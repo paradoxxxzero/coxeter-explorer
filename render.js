@@ -1,32 +1,32 @@
+import Stats from 'stats.js'
 import {
   Color,
-  Curve,
+  CylinderGeometry,
   Fog,
-  Mesh,
+  InstancedMesh,
   MeshStandardMaterial,
+  Object3D,
   PerspectiveCamera,
   PointLight,
   Scene,
   SphereGeometry,
-  TubeGeometry,
   Vector3,
   WebGLRenderer,
-  InstancedMesh,
-  Object3D,
+  Clock,
+  AmbientLight,
 } from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import Stats from 'stats.js'
+import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import './style.css'
 
-export let stats, renderer, camera, scene, raycaster, controls
+export let stats, renderer, camera, scene, controls, clock
 
 const colors = {
   background: 0x000000,
-  edges: 0x303f9f,
+  edges: 0x3949ab,
   vertices: 0x03a9f4,
 }
 
-const size = 7
+const size = 10
 
 export const initialize3d = () => {
   stats = new Stats()
@@ -58,8 +58,9 @@ export const initialize3d = () => {
   scene.background = new Color(colors.background)
 
   scene.fog = new Fog(colors.background, 1, size)
-  // const ambientLight = new AmbientLight(0xffffff)
-  // scene.add(ambientLight)
+
+  const ambientLight = new AmbientLight(0xffffff, 0.75)
+  scene.add(ambientLight)
 
   const pointLight = new PointLight(0xffffff)
   camera.add(pointLight)
@@ -67,19 +68,22 @@ export const initialize3d = () => {
 
   scene.add(camera)
 
-  controls = new OrbitControls(camera, renderer.domElement)
-  controls.target.set(0, 0, 0)
-  controls.minDistance = 0
-  controls.maxDistance = 100
-  controls.addEventListener('change', () => render())
-  controls.update()
+  // controls = new OrbitControls(camera, renderer.domElement)
+  // controls.target.set(0, 0, 0)
+  // controls.minDistance = 0
+  // controls.maxDistance = 100
+  // controls.addEventListener('change', render())
+  // controls.update()
+  controls = new FirstPersonControls(camera, renderer.domElement)
+  controls.lookSpeed = 0.2
+  clock = new Clock()
+  animate()
 
   return {
     renderer,
     scene,
     camera,
     controls,
-    raycaster,
   }
 }
 
@@ -89,68 +93,96 @@ const links = []
 for (let i = -size; i < size; i++) {
   for (let j = -size; j < size; j++) {
     for (let k = -size; k < size; k++) {
-      vertices.push(new Vector3(i + 0.5, j + 0.5, k + 0.5))
+      vertices.push({
+        vertex: new Vector3(i + 0.5, j + 0.5, k + 0.5),
+        order: Math.abs(i + 0.5) + Math.abs(j + 0.5) + Math.abs(k + 0.5),
+      })
     }
   }
 }
 for (let i = 0; i < vertices.length; i++) {
   for (let j = i + 1; j < vertices.length; j++) {
-    const a = vertices[i]
-    const b = vertices[j]
+    const a = vertices[i].vertex
+    const b = vertices[j].vertex
     if (a.distanceTo(b) < 1.1) {
       links.push([i, j])
     }
   }
 }
 
-class SegmentCurve extends Curve {
-  constructor(v1, v2, scale = 1) {
-    super()
-    this.v1 = v1
-    this.v2 = v2
-    this.scale = scale
-  }
-
-  getPoint(t, optionalTarget = new Vector3()) {
-    const tx = this.v1.x + t * (this.v2.x - this.v1.x)
-    const ty = this.v1.y + t * (this.v2.y - this.v1.y)
-    const tz = this.v1.z + t * (this.v2.z - this.v1.z)
-
-    return optionalTarget.set(tx, ty, tz).multiplyScalar(this.scale)
-  }
-}
 const dummy = new Object3D()
+const materialProps = {
+  roughness: 0.5,
+  metalness: 0.5,
+  // clearcoat: 1,
+  // reflectivity: 1,
+}
 
 export const set = () => {
   const vertexGeometry = new SphereGeometry(0.075, 16, 16)
-  const vertex = new InstancedMesh(
+  const instancedVertex = new InstancedMesh(
     vertexGeometry,
-    new MeshStandardMaterial({ color: colors.vertices }),
+    new MeshStandardMaterial({
+      color: colors.vertices,
+      ...materialProps,
+      roughness: 0.7,
+    }),
     vertices.length
   )
-  vertices.forEach((v, i) => {
-    dummy.position.copy(v)
+  vertices.forEach(({ vertex, order }, i) => {
+    dummy.position.copy(vertex)
     dummy.updateMatrix()
-    vertex.setMatrixAt(i, dummy.matrix)
+    instancedVertex.setMatrixAt(i, dummy.matrix)
+    // instancedVertex.setColorAt(
+    //   i,
+    //   new Color(colors.vertices).offsetHSL(order / (3 * size), 0, 0)
+    // )
   })
-  scene.add(vertex)
-  links.forEach(([i, j]) => {
-    const a = vertices[i]
-    const b = vertices[j]
-    const path = new SegmentCurve(a, b)
 
-    const line = new Mesh(
-      new TubeGeometry(path, 5, 0.025, 16),
-      new MeshStandardMaterial({ color: colors.edges })
-    )
-    scene.add(line)
+  // instancedVertex.instanceMatrix.setUsage(StreamDrawUsage)
+  // instancedVertex.instanceColor.setUsage(StreamDrawUsage)
+  scene.add(instancedVertex)
+
+  const edgeGeometry = new CylinderGeometry(0.025, 0.025, 0.9, 16, 1, true)
+  edgeGeometry.translate(0, 0.5, 0)
+  edgeGeometry.rotateX(Math.PI / 2)
+  const instancedEdge = new InstancedMesh(
+    edgeGeometry,
+    new MeshStandardMaterial({
+      color: colors.edges,
+      ...materialProps,
+    }),
+    links.length
+  )
+
+  links.forEach(([i1, i2], i) => {
+    const v1 = vertices[i1]
+    const v2 = vertices[i2]
+    dummy.position.copy(v1.vertex)
+    dummy.lookAt(v2.vertex)
+    dummy.updateMatrix()
+    instancedEdge.setMatrixAt(i, dummy.matrix)
+    // instancedEdge.setColorAt(
+    //   i,
+    //   new Color(colors.edges).offsetHSL(
+    //     (0.5 * (v1.order + v2.order)) / (3 * size),
+    //     0,
+    //     0
+    //   )
+    // )
   })
+  scene.add(instancedEdge)
 }
 
 export const render = () => {
+  const delta = clock.getDelta()
   stats.begin()
   renderer.render(scene, camera)
+  controls.update(delta)
   stats.end()
 }
 
-window.render = render
+export const animate = () => {
+  requestAnimationFrame(animate)
+  render()
+}

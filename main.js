@@ -2,7 +2,7 @@ import { interactions } from './interact'
 import { camera, initialize3d, render, renderer, set } from './render'
 import './style.css'
 
-initialize3d()
+Object.assign(window, initialize3d())
 set()
 
 const size = () => {
