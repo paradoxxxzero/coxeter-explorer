@@ -254,75 +254,32 @@ export const getHoneyComb = (order = 1) => {
   edges.push({ vertices: [7, 1], color: 0x99ffff })
   edges.push({ vertices: [7, 3], color: 0x99ffff })
 
-  // let R = A,
-  //   S = B,
-  //   T = C,
-  //   U = D
-  // for (let i = 0; i < 4; i++) {
-  //   U = reflect(U, R)
-  //   S = reflect(S, R)
-  //   T = reflect(T, R)
-  //   R = U
-
-  //   vertices.push({ vertex: poincare(intersect(S, R, T)), order: i + 2 })
-
-  //   edges.push([4 + i, 0])
-  //   edges.push([4 + i, 1])
-  //   edges.push([4 + i, 2])
-  //   edges.push([4 + i, 3])
-  //   // vertices.push({ vertex: poincare(intersect(E, F, G)), order: 2 })
-  // }
-  // vertices.push({ vertex: poincare(intersect(A, E, F)), order: 2 })
-  // vertices.push({ vertex: poincare(intersect(A, E, F)), order: 2 })
-  // vertices.push({ vertex: poincare(intersect(A, E, F)), order: 2 })
-
-  // const H = reflect(E, E)
-  // const I = reflect(C, E)
-  // const J = reflect(D, E)
-
-  // vertices.push({ vertex: poincare(intersect(F, E, A)), order: 2 })
-  // vertices.push({ vertex: poincare(intersect(A, G, F)), order: 2 })
-  // vertices.push({ vertex: poincare(intersect(E, A, G)), order: 2 })
-
-  // vertices.push({ vertex: poincare(intersect(A, E, C)), order: 2 })
-  // vertices.push({ vertex: poincare(intersect(C, D, A)), order: 2 })
-  // vertices.push({ vertex: poincare(intersect(D, A, G)), order: 2 })
-
-  // edges.push([3, 4])
-  // edges.push([3, 5])
-  // edges.push([3, 6])
-  // edges.push([4, 5])
-  // edges.push([4, 6])
-  // edges.push([5, 6])
-  // edges.push([0, 4])
-  // edges.push([0, 5])
-  // edges.push([0, 6])
-
   return { vertices, edges }
 }
 
-//   const vertices = []
-//   const edges = []
+export const getTestHoneyComb = (size = 10) => {
+  const vertices = []
+  const edges = []
 
-//   for (let i = -size; i < size; i++) {
-//     for (let j = -size; j < size; j++) {
-//       for (let k = -size; k < size; k++) {
-//         vertices.push({
-//           vertex: new Vector3(i + 0.5, j + 0.5, k + 0.5),
-//           order: Math.abs(i + 0.5) + Math.abs(j + 0.5) + Math.abs(k + 0.5),
-//         })
-//       }
-//     }
-//   }
-//   for (let i = 0; i < vertices.length; i++) {
-//     for (let j = i + 1; j < vertices.length; j++) {
-//       const a = vertices[i].vertex
-//       const b = vertices[j].vertex
-//       if (a.distanceTo(b) < 1.1) {
-//         edges.push([i, j])
-//       }
-//     }
-//   }
+  for (let i = -size; i < size; i++) {
+    for (let j = -size; j < size; j++) {
+      for (let k = -size; k < size; k++) {
+        vertices.push({
+          vertex: new Vector3(i + 0.5, j + 0.5, k + 0.5),
+          order: 1, //Math.abs(i + 0.5) + Math.abs(j + 0.5) + Math.abs(k + 0.5),
+        })
+      }
+    }
+  }
+  for (let i = 0; i < vertices.length; i++) {
+    for (let j = i + 1; j < vertices.length; j++) {
+      const a = vertices[i].vertex
+      const b = vertices[j].vertex
+      if (a.distanceTo(b) < 1.1) {
+        edges.push({ vertices: [i, j], order: 1 })
+      }
+    }
+  }
 
-//   return { vertices, edges }
-// }
+  return { vertices, edges }
+}

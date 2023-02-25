@@ -17,7 +17,7 @@ import {
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import './style.css'
-import { getHoneyComb } from './math'
+import { getHoneyComb, getTestHoneyComb } from './math'
 
 export let stats, renderer, camera, scene, controls, clock
 
@@ -100,6 +100,7 @@ const materialProps = {
 
 export const set = () => {
   const { vertices, edges } = getHoneyComb(size)
+  // const { vertices, edges } = getTestHoneyComb(size)
 
   const vertexGeometry = new SphereGeometry(0.075, 16, 16)
   const instancedVertex = new InstancedMesh(
