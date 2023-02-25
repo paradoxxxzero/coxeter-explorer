@@ -94,6 +94,8 @@ const materialProps = {
   metalness: 0.5,
   // clearcoat: 1,
   // reflectivity: 1,
+  transparent: true,
+  opacity: 0.75,
 }
 
 export const set = () => {
@@ -109,14 +111,16 @@ export const set = () => {
     }),
     vertices.length
   )
-  vertices.forEach(({ vertex, order }, i) => {
+  vertices.forEach(({ vertex, order, color }, i) => {
     console.log(vertex)
     dummy.position.copy(vertex)
     dummy.updateMatrix()
     instancedVertex.setMatrixAt(i, dummy.matrix)
     instancedVertex.setColorAt(
       i,
-      new Color(colors.vertices).offsetHSL((order - 1) / 4, 0, 0)
+      color
+        ? new Color(color)
+        : new Color(colors.vertices).offsetHSL((order - 1) / 4, 0, 0)
     )
   })
 
@@ -136,7 +140,7 @@ export const set = () => {
     edges.length
   )
 
-  edges.forEach(([i1, i2], i) => {
+  edges.forEach(({ vertices: [i1, i2], color }, i) => {
     const v1 = vertices[i1]
     const v2 = vertices[i2]
     dummy.position.copy(v1.vertex)
@@ -146,7 +150,9 @@ export const set = () => {
     instancedEdge.setMatrixAt(i, dummy.matrix)
     instancedEdge.setColorAt(
       i,
-      new Color(colors.edges).offsetHSL((v1.order - 1) / 4, 0, 0)
+      color
+        ? new Color(color)
+        : new Color(colors.edges).offsetHSL((v1.order - 1) / 4, 0, 0)
     )
   })
   scene.add(instancedEdge)

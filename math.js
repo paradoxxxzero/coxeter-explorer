@@ -59,68 +59,38 @@ export const dot = (v1, v2, c = curvature) =>
   v1.yzw.dot(v2.yzw) + c * v1.x * v2.x
 
 export const reflect = (v, n) => {
-  const k = min(0, dot(v, n))
+  const k = dot(v, n)
   return v.clone().sub(n.clone().multiplyScalar(2 * k))
 }
 
-// export const cross = (v1, v2, c = curvature) =>
-//   new Vector4(
-//     v1.y * v2.z * v1.w - v2.w * v1.z * v2.y,
-//     v1.z * v2.w * v1.x - v2.x * v1.w * v2.z,
-//     v2.w * v1.x * v2.y - v1.y * v2.x * v1.w,
-//     (c || 1) * (v2.x * v1.y * v2.z - v1.z * v2.y * v1.x)
-//   )
 export const cross = (v1, v2, v3, c = curvature) =>
   new Vector4(
-    v1.y * v2.z * v3.w - v1.w * v2.z * v3.y,
-    v3.x * v1.z * v2.w - v2.w * v3.z * v1.x,
-    v2.x * v3.y * v1.w - v3.w * v1.y * v2.x,
-    (c || 1) * (v1.x * v2.y * v3.z - v3.x * v2.y * v1.z)
+    +v2.y * v3.z * v1.w -
+      v3.y * v2.z * v1.w -
+      v1.y * v3.z * v2.w +
+      v3.y * v1.z * v2.w +
+      v3.w * v1.y * v2.z -
+      v3.w * v2.y * v1.z,
+    -v2.x * v3.z * v1.w +
+      v3.x * v2.z * v1.w +
+      v1.x * v3.z * v2.w -
+      v3.x * v1.z * v2.w -
+      v3.w * v1.x * v2.z +
+      v3.w * v2.x * v1.z,
+    +v2.x * v3.y * v1.w -
+      v3.x * v2.y * v1.w -
+      v1.x * v3.y * v2.w +
+      v3.x * v1.y * v2.w +
+      v3.w * v1.x * v2.y -
+      v3.w * v2.x * v1.y,
+    (c || 1) *
+      (-v1.x * v2.y * v3.z +
+        v1.x * v3.y * v2.z +
+        v2.x * v1.y * v3.z -
+        v2.x * v3.y * v1.z -
+        v3.x * v1.y * v2.z +
+        v3.x * v2.y * v1.z)
   )
-
-// export const cross = (v1, v2, v3, c = curvature) =>
-//   new Vector4(
-//     -v3.w * v1.y * v2.z +
-//       v3.w * v1.z * v2.y +
-//       v3.y * v1.w * v2.z -
-//       v3.y * v1.z * v2.w -
-//       v3.z * v1.w * v2.y +
-//       v3.z * v1.y * v2.w,
-//     v3.w * v1.x * v2.z -
-//       v3.w * v1.z * v2.x -
-//       v3.x * v1.w * v2.z +
-//       v3.x * v1.z * v2.w +
-//       v3.z * v1.w * v2.x -
-//       v3.z * v1.x * v2.w,
-//     -v3.w * v1.x * v2.y +
-//       v3.w * v1.y * v2.x +
-//       v3.x * v1.w * v2.y -
-//       v3.x * v1.y * v2.w -
-//       v3.y * v1.w * v2.x +
-//       v3.y * v1.x * v2.w,
-//     (c || 1) *
-//       (v3.x * v1.y * v2.z -
-//         v3.x * v1.z * v2.y -
-//         v3.y * v1.x * v2.z +
-//         v3.y * v1.z * v2.x +
-//         v3.z * v1.x * v2.y -
-//         v3.z * v1.y * v2.x)
-//   )
-
-// export const cross = (v1, v2, v3, c = curvature) => {
-//   const det2x2_1 = v2
-//     .clone()
-//     .multiply(v3.yzwx)
-//     .sub(v3.clone().multiply(v2.yzwx)) /* xy, yz, zw, wx */
-//   const det2x2_2 = v2.xy.multiply(v3.zw).sub(v3.xy.multiply(v2.zw)) /* xz, yw */
-
-//   return new Vector4(
-//     +v1.y * det2x2_1.z - v1.z * det2x2_2.y + v1.w * det2x2_1.y,
-//     -v1.z * det2x2_1.w - v1.w * det2x2_2.x - v1.x * det2x2_1.z,
-//     +v1.w * det2x2_1.x + v1.x * det2x2_2.y + v1.y * det2x2_1.w,
-//     (c || 1) * (+v1.x * det2x2_1.y - v1.y * det2x2_2.x + v1.z * det2x2_1.x)
-//   )
-// }
 
 export const intersect = (v1, v2, v3) => normalize(cross(v1, v2, v3))
 
@@ -141,7 +111,7 @@ export const poincare = (v, c = curvature) => {
   // z = -c
   // if (c <= 0 || v.w < 1) {
   const nr = 1 / (1 - c * v.x)
-  return new Vector3(v.y * nr, v.z * nr, v.w * nr)
+  return v.yzw.multiplyScalar(nr)
   // }
 }
 
@@ -225,26 +195,64 @@ export const getGoursatTetrahedron = (
 }
 
 export const getHoneyComb = (order = 1) => {
-  const [A, B, C, D] = getGoursatTetrahedron(3.5, 3.8, 3.1, 2.2, 2.01, 3.1) //getGoursatTetrahedron(3, 3, 3, 3)
+  const [A, B, C, D] = getGoursatTetrahedron() //3.5, 3.8, 3.1, 2.2, 2.01, 3.1) //getGoursatTetrahedron(3, 3, 3, 3)
   const vertices = []
   const edges = []
 
   // // Plot Goursat Tetrahedron:
-  vertices.push({ vertex: poincare(A), order: 1 })
-  vertices.push({ vertex: poincare(B), order: 1 })
-  vertices.push({ vertex: poincare(C), order: 1 })
-  vertices.push({ vertex: poincare(D), order: 1 })
-  // vertices.push({ vertex: poincare(intersect(A, B, C)), order: 1 })
-  // vertices.push({ vertex: poincare(intersect(B, C, D)), order: 1 })
-  // vertices.push({ vertex: poincare(intersect(C, D, A)), order: 1 })
-  // vertices.push({ vertex: poincare(intersect(D, A, B)), order: 1 })
+  vertices.push({ vertex: poincare(A), order: 1, color: 0xffff00 })
+  vertices.push({ vertex: poincare(B), order: 1, color: 0xff00ff })
+  vertices.push({ vertex: poincare(C), order: 1, color: 0x00ffff })
+  vertices.push({ vertex: poincare(D), order: 1, color: 0xffffff })
 
-  edges.push([0, 1])
-  edges.push([0, 2])
-  edges.push([0, 3])
-  edges.push([1, 2])
-  edges.push([1, 3])
-  edges.push([2, 3])
+  edges.push({ vertices: [0, 1], color: 0xffffff })
+  edges.push({ vertices: [0, 2], color: 0xffffff })
+  edges.push({ vertices: [0, 3], color: 0xffffff })
+  edges.push({ vertices: [1, 2], color: 0xffffff })
+  edges.push({ vertices: [1, 3], color: 0xffffff })
+  edges.push({ vertices: [2, 3], color: 0xffffff })
+
+  // Mirrors
+  const P = intersect(A, B, C)
+  const Q = intersect(B, C, D)
+  const R = intersect(C, D, A)
+  const S = intersect(D, A, B)
+
+  const T = reflect(Q, P)
+  const U = reflect(R, P)
+  const V = reflect(S, P)
+
+  vertices.push({ vertex: poincare(intersect(T, U, V)), color: 0xff0000 })
+  edges.push({ vertices: [4, 0], color: 0xff9999 })
+  edges.push({ vertices: [4, 1], color: 0xff9999 })
+  edges.push({ vertices: [4, 2], color: 0xff9999 })
+
+  const Z = reflect(P, Q)
+  const a = reflect(R, Q)
+  const b = reflect(S, Q)
+
+  vertices.push({ vertex: poincare(intersect(a, b, Z)), color: 0x00ff00 })
+  edges.push({ vertices: [5, 1], color: 0x99ff99 })
+  edges.push({ vertices: [5, 2], color: 0x99ff99 })
+  edges.push({ vertices: [5, 3], color: 0x99ff99 })
+
+  const W = reflect(P, R)
+  const X = reflect(Q, R)
+  const Y = reflect(S, R)
+
+  vertices.push({ vertex: poincare(intersect(W, X, Y)), color: 0x0000ff })
+  edges.push({ vertices: [6, 0], color: 0x9999ff })
+  edges.push({ vertices: [6, 2], color: 0x9999ff })
+  edges.push({ vertices: [6, 3], color: 0x9999ff })
+
+  const c = reflect(P, S)
+  const d = reflect(Q, S)
+  const e = reflect(R, S)
+
+  vertices.push({ vertex: poincare(intersect(c, d, e)), color: 0x00ffff })
+  edges.push({ vertices: [7, 0], color: 0x99ffff })
+  edges.push({ vertices: [7, 1], color: 0x99ffff })
+  edges.push({ vertices: [7, 3], color: 0x99ffff })
 
   // let R = A,
   //   S = B,
