@@ -1,5 +1,7 @@
 import Stats from 'stats.js'
 import {
+  AmbientLight,
+  Clock,
   Color,
   CylinderGeometry,
   Fog,
@@ -11,13 +13,11 @@ import {
   Scene,
   SphereGeometry,
   WebGLRenderer,
-  Clock,
-  AmbientLight,
 } from 'three'
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+import { getHoneyComb } from './math'
 import './style.css'
-import { getHoneyComb, getTestHoneyComb } from './math'
 
 export let stats, renderer, camera, scene, controls, clock
 
@@ -101,8 +101,9 @@ const materialProps = {
 export const set = () => {
   const { vertices, edges } = getHoneyComb(size)
   // const { vertices, edges } = getTestHoneyComb(size)
+  // const { vertices, edges } = getHoneyCombExpanded(size)
 
-  const vertexGeometry = new SphereGeometry(0.075, 16, 16)
+  const vertexGeometry = new SphereGeometry(0.05, 16, 16)
   const instancedVertex = new InstancedMesh(
     vertexGeometry,
     new MeshStandardMaterial({
@@ -129,7 +130,7 @@ export const set = () => {
   // instancedVertex.instanceColor.setUsage(StreamDrawUsage)
   scene.add(instancedVertex)
 
-  const edgeGeometry = new CylinderGeometry(0.025, 0.025, 1, 16, 1, true)
+  const edgeGeometry = new CylinderGeometry(0.0125, 0.0125, 1, 16, 1, true)
   edgeGeometry.translate(0, 0.5, 0)
   edgeGeometry.rotateX(Math.PI / 2)
   const instancedEdge = new InstancedMesh(
