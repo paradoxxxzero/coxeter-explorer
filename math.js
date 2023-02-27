@@ -1,11 +1,8 @@
 import {
+  Color,
   Vector2,
   Vector3 as ThreeVector3,
   Vector4 as ThreeVector4,
-  Sphere,
-  Matrix3,
-  Matrix4,
-  Color,
 } from 'three'
 const { abs, cos, sin, min, max, sqrt, PI } = Math
 
@@ -179,111 +176,14 @@ export const getGoursatTetrahedron = (
 }
 export const proj = (u, v) => u.clone().multiplyScalar(dot(u, v))
 
-export const getHoneyComb = (order = 1) => {
-  const p = 5
-  const q = 3
-  const r = 4
-
-  const verts = getGoursatTetrahedron(p, 2, 2, q, 2, r)
-  const vertices = []
-  const edges = []
-  const [centerVertex, faceLastVertex, faceCenterVertex, faceFirstVertex] =
-    verts.map(v => poincare(v))
-  const color = new Color().setHSL(0, 0.5, 0.9)
-  // vertices.push({ vertex: centerVertex, color })
-  // vertices.push({ vertex: faceCenterVertex, color })
-  vertices.push({ vertex: faceLastVertex, color })
-
-  edges.push({ vertices: [centerVertex, faceFirstVertex], color })
-  edges.push({ vertices: [centerVertex, faceCenterVertex], color })
-  edges.push({ vertices: [centerVertex, faceLastVertex], color })
-  edges.push({ vertices: [faceFirstVertex, faceCenterVertex], color })
-  edges.push({ vertices: [faceFirstVertex, faceLastVertex], color })
-  edges.push({ vertices: [faceCenterVertex, faceLastVertex], color })
-
-  const fundamentalMirrors = [
-    intersect(verts[0], verts[2], verts[3]),
-    intersect(verts[0], verts[1], verts[2]),
-    intersect(verts[0], verts[3], verts[1]),
-    intersect(verts[1], verts[3], verts[2]),
-  ]
-
-  let mirrors = [...fundamentalMirrors]
-  let lastVertex = faceLastVertex
-  for (let j = 0; j < 2 * p - 2; j++) {
-    const color = new Color().setHSL(j / (2 * p), 0.5, 0.5)
-
-    let [mirror] = mirrors.splice(1, 1)
-    let faces = mirrors.map(face => reflect(face, mirror))
-
-    const vertex = poincare(intersect(...faces))
-
-    if (j % 2 === 1) {
-      vertices.push({
-        vertex,
-        color,
-      })
-    }
-
-    edges.push({
-      vertices: [vertex, centerVertex],
-      color,
-    })
-    edges.push({
-      vertices: [vertex, faceCenterVertex],
-      color,
-    })
-    edges.push({
-      vertices: [vertex, lastVertex],
-      color,
-    })
-    lastVertex = vertex
-    mirrors = [mirror, ...faces]
-  }
-  edges.push({
-    vertices: [lastVertex, faceFirstVertex],
-    color,
-  })
-
-  // for (let j = 0; j < 2 * q - 2; j++) {
-  //   const color = new Color().setHSL(j / (2 * q), 0.5, 0.5)
-
-  //   let [mirror] = mirrors.splice(1, 1)
-  //   let faces = mirrors.map(face => reflect(face, mirror))
-
-  //   const vertex = poincare(intersect(...faces))
-
-  //   if (j % 2 === 1) {
-  //     vertices.push({
-  //       vertex,
-  //       color,
-  //     })
-  //   }
-
-  //   edges.push({
-  //     vertices: [vertex, centerVertex],
-  //     color,
-  //   })
-  //   edges.push({
-  //     vertices: [vertex, faceCenterVertex],
-  //     color,
-  //   })
-  //   edges.push({
-  //     vertices: [vertex, lastVertex],
-  //     color,
-  //   })
-  //   lastVertex = vertex
-  //   mirrors = [mirror, ...faces]
-  // }
-  // edges.push({
-  //   vertices: [lastVertex, faceFirstVertex],
-  //   color,
-  // })
-
-  return { vertices, edges }
-}
-
-const drawTetrahedron = (tetrahedron, vertices, edges, depth) => {
+const drawTetrahedron = (
+  tetrahedron,
+  vertices,
+  edges,
+  depth,
+  expand,
+  subexpand
+) => {
   const verts = tetrahedron.map(v =>
     poincare(intersect(...tetrahedron.filter(face => face !== v)))
   )
@@ -331,35 +231,16 @@ const tokens = new Set()
 const vertexTokens = new Set()
 const edgeTokens = new Set()
 
-const recusiveExpandTetrahedron = (
-  tetrahedron,
-  depth = 0,
-  maxDepth = 5,
-  vertices,
-  edges
-) => {
-  const l = drawTetrahedron(tetrahedron, vertices, edges, depth)
-  if (l > 0.5 || depth > maxDepth) {
-    return
-  }
-
-  const expandedTetrahedra = expandTetrahedron(tetrahedron)
-  expandedTetrahedra.forEach((subTetrahedron, i) => {
+const filteredExpandTetrahedron = tetrahedron =>
+  expandTetrahedron(tetrahedron).filter(subTetrahedron => {
     const token = tokenTetrahedron(subTetrahedron)
     if (tokens.has(token)) {
-      return
+      return false
     }
     tokens.add(token)
-
-    recusiveExpandTetrahedron(
-      subTetrahedron,
-      depth + 1,
-      maxDepth,
-      vertices,
-      edges
-    )
+    return true
   })
-}
+
 const expandTetrahedron = tetrahedron =>
   tetrahedron.map(mirror => [
     mirror,
@@ -368,7 +249,7 @@ const expandTetrahedron = tetrahedron =>
       .map(face => reflect(face, mirror)),
   ])
 
-export const getHoneyCombFull = (order = 2) => {
+export const getHoneyComb = (order = 2) => {
   const p = 5
   const q = 3
   const r = 4
@@ -384,7 +265,34 @@ export const getHoneyCombFull = (order = 2) => {
     intersect(verts[1], verts[3], verts[2]),
   ]
 
-  recusiveExpandTetrahedron(fundamentalMirrors, 0, 47, vertices, edges)
+  order = 20
+  let currentOrderTetrahedra = []
+  let previousOrderTetrahedra = [fundamentalMirrors]
+  for (let i = 0; i < order; i++) {
+    currentOrderTetrahedra = []
+    for (let j = 0; j < previousOrderTetrahedra.length; j++) {
+      const tetrahedron = previousOrderTetrahedra[j]
+      currentOrderTetrahedra.push(filteredExpandTetrahedron(tetrahedron))
+    }
+    previousOrderTetrahedra = []
+    for (let j = 0; j < currentOrderTetrahedra.length; j++) {
+      const currentOrderTetrahedraExpand = currentOrderTetrahedra[j]
+      for (let k = 0; k < currentOrderTetrahedraExpand.length; k++) {
+        if (
+          drawTetrahedron(
+            currentOrderTetrahedraExpand[k],
+            vertices,
+            edges,
+            i,
+            j,
+            k
+          ) < 0.7
+        ) {
+          previousOrderTetrahedra.push(currentOrderTetrahedraExpand[k])
+        }
+      }
+    }
+  }
 
   return { vertices, edges }
 }

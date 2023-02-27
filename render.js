@@ -16,9 +16,8 @@ import {
 } from 'three'
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import { getHoneyComb, getHoneyCombFull } from './math'
+import { getHoneyComb } from './math'
 import './style.css'
-import { getHoneyCombAllFaces, getHoneyCombExpanded } from './math-debug'
 
 export let stats, renderer, camera, scene, controls, clock
 
@@ -44,14 +43,13 @@ export const initialize3d = () => {
 
   renderer.domElement.id = 'c3d'
   document.body.appendChild(renderer.domElement)
-
   camera = new PerspectiveCamera(
     90,
     window.innerWidth / window.innerHeight,
     0.001,
-    size + 1
+    2
   )
-  camera.position.set(-1, 1, 1)
+  camera.position.set(-0.0001, 0, 0)
   camera.up.set(0, 1, 0)
   camera.lookAt(0, 0, 0)
   camera.zoom = Math.min(1, window.innerWidth / window.innerHeight)
@@ -77,6 +75,12 @@ export const initialize3d = () => {
   controls.maxDistance = 100
   controls.addEventListener('change', render)
   controls.update()
+
+  renderer.domElement.addEventListener('dblclick', () => {
+    controls.position0.set(controls.position0.x < -1 ? -0.0001 : -1.5, 0, 0)
+    controls.reset()
+  })
+
   // controls = new FirstPersonControls(camera, renderer.domElement)
   // controls.lookSpeed = 0.2
   // animate()
@@ -102,8 +106,7 @@ const materialProps = {
 }
 
 export const set = () => {
-  // const { vertices, edges } = getHoneyComb(size)
-  const { vertices, edges } = getHoneyCombFull(size)
+  const { vertices, edges } = getHoneyComb(size)
   console.log(
     'Rendering',
     vertices.length,
@@ -114,6 +117,7 @@ export const set = () => {
   // const { vertices, edges } = getTestHoneyComb(size)
   // const { vertices, edges } = getHoneyCombExpanded(size)
   // const { vertices, edges } = getHoneyCombAllFaces(size)
+  // const { vertices, edges } = getHoneyCombManual(size)
 
   const vertexGeometry = new SphereGeometry(vertexRadius, 16, 16)
   const instancedVertex = new InstancedMesh(
