@@ -16,8 +16,9 @@ import {
 } from 'three'
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import { getHoneyComb } from './math'
+import { getHoneyComb, getHoneyCombFull } from './math'
 import './style.css'
+import { getHoneyCombAllFaces, getHoneyCombExpanded } from './math-debug'
 
 export let stats, renderer, camera, scene, controls, clock
 
@@ -89,6 +90,8 @@ export const initialize3d = () => {
 }
 
 const dummy = new Object3D()
+const vertexRadius = 0.025
+const edgeRadius = 0.005
 const materialProps = {
   roughness: 0.5,
   metalness: 0.5,
@@ -99,11 +102,20 @@ const materialProps = {
 }
 
 export const set = () => {
-  const { vertices, edges } = getHoneyComb(size)
+  // const { vertices, edges } = getHoneyComb(size)
+  const { vertices, edges } = getHoneyCombFull(size)
+  console.log(
+    'Rendering',
+    vertices.length,
+    'vertices and',
+    edges.length,
+    'edges'
+  )
   // const { vertices, edges } = getTestHoneyComb(size)
   // const { vertices, edges } = getHoneyCombExpanded(size)
+  // const { vertices, edges } = getHoneyCombAllFaces(size)
 
-  const vertexGeometry = new SphereGeometry(0.05, 16, 16)
+  const vertexGeometry = new SphereGeometry(vertexRadius, 16, 16)
   const instancedVertex = new InstancedMesh(
     vertexGeometry,
     new MeshStandardMaterial({
@@ -114,7 +126,7 @@ export const set = () => {
     vertices.length
   )
   vertices.forEach(({ vertex, order, color }, i) => {
-    console.log(vertex)
+    // console.log('Vertex', vertex)
     dummy.position.copy(vertex)
     dummy.updateMatrix()
     instancedVertex.setMatrixAt(i, dummy.matrix)
@@ -130,7 +142,14 @@ export const set = () => {
   // instancedVertex.instanceColor.setUsage(StreamDrawUsage)
   scene.add(instancedVertex)
 
-  const edgeGeometry = new CylinderGeometry(0.0125, 0.0125, 1, 16, 1, true)
+  const edgeGeometry = new CylinderGeometry(
+    edgeRadius,
+    edgeRadius,
+    1,
+    16,
+    1,
+    true
+  )
   edgeGeometry.translate(0, 0.5, 0)
   edgeGeometry.rotateX(Math.PI / 2)
   const instancedEdge = new InstancedMesh(
@@ -142,19 +161,17 @@ export const set = () => {
     edges.length
   )
 
-  edges.forEach(({ vertices: [i1, i2], color }, i) => {
-    const v1 = vertices[i1]
-    const v2 = vertices[i2]
-    dummy.position.copy(v1.vertex)
-    dummy.scale.set(1, 1, v1.vertex.distanceTo(v2.vertex))
-    dummy.lookAt(v2.vertex)
+  edges.forEach(({ vertices: [v1, v2], order, color }, i) => {
+    dummy.position.copy(v1)
+    dummy.scale.set(1, 1, v1.distanceTo(v2))
+    dummy.lookAt(v2)
     dummy.updateMatrix()
     instancedEdge.setMatrixAt(i, dummy.matrix)
     instancedEdge.setColorAt(
       i,
       color
         ? new Color(color)
-        : new Color(colors.edges).offsetHSL((v1.order - 1) / 4, 0, 0)
+        : new Color(colors.edges).offsetHSL((order - 1) / 4, 0, 0)
     )
   })
   scene.add(instancedEdge)

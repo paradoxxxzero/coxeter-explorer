@@ -1,6 +1,6 @@
 import {
   Vector2,
-  Vector3,
+  Vector3 as ThreeVector3,
   Vector4 as ThreeVector4,
   Sphere,
   Matrix3,
@@ -10,6 +10,20 @@ import {
 const { abs, cos, sin, min, max, sqrt, PI } = Math
 
 let curvature = -1
+
+const tokenPrecision = 3
+const tokenSize = 10 ** tokenPrecision
+
+class Vector3 extends ThreeVector3 {
+  get token() {
+    return 'xyz'
+      .split('')
+      .map(c =>
+        String(~~Math.round(tokenSize * this[c])).padStart(tokenPrecision, '0')
+      )
+      .join('|')
+  }
+}
 
 class Vector4 extends ThreeVector4 {
   get xy() {
@@ -54,15 +68,21 @@ class Vector4 extends ThreeVector4 {
   get wzyx() {
     return new Vector4(this.w, this.z, this.y, this.x)
   }
+  get token() {
+    return 'xyzw'
+      .split('')
+      .map(c =>
+        String(~~Math.round(tokenSize * this[c])).padStart(tokenPrecision, '0')
+      )
+      .join('|')
+  }
 }
 
 export const dot = (v1, v2, c = curvature) =>
   v1.xyz.dot(v2.xyz) + c * v1.w * v2.w
 
-export const reflect = (v, n) => {
-  const k = dot(v, n)
-  return v.clone().sub(n.clone().multiplyScalar(2 * k))
-}
+export const reflect = (v, n) =>
+  v.clone().sub(n.clone().multiplyScalar(2 * dot(v, n)))
 
 export const cross = (v1, v2, v3, c = curvature) =>
   new Vector4(
@@ -95,14 +115,21 @@ export const cross = (v1, v2, v3, c = curvature) =>
 
 export const intersect = (v1, v2, v3) => normalize(cross(v1, v2, v3))
 
+export const asqrt = x => (x < 0 ? -sqrt(-x) : sqrt(x))
+
 export const normalize = (v, c = curvature) => {
   if (c === 0) {
     return new Vector4(v.x / v.w, v.y / v.w, v.z / v.w, 1)
   }
+
+  if (v.w < 0) {
+    v = v.clone().multiplyScalar(-1)
+  }
+
   let d = -dot(v, v, c)
   if (d < 0) {
     d = -d
-    console.warn('normalize: negative dot product')
+    // console.warn('normalize: negative dot product')
   }
   return v.clone().divideScalar(sqrt(d))
 }
@@ -160,70 +187,204 @@ export const getHoneyComb = (order = 1) => {
   const verts = getGoursatTetrahedron(p, 2, 2, q, 2, r)
   const vertices = []
   const edges = []
+  const [centerVertex, faceLastVertex, faceCenterVertex, faceFirstVertex] =
+    verts.map(v => poincare(v))
+  const color = new Color().setHSL(0, 0.5, 0.9)
+  // vertices.push({ vertex: centerVertex, color })
+  // vertices.push({ vertex: faceCenterVertex, color })
+  vertices.push({ vertex: faceLastVertex, color })
 
-  verts.forEach((vert, i) => {
-    vertices.push({
-      vertex: poincare(vert),
-      order: 1,
-      color: new Color().setHSL(0, 0.5, 0.2 + (0.8 * i) / verts.length),
-    })
-    for (let j = 0; j < i; j++) {
-      edges.push({
-        vertices: [i, j],
-        color: new Color().setHSL(0, 0.5, 0.2 + (0.8 * i) / verts.length),
-      })
-    }
-  })
+  edges.push({ vertices: [centerVertex, faceFirstVertex], color })
+  edges.push({ vertices: [centerVertex, faceCenterVertex], color })
+  edges.push({ vertices: [centerVertex, faceLastVertex], color })
+  edges.push({ vertices: [faceFirstVertex, faceCenterVertex], color })
+  edges.push({ vertices: [faceFirstVertex, faceLastVertex], color })
+  edges.push({ vertices: [faceCenterVertex, faceLastVertex], color })
 
-  let mirrors = [
+  const fundamentalMirrors = [
     intersect(verts[0], verts[2], verts[3]),
     intersect(verts[0], verts[1], verts[2]),
     intersect(verts[0], verts[3], verts[1]),
     intersect(verts[1], verts[3], verts[2]),
   ]
 
-  // P, Q, R, S
-  // mirror P
-  // faces Q, R, S
-  // -> T, U, V
-  // T, U, V, P
-  // mirror T
-  // faces U, V, P
-  // flip U, P, V
-  let lastEdge = 1
+  let mirrors = [...fundamentalMirrors]
+  let lastVertex = faceLastVertex
   for (let j = 0; j < 2 * p - 2; j++) {
+    const color = new Color().setHSL(j / (2 * p), 0.5, 0.5)
+
     let [mirror] = mirrors.splice(1, 1)
     let faces = mirrors.map(face => reflect(face, mirror))
 
+    const vertex = poincare(intersect(...faces))
+
     if (j % 2 === 1) {
-      faces = [faces[0], faces[2], faces[1]]
+      vertices.push({
+        vertex,
+        color,
+      })
     }
 
-    vertices.push({
-      vertex: poincare(intersect(...faces)),
-      color: new Color().setHSL(j / (2 * p), 0.5, 0.5),
-    })
-
     edges.push({
-      vertices: [vertices.length - 1, 0],
-      color: new Color().setHSL(j / (2 * p), 0.5, 0.5),
+      vertices: [vertex, centerVertex],
+      color,
     })
     edges.push({
-      vertices: [vertices.length - 1, 2],
-      color: new Color().setHSL(j / (2 * p), 0.5, 0.5),
+      vertices: [vertex, faceCenterVertex],
+      color,
     })
     edges.push({
-      vertices: [vertices.length - 1, lastEdge],
-      color: new Color().setHSL(j / (2 * p), 0.5, 0.5),
+      vertices: [vertex, lastVertex],
+      color,
     })
-    lastEdge = vertices.length - 1
+    lastVertex = vertex
     mirrors = [mirror, ...faces]
   }
-  console.log(edges)
   edges.push({
-    vertices: [lastEdge, 3],
-    color: new Color().setHSL(1, 1, 0.5),
+    vertices: [lastVertex, faceFirstVertex],
+    color,
   })
+
+  // for (let j = 0; j < 2 * q - 2; j++) {
+  //   const color = new Color().setHSL(j / (2 * q), 0.5, 0.5)
+
+  //   let [mirror] = mirrors.splice(1, 1)
+  //   let faces = mirrors.map(face => reflect(face, mirror))
+
+  //   const vertex = poincare(intersect(...faces))
+
+  //   if (j % 2 === 1) {
+  //     vertices.push({
+  //       vertex,
+  //       color,
+  //     })
+  //   }
+
+  //   edges.push({
+  //     vertices: [vertex, centerVertex],
+  //     color,
+  //   })
+  //   edges.push({
+  //     vertices: [vertex, faceCenterVertex],
+  //     color,
+  //   })
+  //   edges.push({
+  //     vertices: [vertex, lastVertex],
+  //     color,
+  //   })
+  //   lastVertex = vertex
+  //   mirrors = [mirror, ...faces]
+  // }
+  // edges.push({
+  //   vertices: [lastVertex, faceFirstVertex],
+  //   color,
+  // })
+
+  return { vertices, edges }
+}
+
+const drawTetrahedron = (tetrahedron, vertices, edges, depth) => {
+  const verts = tetrahedron.map(v =>
+    poincare(intersect(...tetrahedron.filter(face => face !== v)))
+  )
+
+  verts.forEach(vert => {
+    const color = new Color().setHSL(vert.length(), 0.5, 0.5)
+    if (vertexTokens.has(vert.token)) {
+      return
+    }
+    vertexTokens.add(vert.token)
+    vertices.push({ vertex: vert, color })
+  })
+
+  for (let i = 0; i < verts.length; i++) {
+    for (let j = i + 1; j < verts.length; j++) {
+      const edge = [verts[i], verts[j]]
+      const color = new Color().setHSL(
+        0.5 * (edge[0].length() + edge[1].length()),
+        0.5,
+        0.5
+      )
+      if (edgeTokens.has(tokenEdge(edge))) {
+        continue
+      }
+      edgeTokens.add(tokenEdge(edge))
+      edges.push({ vertices: edge, color })
+    }
+  }
+  return min(...verts.map(v => v.length()))
+}
+
+const tokenTetrahedron = tetrahedron =>
+  tetrahedron
+    .sort((a, b) => a.x - b.x || a.y - b.y || a.z - b.z || a.w - b.w)
+    .map(face => face.token)
+    .join(' / ')
+
+const tokenEdge = edge =>
+  edge
+    .sort((a, b) => a.x - b.x || a.y - b.y || a.z - b.z || a.w - b.w)
+    .map(vertex => vertex.token)
+    .join(' / ')
+
+const tokens = new Set()
+const vertexTokens = new Set()
+const edgeTokens = new Set()
+
+const recusiveExpandTetrahedron = (
+  tetrahedron,
+  depth = 0,
+  maxDepth = 5,
+  vertices,
+  edges
+) => {
+  const l = drawTetrahedron(tetrahedron, vertices, edges, depth)
+  if (l > 0.5 || depth > maxDepth) {
+    return
+  }
+
+  const expandedTetrahedra = expandTetrahedron(tetrahedron)
+  expandedTetrahedra.forEach((subTetrahedron, i) => {
+    const token = tokenTetrahedron(subTetrahedron)
+    if (tokens.has(token)) {
+      return
+    }
+    tokens.add(token)
+
+    recusiveExpandTetrahedron(
+      subTetrahedron,
+      depth + 1,
+      maxDepth,
+      vertices,
+      edges
+    )
+  })
+}
+const expandTetrahedron = tetrahedron =>
+  tetrahedron.map(mirror => [
+    mirror,
+    ...tetrahedron
+      .filter(face => face !== mirror)
+      .map(face => reflect(face, mirror)),
+  ])
+
+export const getHoneyCombFull = (order = 2) => {
+  const p = 5
+  const q = 3
+  const r = 4
+
+  const verts = getGoursatTetrahedron(p, 2, 2, q, 2, r)
+  const vertices = []
+  const edges = []
+
+  const fundamentalMirrors = [
+    intersect(verts[0], verts[2], verts[3]),
+    intersect(verts[0], verts[1], verts[2]),
+    intersect(verts[0], verts[3], verts[1]),
+    intersect(verts[1], verts[3], verts[2]),
+  ]
+
+  recusiveExpandTetrahedron(fundamentalMirrors, 0, 47, vertices, edges)
 
   return { vertices, edges }
 }
