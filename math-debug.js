@@ -7,7 +7,7 @@ import {
   poincare,
   reflect,
 } from './math/hypermath'
-import { draw, drawDebug } from './math'
+import { draw } from './math'
 import Vertex from './math/Vertex'
 import Edge from './math/Edge'
 
@@ -30,9 +30,9 @@ export const getHoneyCombNewAPI = (order = 1) => {
     intersect(fundamental[1], fundamental[3], fundamental[2]),
   ])
 
-  drawDebug(fundamentalSimplex, new Color(0xffffff))
-  drawDebug(fundamentalSimplex.reflect(3), new Color(0xffff00))
-  drawDebug(fundamentalSimplex.reflect(3).reflect(2), new Color(0xffff00))
+  draw(fundamentalSimplex, new Color(0xffffff))
+  draw(fundamentalSimplex.reflect(3), new Color(0xffff00))
+  draw(fundamentalSimplex.reflect(3).reflect(2), new Color(0xffff00))
   // let seed
   // let simplex = fundamentalSimplex
   // for (let j = 0; j < 2 * coxeter.p; j++) {
@@ -67,183 +67,14 @@ export const getHoneyCombNewAPI = (order = 1) => {
   return { vertices: Vertex.all, edges: Edge.all }
 }
 
-export const getHoneyCombExpanded = (order = 1) => {
-  const vertices = []
-  const edges = []
-  const pushV = (vertex, color) => {
-    vertices.push({ vertex, color: new Color(color) })
-  }
-  const pushE = (edge, color) => {
-    edges.push({
-      vertex1: { vertex: edge[0], color: new Color(color) },
-      vertex2: { vertex: edge[1], color: new Color(color) },
-      color: new Color(color),
-    })
-  }
-  const p = 5
-  const q = 3
-  const r = 4
-
-  const [A, B, C, D] = getGoursatSimplex(p, 2, 2, q, 2, r) //3.5, 3.8, 3.1, 2.2, 2.01, 3.1) //getGoursatTetrahedron(3, 3, 3, 3)
-
-  const L = poincare(A)
-  const M = poincare(B)
-  const N = poincare(C)
-  const O = poincare(D)
-
-  // // Plot Goursat Tetrahedron:
-  pushV(L, 0xffff00)
-  pushV(M, 0xff00ff)
-  pushV(N, 0x00ffff)
-  pushV(O, 0xffffff)
-
-  pushE([L, M], 0xffffff)
-  pushE([L, N], 0xffffff)
-  pushE([L, O], 0xffffff)
-  pushE([M, N], 0xffffff)
-  pushE([M, O], 0xffffff)
-  pushE([N, O], 0xffffff)
-
-  //       C             /\
-  //   Q  / \ \          /
-  //     / P \S \       /
-  //    /     \ / D
-  //    -------
-  //   A   R   B
-
-  // Mirrors
-  const P = intersect(A, B, C)
-  const Q = intersect(A, C, D)
-  const R = intersect(A, D, B)
-  const S = intersect(B, D, C)
-
-  // const T = reflect(Q, P)
-  // const U = reflect(R, P)
-  // const V = reflect(S, P)
-
-  // const E = poincare(intersect(T, U, V))
-  // pushV(E, 0xff0000)
-  // pushE([E, L], 0xff9999)
-  // pushE([E, N], 0xff9999)
-  // pushE([E, M], 0xff9999)
-
-  // const W = reflect(P, T)
-  // const X = reflect(U, T)
-  // const Y = reflect(V, T)
-
-  // const F = poincare(intersect(W, Y, X))
-  // pushV(F, 0x00ff00)
-  // pushE([F, L], 0x99ff99)
-  // pushE([F, N], 0x99ff99)
-  // pushE([F, E], 0x99ff99)
-
-  const ZA = reflect(P, S)
-  const ZB = reflect(Q, S)
-  const ZC = reflect(R, S)
-
-  console.log(S, ZA, ZB, ZC)
-  const XA = poincare(intersect(ZA, ZB, ZC))
-  pushV(XA, 0xfccfcf)
-  pushE([XA, M], 0xf99f9f)
-  pushE([XA, N], 0xf99f9f)
-  pushE([XA, O], 0xf99f9f)
-
-  const ZD = reflect(S, ZC)
-  const ZE = reflect(ZA, ZC)
-  const ZF = reflect(ZB, ZC)
-  console.log(ZC, ZD, ZE, ZF)
-
-  const XB = poincare(intersect(ZD, ZF, ZE))
-  pushV(XB, 0xfccfcf)
-  pushE([XB, M], 0xf99f9f)
-  pushE([XB, O], 0xf99f9f)
-  pushE([XB, XA], 0xf99f9f)
-
-  // const Z = reflect(T, W)
-  // const AA = reflect(Y, W)
-  // const AB = reflect(X, W)
-
-  // const G = poincare(intersect(Z, AA, AB))
-  // pushV(G, 0x0000ff)
-  // pushE([G, L], 0x9999ff)
-  // pushE([G, N], 0x9999ff)
-  // pushE([G, F], 0x9999ff)
-
-  // const AC = reflect(W, Z)
-  // const AD = reflect(AA, Z)
-  // const AE = reflect(AB, Z)
-
-  // const H = poincare(intersect(AC, AE, AD))
-  // pushV(H, 0x00ffff)
-  // pushE([H, L], 0x99ffff)
-  // pushE([H, N], 0x99ffff)
-  // pushE([H, G], 0x99ffff)
-
-  // const AF = reflect(Z, AC)
-  // const AG = reflect(AE, AC)
-  // const AH = reflect(AD, AC)
-
-  // const I = poincare(intersect(AF, AG, AH))
-  // pushV(I, 0xffff00)
-  // pushE([I, L], 0xffff99)
-  // pushE([I, N], 0xffff99)
-  // pushE([I, H], 0xffff99)
-
-  // const AI = reflect(AC, AF)
-  // const AJ = reflect(AG, AF)
-  // const AK = reflect(AH, AF)
-
-  // const J = poincare(intersect(AI, AK, AJ))
-  // pushV(J, 0xff00ff)
-  // pushE([J, L], 0xff99ff)
-  // pushE([J, N], 0xff99ff)
-  // pushE([J, I], 0xff99ff)
-
-  // const AL = reflect(AF, AI)
-  // const AM = reflect(AK, AI)
-  // const AN = reflect(AJ, AI)
-
-  // const K = poincare(intersect(AL, AM, AN))
-  // pushV(K, 0xff99ff)
-  // pushE([K, L], 0xff9900)
-  // pushE([K, N], 0xff9900)
-  // pushE([K, J], 0xff9900)
-
-  // const AO = reflect(AI, AL)
-  // const AP = reflect(AM, AL)
-  // const AQ = reflect(AN, AL)
-
-  // const KK = poincare(intersect(AO, AQ, AP))
-  // pushV(KK, 0x99ff99)
-  // pushE([KK, L], 0x00ff99)
-  // pushE([KK, N], 0x00ff99)
-  // pushE([KK, K], 0x00ff99)
-
-  // pushE([KK, O], 0x999999)
-
-  // const TA = reflect(P, R)
-  // const TB = reflect(Q, R)
-  // const TC = reflect(S, R)
-
-  // const UA = poincare(intersect(TA, TB, TC))
-  // pushV(UA, 0x559955)
-  // pushE([UA, O], 0x55cc55)
-  // pushE([UA, L], 0x55cc55)
-  // pushE([UA, M], 0x55cc55)
-
-  // const TD = reflect(R, TB)
-  // const TE = reflect(TA, TB)
-  // const TF = reflect(TC, TB)
-
-  // const UB = poincare(intersect(TD, TE, TF))
-  // pushV(UB, 0x995555)
-  // pushE([UB, O], 0xcc5555)
-  // pushE([UB, L], 0xcc5555)
-  // pushE([UB, UA], 0xcc5555)
-
-  // pushE([UB, N], 0xcc5555)
-
-  return { vertices, edges }
+export const renderHoneyCombExpanded = (simplex, coxeter) => {
+  // simplex.faces.forEach(f => f.normalize())
+  draw(simplex, new Color(0xffffff), true, coxeter)
+  draw(simplex.reflect(0), new Color(0xff0000), true, coxeter) // OK
+  draw(simplex.reflect(1), new Color(0x00ff00), true, coxeter) // OK
+  draw(simplex.reflect(2), new Color(0x0000ff), true, coxeter)
+  draw(simplex.reflect(3), new Color(0xffff00), true, coxeter) // OK
+  // draw(simplex.reflect(3).reflect(2), new Color(0xffff00), true, coxeter)
 }
 
 export const getHoneyCombAllFaces = (order = 1) => {

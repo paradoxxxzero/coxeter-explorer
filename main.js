@@ -4,13 +4,14 @@ import './style.css'
 
 Object.assign(window, initialize3d())
 set({
-  p: 3,
+  p: 5,
   q: 3,
   r: 2,
   s: 2,
-  t: 6,
+  t: 4,
   u: 2,
   activeMirrors: [0],
+  // DEBUG: true,
 })
 
 const size = () => {

@@ -22,6 +22,7 @@ import { getGoursatSimplex } from './math/hypermath'
 import Simplex from './math/Simplex'
 import Vertex from './math/Vertex'
 import './style.css'
+import { renderHoneyCombExpanded } from './math-debug'
 export let stats, renderer, camera, scene, controls, clock
 
 const colors = {
@@ -111,6 +112,7 @@ const materialProps = {
 
 export const set = coxeter => {
   renderHoneyComb(getGoursatSimplex(coxeter), coxeter)
+  // renderHoneyCombExpanded(getGoursatSimplex(coxeter), coxeter)
   // const { vertices, edges } = getHoneyCombNewAPI(size)
   // const { vertices, edges } = getHoneyCombManual(size)
   // const { vertices, edges } = getTestHoneyComb(size)

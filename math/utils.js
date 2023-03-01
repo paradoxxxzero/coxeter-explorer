@@ -3,5 +3,5 @@ export const floatToToken = f => {
     throw new Error(`Can't token f: ${f} > 1`)
   }
 
-  return ((f + 1) / 2).toFixed(2).replace('0.', '')
+  return ((f + 1) / 4).toFixed(2).replace('0.', '')
 }

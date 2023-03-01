@@ -24,22 +24,14 @@ export const draw = (simplex, color, new_, coxeter) => {
       }
     )
   }
-  // combinations(simplex.vertices).forEach(([v1, v2]) => {
-  //   const edge = new Edge(v1, v2)
-  //   edge.push(new Color().setHSL(0, 0, 0.2))
-  // })
-}
-
-export const drawDebug = (simplex, color) => {
-  color = color || new Color().setHSL(Math.random(), 1, 0.75)
-
-  simplex.vertices
-    .filter(vertex => vertex)
-    .forEach(vertex => vertex.push(color))
-  combinations(simplex.vertices).forEach(([v1, v2]) => {
-    const edge = new Edge(v1, v2)
-    edge.push(color)
-  })
+  if (coxeter.DEBUG) {
+    color = color.clone().offsetHSL(0, -0.3, -0.3)
+    simplex.vertices.forEach(vertex => vertex.push(color))
+    combinations(simplex.vertices).forEach(([v1, v2]) => {
+      const edge = new Edge(v1, v2)
+      edge.push(color)
+    })
+  }
 }
 
 const renderFace = (simplex, color, coxeter) => {
@@ -55,7 +47,7 @@ const renderFace = (simplex, color, coxeter) => {
       continue
     }
 
-    if (j % 2 === 0 && j < coxeter.p) {
+    if (j % 2 == 0 && j <= coxeter.p) {
       faceRoots.push(simplex)
     }
   }
@@ -68,11 +60,11 @@ const renderCell = (simplex, coxeter) => {
 
   let newFaceRoots
 
-  for (let j = 0; j < 2 * coxeter.t; j++) {
+  for (let j = 0; j < 10 && faceRoots.length; j++) {
     newFaceRoots = []
     for (let i = 0; i < faceRoots.length; i++) {
       const root = faceRoots[i]
-      const color = new Color().setHSL(j / coxeter.q, 0.5, 0.5)
+      const color = new Color().setHSL(j / 5, 0.5, 0.5)
       let seed
       if (j > 0) {
         seed = root.reflect(2)
@@ -103,15 +95,11 @@ export const renderHoneyComb = (simplex, coxeter) => {
   let newCellRoots
   let iterations = 0
 
-  while (cellRoots.length > 0 && iterations++ < 2) {
+  while (cellRoots.length > 0 && iterations++ < 3) {
     newCellRoots = []
     for (let i = 0; i < cellRoots.length; i++) {
       const root = cellRoots[i]
-      const color = new Color().setHSL(
-        (i + 1) / (cellRoots.length + 2),
-        0.5,
-        0.5
-      )
+      const color = new Color().setHSL(0, 0.5, 1)
       let seed
       if (iterations > 1) {
         seed = root.reflect(3)
@@ -124,7 +112,7 @@ export const renderHoneyComb = (simplex, coxeter) => {
         }
       } else {
         seed = root
-        draw(seed, color, false, coxeter)
+        draw(seed, color, true, coxeter)
       }
       newCellRoots.push(...renderCell(seed, coxeter))
     }
