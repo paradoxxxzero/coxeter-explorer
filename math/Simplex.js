@@ -1,4 +1,5 @@
 import { poincare, intersect, reflect } from './hypermath'
+import Vertex from './Vertex'
 
 export default class Simplex {
   static tokens = new Set()
@@ -10,8 +11,11 @@ export default class Simplex {
   }
 
   project() {
-    this._vertices = this.faces.map(v =>
-      poincare(intersect(...this.faces.filter(face => face !== v)))
+    this._vertices = this.faces.map(
+      v =>
+        new Vertex(
+          poincare(intersect(...this.faces.filter(face => face !== v)))
+        )
     )
     return this.register()
   }

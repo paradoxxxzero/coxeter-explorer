@@ -130,17 +130,11 @@ export const set = () => {
     }),
     vertices.length
   )
-  vertices.forEach(({ vertex, order, color }, i) => {
-    // console.log('Vertex', vertex)
-    dummy.position.copy(vertex)
+  vertices.forEach((vertex, i) => {
+    dummy.position.copy(vertex.vertex)
     dummy.updateMatrix()
     instancedVertex.setMatrixAt(i, dummy.matrix)
-    instancedVertex.setColorAt(
-      i,
-      color
-        ? new Color(color)
-        : new Color(colors.vertices).offsetHSL((order - 1) / 4, 0, 0)
-    )
+    instancedVertex.setColorAt(i, vertex.color)
   })
 
   // instancedVertex.instanceMatrix.setUsage(StreamDrawUsage)
@@ -166,18 +160,13 @@ export const set = () => {
     edges.length
   )
 
-  edges.forEach(({ vertices: [v1, v2], order, color }, i) => {
-    dummy.position.copy(v1)
-    dummy.scale.set(1, 1, v1.distanceTo(v2))
-    dummy.lookAt(v2)
+  edges.forEach((edge, i) => {
+    dummy.position.copy(edge.vertex1.vertex)
+    dummy.scale.set(1, 1, edge.vertex1.vertex.distanceTo(edge.vertex2.vertex))
+    dummy.lookAt(edge.vertex2.vertex)
     dummy.updateMatrix()
     instancedEdge.setMatrixAt(i, dummy.matrix)
-    instancedEdge.setColorAt(
-      i,
-      color
-        ? new Color(color)
-        : new Color(colors.edges).offsetHSL((order - 1) / 4, 0, 0)
-    )
+    instancedEdge.setColorAt(i, edge.color)
   })
   scene.add(instancedEdge)
 }
