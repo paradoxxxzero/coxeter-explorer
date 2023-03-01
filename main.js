@@ -3,7 +3,15 @@ import { camera, initialize3d, render, renderer, set } from './render'
 import './style.css'
 
 Object.assign(window, initialize3d())
-set()
+set({
+  p: 3,
+  q: 3,
+  r: 2,
+  s: 2,
+  t: 6,
+  u: 2,
+  activeMirrors: [0],
+})
 
 const size = () => {
   const subsampling = 1

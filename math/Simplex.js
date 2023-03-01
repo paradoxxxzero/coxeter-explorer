@@ -1,5 +1,6 @@
 import { poincare, intersect, reflect } from './hypermath'
 import Vertex from './Vertex'
+import Vector3 from './Vector3'
 
 export default class Simplex {
   static tokens = new Set()
@@ -10,14 +11,14 @@ export default class Simplex {
     this._vertices = null
   }
 
-  project() {
+  project(nope) {
     this._vertices = this.faces.map(
       v =>
         new Vertex(
           poincare(intersect(...this.faces.filter(face => face !== v)))
         )
     )
-    return this.register()
+    return !nope && this.register()
   }
 
   reflect(mirrorIndex = 0) {
@@ -39,15 +40,18 @@ export default class Simplex {
 
   get vertices() {
     if (this._vertices === null) {
-      this.project()
+      this.project(true)
     }
     return this._vertices
   }
 
   get token() {
-    return this.vertices
-      .map(vertex => vertex.token)
-      .sort()
-      .join(' / ')
+    const centroid = new Vector3()
+    this.vertices.forEach(vertex => {
+      centroid.add(vertex.vertex)
+    })
+    centroid.divideScalar(this.vertices.length)
+
+    return centroid.token
   }
 }

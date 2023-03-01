@@ -1,6 +1,5 @@
 import { Vector4 as ThreeVector4, Vector2 } from 'three'
 import Vector3 from './Vector3'
-import { floatToToken } from './utils'
 
 export default class Vector4 extends ThreeVector4 {
   get xy() {
@@ -44,11 +43,5 @@ export default class Vector4 extends ThreeVector4 {
   }
   get wzyx() {
     return new Vector4(this.w, this.z, this.y, this.x)
-  }
-  get token() {
-    return 'xyzw'
-      .split('')
-      .map(c => floatToToken(this[c]))
-      .join('|')
   }
 }

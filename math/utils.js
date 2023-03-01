@@ -1,11 +1,7 @@
-import { round, abs } from './index.js'
-
-const tokenPrecision = 1
-const tokenSize = 10 ** tokenPrecision
-const tokenEpsilon = 10 ** -tokenPrecision
-
 export const floatToToken = f => {
-  return String(
-    (f >= -tokenEpsilon ? '_' : '-') + ~~round(tokenSize * abs(f))
-  ).padStart(tokenPrecision, '0')
+  if (f > 1) {
+    throw new Error(`Can't token f: ${f} > 1`)
+  }
+
+  return ((f + 1) / 2).toFixed(2).replace('0.', '')
 }

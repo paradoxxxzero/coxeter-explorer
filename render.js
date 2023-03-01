@@ -16,9 +16,12 @@ import {
 } from 'three'
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import { getHoneyComb } from './math'
+import { renderHoneyComb } from './math'
+import Edge from './math/Edge'
+import { getGoursatSimplex } from './math/hypermath'
+import Simplex from './math/Simplex'
+import Vertex from './math/Vertex'
 import './style.css'
-
 export let stats, renderer, camera, scene, controls, clock
 
 const colors = {
@@ -47,10 +50,10 @@ export const initialize3d = () => {
     90,
     window.innerWidth / window.innerHeight,
     0.001,
-    2
+    10
   )
   // camera.position.set(-0.0001, 0, 0)
-  camera.position.set(0, 0, 1)
+  camera.position.set(0, 0, 1.5)
   camera.up.set(0, 1, 0)
   camera.lookAt(0, 0, 0)
   camera.zoom = Math.min(1, window.innerWidth / window.innerHeight)
@@ -106,8 +109,17 @@ const materialProps = {
   opacity: 0.75,
 }
 
-export const set = () => {
-  const { vertices, edges } = getHoneyComb(size)
+export const set = coxeter => {
+  renderHoneyComb(getGoursatSimplex(coxeter), coxeter)
+  // const { vertices, edges } = getHoneyCombNewAPI(size)
+  // const { vertices, edges } = getHoneyCombManual(size)
+  // const { vertices, edges } = getTestHoneyComb(size)
+  // const { vertices, edges } = getHoneyCombExpanded(size)
+  // const { vertices, edges } = getHoneyCombAllFaces(size)
+
+  const vertices = Vertex.all
+  const edges = Edge.all
+
   console.log(
     'Rendering',
     vertices.length,
@@ -115,11 +127,6 @@ export const set = () => {
     edges.length,
     'edges'
   )
-  // const { vertices, edges } = getTestHoneyComb(size)
-  // const { vertices, edges } = getHoneyCombExpanded(size)
-  // const { vertices, edges } = getHoneyCombAllFaces(size)
-  // const { vertices, edges } = getHoneyCombManual(size)
-
   const vertexGeometry = new SphereGeometry(vertexRadius, 16, 16)
   const instancedVertex = new InstancedMesh(
     vertexGeometry,
@@ -183,3 +190,9 @@ export const animate = () => {
   requestAnimationFrame(animate)
   render()
 }
+
+Object.assign(window, {
+  Vertex,
+  Edge,
+  Simplex,
+})

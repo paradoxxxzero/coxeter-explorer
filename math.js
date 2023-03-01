@@ -1,59 +1,61 @@
 import { Color } from 'three'
-import { getGoursatSimplex, intersect } from './math/hypermath'
-import Simplex from './math/Simplex.js'
-import { combinations } from './math/index.js'
 import Edge from './math/Edge'
-import Vertex from './math/Vertex'
+import { cartesian, combinations } from './math/index.js'
 
-// 1
-// 0 -> 1
-// 1 -> 0
-// 2 -> 2
-// 3 -> 3
-
-// 2
-// 0 -> 2
-// 1 -> 1
-// 2 -> 0
-// 3 -> 3
-
-const draw = (simplex, color, new_, coxeter) => {
-  const activeVertices = simplex.vertices.filter((_, i) =>
-    coxeter.activeMirrors.includes(i)
+export const draw = (simplex, color, new_, coxeter) => {
+  const activeVertices = simplex.vertices.map((_, i) =>
+    coxeter.activeMirrors.includes(i) ? simplex.vertices[i] : null
   )
   if (new_) {
-    activeVertices.forEach(vertex => vertex.push(color))
+    activeVertices
+      .filter(vertex => vertex)
+      .forEach(vertex => vertex.push(color))
   }
 
   if (simplex.parent) {
-    const lastActiveVertices = simplex.parent.vertices.filter((_, i) =>
-      coxeter.activeMirrors.includes(i)
+    const lastActiveVertices = simplex.parent.vertices.map((_, i) =>
+      coxeter.activeMirrors.includes(i) ? simplex.parent.vertices[i] : null
     )
-    const edge = new Edge(lastActiveVertices[0], activeVertices[0])
-    edge.push(color)
+
+    cartesian(coxeter.activeMirrors, coxeter.activeMirrors).forEach(
+      ([i, j]) => {
+        const edge = new Edge(lastActiveVertices[i], activeVertices[j])
+        edge.push(color)
+      }
+    )
   }
   // combinations(simplex.vertices).forEach(([v1, v2]) => {
-  //   edges.push({
-  //     vertices: [v1, v2],
-  //     color,
-  //   })
+  //   const edge = new Edge(v1, v2)
+  //   edge.push(new Color().setHSL(0, 0, 0.2))
   // })
 }
 
-const renderFace = (simplex, color, coexeter) => {
+export const drawDebug = (simplex, color) => {
+  color = color || new Color().setHSL(Math.random(), 1, 0.75)
+
+  simplex.vertices
+    .filter(vertex => vertex)
+    .forEach(vertex => vertex.push(color))
+  combinations(simplex.vertices).forEach(([v1, v2]) => {
+    const edge = new Edge(v1, v2)
+    edge.push(color)
+  })
+}
+
+const renderFace = (simplex, color, coxeter) => {
   const faceRoots = []
 
-  for (let j = 0; j < 2 * coexeter.p; j++) {
-    simplex = simplex.reflect(j % 2)
+  for (let j = 0; j < 2 * coxeter.p; j++) {
+    simplex = simplex.reflect(1 - (j % 2))
     const new_ = simplex.project()
 
-    draw(simplex, color, new_, coexeter)
+    draw(simplex, color, new_, coxeter)
 
     if (!new_) {
       continue
     }
 
-    if (j % 2 === 0) {
+    if (j % 2 === 0 && j < coxeter.p) {
       faceRoots.push(simplex)
     }
   }
@@ -65,24 +67,28 @@ const renderCell = (simplex, coxeter) => {
   let faceRoots = [simplex]
 
   let newFaceRoots
-  let iterations = 0
 
-  while (faceRoots.length > 0 && iterations++ < 10) {
+  for (let j = 0; j < 2 * coxeter.t; j++) {
     newFaceRoots = []
     for (let i = 0; i < faceRoots.length; i++) {
       const root = faceRoots[i]
-      const color = new Color().setHSL(
-        (i + 1) / (faceRoots.length + 2),
-        0.5,
-        0.5
-      )
-      let seed = iterations === 1 ? root : root.reflect(2)
-      const new_ = seed.project()
-      draw(seed, color, new_, coxeter)
+      const color = new Color().setHSL(j / coxeter.q, 0.5, 0.5)
+      let seed
+      if (j > 0) {
+        seed = root.reflect(2)
 
-      if (!new_) {
-        continue
+        const new_ = seed.project()
+
+        draw(seed, color, new_, coxeter)
+        if (!new_) {
+          continue
+        }
+      } else {
+        seed = root
+        draw(seed, color, false, coxeter)
       }
+      cellRoots.push(seed)
+
       newFaceRoots.push(...renderFace(seed, color, coxeter))
     }
 
@@ -91,21 +97,38 @@ const renderCell = (simplex, coxeter) => {
   return cellRoots
 }
 
-export const getHoneyComb = () => {
-  const p = 5
-  const q = 3
-  const r = 4
-  const activeMirrors = [1]
+export const renderHoneyComb = (simplex, coxeter) => {
+  let cellRoots = [simplex]
 
-  const fundamental = getGoursatSimplex(p, 2, 2, q, 2, r)
-  const fundamentalSimplex = new Simplex([
-    intersect(fundamental[0], fundamental[1], fundamental[2], 1),
-    intersect(fundamental[0], fundamental[2], fundamental[3], 1),
-    intersect(fundamental[0], fundamental[3], fundamental[1], 1),
-    intersect(fundamental[1], fundamental[3], fundamental[2], 1),
-  ])
+  let newCellRoots
+  let iterations = 0
 
-  renderCell(fundamentalSimplex, { p, q, r, activeMirrors })
+  while (cellRoots.length > 0 && iterations++ < 2) {
+    newCellRoots = []
+    for (let i = 0; i < cellRoots.length; i++) {
+      const root = cellRoots[i]
+      const color = new Color().setHSL(
+        (i + 1) / (cellRoots.length + 2),
+        0.5,
+        0.5
+      )
+      let seed
+      if (iterations > 1) {
+        seed = root.reflect(3)
 
-  return { vertices: Vertex.all, edges: Edge.all }
+        const new_ = seed.project()
+        draw(seed, color, new_, coxeter)
+
+        if (!new_) {
+          continue
+        }
+      } else {
+        seed = root
+        draw(seed, color, false, coxeter)
+      }
+      newCellRoots.push(...renderCell(seed, coxeter))
+    }
+
+    cellRoots = newCellRoots
+  }
 }

@@ -8,14 +8,16 @@ export default class Edge {
   }
 
   push(color) {
+    if (this.vertex1.token === this.vertex2.token) {
+      return false
+    }
     const token = this.token
     if (Edge.tokens.has(token)) {
-      return false
+      return
     }
     this.color = color
     Edge.tokens.add(token)
     Edge.all.push(this)
-    return Edge
   }
 
   get token() {

@@ -10,12 +10,11 @@ export default class Vertex {
   push(color) {
     const token = this.token
     if (Vertex.tokens.has(token)) {
-      return false
+      return
     }
     this.color = color
     Vertex.tokens.add(token)
     Vertex.all.push(this)
-    return Vertex
   }
 
   get token() {
