@@ -99,8 +99,8 @@ export const initialize3d = () => {
 }
 
 const dummy = new Object3D()
-const vertexRadius = 0.025
-const edgeRadius = 0.005
+const vertexRadius = 0.15
+const edgeRadius = 0.025
 const materialProps = {
   roughness: 0.5,
   metalness: 0.5,
@@ -140,7 +140,15 @@ export const set = coxeter => {
     vertices.length
   )
   vertices.forEach((vertex, i) => {
+    if (
+      isNaN(vertex.vertex.x) ||
+      isNaN(vertex.vertex.y) ||
+      isNaN(vertex.vertex.z)
+    ) {
+      return
+    }
     dummy.position.copy(vertex.vertex)
+    dummy.scale.setScalar(1 / (1 + vertex.vertex4.length()))
     dummy.updateMatrix()
     instancedVertex.setMatrixAt(i, dummy.matrix)
     instancedVertex.setColorAt(i, vertex.color)
@@ -171,7 +179,11 @@ export const set = coxeter => {
 
   edges.forEach((edge, i) => {
     dummy.position.copy(edge.vertex1.vertex)
-    dummy.scale.set(1, 1, edge.vertex1.vertex.distanceTo(edge.vertex2.vertex))
+    dummy.scale.set(
+      1 / (1 + edge.vertex1.vertex4.length()),
+      1 / (1 + edge.vertex1.vertex4.length()),
+      edge.vertex1.vertex.distanceTo(edge.vertex2.vertex)
+    )
     dummy.lookAt(edge.vertex2.vertex)
     dummy.updateMatrix()
     instancedEdge.setMatrixAt(i, dummy.matrix)

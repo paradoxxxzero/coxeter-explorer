@@ -9,8 +9,11 @@ export const dot = (v1, v2, c = curvature) =>
 export const reflect = (v, n) =>
   v.clone().sub(n.clone().multiplyScalar(2 * dot(v, n)))
 
-export const cross = (v1, v2, v3, c = curvature) =>
-  new Vector4(
+export const cross = (v1, v2, v3, c = curvature) => {
+  v1 = v1.clone().normalize()
+  v2 = v2.clone().normalize()
+  v3 = v3.clone().normalize()
+  return new Vector4(
     +v2.y * v3.z * v1.w -
       v3.y * v2.z * v1.w -
       v1.y * v3.z * v2.w +
@@ -37,6 +40,7 @@ export const cross = (v1, v2, v3, c = curvature) =>
         v3.x * v1.y * v2.z +
         v3.x * v2.y * v1.z)
   )
+}
 
 export const intersect = (v1, v2, v3) => normalize(cross(v1, v2, v3))
 
@@ -50,9 +54,11 @@ export const normalize = (v, c = curvature) => {
   }
 
   let d = -dot(v, v, c)
+  if (d < 0 && d > -1e-6) {
+    d = 0
+  }
   if (d < 0) {
-    d = -d
-    // console.warn('normalize: negative dot product')
+    console.warn('normalize: negative dot product')
   }
   return v.clone().divideScalar(sqrt(d))
 }

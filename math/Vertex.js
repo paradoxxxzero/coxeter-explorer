@@ -1,10 +1,20 @@
+import { poincare } from './hypermath'
+
 export default class Vertex {
   static tokens = new Set()
   static all = []
 
-  constructor(vertex) {
-    this.vertex = vertex
+  constructor(vertex4) {
+    this.vertex4 = vertex4
+    this._vertex3 = null
     this.color = null
+  }
+
+  get vertex() {
+    if (this._vertex3 === null) {
+      this._vertex3 = poincare(this.vertex4)
+    }
+    return this._vertex3
   }
 
   push(color) {

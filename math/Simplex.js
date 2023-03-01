@@ -1,4 +1,4 @@
-import { poincare, intersect, reflect } from './hypermath'
+import { intersect, reflect } from './hypermath'
 import Vertex from './Vertex'
 import Vector3 from './Vector3'
 
@@ -11,16 +11,6 @@ export default class Simplex {
     this._vertices = null
   }
 
-  project(nope) {
-    this._vertices = this.faces.map(
-      v =>
-        new Vertex(
-          poincare(intersect(...this.faces.filter(face => face !== v)))
-        )
-    )
-    return !nope && this.register()
-  }
-
   reflect(mirrorIndex = 0) {
     const faces = this.faces.filter((_, i) => i !== mirrorIndex)
     const mirror = this.faces[mirrorIndex]
@@ -29,7 +19,7 @@ export default class Simplex {
     return new Simplex(reflected, this)
   }
 
-  register() {
+  isNew() {
     const token = this.token
     if (Simplex.tokens.has(token)) {
       return false
@@ -40,7 +30,9 @@ export default class Simplex {
 
   get vertices() {
     if (this._vertices === null) {
-      this.project(true)
+      this._vertices = this.faces.map(
+        v => new Vertex(intersect(...this.faces.filter(face => face !== v)))
+      )
     }
     return this._vertices
   }
