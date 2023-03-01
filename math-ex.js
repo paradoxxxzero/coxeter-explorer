@@ -7,6 +7,7 @@ import {
   Matrix4,
   Color,
 } from 'three'
+import { getGoursatSimplex } from './math'
 const { abs, cos, sin, min, max, sqrt, PI } = Math
 
 export const dot = (v1, v2, c = curvature) =>
@@ -48,6 +49,7 @@ export const poincare = (v, c = curvature) => {
   return v.yzw.multiplyScalar(nr)
   // }
 }
+export const proj = (u, v) => u.clone().multiplyScalar(dot(u, v))
 
 export const gramSchmidt = (v1, v2, v3, v4, u1, u2, u3, u4) => {
   const w1 = u1.clone()
@@ -85,4 +87,90 @@ export const getGoursatTetrahedronGramSchhmidt = (A, B, C, A_, B_, C_) => {
   ]
 
   return U_.map(v => normalize(v))
+}
+
+const drawSimplex = (simplex, vertices, edges, depth, expand, subexpand) => {
+  const verts = simplex.map(v =>
+    poincare(intersect(...simplex.filter(face => face !== v)))
+  )
+
+  verts.forEach(vert => {
+    const color = new Color().setHSL(vert.length(), 0.5, 0.5)
+    if (vertexTokens.has(vert.token)) {
+      return
+    }
+    vertexTokens.add(vert.token)
+    vertices.push({ vertex: vert, color })
+  })
+
+  for (let i = 0; i < verts.length; i++) {
+    for (let j = i + 1; j < verts.length; j++) {
+      const edge = [verts[i], verts[j]]
+      const color = new Color().setHSL(
+        0.5 * (edge[0].length() + edge[1].length()),
+        0.5,
+        0.5
+      )
+      if (edgeTokens.has(tokenEdge(edge))) {
+        continue
+      }
+      edgeTokens.add(tokenEdge(edge))
+      edges.push({ vertices: edge, color })
+    }
+  }
+  return min(...verts.map(v => v.length()))
+}
+
+const expandSimplex = simplex =>
+  simplex.map((_, i) => reflectSimplex(simplex, i))
+
+const filteredExpandSimplex = simplex =>
+  expandSimplex(simplex).filter(subSimplex => registerSimplex(subSimplex))
+
+export const getHoneyCombBruteForce = (order = 2) => {
+  const p = 5
+  const q = 3
+  const r = 4
+
+  const verts = getGoursatSimplex(p, 2, 2, q, 2, r)
+  const vertices = []
+  const edges = []
+
+  const fundamentalMirrors = [
+    intersect(verts[0], verts[2], verts[3]),
+    intersect(verts[0], verts[1], verts[2]),
+    intersect(verts[0], verts[3], verts[1]),
+    intersect(verts[1], verts[3], verts[2]),
+  ]
+
+  order = 20
+  let currentOrderTetrahedra = []
+  let previousOrderTetrahedra = [fundamentalMirrors]
+  for (let i = 0; i < order; i++) {
+    currentOrderTetrahedra = []
+    for (let j = 0; j < previousOrderTetrahedra.length; j++) {
+      const simplex = previousOrderTetrahedra[j]
+      currentOrderTetrahedra.push(filteredExpandSimplex(simplex))
+    }
+    previousOrderTetrahedra = []
+    for (let j = 0; j < currentOrderTetrahedra.length; j++) {
+      const currentOrderTetrahedraExpand = currentOrderTetrahedra[j]
+      for (let k = 0; k < currentOrderTetrahedraExpand.length; k++) {
+        if (
+          drawSimplex(
+            currentOrderTetrahedraExpand[k],
+            vertices,
+            edges,
+            i,
+            j,
+            k
+          ) < 0.75
+        ) {
+          previousOrderTetrahedra.push(currentOrderTetrahedraExpand[k])
+        }
+      }
+    }
+  }
+
+  return { vertices, edges }
 }

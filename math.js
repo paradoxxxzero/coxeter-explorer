@@ -4,20 +4,25 @@ import {
   Vector3 as ThreeVector3,
   Vector4 as ThreeVector4,
 } from 'three'
-const { abs, cos, sin, min, max, sqrt, PI } = Math
+const { abs, cos, sin, min, max, round, sqrt, PI } = Math
 
 let curvature = -1
 
-const tokenPrecision = 3
+const tokenPrecision = 1
 const tokenSize = 10 ** tokenPrecision
+const tokenEpsilon = 10 ** -tokenPrecision
+
+const floatToToken = f => {
+  return String(
+    (f >= -tokenEpsilon ? '_' : '-') + ~~round(tokenSize * abs(f))
+  ).padStart(tokenPrecision, '0')
+}
 
 class Vector3 extends ThreeVector3 {
   get token() {
     return 'xyz'
       .split('')
-      .map(c =>
-        String(~~Math.round(tokenSize * this[c])).padStart(tokenPrecision, '0')
-      )
+      .map(c => floatToToken(this[c]))
       .join('|')
   }
 }
@@ -68,12 +73,12 @@ class Vector4 extends ThreeVector4 {
   get token() {
     return 'xyzw'
       .split('')
-      .map(c =>
-        String(~~Math.round(tokenSize * this[c])).padStart(tokenPrecision, '0')
-      )
+      .map(c => floatToToken(this[c]))
       .join('|')
   }
 }
+export const combinations = array =>
+  [].concat(...array.map((v, i) => array.slice(i + 1).map(w => [v, w])))
 
 export const dot = (v1, v2, c = curvature) =>
   v1.xyz.dot(v2.xyz) + c * v1.w * v2.w
@@ -110,7 +115,8 @@ export const cross = (v1, v2, v3, c = curvature) =>
         v3.x * v2.y * v1.z)
   )
 
-export const intersect = (v1, v2, v3) => normalize(cross(v1, v2, v3))
+export const intersect = (v1, v2, v3, face = curvature) =>
+  normalize(cross(v1, v2, v3), face)
 
 export const asqrt = x => (x < 0 ? -sqrt(-x) : sqrt(x))
 
@@ -139,7 +145,7 @@ export const poincare = (v, c = curvature) => {
   // }
 }
 
-export const getGoursatTetrahedron = (
+export const getGoursatSimplex = (
   AB = 5,
   AC = 2,
   AD = 2,
@@ -155,7 +161,7 @@ export const getGoursatTetrahedron = (
   const c23 = -cos(PI / CD)
   // const activeMirrors = [1, 0, 0, 0]
 
-  // Goursat tetrahedron :
+  // Goursat simplex :
   // Mirrors expressed as normal in minkowski space
   const MA = new Vector4(1, 0, 0, 0)
   const MB = new Vector4(c01, sqrt(1 - c01 * c01), 0, 0)
@@ -167,6 +173,7 @@ export const getGoursatTetrahedron = (
   MD.y = (c13 - MD.x * MB.x) / MB.y
   MD.z = (c23 - MD.xy.dot(MC.xy)) / MC.z
   MD.w = -sqrt(abs(MD.xyz.dot(MD.xyz) - 1))
+
   return [
     intersect(MA, MB, MC),
     intersect(MD, MC, MB),
@@ -174,125 +181,135 @@ export const getGoursatTetrahedron = (
     intersect(MA, MC, MD),
   ]
 }
-export const proj = (u, v) => u.clone().multiplyScalar(dot(u, v))
 
-const drawTetrahedron = (
-  tetrahedron,
-  vertices,
-  edges,
-  depth,
-  expand,
-  subexpand
-) => {
-  const verts = tetrahedron.map(v =>
-    poincare(intersect(...tetrahedron.filter(face => face !== v)))
-  )
-
-  verts.forEach(vert => {
-    const color = new Color().setHSL(vert.length(), 0.5, 0.5)
-    if (vertexTokens.has(vert.token)) {
-      return
-    }
-    vertexTokens.add(vert.token)
-    vertices.push({ vertex: vert, color })
-  })
-
-  for (let i = 0; i < verts.length; i++) {
-    for (let j = i + 1; j < verts.length; j++) {
-      const edge = [verts[i], verts[j]]
-      const color = new Color().setHSL(
-        0.5 * (edge[0].length() + edge[1].length()),
-        0.5,
-        0.5
-      )
-      if (edgeTokens.has(tokenEdge(edge))) {
-        continue
-      }
-      edgeTokens.add(tokenEdge(edge))
-      edges.push({ vertices: edge, color })
-    }
-  }
-  return min(...verts.map(v => v.length()))
-}
-
-const tokenTetrahedron = tetrahedron =>
-  tetrahedron
-    .sort((a, b) => a.x - b.x || a.y - b.y || a.z - b.z || a.w - b.w)
-    .map(face => face.token)
+const tokenSimplex = simplex =>
+  simplex
+    .map(vertex => vertex.token)
+    .sort()
     .join(' / ')
 
 const tokenEdge = edge =>
   edge
-    .sort((a, b) => a.x - b.x || a.y - b.y || a.z - b.z || a.w - b.w)
     .map(vertex => vertex.token)
+    .sort()
     .join(' / ')
 
 const tokens = new Set()
 const vertexTokens = new Set()
 const edgeTokens = new Set()
 
-const filteredExpandTetrahedron = tetrahedron =>
-  expandTetrahedron(tetrahedron).filter(subTetrahedron => {
-    const token = tokenTetrahedron(subTetrahedron)
-    if (tokens.has(token)) {
-      return false
-    }
-    tokens.add(token)
-    return true
-  })
+const registerSimplex = simplex => {
+  const token = tokenSimplex(simplex)
+  if (tokens.has(token)) {
+    return false
+  }
+  tokens.add(token)
+  return true
+}
+// 1
+// 0 -> 1
+// 1 -> 0
+// 2 -> 2
+// 3 -> 3
 
-const expandTetrahedron = tetrahedron =>
-  tetrahedron.map(mirror => [
-    mirror,
-    ...tetrahedron
-      .filter(face => face !== mirror)
-      .map(face => reflect(face, mirror)),
-  ])
+// 2
+// 0 -> 2
+// 1 -> 1
+// 2 -> 0
+// 3 -> 3
 
-export const getHoneyComb = (order = 2) => {
+const reflectSimplex = (simplex, mirrorIndex = 0, keepMirror = false) => {
+  const faces = simplex.filter((_, i) => i !== mirrorIndex)
+  const mirror = simplex[mirrorIndex]
+  const reflected = faces.map(face => reflect(face, mirror))
+  reflected.splice(mirrorIndex, 0, mirror)
+  if (!keepMirror) {
+    ;[reflected[0], reflected[mirrorIndex]] = [
+      reflected[mirrorIndex],
+      reflected[0],
+    ]
+  }
+  return reflected
+}
+
+export const projectSimplex = simplex =>
+  simplex.map(v => poincare(intersect(...simplex.filter(face => face !== v))))
+
+export const getHoneyComb = (order = 1) => {
   const p = 5
   const q = 3
   const r = 4
 
-  const verts = getGoursatTetrahedron(p, 2, 2, q, 2, r)
+  const activeMirrors = [0]
   const vertices = []
   const edges = []
 
-  const fundamentalMirrors = [
-    intersect(verts[0], verts[2], verts[3]),
-    intersect(verts[0], verts[1], verts[2]),
-    intersect(verts[0], verts[3], verts[1]),
-    intersect(verts[1], verts[3], verts[2]),
+  const fundamental = getGoursatSimplex(p, 2, 2, q, 2, r)
+  const fundamentalSimplex = [
+    intersect(fundamental[0], fundamental[1], fundamental[2], 1),
+    intersect(fundamental[0], fundamental[2], fundamental[3], 1),
+    intersect(fundamental[0], fundamental[3], fundamental[1], 1),
+    intersect(fundamental[1], fundamental[3], fundamental[2], 1),
   ]
 
-  order = 20
-  let currentOrderTetrahedra = []
-  let previousOrderTetrahedra = [fundamentalMirrors]
-  for (let i = 0; i < order; i++) {
-    currentOrderTetrahedra = []
-    for (let j = 0; j < previousOrderTetrahedra.length; j++) {
-      const tetrahedron = previousOrderTetrahedra[j]
-      currentOrderTetrahedra.push(filteredExpandTetrahedron(tetrahedron))
-    }
-    previousOrderTetrahedra = []
-    for (let j = 0; j < currentOrderTetrahedra.length; j++) {
-      const currentOrderTetrahedraExpand = currentOrderTetrahedra[j]
-      for (let k = 0; k < currentOrderTetrahedraExpand.length; k++) {
-        if (
-          drawTetrahedron(
-            currentOrderTetrahedraExpand[k],
-            vertices,
-            edges,
-            i,
-            j,
-            k
-          ) < 0.7
-        ) {
-          previousOrderTetrahedra.push(currentOrderTetrahedraExpand[k])
-        }
-      }
-    }
+  const draw = (v, color) => {
+    const activeVertices = v.filter((_, i) => activeMirrors.includes(i))
+    activeVertices.forEach(vertex => {
+      vertices.push({
+        vertex,
+        color,
+      })
+    })
+
+    combinations(v).forEach(([v1, v2]) => {
+      edges.push({
+        vertices: [v1, v2],
+        color,
+      })
+    })
   }
 
+  const renderFace = (simplex, color) => {
+    const roots = []
+
+    for (let j = 0; j < 2 * p; j++) {
+      simplex = reflectSimplex(simplex, 1)
+      const verts = projectSimplex(simplex)
+      if (!registerSimplex(verts)) {
+        continue
+      }
+
+      draw(verts, color)
+      if (j % 2 === 0) {
+        roots.push(simplex)
+      }
+    }
+    return roots
+  }
+
+  let roots = [fundamentalSimplex]
+  let newRoots
+  let iterations = 0
+
+  while (roots.length > 0 && iterations++ < 10) {
+    newRoots = []
+    for (let i = 0; i < roots.length; i++) {
+      const root = roots[i]
+
+      const color = new Color().setHSL((i + 1) / (root.length + 2), 0.5, 0.5)
+      let seed = iterations === 1 ? root : reflectSimplex(root, 2, true)
+      const verts = projectSimplex(seed)
+
+      if (!registerSimplex(verts)) {
+        continue
+      }
+      draw(verts, color)
+
+      newRoots.push(...renderFace(seed, color))
+    }
+
+    roots = newRoots
+  }
+  // console.log([...tokens].sort().join('\n'))
   return { vertices, edges }
 }

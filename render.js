@@ -49,7 +49,8 @@ export const initialize3d = () => {
     0.001,
     2
   )
-  camera.position.set(-0.0001, 0, 0)
+  // camera.position.set(-0.0001, 0, 0)
+  camera.position.set(0, 0, 1)
   camera.up.set(0, 1, 0)
   camera.lookAt(0, 0, 0)
   camera.zoom = Math.min(1, window.innerWidth / window.innerHeight)
@@ -102,7 +103,7 @@ const materialProps = {
   // clearcoat: 1,
   // reflectivity: 1,
   transparent: true,
-  opacity: 0.75,
+  opacity: 0.15,
 }
 
 export const set = () => {
