@@ -5,6 +5,10 @@ import Vector3 from './Vector3'
 export default class Simplex {
   static tokens = new Set()
 
+  static clear = () => {
+    Simplex.tokens.clear()
+  }
+
   constructor(faces, parent = null) {
     this.parent = parent
     this.faces = faces

@@ -4,6 +4,11 @@ export default class Vertex {
   static tokens = new Set()
   static all = []
 
+  static clear = () => {
+    Vertex.tokens.clear()
+    Vertex.all.length = 0
+  }
+
   constructor(vertex4) {
     this.vertex4 = vertex4
     this._vertex3 = null

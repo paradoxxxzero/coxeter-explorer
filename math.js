@@ -62,13 +62,12 @@ const renderFace = (simplex, color, coxeter) => {
 }
 
 const renderCell = (simplex, coxeter, color) => {
-  const maxIterations = 4
   const cellRoots = []
   let faceRoots = [simplex]
 
   let newFaceRoots
 
-  for (let j = 0; j < maxIterations && faceRoots.length; j++) {
+  for (let j = 0; j < coxeter.subOrder && faceRoots.length; j++) {
     newFaceRoots = []
     for (let i = 0; i < faceRoots.length; i++) {
       const root = faceRoots[i]
@@ -97,16 +96,15 @@ const renderCell = (simplex, coxeter, color) => {
 }
 
 export const renderHoneyComb = (simplex, coxeter) => {
-  const maxIterations = 4
   let cellRoots = [simplex]
 
   let newCellRoots
 
-  for (let j = 0; j < maxIterations && cellRoots.length; j++) {
+  for (let j = 0; j < coxeter.order + 1 && cellRoots.length; j++) {
     newCellRoots = []
     for (let i = 0; i < cellRoots.length; i++) {
       const root = cellRoots[i]
-      const color = new Color().setHSL(j / maxIterations, 0.5, 0.5)
+      const color = new Color().setHSL(j / 5, 0.5, 0.5)
       let seed
       if (j > 1) {
         seed = root.reflect(3)

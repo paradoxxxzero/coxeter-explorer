@@ -57,9 +57,6 @@ export const normalize = (v, c = curvature) => {
   if (d < 0 && d > -1e-6) {
     d = 0
   }
-  if (d < 0) {
-    console.warn('normalize: negative dot product')
-  }
   return v.clone().divideScalar(sqrt(d))
 }
 

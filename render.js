@@ -111,6 +111,16 @@ const materialProps = {
 }
 
 export const set = coxeter => {
+  Vertex.clear()
+  Edge.clear()
+  Simplex.clear()
+  scene.children
+    .filter(child => child.isInstancedMesh)
+    .forEach(child => {
+      child.dispose()
+      scene.remove(child)
+    })
+
   renderHoneyComb(getGoursatSimplex(coxeter), coxeter)
   // renderHoneyCombExpanded(getGoursatSimplex(coxeter), coxeter)
   // const { vertices, edges } = getHoneyCombNewAPI(size)
@@ -140,15 +150,12 @@ export const set = coxeter => {
     vertices.length
   )
   vertices.forEach((vertex, i) => {
-    if (
-      isNaN(vertex.vertex.x) ||
-      isNaN(vertex.vertex.y) ||
-      isNaN(vertex.vertex.z)
-    ) {
-      return
+    const len = vertex.vertex4.length()
+    if (len < 1.5) {
+      vertex.vertex.set(NaN, NaN, NaN)
     }
     dummy.position.copy(vertex.vertex)
-    dummy.scale.setScalar(1 / (1 + vertex.vertex4.length()))
+    dummy.scale.setScalar(1 / (1 + len))
     dummy.updateMatrix()
     instancedVertex.setMatrixAt(i, dummy.matrix)
     instancedVertex.setColorAt(i, vertex.color)

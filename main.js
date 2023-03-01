@@ -11,6 +11,8 @@ set({
   t: 4,
   u: 2,
   activeMirrors: [0],
+  order: 3,
+  subOrder: 12,
   // DEBUG: true,
 })
 
@@ -40,3 +42,25 @@ window.ondeviceorientation = window.onresize = size
 // size()
 
 interactions()
+
+document.querySelectorAll('input').forEach(input => {
+  input.addEventListener('change', e => {
+    set({
+      p: +document.querySelector('#p').value,
+      q: +document.querySelector('#q').value,
+      r: +document.querySelector('#r').value,
+      s: +document.querySelector('#s').value,
+      t: +document.querySelector('#t').value,
+      u: +document.querySelector('#u').value,
+      activeMirrors: Array.from(
+        document.querySelectorAll('input[type=checkbox][id^=mirror]')
+      )
+        .map((checkbox, i) => (checkbox.checked ? i : null))
+        .filter(x => x !== null),
+      order: +document.querySelector('#order').value,
+      subOrder: +document.querySelector('#sub-order').value,
+      DEBUG: document.querySelector('#debug').checked,
+    })
+    render()
+  })
+})

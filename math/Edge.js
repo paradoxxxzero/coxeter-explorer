@@ -2,6 +2,11 @@ export default class Edge {
   static tokens = new Set()
   static all = []
 
+  static clear = () => {
+    Edge.tokens.clear()
+    Edge.all.length = 0
+  }
+
   constructor(vertex1, vertex2) {
     this.vertex1 = vertex1
     this.vertex2 = vertex2

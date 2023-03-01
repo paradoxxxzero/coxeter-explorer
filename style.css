@@ -13,3 +13,33 @@ canvas {
   touch-action: none;
   user-select: none;
 }
+
+.controls {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  display: flex;
+}
+label {
+  color: rgba(255, 255, 255, 0.65);
+  font-family: 'Fira Code', monospace;
+}
+.spacer {
+  width: 10vw;
+}
+
+.control {
+  margin: 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.control input[type='number'] {
+  color: #fff;
+  border: none;
+  backdrop-filter: blur(10px);
+  background-color: rgba(125, 125, 125, 0.25);
+  font-size: 1.25em;
+  padding: 5px;
+}
