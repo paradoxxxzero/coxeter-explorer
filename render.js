@@ -103,7 +103,7 @@ const materialProps = {
   // clearcoat: 1,
   // reflectivity: 1,
   transparent: true,
-  opacity: 0.15,
+  opacity: 0.75,
 }
 
 export const set = () => {
