@@ -1,6 +1,7 @@
-import { abs, cos, PI, sqrt } from './index.js'
+import { abs, cos, sin, cosh, sinh, acos, PI, sqrt } from './index.js'
 import Vector4 from './Vector4'
 import Simplex from './Simplex'
+import Vector3 from './Vector3'
 let curvature = -1
 
 export const dot = (v1, v2, c = curvature) =>
@@ -57,6 +58,9 @@ export const normalize = (v, c = curvature) => {
   if (d < 0 && d > -1e-6) {
     d = 0
   }
+  // if (d < 0) {
+  //   d = -d
+  // }
   return v.clone().divideScalar(sqrt(d))
 }
 
@@ -68,13 +72,21 @@ export const poincare = (v, c = curvature) => {
   // }
 }
 
-export const getGoursatSimplex = ({ p, q, r, s, t, u }) => {
+export const getGoursatSimplex = ({ p, q, r, simplex }) => {
+  if (simplex === 'shifted') {
+    return getGoursatSimplexShifted({ p, q, r })
+  }
+
+  return getGoursatSimplexCentered({ p, q, r })
+}
+
+export const getGoursatSimplexCentered = ({ p, q, r }) => {
   const c01 = -cos(PI / p) // AB
-  const c02 = -cos(PI / r) // AC
-  const c03 = -cos(PI / s) // AD
+  const c02 = -cos(PI / 2) // AC
+  const c03 = -cos(PI / 2) // AD
   const c12 = -cos(PI / q) // BC
-  const c13 = -cos(PI / u) // BD
-  const c23 = -cos(PI / t) // CD
+  const c13 = -cos(PI / 2) // BD
+  const c23 = -cos(PI / r) // CD
 
   // Goursat simplex :
   // Mirrors expressed as normal in minkowski space
@@ -90,4 +102,53 @@ export const getGoursatSimplex = ({ p, q, r, s, t, u }) => {
   MD.w = -sqrt(abs(MD.xyz.dot(MD.xyz) - 1))
 
   return new Simplex([MA, MB, MC, MD])
+}
+
+export const getGoursatSimplexShifted = ({ p, q, r }) => {
+  const s = 2
+  const t = 2
+  const u = 2
+
+  const t12 = PI / p
+  const t13 = PI / s
+  const t14 = PI / t
+  const t23 = PI / q
+  const t24 = PI / u
+  const t34 = PI / r
+  // console.log(t12 + t23 + t13 > PI)
+  // console.log(t23 + t34 + t24 > PI)
+  // console.log(t13 + t34 + t14 > PI)
+
+  const p12_13 = acos((cos(t23) + cos(t12) * cos(t13)) / (sin(t12) * sin(t13)))
+  const p12_14 = acos((cos(t24) + cos(t12) * cos(t14)) / (sin(t12) * sin(t14)))
+  const p13_14 = acos((cos(t34) + cos(t13) * cos(t14)) / (sin(t13) * sin(t14)))
+
+  console.log(p12_13 + p12_14 + p13_14 < PI)
+
+  const X =
+    (cos(p13_14) + cos(p12_13) * cos(p12_14)) / (sin(p12_13) * sin(p12_14))
+  const Y = sqrt(X * X - 1)
+  // Goursat simplex :
+  // Mirrors expressed as normal in minkowski space
+  const N1 = new Vector4(0, 0, 1, 0)
+  const N2 = new Vector4(0, sin(t12), -cos(t12), 0)
+  const N3 = new Vector4(
+    sin(t13) * sin(p12_13),
+    -sin(t13) * cos(p12_13),
+    -cos(t13),
+    0
+  )
+  const N4 = new Vector4(
+    -sin(t14) * sin(p12_14) * X,
+    -sin(t14) * cos(p12_14),
+    -cos(t14),
+    sin(t14) * sin(p12_14) * Y
+  )
+
+  return new Simplex([
+    N4, //
+    N2,
+    N3,
+    N1,
+  ])
 }

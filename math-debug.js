@@ -67,7 +67,17 @@ export const getHoneyCombNewAPI = (order = 1) => {
   return { vertices: Vertex.all, edges: Edge.all }
 }
 
-export const renderHoneyCombExpanded = (simplex, coxeter) => {
+export const renderHoneyCombMirrors = (simplex, coxeter) => {
+  // simplex.faces.forEach(f => f.normalize())
+  draw(simplex, new Color(0xffffff), true, coxeter)
+  draw(simplex.reflect(0), new Color(0xff0000), true, coxeter) // OK
+  draw(simplex.reflect(1), new Color(0x00ff00), true, coxeter) // OK
+  draw(simplex.reflect(2), new Color(0x0000ff), true, coxeter)
+  draw(simplex.reflect(3), new Color(0xffff00), true, coxeter) // OK
+  // draw(simplex.reflect(3).reflect(2), new Color(0xffff00), true, coxeter)
+}
+
+export const renderHoneyCombNew = (simplex, coxeter) => {
   // simplex.faces.forEach(f => f.normalize())
   draw(simplex, new Color(0xffffff), true, coxeter)
   draw(simplex.reflect(0), new Color(0xff0000), true, coxeter) // OK

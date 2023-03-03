@@ -32,7 +32,7 @@ export const draw = (simplex, color, new_, coxeter) => {
     )
   }
   if (coxeter.DEBUG) {
-    color = color.clone().offsetHSL(0, -0.3, -0.3)
+    // color = color.clone().offsetHSL(0, -0.3, -0.3)
     simplex.vertices.forEach(vertex => vertex.push(color))
     combinations(simplex.vertices).forEach(([v1, v2]) => {
       const edge = new Edge(v1, v2)
@@ -100,24 +100,29 @@ export const renderHoneyComb = (simplex, coxeter) => {
 
   let newCellRoots
 
-  for (let j = 0; j < coxeter.order + 1 && cellRoots.length; j++) {
+  for (let j = 0; j < coxeter.order && cellRoots.length; j++) {
+    const color = new Color().setHSL(j / 5, 0.5, 0.5)
     newCellRoots = []
     for (let i = 0; i < cellRoots.length; i++) {
       const root = cellRoots[i]
-      const color = new Color().setHSL(j / 5, 0.5, 0.5)
       let seed
-      if (j > 1) {
-        seed = root.reflect(3)
-
-        const new_ = seed.isNew()
-        draw(seed, color, new_, coxeter)
-
-        if (!new_) {
-          continue
-        }
-      } else {
+      if (j === 0) {
         seed = root
         draw(seed, color, true, coxeter)
+        newCellRoots = [simplex]
+        continue
+      }
+      if (j === 1) {
+        seed = root
+      } else {
+        seed = root.reflect(3)
+      }
+
+      const new_ = seed.isNew()
+      draw(seed, color, new_, coxeter)
+
+      if (!new_) {
+        continue
       }
       newCellRoots.push(...renderCell(seed, coxeter, color))
     }

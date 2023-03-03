@@ -16,13 +16,13 @@ import {
 } from 'three'
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import { renderHoneyComb } from './math'
+import { renderHoneyCombNew } from './math-debug'
 import Edge from './math/Edge'
 import { getGoursatSimplex } from './math/hypermath'
 import Simplex from './math/Simplex'
 import Vertex from './math/Vertex'
 import './style.css'
-import { renderHoneyCombExpanded } from './math-debug'
+import { renderHoneyComb } from './math'
 export let stats, renderer, camera, scene, controls, clock
 
 const colors = {
@@ -53,8 +53,7 @@ export const initialize3d = () => {
     0.001,
     10
   )
-  // camera.position.set(-0.0001, 0, 0)
-  camera.position.set(0, 0, 1.5)
+  camera.position.set(-1.5, 0, 0)
   camera.up.set(0, 1, 0)
   camera.lookAt(0, 0, 0)
   camera.zoom = Math.min(1, window.innerWidth / window.innerHeight)
@@ -82,7 +81,7 @@ export const initialize3d = () => {
   controls.update()
 
   renderer.domElement.addEventListener('dblclick', () => {
-    controls.position0.set(controls.position0.x < -1 ? -0.0001 : -1.5, 0, 0)
+    controls.position0.set(controls.position0.x < -1 ? -0.25 : -1.5, 0, 0)
     controls.reset()
   })
 
@@ -122,6 +121,7 @@ export const set = coxeter => {
     })
 
   renderHoneyComb(getGoursatSimplex(coxeter), coxeter)
+  // renderHoneyCombNew(getGoursatSimplex(coxeter), coxeter)
   // renderHoneyCombExpanded(getGoursatSimplex(coxeter), coxeter)
   // const { vertices, edges } = getHoneyCombNewAPI(size)
   // const { vertices, edges } = getHoneyCombManual(size)
@@ -151,9 +151,6 @@ export const set = coxeter => {
   )
   vertices.forEach((vertex, i) => {
     const len = vertex.vertex4.length()
-    if (len < 1.5) {
-      vertex.vertex.set(NaN, NaN, NaN)
-    }
     dummy.position.copy(vertex.vertex)
     dummy.scale.setScalar(1 / (1 + len))
     dummy.updateMatrix()

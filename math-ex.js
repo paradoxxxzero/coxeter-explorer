@@ -174,3 +174,90 @@ export const getHoneyCombBruteForce = (order = 2) => {
 
   return { vertices, edges }
 }
+
+// export const getGoursatSimplex = coxeter => {
+//   // p,q,r,s,t,u = AB,BC,CA,AD,BD,CD
+//   //  P Q R
+//   // o-o-o-o
+//   // A B D C
+//   const p = PI / coxeter.p
+//   // const q = PI / 2
+//   // const r = PI / 2
+//   // const s = PI / 2
+//   const q = PI / coxeter.q
+//   const r = PI / coxeter.r
+
+//   //  A p B
+//   //  o---o
+//   // s|   |r
+//   //  o---o
+//   //  D u C
+
+//   // const p = PI / coxeter.p
+//   // const q = PI / 2
+//   // const r = PI / coxeter.r
+//   // const s = PI / coxeter.u
+//   // const t = PI / 2
+//   // const u = PI / coxeter.s
+
+//   // const MA = new Vector3(0, 0, 1)
+//   // const MB = new Vector3(0, sin(p), -cos(p))
+//   // const z = -cos(q)
+//   // const y = -(cos(r) - cos(p) * cos(q)) / sin(p)
+//   // const x = sqrt(1.0 - y * y - z * z)
+//   // const MC = new Vector3(x, y, z)
+
+//   // const d = 1 / MA.dot(MB.clone().cross(MC))
+//   // const d1 = MB.clone().cross(MC).multiplyScalar(d)
+//   // const d2 = MC.clone().cross(MA).multiplyScalar(d)
+//   // const d3 = MA.clone().cross(MB).multiplyScalar(d)
+//   // const d_ = new Vector3(cos(s), cos(t), cos(u))
+//   // const MD = new Vector3(
+//   //   d_.x * d1.x + d_.y * d2.x + d_.z * d3.x,
+//   //   d_.x * d1.y + d_.y * d2.y + d_.z * d3.y,
+//   //   d_.x * d1.z + d_.y * d2.z + d_.z * d3.z
+//   // )
+
+//   // let S = 1
+//   // const ss = sqrt(MD.dot(MD) - S * S)
+//   // MD.divideScalar(ss)
+//   // S /= ss
+//   // const S2 = S * S
+
+//   // const rev = (r, C, s2) => {
+//   //   const a = r.dot(r)
+//   //   const b = r.dot(C)
+//   //   const c = C.dot(C) - s2
+//   //   let disc = b * b - a * c
+//   //   if (disc < 0) {
+//   //     disc = 0
+//   //   }
+//   //   const t = (-b - sqrt(disc)) / a
+//   //   return new Vector3().copy(r).multiplyScalar(t)
+//   // }
+
+//   // const A = rev(MC.clone().cross(MB), MD, S2).raise()
+//   // const B = rev(MA.clone().cross(MC), MD, S2).raise()
+//   // const C = rev(MB.clone().cross(MA), MD, S2).raise()
+//   // const D = new Vector3().raise()
+
+//   const a = sqrt(
+//     cos(q) ** 2 + sin(p) ** 2 + sin(r) ** 2 - 2 * cos(q) * sin(p) * sin(r)
+//   )
+//   const b = sin(q) * sqrt(sin(p) ** 2 + sin(r) ** 2)
+//   const c = sin(q) * sqrt(sin(p) ** 2 + cos(r) ** 2)
+
+//   const A = new Vector3(0, 0, 0).normalize().raise()
+//   const B = new Vector3(a, 0, 0).normalize().raise()
+//   const C = new Vector3(b * cos(r), c * sin(r), 0).normalize().raise()
+//   const D = new Vector3(c * cos(q), c * sin(q) * cos(p), c * sin(q) * sin(p))
+//     .normalize()
+//     .raise()
+
+//   return new Simplex([
+//     intersect(A, D, B),
+//     intersect(A, C, D),
+//     intersect(B, D, C),
+//     intersect(A, B, C),
+//   ])
+// }

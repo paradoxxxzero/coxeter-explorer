@@ -3,18 +3,6 @@ import { camera, initialize3d, render, renderer, set } from './render'
 import './style.css'
 
 Object.assign(window, initialize3d())
-set({
-  p: 5,
-  q: 3,
-  r: 2,
-  s: 2,
-  t: 4,
-  u: 2,
-  activeMirrors: [0],
-  order: 3,
-  subOrder: 12,
-  // DEBUG: true,
-})
 
 const size = () => {
   const subsampling = 1
@@ -40,27 +28,51 @@ const size = () => {
 
 window.ondeviceorientation = window.onresize = size
 // size()
+// PQR 3 5 3
+// PQR 4 3 5
+// PQR 5 3 5
+
+// // One ideal point
+// PQR 3 4 4
+// PQR 3 3 6
+// PQR 4 3 6
+// PQR 5 3 6
+
+// // Two ideal points
+// PQR 6 3 6
+// PQR 4 4 4
+// PQR 3 6 3
+
+// // Various non-regular angles
+// PQR 5 3 7
+// PQR 6 3 11
+// PQR 2 3 7
+// PQR 3 3 7
+// PQR 5 5 5
+
+const update = () => {
+  set({
+    p: +document.querySelector('#p').value,
+    q: +document.querySelector('#q').value,
+    r: +document.querySelector('#r').value,
+    activeMirrors: Array.from(
+      document.querySelectorAll('input[type=checkbox][id^=mirror]')
+    )
+      .map((checkbox, i) => (checkbox.checked ? i : null))
+      .filter(x => x !== null),
+    order: +document.querySelector('#order').value,
+    subOrder: +document.querySelector('#sub-order').value,
+    simplex: document.querySelector('#shifted').checked
+      ? 'shifted'
+      : 'centered',
+    DEBUG: document.querySelector('#debug').checked,
+  })
+  render()
+}
+document.querySelectorAll('input').forEach(input => {
+  input.addEventListener('change', update)
+})
+
+update()
 
 interactions()
-
-document.querySelectorAll('input').forEach(input => {
-  input.addEventListener('change', e => {
-    set({
-      p: +document.querySelector('#p').value,
-      q: +document.querySelector('#q').value,
-      r: +document.querySelector('#r').value,
-      s: +document.querySelector('#s').value,
-      t: +document.querySelector('#t').value,
-      u: +document.querySelector('#u').value,
-      activeMirrors: Array.from(
-        document.querySelectorAll('input[type=checkbox][id^=mirror]')
-      )
-        .map((checkbox, i) => (checkbox.checked ? i : null))
-        .filter(x => x !== null),
-      order: +document.querySelector('#order').value,
-      subOrder: +document.querySelector('#sub-order').value,
-      DEBUG: document.querySelector('#debug').checked,
-    })
-    render()
-  })
-})
