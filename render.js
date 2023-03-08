@@ -13,6 +13,7 @@ import {
   Scene,
   SphereGeometry,
   WebGLRenderer,
+  Group,
 } from 'three'
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
@@ -21,12 +22,13 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 // import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass'
 import { SAOPass } from 'three/examples/jsm/postprocessing/SAOPass'
 import Edge from './math/Edge'
-import { getGoursatSimplex } from './math/hypermath'
+import { dot, getGoursatSimplex, poincare } from './math/hypermath'
 import Simplex from './math/Simplex'
 import Vertex from './math/Vertex'
 import './style.css'
 import { renderHoneyComb } from './math'
 import { getRules } from './math/group'
+import { sqrt } from './math/index'
 export let stats, renderer, camera, scene, controls, clock, composer
 
 const colors = {
@@ -71,23 +73,6 @@ export const initialize3d = () => {
 
   // const ambientLight = new AmbientLight(0xffffff, 0.75)
   // scene.add(ambientLight)
-  const light = new PointLight(0xddffdd, 0.8)
-  light.position.z = 70
-  light.position.y = -70
-  light.position.x = -70
-  scene.add(light)
-
-  const light2 = new PointLight(0xffdddd, 0.8)
-  light2.position.z = 70
-  light2.position.x = -70
-  light2.position.y = 70
-  scene.add(light2)
-
-  const light3 = new PointLight(0xddddff, 0.8)
-  light3.position.z = 70
-  light3.position.x = 70
-  light3.position.y = -70
-  scene.add(light3)
 
   const pointLight = new PointLight(0xffffff)
   camera.add(pointLight)
@@ -109,16 +94,16 @@ export const initialize3d = () => {
 
   composer = new EffectComposer(renderer)
   composer.addPass(new RenderPass(scene, camera))
-  const ssaoPass = new SAOPass(
-    scene,
-    camera,
-    false,
-    true
-    // window.innerWidth,
-    // window.innerHeight
-  )
-  ssaoPass.kernelRadius = 32
-  composer.addPass(ssaoPass)
+  // const ssaoPass = new SAOPass(
+  //   scene,
+  //   camera,
+  //   false,
+  //   true
+  //   // window.innerWidth,
+  //   // window.innerHeight
+  // )
+  // ssaoPass.kernelRadius = 4
+  // composer.addPass(ssaoPass)
   // controls = new FirstPersonControls(camera, renderer.domElement)
   // controls.lookSpeed = 0.2
   // animate()
@@ -144,17 +129,17 @@ const materialProps = {
   // opacity: 0.5,
 }
 
+let group = new Group()
+
 export const set = coxeter => {
-  Vertex.clear()
-  Edge.clear()
-  Simplex.clear()
-  scene.children
-    .filter(child => child.isInstancedMesh)
-    .forEach(child => {
-      child.dispose()
-      scene.remove(child)
-    })
+  group.children.forEach(child => {
+    child.dispose()
+  })
+  scene.remove(group)
+  group = new Group()
   coxeter.rules = getRules(coxeter)
+  coxeter.vertices = []
+  coxeter.edges = []
 
   // testKnuthBendix()
   renderHoneyComb(getGoursatSimplex(coxeter), coxeter)
@@ -165,10 +150,7 @@ export const set = coxeter => {
   // const { vertices, edges } = getTestHoneyComb(size)
   // const { vertices, edges } = getHoneyCombExpanded(size)
   // const { vertices, edges } = getHoneyCombAllFaces(size)
-
-  const vertices = Vertex.all
-  const edges = Edge.all
-
+  const { vertices, edges } = coxeter
   console.log(
     'Rendering',
     vertices.length,
@@ -186,18 +168,19 @@ export const set = coxeter => {
     }),
     vertices.length
   )
-  vertices.forEach((vertex, i) => {
-    const len = vertex.vertex4.length()
-    dummy.position.copy(vertex.vertex)
+  for (let i = 0; i < vertices.length; i++) {
+    const { vertex, color } = vertices[i]
+    const len = sqrt(dot(vertex, vertex, 1))
+    dummy.position.set(...poincare(vertex))
     dummy.scale.setScalar(1 / (1 + len))
     dummy.updateMatrix()
     instancedVertex.setMatrixAt(i, dummy.matrix)
-    instancedVertex.setColorAt(i, vertex.color)
-  })
+    instancedVertex.setColorAt(i, color)
+  }
 
   // instancedVertex.instanceMatrix.setUsage(StreamDrawUsage)
   // instancedVertex.instanceColor.setUsage(StreamDrawUsage)
-  scene.add(instancedVertex)
+  group.add(instancedVertex)
 
   const edgeGeometry = new CylinderGeometry(
     edgeRadius,
@@ -218,19 +201,28 @@ export const set = coxeter => {
     edges.length
   )
 
-  edges.forEach((edge, i) => {
-    dummy.position.copy(edge.vertex1.vertex)
+  for (let i = 0; i < edges.length; i++) {
+    const edge = edges[i]
+    const len1 = sqrt(dot(edge.vertex1, edge.vertex1, 1))
+    const len2 = sqrt(dot(edge.vertex2, edge.vertex2, 1))
+    const vertex3d1 = poincare(edge.vertex1)
+    const vertex3d2 = poincare(edge.vertex2)
+    const dx = vertex3d2[0] - vertex3d1[0]
+    const dy = vertex3d2[1] - vertex3d1[1]
+    const dz = vertex3d2[2] - vertex3d1[2]
+    dummy.position.set(...vertex3d1)
     dummy.scale.set(
-      1 / (1 + edge.vertex1.vertex4.length()),
-      1 / (1 + edge.vertex1.vertex4.length()),
-      edge.vertex1.vertex.distanceTo(edge.vertex2.vertex)
+      1 / (1 + len1),
+      1 / (1 + len2),
+      sqrt(dx * dx + dy * dy + dz * dz)
     )
-    dummy.lookAt(edge.vertex2.vertex)
+    dummy.lookAt(...vertex3d2)
     dummy.updateMatrix()
     instancedEdge.setMatrixAt(i, dummy.matrix)
     instancedEdge.setColorAt(i, edge.color)
-  })
-  scene.add(instancedEdge)
+  }
+  group.add(instancedEdge)
+  scene.add(group)
 }
 
 export const render = () => {
