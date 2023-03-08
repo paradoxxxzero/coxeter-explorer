@@ -20,8 +20,8 @@ export default class Edge {
     if (Edge.tokens.has(token)) {
       return
     }
-    this.color = color
     Edge.tokens.add(token)
+    this.color = color
     Edge.all.push(this)
   }
 

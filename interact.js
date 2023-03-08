@@ -1,1 +1,1 @@
-export const interactions = () => {};
+export const interactions = () => {}

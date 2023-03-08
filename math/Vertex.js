@@ -27,8 +27,8 @@ export default class Vertex {
     if (Vertex.tokens.has(token)) {
       return
     }
-    this.color = color
     Vertex.tokens.add(token)
+    this.color = color
     Vertex.all.push(this)
   }
 

@@ -1,5 +1,5 @@
 import { interactions } from './interact'
-import { camera, initialize3d, render, renderer, set } from './render'
+import { camera, composer, initialize3d, render, renderer, set } from './render'
 import './style.css'
 
 Object.assign(window, initialize3d())
@@ -14,6 +14,7 @@ const size = () => {
     camera.zoom = Math.min(1, width / height)
     camera.updateProjectionMatrix()
     renderer.setSize(width, height)
+    composer.setSize(width, height)
     if (subsampling !== 1) {
       currentCanvas.style.width = null
       currentCanvas.style.height = null

@@ -1,7 +1,7 @@
-import { abs, cos, sin, cosh, sinh, acos, PI, sqrt } from './index.js'
-import Vector4 from './Vector4'
+import { getRules } from './group'
+import { abs, acos, cos, max, PI, sin, sqrt } from './index.js'
 import Simplex from './Simplex'
-import Vector3 from './Vector3'
+import Vector4 from './Vector4'
 let curvature = -1
 
 export const dot = (v1, v2, c = curvature) =>
@@ -11,9 +11,6 @@ export const reflect = (v, n) =>
   v.clone().sub(n.clone().multiplyScalar(2 * dot(v, n)))
 
 export const cross = (v1, v2, v3, c = curvature) => {
-  v1 = v1.clone().normalize()
-  v2 = v2.clone().normalize()
-  v3 = v3.clone().normalize()
   return new Vector4(
     +v2.y * v3.z * v1.w -
       v3.y * v2.z * v1.w -
@@ -54,14 +51,7 @@ export const normalize = (v, c = curvature) => {
     v = v.clone().multiplyScalar(-1)
   }
 
-  let d = -dot(v, v, c)
-  if (d < 0 && d > -1e-6) {
-    d = 0
-  }
-  // if (d < 0) {
-  //   d = -d
-  // }
-  return v.clone().divideScalar(sqrt(d))
+  return v.clone().divideScalar(sqrt(max(0, -dot(v, v, c))))
 }
 
 export const poincare = (v, c = curvature) => {
@@ -72,15 +62,16 @@ export const poincare = (v, c = curvature) => {
   // }
 }
 
-export const getGoursatSimplex = ({ p, q, r, simplex }) => {
-  if (simplex === 'shifted') {
-    return getGoursatSimplexShifted({ p, q, r })
+export const getGoursatSimplex = coxeter => {
+  if (coxeter.simplex === 'shifted') {
+    return getGoursatSimplexShifted(coxeter)
   }
 
-  return getGoursatSimplexCentered({ p, q, r })
+  return getGoursatSimplexCentered(coxeter)
 }
 
-export const getGoursatSimplexCentered = ({ p, q, r }) => {
+export const getGoursatSimplexCentered = coxeter => {
+  const { p, q, r } = coxeter
   const c01 = -cos(PI / p) // AB
   const c02 = -cos(PI / 2) // AC
   const c03 = -cos(PI / 2) // AD
@@ -101,10 +92,11 @@ export const getGoursatSimplexCentered = ({ p, q, r }) => {
   MD.z = (c23 - MD.xy.dot(MC.xy)) / MC.z
   MD.w = -sqrt(abs(MD.xyz.dot(MD.xyz) - 1))
 
-  return new Simplex([MA, MB, MC, MD])
+  return new Simplex([MA, MB, MC, MD], coxeter)
 }
 
-export const getGoursatSimplexShifted = ({ p, q, r }) => {
+export const getGoursatSimplexShifted = coxeter => {
+  const { p, q, r } = coxeter
   const s = 2
   const t = 2
   const u = 2
@@ -123,7 +115,7 @@ export const getGoursatSimplexShifted = ({ p, q, r }) => {
   const p12_14 = acos((cos(t24) + cos(t12) * cos(t14)) / (sin(t12) * sin(t14)))
   const p13_14 = acos((cos(t34) + cos(t13) * cos(t14)) / (sin(t13) * sin(t14)))
 
-  console.log(p12_13 + p12_14 + p13_14 < PI)
+  // console.log(p12_13 + p12_14 + p13_14 < PI)
 
   const X =
     (cos(p13_14) + cos(p12_13) * cos(p12_14)) / (sin(p12_13) * sin(p12_14))
@@ -145,10 +137,13 @@ export const getGoursatSimplexShifted = ({ p, q, r }) => {
     sin(t14) * sin(p12_14) * Y
   )
 
-  return new Simplex([
-    N4, //
-    N2,
-    N3,
-    N1,
-  ])
+  return new Simplex(
+    [
+      N4, //
+      N2,
+      N3,
+      N1,
+    ],
+    coxeter
+  )
 }

@@ -1,18 +1,22 @@
 import { intersect, reflect } from './hypermath'
-import Vertex from './Vertex'
 import Vector3 from './Vector3'
+import Vertex from './Vertex'
+import { rewrite } from './group'
 
 export default class Simplex {
-  static tokens = new Set()
+  static words = new Set()
 
   static clear = () => {
-    Simplex.tokens.clear()
+    Simplex.words.clear()
   }
 
-  constructor(faces, parent = null) {
+  constructor(faces, coxeter, word = '', mirror, parent = null) {
     this.parent = parent
     this.faces = faces
     this._vertices = null
+    this.coxeter = coxeter
+    this.mirror = mirror
+    this.word = word
   }
 
   reflect(mirrorIndex = 0) {
@@ -20,15 +24,19 @@ export default class Simplex {
     const mirror = this.faces[mirrorIndex]
     const reflected = faces.map(face => reflect(face, mirror))
     reflected.splice(mirrorIndex, 0, mirror)
-    return new Simplex(reflected, this)
+    // reflected.forEach(face => face.divideScalar(sqrt(dot(face, face))))
+    const newWord = rewrite(
+      this.coxeter.rules,
+      this.word + String.fromCharCode(97 + mirrorIndex)
+    )
+    return new Simplex(reflected, this.coxeter, newWord, mirrorIndex, this)
   }
 
   isNew() {
-    const token = this.token
-    if (Simplex.tokens.has(token)) {
+    if (Simplex.words.has(this.word)) {
       return false
     }
-    Simplex.tokens.add(token)
+    Simplex.words.add(this.word)
     return true
   }
 
@@ -39,15 +47,5 @@ export default class Simplex {
       )
     }
     return this._vertices
-  }
-
-  get token() {
-    const centroid = new Vector3()
-    this.vertices.forEach(vertex => {
-      centroid.add(vertex.vertex)
-    })
-    centroid.divideScalar(this.vertices.length)
-
-    return centroid.token
   }
 }

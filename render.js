@@ -16,14 +16,18 @@ import {
 } from 'three'
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import { renderHoneyCombNew } from './math-debug'
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
+// import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass'
+import { SAOPass } from 'three/examples/jsm/postprocessing/SAOPass'
 import Edge from './math/Edge'
 import { getGoursatSimplex } from './math/hypermath'
 import Simplex from './math/Simplex'
 import Vertex from './math/Vertex'
 import './style.css'
 import { renderHoneyComb } from './math'
-export let stats, renderer, camera, scene, controls, clock
+import { getRules } from './math/group'
+export let stats, renderer, camera, scene, controls, clock, composer
 
 const colors = {
   background: 0x000000,
@@ -46,6 +50,7 @@ export const initialize3d = () => {
   renderer.setClearColor(new Color(colors.background), 1)
 
   renderer.domElement.id = 'c3d'
+
   document.body.appendChild(renderer.domElement)
   camera = new PerspectiveCamera(
     90,
@@ -53,19 +58,36 @@ export const initialize3d = () => {
     0.001,
     10
   )
-  camera.position.set(-1.5, 0, 0)
+  camera.position.set(0, 0, -1.05)
   camera.up.set(0, 1, 0)
   camera.lookAt(0, 0, 0)
   camera.zoom = Math.min(1, window.innerWidth / window.innerHeight)
   camera.updateProjectionMatrix()
 
   scene = new Scene()
-  scene.background = new Color(colors.background)
+  // scene.background = new Color(colors.background)
 
-  scene.fog = new Fog(colors.background, 1, size)
+  // scene.fog = new Fog(colors.background, 1, size)
 
-  const ambientLight = new AmbientLight(0xffffff, 0.75)
-  scene.add(ambientLight)
+  // const ambientLight = new AmbientLight(0xffffff, 0.75)
+  // scene.add(ambientLight)
+  const light = new PointLight(0xddffdd, 0.8)
+  light.position.z = 70
+  light.position.y = -70
+  light.position.x = -70
+  scene.add(light)
+
+  const light2 = new PointLight(0xffdddd, 0.8)
+  light2.position.z = 70
+  light2.position.x = -70
+  light2.position.y = 70
+  scene.add(light2)
+
+  const light3 = new PointLight(0xddddff, 0.8)
+  light3.position.z = 70
+  light3.position.x = 70
+  light3.position.y = -70
+  scene.add(light3)
 
   const pointLight = new PointLight(0xffffff)
   camera.add(pointLight)
@@ -85,11 +107,24 @@ export const initialize3d = () => {
     controls.reset()
   })
 
+  composer = new EffectComposer(renderer)
+  composer.addPass(new RenderPass(scene, camera))
+  const ssaoPass = new SAOPass(
+    scene,
+    camera,
+    false,
+    true
+    // window.innerWidth,
+    // window.innerHeight
+  )
+  ssaoPass.kernelRadius = 32
+  composer.addPass(ssaoPass)
   // controls = new FirstPersonControls(camera, renderer.domElement)
   // controls.lookSpeed = 0.2
   // animate()
 
   return {
+    composer,
     renderer,
     scene,
     camera,
@@ -106,7 +141,7 @@ const materialProps = {
   // clearcoat: 1,
   // reflectivity: 1,
   transparent: true,
-  opacity: 0.75,
+  // opacity: 0.5,
 }
 
 export const set = coxeter => {
@@ -119,10 +154,12 @@ export const set = coxeter => {
       child.dispose()
       scene.remove(child)
     })
+  coxeter.rules = getRules(coxeter)
 
+  // testKnuthBendix()
   renderHoneyComb(getGoursatSimplex(coxeter), coxeter)
   // renderHoneyCombNew(getGoursatSimplex(coxeter), coxeter)
-  // renderHoneyCombExpanded(getGoursatSimplex(coxeter), coxeter)
+  // renderHoneyCombManual(getGoursatSimplex(coxeter), coxeter)
   // const { vertices, edges } = getHoneyCombNewAPI(size)
   // const { vertices, edges } = getHoneyCombManual(size)
   // const { vertices, edges } = getTestHoneyComb(size)
@@ -199,7 +236,7 @@ export const set = coxeter => {
 export const render = () => {
   // const delta = clock.getDelta()
   stats.begin()
-  renderer.render(scene, camera)
+  composer.render()
   // controls.update(delta)
   stats.end()
 }
