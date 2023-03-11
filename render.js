@@ -112,15 +112,15 @@ export const initialize3d = () => {
 }
 
 const dummy = new Object3D()
-const vertexRadius = 0.05
-const edgeRadius = 0.025
+const vertexRadius = 0.03
+const edgeRadius = 0.005
 const materialProps = {
   roughness: 0.5,
   metalness: 0.5,
   // clearcoat: 1,
   // reflectivity: 1,
   transparent: true,
-  // opacity: 0.5,
+  opacity: 0.5,
 }
 
 let group = new Group()

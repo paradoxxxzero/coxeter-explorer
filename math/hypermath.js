@@ -32,38 +32,6 @@ export const reflect = (v, n) => {
   return v
 }
 
-// export const cross = ([x1, y1, z1, w1], [x2, y2, z2, w2], [x3, y3, z3, w3]) => {
-//   return [
-//     +y2 * z3 * w1 -
-//       y3 * z2 * w1 -
-//       y1 * z3 * w2 +
-//       y3 * z1 * w2 +
-//       w3 * y1 * z2 -
-//       w3 * y2 * z1,
-//     -x2 * z3 * w1 +
-//       x3 * z2 * w1 +
-//       x1 * z3 * w2 -
-//       x3 * z1 * w2 -
-//       w3 * x1 * z2 +
-//       w3 * x2 * z1,
-//     +x2 * y3 * w1 -
-//       x3 * y2 * w1 -
-//       x1 * y3 * w2 +
-//       x3 * y1 * w2 +
-//       w3 * x1 * y2 -
-//       w3 * x2 * y1,
-//     (C.curvature || 1) *
-//       (-x1 * y2 * z3 +
-//         x1 * y3 * z2 +
-//         x2 * y1 * z3 -
-//         x2 * y3 * z1 -
-//         x3 * y1 * z2 +
-//         x3 * y2 * z1),
-//   ]
-// }
-
-// export const intersect = (v1, v2, v3) => normalize(cross(v1, v2, v3))
-
 export const normalize = v => {
   v = v.slice()
   // if (v[v.length - 1] < 0) {
@@ -96,14 +64,6 @@ export const poincare = v => {
   v.length--
   return v
 }
-
-// export const getGoursatSimplex = coxeter => {
-//   if (coxeter.simplex === 'shifted') {
-//     return getGoursatSimplexShifted(coxeter)
-//   }
-
-//   return getGoursatSimplexCentered(coxeter)
-// }
 
 export const getFundamentalSimplexMirrors = () => {
   const { dimensions, p, q, r, s, t, u, curvature } = C
@@ -153,12 +113,9 @@ export const getFundamentalSimplexMirrors = () => {
   mirrors[2][0] = gram_matrix[2][0]
   mirrors[2][1] =
     (gram_matrix[2][1] - mirrors[2][0] * mirrors[1][0]) / mirrors[1][1]
-  mirrors[2][2] = curvature
-    ? curvature *
-      sqrt(
-        abs(1 - mirrors[2][0] * mirrors[2][0] - mirrors[2][1] * mirrors[2][1])
-      )
-    : 1
+  mirrors[2][2] = sqrt(
+    abs(1 - mirrors[2][0] * mirrors[2][0] - mirrors[2][1] * mirrors[2][1])
+  )
   if (dimensions === 4) {
     mirrors[3][0] = gram_matrix[3][0]
     mirrors[3][1] =
@@ -168,17 +125,19 @@ export const getFundamentalSimplexMirrors = () => {
         mirrors[3][0] * mirrors[2][0] -
         mirrors[3][1] * mirrors[2][1]) /
       mirrors[2][2]
-    mirrors[3][3] = curvature
-      ? sqrt(
-          abs(
-            1 -
-              mirrors[3][0] * mirrors[3][0] -
-              mirrors[3][1] * mirrors[3][1] -
-              mirrors[3][2] * mirrors[3][2]
-          )
-        )
-      : 1
+    mirrors[3][3] = sqrt(
+      abs(
+        1 -
+          mirrors[3][0] * mirrors[3][0] -
+          mirrors[3][1] * mirrors[3][1] -
+          mirrors[3][2] * mirrors[3][2]
+      )
+    )
   }
+  mirrors[mirrors.length - 1][mirrors.length - 1] = curvature
+    ? mirrors[mirrors.length - 1][mirrors.length - 1] * curvature
+    : 1
+
   return mirrors
 }
 
@@ -187,83 +146,13 @@ export const getFundamentalVertex = (mirrors, [x, y, z, w]) => {
   const p = C.dimensions === 3 ? [0, 0, 0] : [0, 0, 0, 0]
   p[0] = x
   p[1] = (y - mirrors[1][0] * p[0]) / mirrors[1][1]
-  p[2] =
-    ((C.curvature || 1) * (z - mirrors[2][0] * p[0] - mirrors[2][1] * p[1])) /
-    mirrors[2][2]
+  p[2] = (z - mirrors[2][0] * p[0] - mirrors[2][1] * p[1]) / mirrors[2][2]
 
   if (C.dimensions === 4) {
     p[3] =
       (w - mirrors[3][0] * p[0] - mirrors[3][1] * p[1] - mirrors[3][2] * p[2]) /
       mirrors[3][3]
   }
+  p[p.length - 1] *= C.curvature || 1
   return normalize(p)
-}
-
-export const getGoursatSimplexCentered = ({ p, q, r, s, t, u }) => {
-  const c01 = -cos(PI / p) // AB
-  const c02 = -cos(PI / q) // AC
-  const c03 = -cos(PI / r) // AD
-  const c12 = -cos(PI / s) // BC
-  const c13 = -cos(PI / t) // BD
-  const c23 = -cos(PI / u) // CD
-
-  // Goursat simplex :
-  // Mirrors expressed as normal in minkowski space
-  const MA = [1, 0, 0, 0]
-  const MB = [c01, sqrt(1 - c01 * c01), 0, 0]
-  const MC = [c02, 0, 0, 0]
-  MC[1] = (c12 - MC[0] * MB[0]) / MB[1]
-  MC[2] = sqrt(abs(1 - (MC[0] * MC[0] + MC[1] * MC[1])))
-
-  const MD = [c03, 0, 0, 0]
-  MD[1] = (c13 - MD[0] * MB[0]) / MB[1]
-  MD[2] = (c23 - (MC[0] * MD[0] + MC[1] * MD[1])) / MC[2]
-  MD[3] = -sqrt(abs(MD[0] * MD[0] + MD[1] * MD[1] + MD[2] * MD[2] - 1))
-  return {
-    faces: [MA, MB, MC, MD],
-    word: '',
-  }
-}
-
-export const getGoursatSimplexShifted = ({ p, q, r, s, t, u }) => {
-  const t12 = PI / p
-  const t13 = PI / s
-  const t14 = PI / t
-  const t23 = PI / q
-  const t24 = PI / u
-  const t34 = PI / r
-  // console.log(t12 + t23 + t13 > PI)
-  // console.log(t23 + t34 + t24 > PI)
-  // console.log(t13 + t34 + t14 > PI)
-
-  const p12_13 = acos((cos(t23) + cos(t12) * cos(t13)) / (sin(t12) * sin(t13)))
-  const p12_14 = acos((cos(t24) + cos(t12) * cos(t14)) / (sin(t12) * sin(t14)))
-  const p13_14 = acos((cos(t34) + cos(t13) * cos(t14)) / (sin(t13) * sin(t14)))
-
-  // console.log(p12_13 + p12_14 + p13_14 < PI)
-
-  const X =
-    (cos(p13_14) + cos(p12_13) * cos(p12_14)) / (sin(p12_13) * sin(p12_14))
-  const Y = sqrt(X * X - 1)
-  // Goursat simplex :
-  // Mirrors expressed as normal in minkowski space
-  const N1 = [0, 0, 1, 0]
-  const N2 = [0, sin(t12), -cos(t12), 0]
-  const N3 = [sin(t13) * sin(p12_13), -sin(t13) * cos(p12_13), -cos(t13), 0]
-  const N4 = [
-    -sin(t14) * sin(p12_14) * X,
-    -sin(t14) * cos(p12_14),
-    -cos(t14),
-    sin(t14) * sin(p12_14) * Y,
-  ]
-
-  return {
-    faces: [
-      N4, //
-      N2,
-      N3,
-      N1,
-    ],
-    word: '',
-  }
 }

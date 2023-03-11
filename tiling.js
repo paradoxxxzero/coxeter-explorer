@@ -24,7 +24,6 @@ export const tile = () => {
     C.z ? 1 : 0,
     C.w ? 1 : 0,
   ])
-  console.log(vertex)
   const { vertices, edges } = C.runtime
   vertices.push({ vertex, color: new Color(0x0000ff) })
   // fundamentalSimplexVertices.forEach(vertex =>
@@ -41,22 +40,21 @@ export const tile = () => {
   }
   for (let i = 0; i < C.dimensions; i++) {
     const rv = reflect(vertex, fundamentalSimplexMirrors[i])
-    console.log(i, rv, normalize(rv), fundamentalSimplexMirrors[i])
     vertices.push({
       vertex: normalize(rv),
-      color: new Color().setHSL(i * 0.2, 0.7, 0.6),
+      color: new Color().setHSL(i * 0.2, 0.7, 0.5),
     })
     for (let i = 0; i < C.dimensions; i++) {
       const rv2 = reflect(rv, fundamentalSimplexMirrors[i])
       vertices.push({
         vertex: normalize(rv2),
-        color: new Color().setHSL(i * 0.2, 0.85, 0.4),
+        color: new Color().setHSL(i * 0.2, 0.85, 0.5),
       })
       for (let i = 0; i < C.dimensions; i++) {
         const rv3 = reflect(rv2, fundamentalSimplexMirrors[i])
         vertices.push({
           vertex: normalize(rv3),
-          color: new Color().setHSL(i * 0.2, 1, 0.1),
+          color: new Color().setHSL(i * 0.2, 1, 0.5),
         })
       }
     }

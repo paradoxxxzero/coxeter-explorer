@@ -2,7 +2,7 @@ import { setCurvature } from './math/hypermath'
 export const C = {
   // coxeter
   p: 3,
-  q: 3,
+  q: 5,
   r: 3,
   s: 2,
   t: 2,
