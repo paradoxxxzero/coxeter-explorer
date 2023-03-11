@@ -1,4 +1,4 @@
-const MAX_ITERATIONS = 1000
+const MAX_ITERATIONS = 100
 
 export const sorter = (a, b) => {
   const l = a.length - b.length
@@ -176,23 +176,39 @@ export const knuthBendix = rules => {
     const newRules = reduce(rules)
     // console.log('iteration', i, Object.entries(newRules).sort())
     if (equals(newRules, rules)) {
+      console.log('iterations', i)
       return newRules
     }
     rules = newRules
+    if (Object.keys(rules).length > 100) {
+      throw new Error('Too many rules')
+    }
   }
   throw new Error('Max iterations reached')
 }
 
-export const getRules = ({ p, q, r }) =>
+export const getRules = ({ p, q, r, s, t, u }) =>
+  // knuthBendix({
+  //   aa: '',
+  //   bb: '',
+  //   cc: '',
+  //   dd: '',
+  //   ['ab'.repeat(p)]: '',
+  //   acac: '',
+  //   adad: '',
+  //   ['bc'.repeat(q)]: '',
+  //   bdbd: '',
+  //   ['cd'.repeat(r)]: '',
+  // })
   knuthBendix({
     aa: '',
     bb: '',
     cc: '',
     dd: '',
     ['ab'.repeat(p)]: '',
-    acac: '',
-    adad: '',
     ['bc'.repeat(q)]: '',
-    bdbd: '',
     ['cd'.repeat(r)]: '',
+    ['ac'.repeat(s)]: '',
+    ['ad'.repeat(t)]: '',
+    ['bd'.repeat(u)]: '',
   })

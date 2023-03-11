@@ -1,5 +1,14 @@
+import { C, setC } from './c'
 import { interactions } from './interact'
-import { camera, composer, initialize3d, render, renderer, set } from './render'
+import {
+  camera,
+  clear,
+  composer,
+  initialize3d,
+  render,
+  renderer,
+  generate,
+} from './render'
 import './style.css'
 
 Object.assign(window, initialize3d())
@@ -51,29 +60,51 @@ window.ondeviceorientation = window.onresize = size
 // PQR 3 3 7
 // PQR 5 5 5
 
-const update = () => {
-  set({
-    p: +document.querySelector('#p').value,
-    q: +document.querySelector('#q').value,
-    r: +document.querySelector('#r').value,
-    activeMirrors: Array.from(
-      document.querySelectorAll('input[type=checkbox][id^=mirror]')
-    )
-      .map((checkbox, i) => (checkbox.checked ? i : null))
-      .filter(x => x !== null),
-    order: +document.querySelector('#order').value,
-    subOrder: +document.querySelector('#sub-order').value,
-    simplex: document.querySelector('#shifted').checked
-      ? 'shifted'
-      : 'centered',
-    DEBUG: document.querySelector('#debug').checked,
+const restore = () => {
+  document.querySelector('#d4').checked = C.dimensions === 4
+  document.querySelectorAll('.d4').forEach(el => {
+    el.style.display = C.dimensions === 4 ? 'block' : 'none'
   })
+  'pqrstu'.split('').forEach(d => {
+    document.querySelector(`#${d}`).value = C[d]
+  })
+  'xyzw'.split('').forEach(d => {
+    document.querySelector(`#mirror-${d}`).checked = !!C[d]
+  })
+  document.querySelector('#order').value = C.order
+  document.querySelector('#debug').checked = C.DEBUG
+}
+
+const update = () => {
+  const newC = {}
+  newC.dimensions = document.querySelector('#d4').checked ? 4 : 3
+  document.querySelectorAll('.d4').forEach(el => {
+    el.style.display = newC.dimensions === 4 ? 'block' : 'none'
+  })
+  'pqrstu'.split('').forEach(d => {
+    newC[d] = +document.querySelector(`#${d}`).value
+  })
+  'xyzw'.split('').forEach(d => {
+    newC[d] = document.querySelector(`#mirror-${d}`).checked
+  })
+  if (newC.dimensions === 4) {
+    // Swap interesting angles
+    ;[newC.q, newC.s] = [newC.s, newC.q]
+    ;[newC.r, newC.u] = [newC.u, newC.r]
+  }
+  newC.order = +document.querySelector('#order').value
+  newC.DEBUG = document.querySelector('#debug').checked
+  setC(newC)
+  clear()
+  generate()
   render()
 }
+
 document.querySelectorAll('input').forEach(input => {
   input.addEventListener('change', update)
 })
 
+restore()
 update()
 
 interactions()

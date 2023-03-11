@@ -12,22 +12,11 @@
       <div class="control">
         <label>
           Order
-          <input type="number" id="order" value="3" min="1" max="6" step="1" />
+          <input type="number" id="order" min="1" max="32" step="1" />
         </label>
         <label>
-          SubOrder
-          <input
-            type="number"
-            id="sub-order"
-            value="4"
-            min="1"
-            max="24"
-            step="1"
-          />
-        </label>
-        <label>
-          Shifted
-          <input type="checkbox" id="shifted" />
+          4d
+          <input type="checkbox" id="d4" />
         </label>
         <label>
           Debug
@@ -36,34 +25,52 @@
       </div>
       <div class="control">
         <label>
-          <input type="checkbox" id="mirror-0" checked />
+          <input type="checkbox" id="mirror-x" checked />
           <span class="coxeter">——</span>
         </label>
-        <label>
-          p
-          <input type="number" id="p" value="5" min="2" max="12" step="1" />
-        </label>
-        <label>
-          <span class="coxeter">——</span>
-          <input type="checkbox" id="mirror-1" />
-          <span class="coxeter">——</span>
-        </label>
-        <label>
-          q
-          <input type="number" id="q" value="3" min="2" max="12" step="1" />
-        </label>
+        <div class="number">
+          <label>
+            p
+            <input type="number" id="p" min="2" step="1" />
+          </label>
+          <label class="d4">
+            s
+            <input type="number" id="s" min="2" step="1" />
+          </label>
+        </div>
         <label>
           <span class="coxeter">——</span>
-          <input type="checkbox" id="mirror-2" />
+          <input type="checkbox" id="mirror-y" />
           <span class="coxeter">——</span>
         </label>
-        <label>
-          r
-          <input type="number" id="r" value="4" min="2" max="12" step="1" />
-        </label>
+        <div class="number">
+          <label>
+            q
+            <input type="number" id="q" min="2" step="1" />
+          </label>
+          <label class="d4">
+            t
+            <input type="number" id="t" min="2" step="1" />
+          </label>
+        </div>
         <label>
           <span class="coxeter">——</span>
-          <input type="checkbox" id="mirror-3" />
+          <input type="checkbox" id="mirror-z" />
+          <span class="coxeter">——</span>
+        </label>
+        <div class="number">
+          <label>
+            r
+            <input type="number" id="r" min="2" step="1" />
+          </label>
+          <label class="d4">
+            u
+            <input type="number" id="u" min="2" step="1" />
+          </label>
+        </div>
+        <label class="d4">
+          <span class="coxeter">——</span>
+          <input type="checkbox" id="mirror-w" />
         </label>
       </div>
     </aside>

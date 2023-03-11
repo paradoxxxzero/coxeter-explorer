@@ -1,10 +1,9 @@
 import Stats from 'stats.js'
 import {
-  AmbientLight,
   Clock,
   Color,
   CylinderGeometry,
-  Fog,
+  Group,
   InstancedMesh,
   MeshStandardMaterial,
   Object3D,
@@ -13,22 +12,17 @@ import {
   Scene,
   SphereGeometry,
   WebGLRenderer,
-  Group,
 } from 'three'
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 // import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass'
-import { SAOPass } from 'three/examples/jsm/postprocessing/SAOPass'
-import Edge from './math/Edge'
-import { dot, getGoursatSimplex, poincare } from './math/hypermath'
-import Simplex from './math/Simplex'
-import Vertex from './math/Vertex'
-import './style.css'
-import { renderHoneyComb } from './math'
-import { getRules } from './math/group'
+import { C } from './c'
+import { poincare } from './math/hypermath'
 import { sqrt } from './math/index'
+import './style.css'
+import { tile } from './tiling'
 export let stats, renderer, camera, scene, controls, clock, composer
 
 const colors = {
@@ -60,7 +54,7 @@ export const initialize3d = () => {
     0.001,
     10
   )
-  camera.position.set(0, 0, -1.05)
+  camera.position.set(0, 0, -1)
   camera.up.set(0, 1, 0)
   camera.lookAt(0, 0, 0)
   camera.zoom = Math.min(1, window.innerWidth / window.innerHeight)
@@ -118,7 +112,7 @@ export const initialize3d = () => {
 }
 
 const dummy = new Object3D()
-const vertexRadius = 0.15
+const vertexRadius = 0.05
 const edgeRadius = 0.025
 const materialProps = {
   roughness: 0.5,
@@ -130,19 +124,18 @@ const materialProps = {
 }
 
 let group = new Group()
-
-export const set = coxeter => {
+export const clear = () => {
   group.children.forEach(child => {
     child.dispose()
   })
   scene.remove(group)
   group = new Group()
-  coxeter.rules = getRules(coxeter)
-  coxeter.vertices = []
-  coxeter.edges = []
+  scene.add(group)
+}
 
-  // testKnuthBendix()
-  renderHoneyComb(getGoursatSimplex(coxeter), coxeter)
+export const generate = () => {
+  tile()
+  // renderHoneyComb(getGoursatSimplex(coxeter), coxeter)
   // renderHoneyCombNew(getGoursatSimplex(coxeter), coxeter)
   // renderHoneyCombManual(getGoursatSimplex(coxeter), coxeter)
   // const { vertices, edges } = getHoneyCombNewAPI(size)
@@ -150,7 +143,7 @@ export const set = coxeter => {
   // const { vertices, edges } = getTestHoneyComb(size)
   // const { vertices, edges } = getHoneyCombExpanded(size)
   // const { vertices, edges } = getHoneyCombAllFaces(size)
-  const { vertices, edges } = coxeter
+  const { vertices, edges } = C.runtime
   console.log(
     'Rendering',
     vertices.length,
@@ -170,14 +163,19 @@ export const set = coxeter => {
   )
   for (let i = 0; i < vertices.length; i++) {
     const { vertex, color } = vertices[i]
-    const len = sqrt(dot(vertex, vertex, 1))
-    dummy.position.set(...poincare(vertex))
-    dummy.scale.setScalar(1 / (1 + len))
+    dummy.matrix.identity()
+    dummy.matrixWorld.identity()
+    dummy.quaternion.identity()
+    dummy.position.set(...(C.dimensions === 4 ? poincare(vertex) : vertex))
+    // if (coxeter.dimensions === 4) {
+    //   const len = sqrt(dot(vertex, vertex, 1))
+    //   dummy.scale.setScalar(1 / (1 + len))
+    // }
+    dummy.scale.setScalar(1)
     dummy.updateMatrix()
     instancedVertex.setMatrixAt(i, dummy.matrix)
     instancedVertex.setColorAt(i, color)
   }
-
   // instancedVertex.instanceMatrix.setUsage(StreamDrawUsage)
   // instancedVertex.instanceColor.setUsage(StreamDrawUsage)
   group.add(instancedVertex)
@@ -203,26 +201,29 @@ export const set = coxeter => {
 
   for (let i = 0; i < edges.length; i++) {
     const edge = edges[i]
-    const len1 = sqrt(dot(edge.vertex1, edge.vertex1, 1))
-    const len2 = sqrt(dot(edge.vertex2, edge.vertex2, 1))
-    const vertex3d1 = poincare(edge.vertex1)
-    const vertex3d2 = poincare(edge.vertex2)
+
+    const vertex3d1 = C.dimensions === 4 ? poincare(edge.vertex1) : edge.vertex1
+    const vertex3d2 = C.dimensions === 4 ? poincare(edge.vertex2) : edge.vertex2
     const dx = vertex3d2[0] - vertex3d1[0]
     const dy = vertex3d2[1] - vertex3d1[1]
     const dz = vertex3d2[2] - vertex3d1[2]
     dummy.position.set(...vertex3d1)
-    dummy.scale.set(
-      1 / (1 + len1),
-      1 / (1 + len2),
-      sqrt(dx * dx + dy * dy + dz * dz)
-    )
+    // if (coxeter.dimensions === 4) {
+    //   len1 = sqrt(dot(edge.vertex1, edge.vertex1, 1))
+    //   len2 = sqrt(dot(edge.vertex2, edge.vertex2, 1))
+    // }
+    // dummy.scale.set(
+    //   1 / (1 + len1),
+    //   1 / (1 + len2),
+    //   sqrt(dx * dx + dy * dy + dz * dz)
+    // )
+    dummy.scale.set(1, 1, sqrt(dx * dx + dy * dy + dz * dz))
     dummy.lookAt(...vertex3d2)
     dummy.updateMatrix()
     instancedEdge.setMatrixAt(i, dummy.matrix)
     instancedEdge.setColorAt(i, edge.color)
   }
   group.add(instancedEdge)
-  scene.add(group)
 }
 
 export const render = () => {
@@ -237,9 +238,3 @@ export const animate = () => {
   requestAnimationFrame(animate)
   render()
 }
-
-Object.assign(window, {
-  Vertex,
-  Edge,
-  Simplex,
-})
