@@ -1,3 +1,5 @@
+import { C } from '../c'
+
 const MAX_ITERATIONS = 100
 
 export const sorter = (a, b) => {
@@ -187,28 +189,30 @@ export const knuthBendix = rules => {
   throw new Error('Max iterations reached')
 }
 
-export const getRules = ({ p, q, r, s, t, u }) =>
-  // knuthBendix({
-  //   aa: '',
-  //   bb: '',
-  //   cc: '',
-  //   dd: '',
-  //   ['ab'.repeat(p)]: '',
-  //   acac: '',
-  //   adad: '',
-  //   ['bc'.repeat(q)]: '',
-  //   bdbd: '',
-  //   ['cd'.repeat(r)]: '',
-  // })
-  knuthBendix({
-    aa: '',
-    bb: '',
-    cc: '',
-    dd: '',
-    ['ab'.repeat(p)]: '',
-    ['bc'.repeat(q)]: '',
-    ['cd'.repeat(r)]: '',
-    ['ac'.repeat(s)]: '',
-    ['ad'.repeat(t)]: '',
-    ['bd'.repeat(u)]: '',
-  })
+export const setRules = () => {
+  C.rules = knuthBendix(
+    C.dimensions === 3
+      ? {
+          aa: '',
+          bb: '',
+          cc: '',
+          ['ab'.repeat(C.p)]: '',
+          ['ac'.repeat(C.q)]: '',
+          ['bc'.repeat(C.r)]: '',
+        }
+      : {
+          aa: '',
+          bb: '',
+          cc: '',
+          dd: '',
+          ['ab'.repeat(C.p)]: '',
+          ['ac'.repeat(C.q)]: '',
+          ['ad'.repeat(C.r)]: '',
+          ['bc'.repeat(C.s)]: '',
+          ['bd'.repeat(C.t)]: '',
+          ['cd'.repeat(C.u)]: '',
+        }
+  )
+}
+
+export const shorten = word => rewrite(C.rules, word)

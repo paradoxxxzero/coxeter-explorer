@@ -16,10 +16,11 @@ export const setCurvature = () => {
   }
 }
 
-export const dot = (v1, v2) => {
+export const dot = (v1, v2, forceCurvature = null) => {
+  const c = forceCurvature === null ? C.curvature : forceCurvature
   let sum = 0
   for (let i = 0; i < v1.length; i++) {
-    sum += v1[i] * v2[i] * (i === v1.length - 1 ? C.curvature || 1 : 1)
+    sum += v1[i] * v2[i] * (i === v1.length - 1 ? c || 1 : 1)
   }
   return sum
 }

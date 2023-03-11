@@ -40,6 +40,9 @@ label {
   margin: 0.2em;
   color: white;
 }
+.control-left > * {
+  margin: 0.2em 0.75em;
+}
 
 .coxeter {
   font-size: 1.25em;

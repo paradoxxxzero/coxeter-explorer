@@ -12,6 +12,7 @@ import {
   Scene,
   SphereGeometry,
   WebGLRenderer,
+  AmbientLight,
 } from 'three'
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
@@ -19,7 +20,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 // import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass'
 import { C } from './c'
-import { poincare } from './math/hypermath'
+import { poincare, dot } from './math/hypermath'
 import { sqrt } from './math/index'
 import './style.css'
 import { tile } from './tiling'
@@ -52,7 +53,7 @@ export const initialize3d = () => {
     90,
     window.innerWidth / window.innerHeight,
     0.001,
-    10
+    100000
   )
   camera.position.set(0, 0, -1)
   camera.up.set(0, 1, 0)
@@ -65,8 +66,8 @@ export const initialize3d = () => {
 
   // scene.fog = new Fog(colors.background, 1, size)
 
-  // const ambientLight = new AmbientLight(0xffffff, 0.75)
-  // scene.add(ambientLight)
+  const ambientLight = new AmbientLight(0xffffff, 0.75)
+  scene.add(ambientLight)
 
   const pointLight = new PointLight(0xffffff)
   camera.add(pointLight)
@@ -82,7 +83,7 @@ export const initialize3d = () => {
   controls.update()
 
   renderer.domElement.addEventListener('dblclick', () => {
-    controls.position0.set(controls.position0.x < -1 ? -0.25 : -1.5, 0, 0)
+    controls.position0.set(0, 0, controls.position0.z <= -1 ? -0.25 : -1, 0, 0)
     controls.reset()
   })
 
@@ -112,8 +113,8 @@ export const initialize3d = () => {
 }
 
 const dummy = new Object3D()
-const vertexRadius = 0.03
-const edgeRadius = 0.005
+const vertexRadius = 0.06
+const edgeRadius = 0.025
 const materialProps = {
   roughness: 0.5,
   metalness: 0.5,
@@ -167,11 +168,12 @@ export const generate = () => {
     dummy.matrixWorld.identity()
     dummy.quaternion.identity()
     dummy.position.set(...(C.dimensions === 4 ? poincare(vertex) : vertex))
-    // if (coxeter.dimensions === 4) {
-    //   const len = sqrt(dot(vertex, vertex, 1))
-    //   dummy.scale.setScalar(1 / (1 + len))
-    // }
-    dummy.scale.setScalar(1)
+    if (C.dimensions === 4) {
+      const len = sqrt(dot(vertex, vertex, 1))
+      dummy.scale.setScalar(1 / (1 + len))
+    } else {
+      dummy.scale.setScalar(1)
+    }
     dummy.updateMatrix()
     instancedVertex.setMatrixAt(i, dummy.matrix)
     instancedVertex.setColorAt(i, color)
@@ -186,7 +188,7 @@ export const generate = () => {
     1,
     16,
     1,
-    true
+    !true
   )
   edgeGeometry.translate(0, 0.5, 0)
   edgeGeometry.rotateX(Math.PI / 2)
@@ -208,16 +210,19 @@ export const generate = () => {
     const dy = vertex3d2[1] - vertex3d1[1]
     const dz = vertex3d2[2] - vertex3d1[2]
     dummy.position.set(...vertex3d1)
-    // if (coxeter.dimensions === 4) {
-    //   len1 = sqrt(dot(edge.vertex1, edge.vertex1, 1))
-    //   len2 = sqrt(dot(edge.vertex2, edge.vertex2, 1))
-    // }
-    // dummy.scale.set(
-    //   1 / (1 + len1),
-    //   1 / (1 + len2),
-    //   sqrt(dx * dx + dy * dy + dz * dz)
-    // )
-    dummy.scale.set(1, 1, sqrt(dx * dx + dy * dy + dz * dz))
+    let len1, len2
+    if (C.dimensions === 4) {
+      len1 = sqrt(dot(edge.vertex1, edge.vertex1, 1))
+      len2 = sqrt(dot(edge.vertex2, edge.vertex2, 1))
+    } else {
+      len1 = 1
+      len2 = 1
+    }
+    dummy.scale.set(
+      1 / (1 + len1),
+      1 / (1 + len2),
+      sqrt(dx * dx + dy * dy + dz * dz)
+    )
     dummy.lookAt(...vertex3d2)
     dummy.updateMatrix()
     instancedEdge.setMatrixAt(i, dummy.matrix)

@@ -73,6 +73,8 @@ const restore = () => {
   })
   document.querySelector('#order').value = C.order
   document.querySelector('#debug').checked = C.DEBUG
+  document.querySelector('#vertices').checked = C.vertices
+  document.querySelector('#edges').checked = C.edges
 }
 
 const update = () => {
@@ -94,6 +96,8 @@ const update = () => {
   }
   newC.order = +document.querySelector('#order').value
   newC.DEBUG = document.querySelector('#debug').checked
+  newC.vertices = document.querySelector('#vertices').checked
+  newC.edges = document.querySelector('#edges').checked
   setC(newC)
   clear()
   generate()
