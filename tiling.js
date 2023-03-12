@@ -140,7 +140,9 @@ export const tile = () => {
       const v = words.get(word)
 
       for (let k = 0; k < C.dimensions; k++) {
-        if (word.slice(-1) === String.fromCharCode(97 + k)) continue
+        if (word.slice(-1) === String.fromCharCode(97 + k)) {
+          continue
+        }
         const newWord = shorten(word + String.fromCharCode(97 + k))
         const color = new Color().setHSL(newWord.length / C.order, 0.5, 0.5)
         if (words.has(newWord)) {

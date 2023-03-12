@@ -13,12 +13,15 @@ import {
   SphereGeometry,
   WebGLRenderer,
   AmbientLight,
+  Vector2,
+  ReinhardToneMapping,
 } from 'three'
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
-// import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass'
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
+import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass'
 import { C } from './c'
 import { poincare, dot } from './math/hypermath'
 import { sqrt } from './math/index'
@@ -31,8 +34,6 @@ const colors = {
   edges: 0x3949ab,
   vertices: 0x03a9f4,
 }
-
-const size = 10
 
 export const initialize3d = () => {
   clock = new Clock()
@@ -89,7 +90,18 @@ export const initialize3d = () => {
 
   composer = new EffectComposer(renderer)
   composer.addPass(new RenderPass(scene, camera))
-  // const ssaoPass = new SAOPass(
+
+  renderer.toneMapping = ReinhardToneMapping
+  renderer.toneMappingExposure = 1.5
+  const bloomPass = new UnrealBloomPass(
+    new Vector2(window.innerWidth, window.innerHeight),
+    1.5,
+    0,
+    0
+  )
+  composer.addPass(bloomPass)
+
+  // const ssaoPass = new SSAOPass(
   //   scene,
   //   camera,
   //   false,
@@ -121,7 +133,7 @@ const materialProps = {
   // clearcoat: 1,
   // reflectivity: 1,
   transparent: true,
-  opacity: 0.5,
+  // opacity: 0.5,
 }
 
 let group = new Group()
@@ -136,15 +148,8 @@ export const clear = () => {
 
 export const generate = () => {
   tile()
-  // renderHoneyComb(getGoursatSimplex(coxeter), coxeter)
-  // renderHoneyCombNew(getGoursatSimplex(coxeter), coxeter)
-  // renderHoneyCombManual(getGoursatSimplex(coxeter), coxeter)
-  // const { vertices, edges } = getHoneyCombNewAPI(size)
-  // const { vertices, edges } = getHoneyCombManual(size)
-  // const { vertices, edges } = getTestHoneyComb(size)
-  // const { vertices, edges } = getHoneyCombExpanded(size)
-  // const { vertices, edges } = getHoneyCombAllFaces(size)
   const { vertices, edges } = C.runtime
+
   console.log(
     'Rendering',
     vertices.length,
