@@ -1,19 +1,53 @@
 import { C } from '../C.js'
 import { abs, acos, cos, max, PI, sin, sqrt } from './index.js'
 
-export const setCurvature = () => {
-  if (C.dimensions === 3) {
-    const anglesSum = 1 / C.p + 1 / C.q + 1 / C.r
-    if (Math.abs(anglesSum - 1) < 1e-5) {
-      C.curvature = 0
-    } else if (anglesSum - 1 < 1e-5) {
-      C.curvature = -1
-    } else {
-      C.curvature = 1
-    }
-  } else {
-    C.curvature = -1
+export const det = gram => {
+  if (gram.length === 3) {
+    return (
+      gram[0][0] * gram[1][1] * gram[2][2] +
+      gram[0][1] * gram[1][2] * gram[2][0] +
+      gram[0][2] * gram[1][0] * gram[2][1] -
+      gram[0][2] * gram[1][1] * gram[2][0] -
+      gram[0][1] * gram[1][0] * gram[2][2] -
+      gram[0][0] * gram[1][2] * gram[2][1]
+    )
+  } else if (gram.length === 4) {
+    return (
+      gram[0][0] *
+        (gram[1][1] * gram[2][2] * gram[3][3] +
+          gram[1][2] * gram[2][3] * gram[3][1] +
+          gram[1][3] * gram[2][1] * gram[3][2] -
+          gram[1][3] * gram[2][2] * gram[3][1] -
+          gram[1][2] * gram[2][1] * gram[3][3] -
+          gram[1][1] * gram[2][3] * gram[3][2]) +
+      gram[0][1] *
+        (gram[1][0] * gram[2][3] * gram[3][2] +
+          gram[1][2] * gram[2][0] * gram[3][3] +
+          gram[1][3] * gram[2][2] * gram[3][0] -
+          gram[1][3] * gram[2][0] * gram[3][2] -
+          gram[1][2] * gram[2][3] * gram[3][0] -
+          gram[1][0] * gram[2][2] * gram[3][3]) +
+      gram[0][2] *
+        (gram[1][0] * gram[2][1] * gram[3][3] +
+          gram[1][1] * gram[2][3] * gram[3][0] +
+          gram[1][3] * gram[2][0] * gram[3][1] -
+          gram[1][3] * gram[2][1] * gram[3][0] -
+          gram[1][1] * gram[2][0] * gram[3][3] -
+          gram[1][0] * gram[2][3] * gram[3][1]) +
+      gram[0][3] *
+        (gram[1][0] * gram[2][2] * gram[3][1] +
+          gram[1][1] * gram[2][0] * gram[3][2] +
+          gram[1][2] * gram[2][1] * gram[3][0] -
+          gram[1][2] * gram[2][0] * gram[3][1] -
+          gram[1][1] * gram[2][2] * gram[3][0] -
+          gram[1][0] * gram[2][1] * gram[3][2])
+    )
   }
+}
+
+export const getCurvature = gram => {
+  const determinant = det(gram)
+  return abs(determinant) < 1e-8 ? 0 : Math.sign(determinant)
 }
 
 export const dot = (v1, v2, forceCurvature = null) => {
@@ -76,11 +110,11 @@ export const slerp = (u, v, step) => {
   for (let i = step; i < 1; i += step) {
     const a = Math.sin((1 - i) * o) / n
     const b = Math.sin(i * o) / n
-    vertices.push([
-      u[0] * a + v[0] * b,
-      u[1] * a + v[1] * b,
-      u[2] * a + v[2] * b,
-    ])
+    const s = new Array(C.dimensions)
+    for (let j = 0; j < C.dimensions; j++) {
+      s[j] = u[j] * a + v[j] * b
+    }
+    vertices.push(s)
   }
   vertices.push(v)
   return vertices
@@ -116,50 +150,26 @@ export const xlerp = (u, v, curveStep) => {
 }
 
 export const getFundamentalSimplexMirrors = () => {
-  const { dimensions, p, q, r, s, t, u, curvature } = C
-  const coxeter_matrix =
-    dimensions === 3
-      ? [
-          [1, p, q],
-          [p, 1, r],
-          [q, r, 1],
-        ]
-      : dimensions === 4
-      ? [
-          [1, p, q, r],
-          [p, 1, s, t],
-          [q, s, 1, u],
-          [r, t, u, 1],
-        ]
-      : null
-
-  if (!coxeter_matrix) {
-    throw new Error('Invalid dimension ' + dimensions)
-  }
-
-  const gram_matrix = coxeter_matrix.map(row =>
-    row.map(column => -cos(PI / column))
-  )
+  const { dimensions, curvature } = C
 
   const mirrors = new Array(dimensions)
     .fill()
     .map(() => new Array(dimensions).fill(0))
 
   mirrors[0][0] = 1
-  mirrors[1][0] = gram_matrix[1][0]
+  mirrors[1][0] = C.gram[1][0]
   mirrors[1][1] = sqrt(1 - mirrors[1][0] * mirrors[1][0])
-  mirrors[2][0] = gram_matrix[2][0]
-  mirrors[2][1] =
-    (gram_matrix[2][1] - mirrors[2][0] * mirrors[1][0]) / mirrors[1][1]
+  mirrors[2][0] = C.gram[2][0]
+  mirrors[2][1] = (C.gram[2][1] - mirrors[2][0] * mirrors[1][0]) / mirrors[1][1]
   mirrors[2][2] = sqrt(
     abs(1 - mirrors[2][0] * mirrors[2][0] - mirrors[2][1] * mirrors[2][1])
   )
   if (dimensions === 4) {
-    mirrors[3][0] = gram_matrix[3][0]
+    mirrors[3][0] = C.gram[3][0]
     mirrors[3][1] =
-      (gram_matrix[3][1] - mirrors[3][0] * mirrors[1][0]) / mirrors[1][1]
+      (C.gram[3][1] - mirrors[3][0] * mirrors[1][0]) / mirrors[1][1]
     mirrors[3][2] =
-      (gram_matrix[3][2] -
+      (C.gram[3][2] -
         mirrors[3][0] * mirrors[2][0] -
         mirrors[3][1] * mirrors[2][1]) /
       mirrors[2][2]

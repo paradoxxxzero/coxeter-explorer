@@ -1,4 +1,4 @@
-import { C, setC } from './honeyball/C'
+import { C, getC, setC } from './honeyball/C'
 import { interactions } from './honeyball/interact'
 import {
   camera,
@@ -10,6 +10,8 @@ import {
   generate,
 } from './honeyball/render'
 import './style.css'
+import { getCurvature } from './honeyball/math/hypermath'
+import { cos, PI } from './honeyball/math'
 
 Object.assign(window, initialize3d())
 
@@ -72,6 +74,7 @@ const restore = () => {
     document.querySelector(`#mirror-${d}`).checked = !!C[d]
   })
   document.querySelector('#order').value = C.order
+  document.querySelector('#segments').value = C.segments
   document.querySelector('#debug').checked = C.DEBUG
   document.querySelector('#vertices').checked = C.vertices
   document.querySelector('#edges').checked = C.edges
@@ -80,6 +83,7 @@ const restore = () => {
 const update = () => {
   const newC = {}
   newC.dimensions = document.querySelector('#d4').checked ? 4 : 3
+
   document.querySelectorAll('.d4').forEach(el => {
     el.style.display = newC.dimensions === 4 ? 'block' : 'none'
   })
@@ -89,15 +93,49 @@ const update = () => {
   'xyzw'.split('').forEach(d => {
     newC[d] = document.querySelector(`#mirror-${d}`).checked
   })
-  if (newC.dimensions === 4) {
-    // Swap interesting angles
+  if (
+    (C.dimensions === 4 && newC.dimensions === 3) ||
+    (C.dimensions === 3 && newC.dimensions === 4)
+  ) {
     ;[newC.q, newC.s] = [newC.s, newC.q]
     ;[newC.r, newC.u] = [newC.u, newC.r]
+    'pqrstu'.split('').forEach(d => {
+      document.querySelector(`#${d}`).value = newC[d]
+    })
   }
   newC.order = +document.querySelector('#order').value
+  newC.segments = +document.querySelector('#segments').value
   newC.DEBUG = document.querySelector('#debug').checked
   newC.vertices = document.querySelector('#vertices').checked
   newC.edges = document.querySelector('#edges').checked
+
+  newC.coxeter =
+    newC.dimensions === 3
+      ? [
+          [-1, newC.p, newC.q],
+          [newC.p, -1, newC.r],
+          [newC.q, newC.r, -1],
+        ]
+      : newC.dimensions === 4
+      ? [
+          [-1, newC.p, newC.q, newC.r],
+          [newC.p, -1, newC.s, newC.t],
+          [newC.q, newC.s, -1, newC.u],
+          [newC.r, newC.t, newC.u, -1],
+        ]
+      : null
+
+  newC.gram = newC.coxeter.map(row => row.map(column => -cos(PI / column)))
+
+  newC.curvature = getCurvature(newC.gram)
+  document.querySelector('#space').innerHTML = `${
+    newC.curvature === 0
+      ? '&#x1D53C'
+      : newC.curvature > 0
+      ? '&#x1D54A'
+      : '&#x210D'
+  }<sup>${newC.dimensions - 1}</sup>`
+
   setC(newC)
   clear()
   generate()
@@ -108,6 +146,7 @@ document.querySelectorAll('input').forEach(input => {
   input.addEventListener('change', update)
 })
 
+getC()
 restore()
 update()
 

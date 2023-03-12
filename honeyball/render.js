@@ -19,6 +19,7 @@ import {
   BufferAttribute,
   LineBasicMaterial,
   LineSegments,
+  MeshBasicMaterial,
 } from 'three'
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
@@ -26,11 +27,13 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
 import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass'
+import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
 import { C } from './C'
 import { poincare, dot, xlerp } from './math/hypermath'
 import { sqrt } from './math/index'
 
 import { tile } from './tiling'
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 export let stats, renderer, camera, scene, controls, clock, composer
 
 const colors = {
@@ -43,9 +46,7 @@ export const initialize3d = () => {
   clock = new Clock()
   stats = new Stats()
   document.body.appendChild(stats.dom)
-  renderer = new WebGLRenderer({
-    antialias: true,
-  })
+  renderer = new WebGLRenderer()
 
   renderer.setPixelRatio(window.devicePixelRatio)
   renderer.setSize(window.innerWidth, window.innerHeight)
@@ -95,6 +96,21 @@ export const initialize3d = () => {
   composer = new EffectComposer(renderer)
   composer.addPass(new RenderPass(scene, camera))
 
+  const fxaaPass = new ShaderPass(FXAAShader)
+  const pixelRatio = renderer.getPixelRatio()
+  fxaaPass.material.uniforms['resolution'].value.x =
+    1 / (window.innerWidth * pixelRatio)
+  fxaaPass.material.uniforms['resolution'].value.y =
+    1 / (window.innerHeight * pixelRatio)
+  composer.addPass(fxaaPass)
+
+  window.addEventListener('resize', () => {
+    const pixelRatio = renderer.getPixelRatio()
+    fxaaPass.material.uniforms['resolution'].value.x =
+      1 / (window.innerWidth * pixelRatio)
+    fxaaPass.material.uniforms['resolution'].value.y =
+      1 / (window.innerHeight * pixelRatio)
+  })
   renderer.toneMapping = ReinhardToneMapping
   renderer.toneMappingExposure = 1.75
   const bloomPass = new UnrealBloomPass(
@@ -104,7 +120,6 @@ export const initialize3d = () => {
     0
   )
   composer.addPass(bloomPass)
-
   // const ssaoPass = new SSAOPass(
   //   scene,
   //   camera,
@@ -238,24 +253,27 @@ const plotVertices = () => {
 
 const plotEdges = () => {
   const { edges } = C.runtime
-  const segments = 10
-  const segmentedEdges = []
-  for (let i = 0; i < edges.length; i++) {
-    const edge = edges[i]
-    const segmented = xlerp(edge.vertex1, edge.vertex2, 1 / segments)
-    for (let j = 0; j < segmented.length - 1; j++) {
-      segmentedEdges.push({
-        vertex1: segmented[j],
-        vertex2: segmented[j + 1],
-        color: edge.color,
-      })
+  let finalEdges = edges
+  if (C.segments > 1) {
+    const segmentedEdges = []
+    for (let i = 0; i < edges.length; i++) {
+      const edge = edges[i]
+      const segmented = xlerp(edge.vertex1, edge.vertex2, 1 / C.segments)
+      for (let j = 0; j < segmented.length - 1; j++) {
+        segmentedEdges.push({
+          vertex1: segmented[j],
+          vertex2: segmented[j + 1],
+          color: edge.color,
+        })
+      }
     }
+    finalEdges = segmentedEdges
   }
   console.info(
     'Plotting',
     edges.length,
     'edges, segmented in',
-    segmentedEdges.length,
+    finalEdges.length,
     'segments'
   )
 
@@ -271,14 +289,14 @@ const plotEdges = () => {
   edgeGeometry.rotateX(Math.PI / 2)
   const instancedEdge = new InstancedMesh(
     edgeGeometry,
-    new MeshStandardMaterial({
-      ...materialProps,
+    new MeshBasicMaterial({
+      // ...materialProps,
     }),
-    segmentedEdges.length
+    finalEdges.length
   )
 
-  for (let i = 0; i < segmentedEdges.length; i++) {
-    const edge = segmentedEdges[i]
+  for (let i = 0; i < finalEdges.length; i++) {
+    const edge = finalEdges[i]
     const vertex3d1 = C.dimensions === 4 ? poincare(edge.vertex1) : edge.vertex1
     const vertex3d2 = C.dimensions === 4 ? poincare(edge.vertex2) : edge.vertex2
     const dx = vertex3d2[0] - vertex3d1[0]
@@ -297,7 +315,7 @@ const plotEdges = () => {
       len2 = 1
     }
     dummy.scale.set(
-      1 / (1 + len1),
+      1 / (1 + len1), // ???
       1 / (1 + len2),
       sqrt(dx * dx + dy * dy + dz * dz)
     )
