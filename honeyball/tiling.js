@@ -1,13 +1,12 @@
 import { Color } from 'three'
-import { C } from './c'
+import { C } from './C'
+import { setRules, shorten } from './math/group'
 import {
   getFundamentalSimplexMirrors,
   getFundamentalVertex,
-  reflect,
   normalize,
+  reflect,
 } from './math/hypermath'
-import { combinations, cartesian, genPaths } from './math/index'
-import { setRules, shorten, sorter } from './math/group'
 import { floatToToken } from './math/utils'
 
 export const tile = () => {
@@ -49,29 +48,6 @@ export const tile = () => {
       }
     }
   }
-  // for (let i = 0; i < C.dimensions; i++) {
-  //   const rv = reflect(vertex, fundamentalSimplexMirrors[i])
-  //   vertices.push({
-  //     vertex: normalize(rv),
-  //     color: new Color().setHSL(i * 0.2, 0.7, 0.5),
-  //   })
-  //   for (let i = 0; i < C.dimensions; i++) {
-  //     const rv2 = reflect(rv, fundamentalSimplexMirrors[i])
-  //     vertices.push({
-  //       vertex: normalize(rv2),
-  //       color: new Color().setHSL(i * 0.2, 0.85, 0.5),
-  //     })
-  //     for (let i = 0; i < C.dimensions; i++) {
-  //       const rv3 = reflect(rv2, fundamentalSimplexMirrors[i])
-  //       vertices.push({
-  //         vertex: normalize(rv3),
-  //         color: new Color().setHSL(i * 0.2, 1, 0.5),
-  //       })
-  //     }
-  //   }
-  // }
-  // TODO: use a single geometry
-  // const allPaths = genPaths('abcd', C.order)
 
   try {
     setRules()
@@ -79,25 +55,7 @@ export const tile = () => {
     console.log(e)
     return
   }
-  // const paths = new Set()
-  // allPaths.forEach(path => paths.add(shorten(path)))
 
-  // for (const path of paths) {
-  //   const reflections = path.split('').reverse()
-  //   let v = vertex
-
-  //   for (let i = 0; i < reflections.length; i++) {
-  //     // TODO: use matrix for reflection and store intermediate values
-  //     v = reflect(
-  //       v,
-  //       fundamentalSimplexMirrors[reflections[i].charCodeAt(0) - 97]
-  //     )
-  //   }
-  //   vertices.push({
-  //     vertex: normalize(v),
-  //     color: new Color().setHSL(path.length / C.order, 0.5, 0.5),
-  //   })
-  // }
   const reflectionCache = new Map()
   const reflectWord = word => {
     let v = vertex

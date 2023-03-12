@@ -1,4 +1,4 @@
-import { C } from '../c.js'
+import { C } from '../C.js'
 import { abs, acos, cos, max, PI, sin, sqrt } from './index.js'
 
 export const setCurvature = () => {
@@ -66,6 +66,55 @@ export const poincare = v => {
   return v
 }
 
+export const slerp = (u, v, step) => {
+  const o = Math.acos(dot(u, v))
+  const n = Math.sin(o)
+  if (n === 0) {
+    return [u, v]
+  }
+  const vertices = [u]
+  for (let i = step; i < 1; i += step) {
+    const a = Math.sin((1 - i) * o) / n
+    const b = Math.sin(i * o) / n
+    vertices.push([
+      u[0] * a + v[0] * b,
+      u[1] * a + v[1] * b,
+      u[2] * a + v[2] * b,
+    ])
+  }
+  vertices.push(v)
+  return vertices
+}
+
+export const hlerp = (u, v, step) => {
+  const o = Math.acosh(-dot(u, v))
+  const n = Math.sinh(o)
+  if (n === 0) {
+    return [u, v]
+  }
+  const vertices = [u]
+  for (let i = step; i < 1; i += step) {
+    const a = Math.sinh((1 - i) * o) / n
+    const b = Math.sinh(i * o) / n
+    const s = new Array(C.dimensions)
+    for (let j = 0; j < C.dimensions; j++) {
+      s[j] = u[j] * a + v[j] * b
+    }
+    vertices.push(s)
+  }
+  vertices.push(v)
+  return vertices
+}
+export const xlerp = (u, v, curveStep) => {
+  if (C.curvature > 0) {
+    return slerp(u, v, curveStep)
+  } else if (C.curvature < 0) {
+    return hlerp(u, v, curveStep)
+  } else {
+    return [u, v]
+  }
+}
+
 export const getFundamentalSimplexMirrors = () => {
   const { dimensions, p, q, r, s, t, u, curvature } = C
   const coxeter_matrix =
@@ -92,21 +141,9 @@ export const getFundamentalSimplexMirrors = () => {
     row.map(column => -cos(PI / column))
   )
 
-  const mirrors =
-    dimensions === 3
-      ? [
-          [0, 0, 0],
-          [0, 0, 0],
-          [0, 0, 0],
-        ]
-      : dimensions === 4
-      ? [
-          [0, 0, 0, 0],
-          [0, 0, 0, 0],
-          [0, 0, 0, 0],
-          [0, 0, 0, 0],
-        ]
-      : null
+  const mirrors = new Array(dimensions)
+    .fill()
+    .map(() => new Array(dimensions).fill(0))
 
   mirrors[0][0] = 1
   mirrors[1][0] = gram_matrix[1][0]
@@ -144,7 +181,7 @@ export const getFundamentalSimplexMirrors = () => {
 
 export const getFundamentalVertex = (mirrors, [x, y, z, w]) => {
   // solve mirrors for x,y,z,w
-  const p = C.dimensions === 3 ? [0, 0, 0] : [0, 0, 0, 0]
+  const p = new Array(C.dimensions)
   p[0] = x
   p[1] = (y - mirrors[1][0] * p[0]) / mirrors[1][1]
   p[2] = (z - mirrors[2][0] * p[0] - mirrors[2][1] * p[1]) / mirrors[2][2]

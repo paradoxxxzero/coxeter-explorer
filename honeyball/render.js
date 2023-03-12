@@ -15,6 +15,10 @@ import {
   AmbientLight,
   Vector2,
   ReinhardToneMapping,
+  BufferGeometry,
+  BufferAttribute,
+  LineBasicMaterial,
+  LineSegments,
 } from 'three'
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
@@ -22,10 +26,10 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
 import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass'
-import { C } from './c'
-import { poincare, dot } from './math/hypermath'
+import { C } from './C'
+import { poincare, dot, xlerp } from './math/hypermath'
 import { sqrt } from './math/index'
-import './style.css'
+
 import { tile } from './tiling'
 export let stats, renderer, camera, scene, controls, clock, composer
 
@@ -92,7 +96,7 @@ export const initialize3d = () => {
   composer.addPass(new RenderPass(scene, camera))
 
   renderer.toneMapping = ReinhardToneMapping
-  renderer.toneMappingExposure = 1.5
+  renderer.toneMappingExposure = 1.75
   const bloomPass = new UnrealBloomPass(
     new Vector2(window.innerWidth, window.innerHeight),
     1.5,
@@ -133,7 +137,7 @@ const materialProps = {
   // clearcoat: 1,
   // reflectivity: 1,
   transparent: true,
-  // opacity: 0.5,
+  opacity: 0.75,
 }
 
 let group = new Group()
@@ -146,27 +150,18 @@ export const clear = () => {
   scene.add(group)
 }
 
-export const generate = () => {
-  tile()
-  const { vertices, edges } = C.runtime
-
-  console.log(
-    'Rendering',
-    vertices.length,
-    'vertices and',
-    edges.length,
-    'edges'
-  )
+const plotVertices = () => {
+  const { vertices } = C.runtime
   const vertexGeometry = new SphereGeometry(vertexRadius, 16, 16)
   const instancedVertex = new InstancedMesh(
     vertexGeometry,
     new MeshStandardMaterial({
-      // color: colors.vertices,
       ...materialProps,
       roughness: 0.7,
     }),
     vertices.length
   )
+  console.info('Plotting', vertices.length, 'vertices')
   for (let i = 0; i < vertices.length; i++) {
     const { vertex, color } = vertices[i]
     dummy.matrix.identity()
@@ -186,12 +181,89 @@ export const generate = () => {
   // instancedVertex.instanceMatrix.setUsage(StreamDrawUsage)
   // instancedVertex.instanceColor.setUsage(StreamDrawUsage)
   group.add(instancedVertex)
+}
+
+// // const MAX = 1000000
+// const plotEdges = () => {
+//   const { edges } = C.runtime
+//   const lineIndex = []
+//   const lineGeometry = new BufferGeometry()
+//   const linePositions = new Float32Array(3 * 2 * edges.length)
+//   lineGeometry.setAttribute(
+//     'position',
+//     new BufferAttribute(linePositions, 3) //.setUsage(StreamDrawUsage)
+//   )
+//   const lineColors = new Float32Array(3 * 2 * edges.length)
+//   lineGeometry.setAttribute(
+//     'color',
+//     new BufferAttribute(lineColors, 3) //.setUsage(StreamDrawUsage)
+//   )
+//   const lineMaterial = new LineBasicMaterial({
+//     vertexColors: true,
+//   })
+//   lineMaterial.linewidth = 5
+
+//   const lines = new LineSegments(lineGeometry, lineMaterial)
+//   // lines.scale.setScalar(0.999)
+
+//   for (let i = 0; i < edges.length; i++) {
+//     const edge = edges[i]
+
+//     const vertex3d1 = C.dimensions === 4 ? poincare(edge.vertex1) : edge.vertex1
+//     const vertex3d2 = C.dimensions === 4 ? poincare(edge.vertex2) : edge.vertex2
+//     linePositions[i * 6 + 0] = vertex3d1[0]
+//     linePositions[i * 6 + 1] = vertex3d1[1]
+//     linePositions[i * 6 + 2] = vertex3d1[2]
+//     linePositions[i * 6 + 3] = vertex3d2[0]
+//     linePositions[i * 6 + 4] = vertex3d2[1]
+//     linePositions[i * 6 + 5] = vertex3d2[2]
+
+//     lineColors[i * 6 + 0] = edge.color.r
+//     lineColors[i * 6 + 1] = edge.color.g
+//     lineColors[i * 6 + 2] = edge.color.b
+//     lineColors[i * 6 + 3] = edge.color.r
+//     lineColors[i * 6 + 4] = edge.color.g
+//     lineColors[i * 6 + 5] = edge.color.b
+
+//     lineIndex.push(i * 2, i * 2 + 1)
+//   }
+
+//   lines.geometry.setIndex(lineIndex)
+//   lines.geometry.setDrawRange(0, lineIndex.length)
+//   lines.geometry.attributes.position.needsUpdate = true
+//   lines.geometry.attributes.color.needsUpdate = true
+//   lines.geometry.computeBoundingSphere()
+//   group.add(lines)
+// }
+
+const plotEdges = () => {
+  const { edges } = C.runtime
+  const segments = 10
+  const segmentedEdges = []
+  for (let i = 0; i < edges.length; i++) {
+    const edge = edges[i]
+    const segmented = xlerp(edge.vertex1, edge.vertex2, 1 / segments)
+    for (let j = 0; j < segmented.length - 1; j++) {
+      segmentedEdges.push({
+        vertex1: segmented[j],
+        vertex2: segmented[j + 1],
+        color: edge.color,
+      })
+    }
+  }
+  console.info(
+    'Plotting',
+    edges.length,
+    'edges, segmented in',
+    segmentedEdges.length,
+    'segments'
+  )
 
   const edgeGeometry = new CylinderGeometry(
     edgeRadius,
     edgeRadius,
     1,
-    16,
+    4,
     1,
     !true
   )
@@ -200,20 +272,21 @@ export const generate = () => {
   const instancedEdge = new InstancedMesh(
     edgeGeometry,
     new MeshStandardMaterial({
-      // color: colors.edges,
       ...materialProps,
     }),
-    edges.length
+    segmentedEdges.length
   )
 
-  for (let i = 0; i < edges.length; i++) {
-    const edge = edges[i]
-
+  for (let i = 0; i < segmentedEdges.length; i++) {
+    const edge = segmentedEdges[i]
     const vertex3d1 = C.dimensions === 4 ? poincare(edge.vertex1) : edge.vertex1
     const vertex3d2 = C.dimensions === 4 ? poincare(edge.vertex2) : edge.vertex2
     const dx = vertex3d2[0] - vertex3d1[0]
     const dy = vertex3d2[1] - vertex3d1[1]
     const dz = vertex3d2[2] - vertex3d1[2]
+    dummy.matrix.identity()
+    dummy.matrixWorld.identity()
+    dummy.quaternion.identity()
     dummy.position.set(...vertex3d1)
     let len1, len2
     if (C.dimensions === 4) {
@@ -234,6 +307,17 @@ export const generate = () => {
     instancedEdge.setColorAt(i, edge.color)
   }
   group.add(instancedEdge)
+}
+
+export const generate = () => {
+  tile()
+
+  if (C.vertices) {
+    plotVertices()
+  }
+  if (C.edges) {
+    plotEdges()
+  }
 }
 
 export const render = () => {

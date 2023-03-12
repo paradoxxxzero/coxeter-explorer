@@ -1,4 +1,4 @@
-import { C } from '../c'
+import { C } from '../C'
 
 const MAX_ITERATIONS = 100
 

@@ -1,5 +1,5 @@
-import { C, setC } from './c'
-import { interactions } from './interact'
+import { C, setC } from './honeyball/C'
+import { interactions } from './honeyball/interact'
 import {
   camera,
   clear,
@@ -8,7 +8,7 @@ import {
   render,
   renderer,
   generate,
-} from './render'
+} from './honeyball/render'
 import './style.css'
 
 Object.assign(window, initialize3d())
