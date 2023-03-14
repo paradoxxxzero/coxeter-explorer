@@ -189,8 +189,8 @@ export const knuthBendix = rules => {
   throw new Error('Max iterations reached')
 }
 
-export const setRules = () => {
-  C.rules = knuthBendix(
+export const getRules = () =>
+  knuthBendix(
     C.dimensions === 3
       ? {
           aa: '',
@@ -213,6 +213,5 @@ export const setRules = () => {
           ['cd'.repeat(C.u)]: '',
         }
   )
-}
 
-export const shorten = word => rewrite(C.rules, word)
+export const shorten = word => rewrite(C.runtime.rules, word)

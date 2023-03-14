@@ -13,7 +13,7 @@ import './style.css'
 import { getCurvature } from './honeyball/math/hypermath'
 import { cos, PI } from './honeyball/math'
 import { Vector2 } from 'three'
-import { tile } from './honeyball/tiling'
+import { tile, initTiling } from './honeyball/tiling'
 
 window.C = C
 Object.assign(window, initialize3d())
@@ -69,6 +69,23 @@ window.ondeviceorientation = window.onresize = size
 // PQR 2 3 7
 // PQR 3 3 7
 // PQR 5 5 5
+const swapMaybe = (d, n) => {
+  if (n === 4) {
+    if (d === 'q') {
+      return 's'
+    }
+    if (d === 's') {
+      return 'q'
+    }
+    if (d === 'r') {
+      return 'u'
+    }
+    if (d === 'u') {
+      return 'r'
+    }
+  }
+  return d
+}
 
 const restore = () => {
   document.querySelector('#d4').checked = C.dimensions === 4
@@ -76,7 +93,7 @@ const restore = () => {
     el.style.display = C.dimensions === 4 ? 'block' : 'none'
   })
   'pqrstu'.split('').forEach(d => {
-    document.querySelector(`#${d}`).value = C[d]
+    document.querySelector(`#${swapMaybe(d, C.dimensions)}`).value = C[d]
   })
   'xyzw'.split('').forEach(d => {
     document.querySelector(`#mirror-${d}`).checked = !!C[d]
@@ -95,22 +112,14 @@ const update = () => {
   document.querySelectorAll('.d4').forEach(el => {
     el.style.display = newC.dimensions === 4 ? 'block' : 'none'
   })
+
   'pqrstu'.split('').forEach(d => {
-    newC[d] = +document.querySelector(`#${d}`).value
+    newC[d] = +document.querySelector(`#${swapMaybe(d, newC.dimensions)}`).value
   })
   'xyzw'.split('').forEach(d => {
     newC[d] = document.querySelector(`#mirror-${d}`).checked
   })
-  if (
-    (C.dimensions === 4 && newC.dimensions === 3) ||
-    (C.dimensions === 3 && newC.dimensions === 4)
-  ) {
-    ;[newC.q, newC.s] = [newC.s, newC.q]
-    ;[newC.r, newC.u] = [newC.u, newC.r]
-    'pqrstu'.split('').forEach(d => {
-      document.querySelector(`#${d}`).value = newC[d]
-    })
-  }
+
   newC.order = +document.querySelector('#order').value
   newC.segments = +document.querySelector('#segments').value
   newC.DEBUG = document.querySelector('#debug').checked
@@ -125,10 +134,12 @@ const update = () => {
       : '&#x210D'
   }<sup>${newC.dimensions - 1}</sup>`
 
+  const lastOrder = C.order
   const changed = Object.keys(newC).filter(key => newC[key] !== C[key])
+  let mustRedraw = !C.runtime
   if (
-    !C.runtime ||
-    ['p', 'q', 'r', 's', 't', 'u', 'order', 'x', 'y', 'z', 'w'].some(key =>
+    mustRedraw ||
+    ['p', 'q', 'r', 's', 't', 'u', 'dimensions'].some(key =>
       changed.includes(key)
     )
   ) {
@@ -151,16 +162,31 @@ const update = () => {
     newC.gram = newC.coxeter.map(row => row.map(column => -cos(PI / column)))
 
     newC.curvature = getCurvature(newC.gram)
-    setC(newC)
-    clear()
-    tile()
-    plot()
-  } else {
-    setC(newC)
-    if (['edges', 'vertices', 'segments'].some(key => changed.includes(key))) {
-      clear()
-      plot()
+    mustRedraw = true
+  }
+  setC(newC)
+  if (
+    mustRedraw ||
+    ['x', 'y', 'z', 'w', 'order'].some(key => changed.includes(key))
+  ) {
+    const t = performance.now()
+    if (
+      changed.length !== 1 ||
+      changed[0] !== 'order' ||
+      lastOrder >= C.order
+    ) {
+      initTiling()
     }
+    tile()
+    console.log('tile', performance.now() - t, 'ms')
+    mustRedraw = true
+  }
+  if (
+    mustRedraw ||
+    ['edges', 'vertices', 'segments'].some(key => changed.includes(key))
+  ) {
+    clear()
+    plot()
   }
   render()
 }

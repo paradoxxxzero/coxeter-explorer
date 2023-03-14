@@ -1,19 +1,19 @@
 export const C = {
   // coxeter
   p: 5,
-  q: 3,
-  r: 4,
-  s: 2,
+  q: 2,
+  r: 2,
+  s: 3,
   t: 2,
-  u: 2,
+  u: 4,
 
   // v:
   x: 1,
-  y: 1,
-  z: 1,
+  y: 0,
+  z: 0,
   w: 0,
 
-  dimensions: 3,
+  dimensions: 4,
   order: 10,
   segments: 5,
   vertices: false,
@@ -55,9 +55,7 @@ export const setC = newC => {
 
   location.hash = btoa(
     JSON.stringify(
-      Object.fromEntries(
-        Object.entries(C).filter(([k, v]) => SAVED.includes(k))
-      )
+      Object.fromEntries(Object.entries(C).filter(([k]) => SAVED.includes(k)))
     )
   )
 }

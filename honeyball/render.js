@@ -146,16 +146,16 @@ export const clear = () => {
 }
 
 const plotVertices = () => {
-  const { vertices } = C.runtime
+  const R = C.runtime
   const vertexGeometry = new SphereGeometry(vertexRadius, 16, 16)
   const instancedVertex = new InstancedMesh(
     vertexGeometry,
     new MeshBasicMaterial({}),
-    vertices.length
+    R.vertices.length
   )
-  console.info('Plotting', vertices.length, 'vertices')
-  for (let i = 0; i < vertices.length; i++) {
-    const { vertex, color } = vertices[i]
+  console.info('Plotting', R.vertices.length, 'vertices')
+  for (let i = 0; i < R.vertices.length; i++) {
+    const { vertex, color } = R.vertices[i]
     dummy.matrix.identity()
     dummy.matrixWorld.identity()
     dummy.quaternion.identity()
@@ -174,7 +174,102 @@ const plotVertices = () => {
   group.add(instancedVertex)
 }
 
-// // const MAX = 1000000
+const plotEdges = () => {
+  const R = C.runtime
+  R.allEdges = R.edges
+  if (C.segments > 1) {
+    const segmentedEdges = []
+    for (let i = 0; i < R.edges.length; i++) {
+      const edge = R.edges[i]
+      const segmented = xlerp(edge.vertex1, edge.vertex2, 1 / C.segments)
+      for (let j = 0; j < segmented.length - 1; j++) {
+        segmentedEdges.push({
+          vertex1: segmented[j],
+          vertex2: segmented[j + 1],
+          color: edge.color,
+        })
+      }
+    }
+    R.allEdges = segmentedEdges
+  }
+  console.info(
+    'Plotting',
+    R.edges.length,
+    'edges, segmented in',
+    R.allEdges.length,
+    'segments'
+  )
+
+  const edgeGeometry = new CylinderGeometry(
+    edgeRadius,
+    edgeRadius,
+    1,
+    4,
+    1,
+    false
+  )
+  edgeGeometry.translate(0, 0.5, 0)
+  edgeGeometry.rotateX(Math.PI / 2)
+  const instancedEdge = new InstancedMesh(
+    edgeGeometry,
+    new MeshBasicMaterial({
+      // ...materialProps,
+    }),
+    R.allEdges.length
+  )
+
+  for (let i = 0; i < R.allEdges.length; i++) {
+    const edge = R.allEdges[i]
+    const vertex3d1 = C.dimensions === 4 ? poincare(edge.vertex1) : edge.vertex1
+    const vertex3d2 = C.dimensions === 4 ? poincare(edge.vertex2) : edge.vertex2
+    const dx = vertex3d2[0] - vertex3d1[0]
+    const dy = vertex3d2[1] - vertex3d1[1]
+    const dz = vertex3d2[2] - vertex3d1[2]
+    dummy.matrix.identity()
+    dummy.matrixWorld.identity()
+    dummy.quaternion.identity()
+    dummy.position.set(...vertex3d1)
+    let sx, sy
+    if (C.dimensions === 4) {
+      sx = sy = 1 / max(1, abs(edge.vertex1[3]), abs(edge.vertex2[3]))
+    } else {
+      sx = 1
+      sy = 1
+    }
+    dummy.scale.set(sx, sy, sqrt(dx * dx + dy * dy + dz * dz))
+    dummy.lookAt(...vertex3d2)
+    dummy.updateMatrix()
+    instancedEdge.setMatrixAt(i, dummy.matrix)
+    instancedEdge.setColorAt(i, edge.color)
+  }
+  group.add(instancedEdge)
+}
+
+export const plot = () => {
+  if (C.vertices) {
+    plotVertices()
+  }
+  if (C.edges) {
+    plotEdges()
+  }
+}
+
+export const render = () => {
+  // const delta = clock.getDelta()
+  stats.begin()
+  composer.render()
+  // controls.update(delta)
+  stats.end()
+}
+
+export const animate = () => {
+  requestAnimationFrame(animate)
+  render()
+}
+
+// Draw edges as lines:
+//
+// const MAX = 1000000
 // const plotEdges = () => {
 //   const { edges } = C.runtime
 //   const lineIndex = []
@@ -226,99 +321,3 @@ const plotVertices = () => {
 //   lines.geometry.computeBoundingSphere()
 //   group.add(lines)
 // }
-
-const plotEdges = () => {
-  const { edges } = C.runtime
-  C.runtime.allEdges = edges
-  if (C.segments > 1) {
-    const segmentedEdges = []
-    for (let i = 0; i < edges.length; i++) {
-      const edge = edges[i]
-      const segmented = xlerp(edge.vertex1, edge.vertex2, 1 / C.segments)
-      for (let j = 0; j < segmented.length - 1; j++) {
-        segmentedEdges.push({
-          vertex1: segmented[j],
-          vertex2: segmented[j + 1],
-          color: edge.color,
-        })
-      }
-    }
-    C.runtime.allEdges = segmentedEdges
-  }
-  console.info(
-    'Plotting',
-    edges.length,
-    'edges, segmented in',
-    C.runtime.allEdges.length,
-    'segments'
-  )
-
-  const edgeGeometry = new CylinderGeometry(
-    edgeRadius,
-    edgeRadius,
-    1,
-    4,
-    1,
-    true
-  )
-  edgeGeometry.translate(0, 0.5, 0)
-  edgeGeometry.rotateX(Math.PI / 2)
-  const instancedEdge = new InstancedMesh(
-    edgeGeometry,
-    new MeshBasicMaterial({
-      // ...materialProps,
-    }),
-    C.runtime.allEdges.length
-  )
-
-  for (let i = 0; i < C.runtime.allEdges.length; i++) {
-    const edge = C.runtime.allEdges[i]
-    const vertex3d1 = C.dimensions === 4 ? poincare(edge.vertex1) : edge.vertex1
-    const vertex3d2 = C.dimensions === 4 ? poincare(edge.vertex2) : edge.vertex2
-    const dx = vertex3d2[0] - vertex3d1[0]
-    const dy = vertex3d2[1] - vertex3d1[1]
-    const dz = vertex3d2[2] - vertex3d1[2]
-    dummy.matrix.identity()
-    dummy.matrixWorld.identity()
-    dummy.quaternion.identity()
-    dummy.position.set(...vertex3d1)
-    let sx, sy
-    if (C.dimensions === 4) {
-      sx = sy = 1 / max(1, abs(edge.vertex1[3]), abs(edge.vertex2[3]))
-    } else {
-      sx = 1
-      sy = 1
-    }
-    dummy.scale.set(sx, sy, sqrt(dx * dx + dy * dy + dz * dz))
-    dummy.lookAt(...vertex3d2)
-    dummy.updateMatrix()
-    instancedEdge.setMatrixAt(i, dummy.matrix)
-    instancedEdge.setColorAt(i, edge.color)
-  }
-  group.add(instancedEdge)
-}
-
-export const plot = () => {
-  if (C.vertices) {
-    plotVertices()
-  }
-  if (C.edges) {
-    plotEdges()
-  }
-
-  // window.bloomPass.strength =
-  //   C.dimensions === 4 ? 16 / log(1 + C.runtime.allEdges.length) : 2
-}
-
-export const render = () => {
-  // const delta = clock.getDelta()
-  stats.begin()
-  composer.render()
-  // controls.update(delta)
-  stats.end()
-}
-
-export const animate = () => {
-  requestAnimationFrame(animate)
-  render()
-}
