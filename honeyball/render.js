@@ -5,34 +5,25 @@ import {
   CylinderGeometry,
   Group,
   InstancedMesh,
-  MeshStandardMaterial,
+  MeshBasicMaterial,
   Object3D,
   PerspectiveCamera,
-  PointLight,
+  ReinhardToneMapping,
   Scene,
   SphereGeometry,
-  WebGLRenderer,
-  AmbientLight,
   Vector2,
-  ReinhardToneMapping,
-  BufferGeometry,
-  BufferAttribute,
-  LineBasicMaterial,
-  LineSegments,
-  MeshBasicMaterial,
+  WebGLRenderer,
 } from 'three'
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
-import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass'
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
 import { C } from './C'
-import { poincare, dot, xlerp } from './math/hypermath'
-import { sqrt } from './math/index'
+import { poincare, xlerp } from './math/hypermath'
+import { abs, max, sqrt } from './math/index'
 
-import { tile } from './tiling'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 export let stats, renderer, camera, scene, controls, clock, composer
 
@@ -72,11 +63,11 @@ export const initialize3d = () => {
 
   // scene.fog = new Fog(colors.background, 1, size)
 
-  const ambientLight = new AmbientLight(0xffffff, 0.75)
-  scene.add(ambientLight)
+  // const ambientLight = new AmbientLight(0xffffff, 0.75)
+  // scene.add(ambientLight)
 
-  const pointLight = new PointLight(0xffffff)
-  camera.add(pointLight)
+  // const pointLight = new PointLight(0xffffff)
+  // camera.add(pointLight)
   camera.updateProjectionMatrix()
 
   scene.add(camera)
@@ -89,7 +80,7 @@ export const initialize3d = () => {
   controls.update()
 
   renderer.domElement.addEventListener('dblclick', () => {
-    controls.position0.set(0, 0, controls.position0.z <= -1 ? -0.25 : -1, 0, 0)
+    controls.position0.set(0, 0, controls.position0.z === -1 ? -0.25 : -1, 0, 0)
     controls.reset()
   })
 
@@ -104,15 +95,8 @@ export const initialize3d = () => {
     1 / (window.innerHeight * pixelRatio)
   composer.addPass(fxaaPass)
 
-  window.addEventListener('resize', () => {
-    const pixelRatio = renderer.getPixelRatio()
-    fxaaPass.material.uniforms['resolution'].value.x =
-      1 / (window.innerWidth * pixelRatio)
-    fxaaPass.material.uniforms['resolution'].value.y =
-      1 / (window.innerHeight * pixelRatio)
-  })
   renderer.toneMapping = ReinhardToneMapping
-  renderer.toneMappingExposure = 1.75
+  renderer.toneMappingExposure = 1.5
   const bloomPass = new UnrealBloomPass(
     new Vector2(window.innerWidth, window.innerHeight),
     1.5,
@@ -140,20 +124,15 @@ export const initialize3d = () => {
     scene,
     camera,
     controls,
+    bloomPass,
+    // ssaoPass,
+    fxaaPass,
   }
 }
 
 const dummy = new Object3D()
 const vertexRadius = 0.06
 const edgeRadius = 0.025
-const materialProps = {
-  roughness: 0.5,
-  metalness: 0.5,
-  // clearcoat: 1,
-  // reflectivity: 1,
-  transparent: true,
-  opacity: 0.75,
-}
 
 let group = new Group()
 export const clear = () => {
@@ -161,6 +140,7 @@ export const clear = () => {
     child.dispose()
   })
   scene.remove(group)
+
   group = new Group()
   scene.add(group)
 }
@@ -170,10 +150,7 @@ const plotVertices = () => {
   const vertexGeometry = new SphereGeometry(vertexRadius, 16, 16)
   const instancedVertex = new InstancedMesh(
     vertexGeometry,
-    new MeshStandardMaterial({
-      ...materialProps,
-      roughness: 0.7,
-    }),
+    new MeshBasicMaterial({}),
     vertices.length
   )
   console.info('Plotting', vertices.length, 'vertices')
@@ -184,8 +161,7 @@ const plotVertices = () => {
     dummy.quaternion.identity()
     dummy.position.set(...(C.dimensions === 4 ? poincare(vertex) : vertex))
     if (C.dimensions === 4) {
-      const len = sqrt(dot(vertex, vertex, 1))
-      dummy.scale.setScalar(1 / (1 + len))
+      dummy.scale.setScalar(1 / max(1, abs(vertex[3])))
     } else {
       dummy.scale.setScalar(1)
     }
@@ -253,7 +229,7 @@ const plotVertices = () => {
 
 const plotEdges = () => {
   const { edges } = C.runtime
-  let finalEdges = edges
+  C.runtime.allEdges = edges
   if (C.segments > 1) {
     const segmentedEdges = []
     for (let i = 0; i < edges.length; i++) {
@@ -267,13 +243,13 @@ const plotEdges = () => {
         })
       }
     }
-    finalEdges = segmentedEdges
+    C.runtime.allEdges = segmentedEdges
   }
   console.info(
     'Plotting',
     edges.length,
     'edges, segmented in',
-    finalEdges.length,
+    C.runtime.allEdges.length,
     'segments'
   )
 
@@ -283,7 +259,7 @@ const plotEdges = () => {
     1,
     4,
     1,
-    !true
+    true
   )
   edgeGeometry.translate(0, 0.5, 0)
   edgeGeometry.rotateX(Math.PI / 2)
@@ -292,11 +268,11 @@ const plotEdges = () => {
     new MeshBasicMaterial({
       // ...materialProps,
     }),
-    finalEdges.length
+    C.runtime.allEdges.length
   )
 
-  for (let i = 0; i < finalEdges.length; i++) {
-    const edge = finalEdges[i]
+  for (let i = 0; i < C.runtime.allEdges.length; i++) {
+    const edge = C.runtime.allEdges[i]
     const vertex3d1 = C.dimensions === 4 ? poincare(edge.vertex1) : edge.vertex1
     const vertex3d2 = C.dimensions === 4 ? poincare(edge.vertex2) : edge.vertex2
     const dx = vertex3d2[0] - vertex3d1[0]
@@ -306,19 +282,14 @@ const plotEdges = () => {
     dummy.matrixWorld.identity()
     dummy.quaternion.identity()
     dummy.position.set(...vertex3d1)
-    let len1, len2
+    let sx, sy
     if (C.dimensions === 4) {
-      len1 = sqrt(dot(edge.vertex1, edge.vertex1, 1))
-      len2 = sqrt(dot(edge.vertex2, edge.vertex2, 1))
+      sx = sy = 1 / max(1, abs(edge.vertex1[3]), abs(edge.vertex2[3]))
     } else {
-      len1 = 1
-      len2 = 1
+      sx = 1
+      sy = 1
     }
-    dummy.scale.set(
-      1 / (1 + len1), // ???
-      1 / (1 + len2),
-      sqrt(dx * dx + dy * dy + dz * dz)
-    )
+    dummy.scale.set(sx, sy, sqrt(dx * dx + dy * dy + dz * dz))
     dummy.lookAt(...vertex3d2)
     dummy.updateMatrix()
     instancedEdge.setMatrixAt(i, dummy.matrix)
@@ -327,15 +298,16 @@ const plotEdges = () => {
   group.add(instancedEdge)
 }
 
-export const generate = () => {
-  tile()
-
+export const plot = () => {
   if (C.vertices) {
     plotVertices()
   }
   if (C.edges) {
     plotEdges()
   }
+
+  // window.bloomPass.strength =
+  //   C.dimensions === 4 ? 16 / log(1 + C.runtime.allEdges.length) : 2
 }
 
 export const render = () => {

@@ -7,12 +7,15 @@ import {
   initialize3d,
   render,
   renderer,
-  generate,
+  plot,
 } from './honeyball/render'
 import './style.css'
 import { getCurvature } from './honeyball/math/hypermath'
 import { cos, PI } from './honeyball/math'
+import { Vector2 } from 'three'
+import { tile } from './honeyball/tiling'
 
+window.C = C
 Object.assign(window, initialize3d())
 
 const size = () => {
@@ -26,6 +29,11 @@ const size = () => {
     camera.updateProjectionMatrix()
     renderer.setSize(width, height)
     composer.setSize(width, height)
+    window.bloomPass.resolution = new Vector2(width, height)
+    window.fxaaPass.material.uniforms['resolution'].value.x =
+      1 / (width * renderer.getPixelRatio())
+    window.fxaaPass.material.uniforms['resolution'].value.y =
+      1 / (height * renderer.getPixelRatio())
     if (subsampling !== 1) {
       currentCanvas.style.width = null
       currentCanvas.style.height = null
@@ -109,25 +117,6 @@ const update = () => {
   newC.vertices = document.querySelector('#vertices').checked
   newC.edges = document.querySelector('#edges').checked
 
-  newC.coxeter =
-    newC.dimensions === 3
-      ? [
-          [-1, newC.p, newC.q],
-          [newC.p, -1, newC.r],
-          [newC.q, newC.r, -1],
-        ]
-      : newC.dimensions === 4
-      ? [
-          [-1, newC.p, newC.q, newC.r],
-          [newC.p, -1, newC.s, newC.t],
-          [newC.q, newC.s, -1, newC.u],
-          [newC.r, newC.t, newC.u, -1],
-        ]
-      : null
-
-  newC.gram = newC.coxeter.map(row => row.map(column => -cos(PI / column)))
-
-  newC.curvature = getCurvature(newC.gram)
   document.querySelector('#space').innerHTML = `${
     newC.curvature === 0
       ? '&#x1D53C'
@@ -136,9 +125,43 @@ const update = () => {
       : '&#x210D'
   }<sup>${newC.dimensions - 1}</sup>`
 
-  setC(newC)
-  clear()
-  generate()
+  const changed = Object.keys(newC).filter(key => newC[key] !== C[key])
+  if (
+    !C.runtime ||
+    ['p', 'q', 'r', 's', 't', 'u', 'order', 'x', 'y', 'z', 'w'].some(key =>
+      changed.includes(key)
+    )
+  ) {
+    newC.coxeter =
+      newC.dimensions === 3
+        ? [
+            [-1, newC.p, newC.q],
+            [newC.p, -1, newC.r],
+            [newC.q, newC.r, -1],
+          ]
+        : newC.dimensions === 4
+        ? [
+            [-1, newC.p, newC.q, newC.r],
+            [newC.p, -1, newC.s, newC.t],
+            [newC.q, newC.s, -1, newC.u],
+            [newC.r, newC.t, newC.u, -1],
+          ]
+        : null
+
+    newC.gram = newC.coxeter.map(row => row.map(column => -cos(PI / column)))
+
+    newC.curvature = getCurvature(newC.gram)
+    setC(newC)
+    clear()
+    tile()
+    plot()
+  } else {
+    setC(newC)
+    if (['edges', 'vertices', 'segments'].some(key => changed.includes(key))) {
+      clear()
+      plot()
+    }
+  }
   render()
 }
 

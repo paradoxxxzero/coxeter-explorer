@@ -1,46 +1,46 @@
 import { C } from '../C.js'
-import { abs, acos, cos, max, PI, sin, sqrt } from './index.js'
+import { abs, acos, acosh, cos, max, PI, sin, sqrt } from './index.js'
 
-export const det = gram => {
-  if (gram.length === 3) {
+export const det = m => {
+  if (m.length === 3) {
     return (
-      gram[0][0] * gram[1][1] * gram[2][2] +
-      gram[0][1] * gram[1][2] * gram[2][0] +
-      gram[0][2] * gram[1][0] * gram[2][1] -
-      gram[0][2] * gram[1][1] * gram[2][0] -
-      gram[0][1] * gram[1][0] * gram[2][2] -
-      gram[0][0] * gram[1][2] * gram[2][1]
+      m[0][0] * m[1][1] * m[2][2] +
+      m[0][1] * m[1][2] * m[2][0] +
+      m[0][2] * m[1][0] * m[2][1] -
+      m[0][2] * m[1][1] * m[2][0] -
+      m[0][1] * m[1][0] * m[2][2] -
+      m[0][0] * m[1][2] * m[2][1]
     )
-  } else if (gram.length === 4) {
+  } else if (m.length === 4) {
     return (
-      gram[0][0] *
-        (gram[1][1] * gram[2][2] * gram[3][3] +
-          gram[1][2] * gram[2][3] * gram[3][1] +
-          gram[1][3] * gram[2][1] * gram[3][2] -
-          gram[1][3] * gram[2][2] * gram[3][1] -
-          gram[1][2] * gram[2][1] * gram[3][3] -
-          gram[1][1] * gram[2][3] * gram[3][2]) +
-      gram[0][1] *
-        (gram[1][0] * gram[2][3] * gram[3][2] +
-          gram[1][2] * gram[2][0] * gram[3][3] +
-          gram[1][3] * gram[2][2] * gram[3][0] -
-          gram[1][3] * gram[2][0] * gram[3][2] -
-          gram[1][2] * gram[2][3] * gram[3][0] -
-          gram[1][0] * gram[2][2] * gram[3][3]) +
-      gram[0][2] *
-        (gram[1][0] * gram[2][1] * gram[3][3] +
-          gram[1][1] * gram[2][3] * gram[3][0] +
-          gram[1][3] * gram[2][0] * gram[3][1] -
-          gram[1][3] * gram[2][1] * gram[3][0] -
-          gram[1][1] * gram[2][0] * gram[3][3] -
-          gram[1][0] * gram[2][3] * gram[3][1]) +
-      gram[0][3] *
-        (gram[1][0] * gram[2][2] * gram[3][1] +
-          gram[1][1] * gram[2][0] * gram[3][2] +
-          gram[1][2] * gram[2][1] * gram[3][0] -
-          gram[1][2] * gram[2][0] * gram[3][1] -
-          gram[1][1] * gram[2][2] * gram[3][0] -
-          gram[1][0] * gram[2][1] * gram[3][2])
+      m[0][0] *
+        (m[1][1] * m[2][2] * m[3][3] +
+          m[1][2] * m[2][3] * m[3][1] +
+          m[1][3] * m[2][1] * m[3][2] -
+          m[1][3] * m[2][2] * m[3][1] -
+          m[1][2] * m[2][1] * m[3][3] -
+          m[1][1] * m[2][3] * m[3][2]) +
+      m[0][1] *
+        (m[1][0] * m[2][3] * m[3][2] +
+          m[1][2] * m[2][0] * m[3][3] +
+          m[1][3] * m[2][2] * m[3][0] -
+          m[1][3] * m[2][0] * m[3][2] -
+          m[1][2] * m[2][3] * m[3][0] -
+          m[1][0] * m[2][2] * m[3][3]) +
+      m[0][2] *
+        (m[1][0] * m[2][1] * m[3][3] +
+          m[1][1] * m[2][3] * m[3][0] +
+          m[1][3] * m[2][0] * m[3][1] -
+          m[1][3] * m[2][1] * m[3][0] -
+          m[1][1] * m[2][0] * m[3][3] -
+          m[1][0] * m[2][3] * m[3][1]) +
+      m[0][3] *
+        (m[1][0] * m[2][2] * m[3][1] +
+          m[1][1] * m[2][0] * m[3][2] +
+          m[1][2] * m[2][1] * m[3][0] -
+          m[1][2] * m[2][0] * m[3][1] -
+          m[1][1] * m[2][2] * m[3][0] -
+          m[1][0] * m[2][1] * m[3][2])
     )
   }
 }
@@ -50,7 +50,7 @@ export const getCurvature = gram => {
   return abs(determinant) < 1e-8 ? 0 : Math.sign(determinant)
 }
 
-export const dot = (v1, v2, forceCurvature = null) => {
+export const xdot = (v1, v2, forceCurvature = null) => {
   const c = forceCurvature === null ? C.curvature : forceCurvature
   let sum = 0
   for (let i = 0; i < v1.length; i++) {
@@ -58,9 +58,20 @@ export const dot = (v1, v2, forceCurvature = null) => {
   }
   return sum
 }
+
+export const xdistance = (v1, v2) => {
+  if (C.curvature > 0) {
+    return acos(xdot(v1, v2))
+  }
+  if (C.curvature < 0) {
+    return acosh(-xdot(v1, v2))
+  }
+  return sqrt(xdot(v1, v2))
+}
+
 export const reflect = (v, n) => {
   v = v.slice()
-  const vn2 = 2 * dot(v, n)
+  const vn2 = 2 * xdot(v, n)
   for (let i = 0; i < v.length; i++) {
     v[i] -= vn2 * (C.curvature || i !== v.length - 1 ? n[i] : 0)
   }
@@ -83,7 +94,7 @@ export const normalize = v => {
 
   const nr =
     (C.curvature === -1 ? Math.sign(v[v.length - 1]) || 1 : 1) /
-    sqrt(abs(dot(v, v)))
+    sqrt(abs(xdot(v, v)))
   for (let i = 0; i < v.length; i++) {
     v[i] *= nr
   }
@@ -101,7 +112,7 @@ export const poincare = v => {
 }
 
 export const slerp = (u, v, step) => {
-  const o = Math.acos(dot(u, v))
+  const o = Math.acos(xdot(u, v))
   const n = Math.sin(o)
   if (n === 0) {
     return [u, v]
@@ -121,7 +132,7 @@ export const slerp = (u, v, step) => {
 }
 
 export const hlerp = (u, v, step) => {
-  const o = Math.acosh(-dot(u, v))
+  const o = Math.acosh(-xdot(u, v))
   const n = Math.sinh(o)
   if (n === 0) {
     return [u, v]
@@ -149,6 +160,94 @@ export const xlerp = (u, v, curveStep) => {
   }
 }
 
+const hyperbolicTranslate = (vertex, offset) => {
+  const [xe, ye, ze] = vertex
+  const [xt, yt] = offset
+
+  const cxt = Math.sqrt(1 + xt * xt) // Math.cosh(Math.asinh(xt))
+  const cyt = Math.sqrt(1 + yt * yt) // Math.cosh(Math.asinh(yt))
+  const a = xe
+  const b = ye * yt + ze * cyt
+  vertex[0] = a * cxt - b * xt
+  vertex[1] = ye * cyt + ze * yt
+  vertex[2] = -a * xt + b * cxt
+}
+
+const ellipticTranslate = (vertex, offset) => {
+  const [xe, ye, ze] = vertex
+  const [xt, yt] = offset
+  const cxt = Math.sqrt(1 - xt * xt) // Math.cos(Math.asin(xt))
+  const cyt = Math.sqrt(1 - yt * yt) // Math.cos(Math.asin(yt))
+  const a = xe
+  const b = ye * yt + ze * cyt
+  vertex[0] = a * cxt + b * xt
+  vertex[1] = ye * cyt - ze * yt
+  vertex[2] = -a * xt + b * cxt
+}
+
+const parabolicTranslate = (vertex, offset) => {
+  let [xe, ye] = vertex
+  const [xt, yt] = offset
+
+  vertex[0] = xe - xt
+  vertex[1] = ye + yt
+}
+
+const rotate = (vertex, theta) => {
+  // Rotation is the same as in euclidean space
+  const [x, y] = vertex
+  const c = Math.cos(theta)
+  const s = Math.sin(theta)
+  vertex[0] = x * c - y * s
+  vertex[1] = x * s + y * c
+}
+
+const hyperbolicScale = (vertex, scale) => {
+  const [xe, ye, ze] = vertex
+  const nr = scale / Math.sqrt(xe * xe + ye * ye + ze * ze)
+  const offset = [vertex[0] * nr, -vertex[1] * nr, vertex[2] * nr]
+  hyperbolicTranslate(vertex, offset)
+}
+
+const ellipticScale = (vertex, scale) => {
+  const [xe, ye, ze] = vertex
+  const nr = scale / Math.sqrt(xe * xe + ye * ye + ze * ze)
+  const offset = [vertex[0] * nr, -vertex[1] * nr, vertex[2] * nr]
+  ellipticTranslate(vertex, offset)
+}
+
+const parabolicScale = (vertex, scale) => {
+  let [xe, ye, ze] = vertex
+
+  vertex[0] = xe * (1 - scale)
+  vertex[1] = ye * (1 - scale)
+  vertex[2] = ze * (1 - scale)
+}
+
+const translations = [
+  hyperbolicTranslate,
+  parabolicTranslate,
+  ellipticTranslate,
+]
+
+export const translateVertex = (vertex, offset) =>
+  translations[C.curvature + 1](vertex, offset)
+
+const scales = [hyperbolicScale, parabolicScale, ellipticScale]
+
+export const scaleVertex = (vertex, factor) =>
+  scales[C.curvature + 1](vertex, factor)
+
+export const rotateVertex = rotate
+
+const transformations = {
+  translate: translateVertex,
+  scale: scaleVertex,
+  rotater: rotateVertex,
+}
+
+export const transformVertex = (type, vertex, parameter) =>
+  transformations[type](vertex, parameter)
 export const getFundamentalSimplexMirrors = () => {
   const { dimensions, curvature } = C
 

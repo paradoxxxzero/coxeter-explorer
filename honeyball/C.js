@@ -19,13 +19,6 @@ export const C = {
   vertices: false,
   edges: true,
   DEBUG: false,
-  //
-  curvature: -1,
-  //
-  runtime: {
-    vertices: [],
-    edges: [],
-  },
 }
 const SAVED = [
   'p',
@@ -67,9 +60,4 @@ export const setC = newC => {
       )
     )
   )
-
-  C.runtime = {
-    vertices: [],
-    edges: [],
-  }
 }

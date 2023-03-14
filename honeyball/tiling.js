@@ -6,10 +6,26 @@ import {
   getFundamentalVertex,
   normalize,
   reflect,
+  translateVertex,
 } from './math/hypermath'
 import { floatToToken } from './math/utils'
+import { sorter } from './math/group'
+import { abs } from './math'
+
+const same = (v1, v2) => {
+  for (let i = 0; i < v1.length; i++) {
+    if (abs(v1[i] - v2[i]) > 1e-8) {
+      return false
+    }
+  }
+  return true
+}
 
 export const tile = () => {
+  C.runtime = {
+    vertices: [],
+    edges: [],
+  }
   const fundamentalSimplexMirrors = getFundamentalSimplexMirrors()
   const fundamentalSimplexVertices = fundamentalSimplexMirrors.map(
     (mirror, i) =>
@@ -20,31 +36,33 @@ export const tile = () => {
           .map((_, j) => (i === j ? C.curvature || 1 : 0))
       )
   )
+
   const vertex = getFundamentalVertex(fundamentalSimplexMirrors, [
     C.x ? 1 : 0,
     C.y ? 1 : 0,
     C.z ? 1 : 0,
     C.w ? 1 : 0,
   ])
+  // const shift = [1.0, 1]
+  // translateVertex(vertex, shift)
+  // fundamentalSimplexMirrors.forEach(mirror => translateVertex(mirror, shift))
   const { vertices, edges } = C.runtime
-  C.vertices && vertices.push({ vertex, color: new Color(0x0000ff) })
   // fundamentalSimplexVertices.forEach(vertex =>
   //   vertices.push({ vertex, color: new Color(0x00ff00) })
   // )
   if (C.DEBUG) {
+    vertices.push({ vertex, color: new Color(0x0000ff) })
     for (let i = 0; i < fundamentalSimplexVertices.length; i++) {
-      C.vertices &&
-        vertices.push({
-          vertex: fundamentalSimplexVertices[i],
+      vertices.push({
+        vertex: fundamentalSimplexVertices[i],
+        color: new Color(0x00ff00),
+      })
+      for (let j = 0; j < i; j++) {
+        edges.push({
+          vertex1: fundamentalSimplexVertices[i],
+          vertex2: fundamentalSimplexVertices[j],
           color: new Color(0x00ff00),
         })
-      for (let j = 0; j < i; j++) {
-        C.edges &&
-          edges.push({
-            vertex1: fundamentalSimplexVertices[i],
-            vertex2: fundamentalSimplexVertices[j],
-            color: new Color(0x00ff00),
-          })
       }
     }
   }
@@ -86,45 +104,51 @@ export const tile = () => {
   const words = new Map()
   const edgeHashes = new Set()
   const vertexHashes = new Set()
-  let currentWord = ''
-  words.set(currentWord, vertex)
-  let wordsToConsider = [currentWord]
+  words.set('', vertex)
+  let wordsToConsider = ['']
 
+  let fundamentalChamberWords = ['']
   for (let i = 0; i < C.order; i++) {
-    let futurewordsToConsider = []
+    let futurewordsToConsider
+    // Start by filing the fundamental chamber to equilibrate the tiling
+    do {
+      futurewordsToConsider = []
+      for (let j = 0; j < wordsToConsider.length; j++) {
+        const word = wordsToConsider[j]
+        const v = words.get(word)
 
-    for (let j = 0; j < wordsToConsider.length; j++) {
-      const word = wordsToConsider[j]
-      const v = words.get(word)
-
-      for (let k = 0; k < C.dimensions; k++) {
-        if (word.slice(-1) === String.fromCharCode(97 + k)) {
-          continue
-        }
-        const newWord = shorten(word + String.fromCharCode(97 + k))
-        const color = new Color().setHSL(newWord.length / C.order, 0.5, 0.5)
-        if (words.has(newWord)) {
-          const edgeHash = (v + words.get(newWord)) * 0.5
-          if (edgeHashes.has(edgeHash)) {
+        for (let k = 0; k < C.dimensions - (i === 0 ? 1 : 0); k++) {
+          if (word.slice(-1) === String.fromCharCode(97 + k)) {
             continue
           }
-          if (C.edges) {
+          const newWord = shorten(word + String.fromCharCode(97 + k))
+          const color = new Color().setHSL(
+            (newWord.length * 0.17) % 1,
+            0.5,
+            0.5
+          )
+          if (words.has(newWord)) {
             const rv = words.get(newWord)
-            const edgeHash = [hash(v), hash(rv)].sort().join('/')
+            const edgeWords = [word, newWord].sort(sorter)
+            const edgeHash = (
+              edgeWords[0] === word ? [hash(v), hash(rv)] : [hash(rv), hash(v)]
+            )
+              .sort()
+              .join('/')
             if (!edgeHashes.has(edgeHash)) {
               edgeHashes.add(edgeHash)
-              edges.push({
-                vertex1: v,
-                vertex2: rv,
-                color: color,
-              })
+              if (!same(v, rv)) {
+                edges.push({
+                  vertex1: v,
+                  vertex2: rv,
+                  color: color,
+                })
+              }
             }
-          }
-        } else {
-          const rv = reflectWord(newWord)
-          words.set(newWord, rv)
-          const normalized = normalize(rv)
-          if (C.vertices) {
+          } else {
+            const rv = reflectWord(newWord)
+            words.set(newWord, rv)
+            const normalized = normalize(rv)
             const vertexHash = hash(normalized)
             if (!vertexHashes.has(vertexHash)) {
               vertexHashes.add(vertexHash)
@@ -134,22 +158,39 @@ export const tile = () => {
                 color,
               })
             }
-          }
-          if (C.edges) {
-            const edgeHash = [hash(v), hash(rv)].sort().join('/')
+            const edgeWords = [word, newWord].sort(sorter)
+            const edgeHash = (
+              edgeWords[0] === word ? [hash(v), hash(rv)] : [hash(rv), hash(v)]
+            )
+              .sort()
+              .join('/')
             if (!edgeHashes.has(edgeHash)) {
               edgeHashes.add(edgeHash)
-              edges.push({
-                vertex1: v,
-                vertex2: rv,
-                color,
-              })
+              if (!same(v, rv)) {
+                edges.push({
+                  vertex1: v,
+                  vertex2: rv,
+                  color,
+                })
+              }
             }
+            futurewordsToConsider.push(newWord)
           }
-          futurewordsToConsider.push(newWord)
         }
       }
+      if (i === 0) {
+        fundamentalChamberWords.push(...futurewordsToConsider)
+        wordsToConsider = futurewordsToConsider
+      }
+    } while (i === 0 && futurewordsToConsider.length)
+    if (i === 0) {
+      wordsToConsider = fundamentalChamberWords
+    } else {
+      wordsToConsider = futurewordsToConsider
     }
-    wordsToConsider = futurewordsToConsider
+
+    if (!wordsToConsider.length) {
+      break
+    }
   }
 }

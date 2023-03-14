@@ -5,11 +5,13 @@ export const {
   cosh,
   sinh,
   acos,
+  acosh,
   min,
   max,
   round,
   sqrt,
   floor,
+  log,
   PI,
 } = Math
 

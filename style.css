@@ -62,8 +62,7 @@ label {
 input[type='number'] {
   color: white;
   border: none;
-  backdrop-filter: blur(10px);
-  background-color: rgba(125, 125, 125, 0.25);
+  background-color: rgba(150, 150, 150, 0.25);
   font-size: 1.25em;
   padding: 5px;
   max-width: 4ch;
