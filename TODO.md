@@ -1,3 +1,4 @@
 - Draw per order
 - Delegate some computation to gpu: projection / segmenting in shader
 - Translations
+- Use webworkers

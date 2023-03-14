@@ -145,51 +145,13 @@ export const tile = () => {
           )
           if (R.words.has(newWord)) {
             const rv = R.words.get(newWord)
-            const edgeWords = [word, newWord].sort(sorter)
-            const edgeHash = (
-              edgeWords[0] === word ? [hash(v), hash(rv)] : [hash(rv), hash(v)]
-            )
-              .sort()
-              .join('/')
-            if (!R.edgeHashes.has(edgeHash)) {
-              R.edgeHashes.add(edgeHash)
-              if (!same(v, rv)) {
-                R.edges.push({
-                  vertex1: v,
-                  vertex2: rv,
-                  color: color,
-                })
-              }
-            }
+            link(word, newWord, v, rv, color)
           } else {
             const rv = reflectWord(newWord)
             R.words.set(newWord, rv)
-            const normalized = normalize(rv)
-            const vertexHash = hash(normalized)
-            if (!R.vertexHashes.has(vertexHash)) {
-              R.vertexHashes.add(vertexHash)
 
-              R.vertices.push({
-                vertex: normalized,
-                color,
-              })
-            }
-            const edgeWords = [word, newWord].sort(sorter)
-            const edgeHash = (
-              edgeWords[0] === word ? [hash(v), hash(rv)] : [hash(rv), hash(v)]
-            )
-              .sort()
-              .join('/')
-            if (!R.edgeHashes.has(edgeHash)) {
-              R.edgeHashes.add(edgeHash)
-              if (!same(v, rv)) {
-                R.edges.push({
-                  vertex1: v,
-                  vertex2: rv,
-                  color,
-                })
-              }
-            }
+            plot(rv, R, color)
+            link(word, newWord, v, rv, color)
             futurewordsToConsider.push(newWord)
           }
         }
@@ -210,5 +172,39 @@ export const tile = () => {
       return
     }
     R.lastOrder = i + 1
+  }
+}
+
+function plot(rv, color) {
+  const R = C.runtime
+  const vertexHash = hash(rv)
+  if (!R.vertexHashes.has(vertexHash)) {
+    R.vertexHashes.add(vertexHash)
+
+    R.vertices.push({
+      vertex: rv,
+      color,
+    })
+  }
+}
+
+function link(word, newWord, v, rv, color) {
+  const R = C.runtime
+  const edgeWords = [word, newWord].sort(sorter)
+  const edgeHash = (
+    edgeWords[0] === word ? [hash(v), hash(rv)] : [hash(rv), hash(v)]
+  )
+    .sort()
+    .join('/')
+  if (!R.edgeHashes.has(edgeHash)) {
+    R.edgeHashes.add(edgeHash)
+    if (!same(v, rv)) {
+      R.edges.push({
+        vertex1: v,
+        vertex2: rv,
+        color: color,
+      })
+      return true
+    }
   }
 }

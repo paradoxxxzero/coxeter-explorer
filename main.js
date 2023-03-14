@@ -134,8 +134,11 @@ const update = () => {
       : '&#x210D'
   }<sup>${newC.dimensions - 1}</sup>`
 
-  const lastOrder = C.order
   const changed = Object.keys(newC).filter(key => newC[key] !== C[key])
+  const lastOrder = C.order
+  const isOnlyOrderChanged =
+    changed.length === 1 && changed[0] === 'order' && lastOrder < C.order
+
   let mustRedraw = !C.runtime
   if (
     mustRedraw ||
@@ -170,11 +173,7 @@ const update = () => {
     ['x', 'y', 'z', 'w', 'order'].some(key => changed.includes(key))
   ) {
     const t = performance.now()
-    if (
-      changed.length !== 1 ||
-      changed[0] !== 'order' ||
-      lastOrder >= C.order
-    ) {
+    if (!isOnlyOrderChanged) {
       initTiling()
     }
     tile()
@@ -185,6 +184,7 @@ const update = () => {
     mustRedraw ||
     ['edges', 'vertices', 'segments'].some(key => changed.includes(key))
   ) {
+    // Don't clear for order
     clear()
     plot()
   }
