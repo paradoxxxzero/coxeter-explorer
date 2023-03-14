@@ -2,3 +2,4 @@
 - Delegate some computation to gpu: projection / segmenting in shader
 - Translations
 - Use webworkers
+- Use distance instead of segments

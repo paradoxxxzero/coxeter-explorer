@@ -1,11 +1,10 @@
 import { Color } from 'three'
 import { C } from './C'
 import { abs } from './math'
-import { getRules, shorten, sorter } from './math/group'
+import { getRules, shorten } from './math/group'
 import {
   getFundamentalSimplexMirrors,
   getFundamentalVertex,
-  normalize,
   reflect,
 } from './math/hypermath'
 
@@ -41,20 +40,20 @@ const reflectWord = word => {
   const R = C.runtime
   let v = R.rootVertex
   const reflections = word.split('').reverse().join('')
-  let reflection = ''
+  // let reflection = ''
   let remaining = reflections
-  for (let i = reflections.length; i > 0; i--) {
-    reflection = reflections.slice(0, i)
-    if (R.reflections.has(reflection)) {
-      v = R.reflections.get(reflection)
-      remaining = reflections.slice(i)
-      break
-    }
-  }
+  // for (let i = reflections.length; i > 0; i--) {
+  //   reflection = reflections.slice(0, i)
+  //   if (R.reflections.has(reflection)) {
+  //     v = R.reflections.get(reflection)
+  //     remaining = reflections.slice(i)
+  //     break
+  //   }
+  // }
 
   for (let i = 0; i < remaining.length; i++) {
     v = reflect(v, R.mirrors[remaining[i].charCodeAt(0) - 97])
-    R.reflections.set(reflection + remaining.slice(0, i + 1), v)
+    // R.reflections.set(reflection + remaining.slice(0, i + 1), v)
   }
   return v
 }
@@ -62,7 +61,7 @@ const reflectWord = word => {
 const hash = v => {
   let s = ''
   for (let i = 0; i < v.length; i++) {
-    s += v[i].toExponential(4)
+    s += v[i].toString().slice(0, 6) // toExponential(4)
     if (i < v.length - 1) {
       s += '|'
     }
@@ -190,12 +189,12 @@ function plot(rv, color) {
 
 function link(word, newWord, v, rv, color) {
   const R = C.runtime
-  const edgeWords = [word, newWord].sort(sorter)
-  const edgeHash = (
-    edgeWords[0] === word ? [hash(v), hash(rv)] : [hash(rv), hash(v)]
-  )
-    .sort()
-    .join('/')
+  const edgeHash =
+    word.length < newWord.length ||
+    (word.length === newWord.length && word < newWord)
+      ? hash(v) + '/' + hash(rv)
+      : hash(rv) + '/' + hash(v)
+
   if (!R.edgeHashes.has(edgeHash)) {
     R.edgeHashes.add(edgeHash)
     if (!same(v, rv)) {

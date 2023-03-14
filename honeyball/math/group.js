@@ -10,56 +10,42 @@ export const sorter = (a, b) => {
   return a <= b ? -1 : 1
 }
 
-const normalize = rules =>
-  Object.entries(rules).reduce((newRules, rule) => {
-    const [w, v] = rule.sort(sorter)
-
-    if (!newRules[v]) {
-      newRules[v] = w
+const normalize = rules => {
+  const ruleMap = new Map()
+  const keys = Object.keys(rules).sort(sorter)
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i]
+    const [w, v] = [k, rules[k]].sort(sorter)
+    if (!ruleMap.has(v)) {
+      ruleMap.set(v, w)
     } else {
-      newRules[v] = [w, newRules[v]].sort()[0]
+      ruleMap.set(v, [w, ruleMap.get(v)].sort()[0])
     }
-    return newRules
-  }, [])
-
-const length = rules =>
-  Object.keys(rules)
-    .map(k => k.length)
-    .sort()
+  }
+  return ruleMap
+}
 
 export const rewrite = (rules, word) => {
-  let newWord = ''
-
-  if (!word.length) {
-    return newWord
+  if (word.length === 0 || rules.size === 0) {
+    return word
   }
-  const letters = word.split('').reverse()
-  const lengths = length(rules)
+  const re = rules._re_cache || new RegExp([...rules.keys()].join('|'), 'g')
+  let rewrittenWord = word
 
-  while (letters.length > 0) {
-    newWord += letters.pop()
-    for (let i = 0; i < lengths.length; i++) {
-      const suffix = newWord.substring(newWord.length - lengths[i])
-      const replacement = rules[suffix]
-      if (replacement || replacement === '') {
-        newWord = newWord.substring(0, newWord.length - lengths[i])
-        for (let j = replacement.length - 1; j >= 0; j--) {
-          letters.push(replacement[j])
-        }
-        continue
-      }
-    }
-  }
-  return newWord
+  do {
+    word = rewrittenWord
+    rewrittenWord = word.replace(re, match => rules.get(match))
+  } while (rewrittenWord !== word)
+  return word
 }
 
 const simplify = rules => {
-  const newRules = { ...rules }
-  rules = Object.entries(rules)
+  const newRules = new Map(rules)
+  rules = [...rules.entries()]
 
   while (rules.length > 0) {
     const [v, w] = rules.pop()
-    delete newRules[v]
+    newRules.delete(v)
 
     const vv = rewrite(newRules, v)
     const ww = rewrite(newRules, w)
@@ -70,13 +56,13 @@ const simplify = rules => {
     } else {
       const [w1, v1] = [vv, ww].sort(sorter)
       if (v1 !== v && w1 !== w) {
-        newRules[v1] = w1
+        newRules.set(v1, w1)
         rules.push([v1, w1])
         addBack = false
       }
     }
     if (addBack) {
-      newRules[v] = w
+      newRules.set(v, w)
     }
   }
   return newRules
@@ -88,11 +74,8 @@ const overlap = function (s1, s2) {
   }
 
   const istart = Math.max(0, s1.length - s2.length)
-  for (
-    let i = istart, end = s1.length, asc = istart <= end;
-    asc ? i < end : i > end;
-    asc ? i++ : i--
-  ) {
+
+  for (let i = istart; i < s1.length; i++) {
     if (s1[i] === s2[0]) {
       if (s1.slice(i + 1) === s2.slice(1, s1.length - i)) {
         return {
@@ -109,11 +92,7 @@ const splitBy = function (s1, s2) {
     return null
   }
 
-  for (
-    let i = 0, end = s1.length - s2.length + 1, asc = 0 <= end;
-    asc ? i < end : i > end;
-    asc ? i++ : i--
-  ) {
+  for (let i = 0; i < s1.length - s2.length + 1; i++) {
     if (s1.slice(i, i + s2.length) === s2) {
       return {
         prefix: s1.slice(0, i),
@@ -136,9 +115,14 @@ const findOverlap = (v1, w1, v2, w2) => {
 }
 
 const complete = rules => {
-  const newRules = { ...rules }
-  Object.entries(rules).forEach(([v1, w1]) => {
-    Object.entries(rules).forEach(([v2, w2]) => {
+  const newRules = new Map(rules)
+
+  const entries = [...rules.entries()]
+  for (let i = 0; i < entries.length; i++) {
+    const [v1, w1] = entries[i]
+    for (let j = 0; j < entries.length; j++) {
+      if (i === j) continue
+      const [v2, w2] = entries[j]
       const overlap = findOverlap(v1, w1, v2, w2)
 
       if (overlap) {
@@ -147,29 +131,31 @@ const complete = rules => {
 
         if (t1 !== t2) {
           const [w, v] = [t1, t2].sort(sorter)
-          newRules[v] = w
+          newRules.set(v, w)
         }
       }
-    })
-  })
+    }
+  }
   return newRules
 }
 
 const reduce = rules => complete(simplify(rules))
 
 const equals = (a, b) => {
-  const aKeys = Object.keys(a)
-  const bKeys = Object.keys(b)
-  if (aKeys.length !== bKeys.length) {
+  if (a.size !== b.size) {
     return false
   }
-  for (let i = 0; i < aKeys.length; i++) {
-    const key = aKeys[i]
-    if (a[key] !== b[key]) {
+  const aKeys = a.keys()
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const { done, value } = aKeys.next()
+    if (done) {
+      return true
+    }
+    if (a.get(value) !== b.get(value)) {
       return false
     }
   }
-  return true
 }
 
 export const knuthBendix = rules => {
@@ -179,10 +165,11 @@ export const knuthBendix = rules => {
     // console.log('iteration', i, Object.entries(newRules).sort())
     if (equals(newRules, rules)) {
       console.log('iterations', i)
+      newRules._re_cache = new RegExp([...newRules.keys()].join('|'), 'g')
       return newRules
     }
     rules = newRules
-    if (Object.keys(rules).length > 100) {
+    if (rules.size > 100) {
       throw new Error('Too many rules')
     }
   }
