@@ -172,9 +172,6 @@ export const knuthBendix = rules => {
       return newRules
     }
     rules = newRules
-    if (rules.size > 200) {
-      throw new Error('Too many rules')
-    }
   }
   throw new Error('Max iterations reached')
 }

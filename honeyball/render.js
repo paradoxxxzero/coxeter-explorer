@@ -12,6 +12,7 @@ import {
   SphereGeometry,
   Vector2,
   WebGLRenderer,
+  StreamDrawUsage,
 } from 'three'
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
@@ -20,12 +21,14 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
 import { C } from './C'
-import { poincare, xlerp } from './math/hypermath'
+import { poincare } from './math/hypermath'
 import { abs, max, min, sqrt } from './math/index'
 
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { R } from './R'
 export let stats, renderer, camera, scene, controls, clock, composer
+
+const group = new Group()
 
 const colors = {
   background: 0x000000,
@@ -60,6 +63,7 @@ export const initialize3d = () => {
   camera.updateProjectionMatrix()
 
   scene = new Scene()
+  scene.add(group)
   // scene.background = new Color(colors.background)
 
   // scene.fog = new Fog(colors.background, 1, size)
@@ -119,6 +123,9 @@ export const initialize3d = () => {
   // controls.lookSpeed = 0.2
   // animate()
 
+  initEdge()
+  initVertex()
+
   return {
     composer,
     renderer,
@@ -134,27 +141,60 @@ export const initialize3d = () => {
 const dummy = new Object3D()
 const vertexRadius = 0.06
 const edgeRadius = 0.025
+const vertexGeometry = new SphereGeometry(vertexRadius, 16, 16)
+const edgeGeometry = new CylinderGeometry(
+  edgeRadius,
+  edgeRadius,
+  1,
+  8,
+  1,
+  false
+)
+edgeGeometry.translate(0, 0.5, 0)
+edgeGeometry.rotateX(Math.PI / 2)
 
-let group = new Group()
-export const clear = () => {
-  group.children.forEach(child => {
-    child.dispose()
-  })
-  scene.remove(group)
+let instancedVertex = null
+let instancedEdge = null
+let currentVerticesMax = 5000
+let currentEdgesMax = 50000
 
-  group = new Group()
-  scene.add(group)
+const initVertex = () => {
+  instancedVertex = new InstancedMesh(
+    vertexGeometry,
+    new MeshBasicMaterial(),
+    currentVerticesMax
+  )
+  instancedVertex.setColorAt(0, new Color())
+  instancedVertex.count = 0
+  instancedVertex.instanceMatrix.setUsage(StreamDrawUsage)
+  instancedVertex.instanceColor.setUsage(StreamDrawUsage)
+  group.add(instancedVertex)
 }
 
-const plotVertices = stop => {
-  const vertexGeometry = new SphereGeometry(vertexRadius, 16, 16)
-  const instancedVertex = new InstancedMesh(
-    vertexGeometry,
-    new MeshBasicMaterial({}),
-    stop
+const initEdge = () => {
+  instancedEdge = new InstancedMesh(
+    edgeGeometry,
+    new MeshBasicMaterial(),
+    currentEdgesMax
   )
-  console.info('Plotting', stop, 'vertices')
-  for (let i = 0; i < stop; i++) {
+  instancedEdge.setColorAt(0, new Color())
+  instancedEdge.count = 0
+  instancedEdge.instanceMatrix.setUsage(StreamDrawUsage)
+  instancedEdge.instanceColor.setUsage(StreamDrawUsage)
+  group.add(instancedEdge)
+}
+
+const plotVertices = ([start, stop]) => {
+  console.info(`Plotting [${start},${stop}] vertices`)
+  if (stop > currentVerticesMax) {
+    currentVerticesMax = stop
+    instancedVertex.dispose()
+    group.remove(instancedVertex)
+    initVertex()
+    start = 0
+  }
+  instancedVertex.count = stop
+  for (let i = start; i < stop; i++) {
     const { vertex, color } = R.vertices[i]
     dummy.matrix.identity()
     dummy.matrixWorld.identity()
@@ -169,56 +209,23 @@ const plotVertices = stop => {
     instancedVertex.setMatrixAt(i, dummy.matrix)
     instancedVertex.setColorAt(i, _color.set(color))
   }
-  // instancedVertex.instanceMatrix.setUsage(StreamDrawUsage)
-  // instancedVertex.instanceColor.setUsage(StreamDrawUsage)
-  group.add(instancedVertex)
+  instancedVertex.instanceMatrix.needsUpdate = true
+  instancedVertex.instanceColor.needsUpdate = true
 }
 
-const plotEdges = stop => {
-  R.allEdges = R.edges.slice(0, stop)
-  if (C.segments > 1) {
-    const segmentedEdges = []
-    for (let i = 0; i < stop; i++) {
-      const edge = R.edges[i]
-      const segmented = xlerp(edge.vertex1, edge.vertex2, 1 / C.segments)
-      for (let j = 0; j < segmented.length - 1; j++) {
-        segmentedEdges.push({
-          vertex1: segmented[j],
-          vertex2: segmented[j + 1],
-          color: edge.color,
-        })
-      }
-    }
-    R.allEdges = segmentedEdges
+const plotEdges = ([start, stop]) => {
+  console.info(`Plotting [${start},${stop}] edges`)
+
+  if (stop > currentEdgesMax) {
+    currentEdgesMax = stop
+    instancedEdge.dispose()
+    group.remove(instancedEdge)
+    initEdge()
+    start = 0
   }
-  console.info(
-    'Plotting',
-    stop,
-    'edges, segmented in',
-    R.allEdges.length,
-    'segments'
-  )
-
-  const edgeGeometry = new CylinderGeometry(
-    edgeRadius,
-    edgeRadius,
-    1,
-    8,
-    1,
-    false
-  )
-  edgeGeometry.translate(0, 0.5, 0)
-  edgeGeometry.rotateX(Math.PI / 2)
-  const instancedEdge = new InstancedMesh(
-    edgeGeometry,
-    new MeshBasicMaterial({
-      // ...materialProps,
-    }),
-    R.allEdges.length
-  )
-
-  for (let i = 0; i < R.allEdges.length; i++) {
-    const edge = R.allEdges[i]
+  instancedEdge.count = stop
+  for (let i = start; i < stop; i++) {
+    const edge = R.edges[i]
     const vertex3d1 = C.dimensions === 4 ? poincare(edge.vertex1) : edge.vertex1
     const vertex3d2 = C.dimensions === 4 ? poincare(edge.vertex2) : edge.vertex2
     const dx = vertex3d2[0] - vertex3d1[0]
@@ -240,15 +247,18 @@ const plotEdges = stop => {
     instancedEdge.setMatrixAt(i, dummy.matrix)
     instancedEdge.setColorAt(i, _color.set(edge.color))
   }
-  group.add(instancedEdge)
+  instancedEdge.instanceMatrix.needsUpdate = true
+  instancedEdge.instanceColor.needsUpdate = true
 }
 
-export const plot = ({ verticesIndex, edgesIndex }) => {
+export const plot = ({ vertices, edges }) => {
+  instancedVertex.visible = C.vertices
   if (C.vertices) {
-    plotVertices(verticesIndex)
+    plotVertices(vertices)
   }
+  instancedEdge.visible = C.edges
   if (C.edges) {
-    plotEdges(edgesIndex)
+    plotEdges(edges)
   }
 }
 

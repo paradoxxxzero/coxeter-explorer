@@ -6,6 +6,7 @@ import {
   getFundamentalVertex,
   reflect,
   getCurvature,
+  xlerp,
 } from './math/hypermath'
 import { C, setC } from './C'
 import { R, setR } from './R'
@@ -121,6 +122,7 @@ const flip = (word, k, v) => {
 const tileFundamentalChamber = () => {
   let fundamentalChamberWords = ['']
   let futurewordsToConsider
+  let max = 100
   // Start by filing the fundamental chamber to equilibrate the tiling
   do {
     futurewordsToConsider = []
@@ -135,11 +137,12 @@ const tileFundamentalChamber = () => {
     }
     fundamentalChamberWords.push(...futurewordsToConsider)
     W.wordsToConsider = futurewordsToConsider
-  } while (futurewordsToConsider.length)
+  } while (futurewordsToConsider.length && max--)
+  console.log(max)
   W.wordsToConsider = fundamentalChamberWords
 }
 
-export const tile = order => {
+export const tile = () => {
   let futurewordsToConsider
   // Start by filing the fundamental chamber to equilibrate the tiling
   futurewordsToConsider = []
@@ -177,11 +180,22 @@ function link(word, newWord, v, rv, color) {
   if (!W.edgeHashes.has(edgeHash)) {
     W.edgeHashes.add(edgeHash)
     if (!same(v, rv)) {
-      W.edges.push({
-        vertex1: v,
-        vertex2: rv,
-        color: color,
-      })
+      if (C.segments > 1) {
+        const segmented = xlerp(v, rv, 1 / C.segments)
+        for (let j = 0; j < segmented.length - 1; j++) {
+          W.edges.push({
+            vertex1: segmented[j],
+            vertex2: segmented[j + 1],
+            color: color,
+          })
+        }
+      } else {
+        W.edges.push({
+          vertex1: v,
+          vertex2: rv,
+          color: color,
+        })
+      }
       return true
     }
   }
@@ -197,7 +211,7 @@ onmessage = ({ data: { C, order, uuid } }) => {
     } else {
       W.vertices = []
       W.edges = []
-      tile(order)
+      tile()
     }
     postMessage(
       {

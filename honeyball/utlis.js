@@ -1,3 +1,5 @@
+import { max } from './math'
+
 let processing = 0
 let process = () => {}
 
@@ -13,6 +15,12 @@ export const setProcess = f => {
   process = f
 }
 
+export const kill = w => {
+  w.terminate()
+  processing = 0
+  process(processing)
+}
+
 export const worker = async (w, data) => {
   data.uuid = uuid4()
   processing++
@@ -24,24 +32,29 @@ export const worker = async (w, data) => {
       if (e.data.uuid !== data.uuid) {
         return
       }
+      w.removeEventListener('message', receive)
       processing--
       process(processing)
 
       resolve(e.data)
-      w.removeEventListener('message', receive)
     }
     const error = e => {
       if (!e.uuid) {
+        w.removeEventListener('error', error)
+        processing--
+        processing = max(0, processing) // FIXME
+        process(processing, true)
         console.error("Can't call web worker", e)
+        return
       }
       if (e.uuid !== data.uuid) {
         return
       }
+      w.removeEventListener('error', error)
       processing--
-      process(processing)
+      process(processing, true)
 
       reject(e)
-      w.removeEventListener('error', error)
     }
     w.addEventListener('message', receive)
     w.addEventListener('error', error)

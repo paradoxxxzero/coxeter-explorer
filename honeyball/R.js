@@ -2,7 +2,7 @@ export const R = {
   curvature: 0,
   edges: [],
   vertices: [],
-  orders: [],
+  ranges: [],
 }
 
 export const setR = newR => {

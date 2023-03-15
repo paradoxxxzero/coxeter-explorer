@@ -2,9 +2,9 @@ import { Vector2 } from 'three'
 import { C, getC, setC } from './honeyball/C'
 import { interactions } from './honeyball/interact'
 import { max } from './honeyball/math'
+import { R, setR } from './honeyball/R'
 import {
   camera,
-  clear,
   composer,
   initialize3d,
   plot,
@@ -12,10 +12,9 @@ import {
   renderer,
 } from './honeyball/render'
 import Tiling from './honeyball/tiling.worker?worker'
-import { setProcess, worker } from './honeyball/utlis'
-import { setR, R } from './honeyball/R'
+import { setProcess, worker, kill } from './honeyball/utlis'
 
-const tiling = new Tiling()
+let tiling = new Tiling()
 window.C = C
 Object.assign(window, initialize3d())
 
@@ -71,11 +70,20 @@ window.ondeviceorientation = window.onresize = size
 // PQR 3 3 7
 // PQR 5 5 5
 
-setProcess(level => {
+setProcess((level, error) => {
   if (level) {
-    document.getElementById('space').classList.add('processing')
+    document.body.classList.add('processing')
+    document.querySelectorAll('input').forEach(input => (input.disabled = true))
   } else {
-    document.getElementById('space').classList.remove('processing')
+    document.body.classList.remove('processing')
+    document
+      .querySelectorAll('input')
+      .forEach(input => (input.disabled = false))
+  }
+  if (error) {
+    document.body.classList.add('error')
+  } else {
+    document.body.classList.remove('error')
   }
 })
 
@@ -97,10 +105,6 @@ const restore = () => {
 }
 
 const update = async event => {
-  if (document.getElementById('space').classList.contains('processing')) {
-    restore()
-    return
-  }
   const target = event?.target.id
   const newC = {}
   newC.dimensions = document.querySelector('#d4').checked ? 4 : 3
@@ -169,11 +173,10 @@ const update = async event => {
 
   if (
     mustRedraw ||
-    ['x', 'y', 'z', 'w', 'order'].some(key => changed.includes(key))
+    ['x', 'y', 'z', 'w', 'order', 'segments'].some(key => changed.includes(key))
   ) {
-    if (target === 'order' && R.orders[C.order - 1]) {
-      clear()
-      plot(R.orders[C.order - 1])
+    if (target === 'order' && R.ranges[C.order - 1]) {
+      plot(R.ranges[C.order - 1])
       render()
     } else {
       const startOrder = target === 'order' ? lastOrder : 0
@@ -189,7 +192,7 @@ const update = async event => {
         })
 
         if (i === 0) {
-          setR({ ...newR, orders: {} })
+          setR({ ...newR, ranges: {} })
           document.querySelector('#space').innerHTML = `${
             R.curvature === 0
               ? '&#x1D53C'
@@ -200,31 +203,32 @@ const update = async event => {
         }
 
         if (vertices.length || edges.length) {
-          // TODO: Do no reconstruct
-          clear()
-
+          const fromVertices = R.vertices.length
           R.vertices = R.vertices.concat(vertices)
+          const toVertices = R.vertices.length
+          const fromEdges = R.edges.length
           R.edges = R.edges.concat(edges)
-          R.orders[i] = {
-            verticesIndex: R.vertices.length,
-            edgesIndex: R.edges.length,
+          const toEdges = R.edges.length
+
+          R.ranges[i] = {
+            vertices: [fromVertices, toVertices],
+            edges: [fromEdges, toEdges],
           }
-          const t = performance.now()
-          plot(R.orders[i])
+          plot(R.ranges[i])
           render()
         } else {
-          R.orders[i] = {
-            verticesIndex: R.vertices.length,
-            edgesIndex: R.edges.length,
+          R.ranges[i] = {
+            vertices: [R.vertices.length, R.vertices.length],
+            edges: [R.edges.length, R.edges.length],
           }
         }
       }
     }
-  } else {
-    if (['edges', 'vertices', 'segments'].some(key => changed.includes(key))) {
-      clear()
-      plot(R.orders[C.order - 1])
-    }
+  } else if (['edges', 'vertices'].some(key => changed.includes(key))) {
+    plot({
+      vertices: [0, R.vertices.length],
+      edges: [0, R.edges.length],
+    })
     render()
   }
 }
@@ -234,7 +238,35 @@ document.querySelectorAll('input').forEach(input => {
 })
 
 document.getElementById('space').addEventListener('click', () => {
-  document.body.classList.toggle('real-estate')
+  if (document.body.classList.contains('processing')) {
+    kill(tiling)
+    document.body.classList.remove('processing')
+    tiling = new Tiling()
+    setC({
+      p: 5,
+      q: 2,
+      r: 2,
+      s: 3,
+      t: 2,
+      u: 4,
+
+      // v:
+      x: 1,
+      y: 0,
+      z: 0,
+      w: 0,
+
+      dimensions: 4,
+      order: 10,
+      segments: 16,
+      vertices: false,
+      edges: true,
+    })
+    restore()
+    update()
+  } else {
+    document.body.classList.toggle('real-estate')
+  }
 })
 
 getC()
