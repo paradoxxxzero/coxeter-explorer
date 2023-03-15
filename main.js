@@ -12,8 +12,10 @@ import {
 import { getCurvature } from './honeyball/math/hypermath'
 import { cos, max, PI } from './honeyball/math'
 import { Vector2 } from 'three'
-import { tile, initTiling } from './honeyball/tiling'
+import { worker, setProcess } from './honeyball/utlis'
+import Tiling from './honeyball/tiling.worker?worker'
 
+const tiling = new Tiling()
 window.C = C
 Object.assign(window, initialize3d())
 
@@ -69,6 +71,14 @@ window.ondeviceorientation = window.onresize = size
 // PQR 3 3 7
 // PQR 5 5 5
 
+setProcess(level => {
+  if (level) {
+    document.getElementById('space').classList.add('processing')
+  } else {
+    document.getElementById('space').classList.remove('processing')
+  }
+})
+
 const restore = () => {
   document.querySelector('#d4').checked = C.dimensions === 4
   document.querySelectorAll('.d4').forEach(el => {
@@ -87,7 +97,7 @@ const restore = () => {
   document.querySelector('#edges').checked = C.edges
 }
 
-const update = event => {
+const update = async event => {
   const target = event?.target.id
   const newC = {}
   newC.dimensions = document.querySelector('#d4').checked ? 4 : 3
@@ -170,16 +180,18 @@ const update = event => {
     }<sup>${newC.dimensions - 1}</sup>`
     mustRedraw = true
   }
-  setC(newC)
+  setC(newC, true)
   if (
     mustRedraw ||
     ['x', 'y', 'z', 'w', 'order'].some(key => changed.includes(key))
   ) {
-    if (!isOnlyOrderChanged) {
-      initTiling()
-    }
     const t = performance.now()
-    tile()
+    const { C: workerC } = await worker(tiling, {
+      C,
+      init: !isOnlyOrderChanged,
+    })
+
+    C.runtime = workerC.runtime
     console.log('tile', performance.now() - t, 'ms')
     mustRedraw = true
   }

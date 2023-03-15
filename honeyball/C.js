@@ -50,12 +50,13 @@ export const getC = () => {
   }
 }
 
-export const setC = newC => {
+export const setC = (newC, sync = false) => {
   Object.assign(C, newC)
-
-  location.hash = btoa(
-    JSON.stringify(
-      Object.fromEntries(Object.entries(C).filter(([k]) => SAVED.includes(k)))
+  if (sync) {
+    location.hash = btoa(
+      JSON.stringify(
+        Object.fromEntries(Object.entries(C).filter(([k]) => SAVED.includes(k)))
+      )
     )
-  )
+  }
 }

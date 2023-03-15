@@ -25,6 +25,21 @@
         color: rgba(255, 255, 255);
         mix-blend-mode: difference;
       }
+      #space.processing {
+        animation: processing 1s infinite;
+      }
+      @keyframes processing {
+        0% {
+          opacity: 0;
+        }
+        50% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
+
       label {
         white-space: nowrap;
         font-family: 'Fira Code', monospace;

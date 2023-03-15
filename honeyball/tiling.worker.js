@@ -1,5 +1,4 @@
 import { Color } from 'three'
-import { C } from './C'
 import { abs } from './math'
 import { getRules, shorten } from './math/group'
 import {
@@ -7,6 +6,9 @@ import {
   getFundamentalVertex,
   reflect,
 } from './math/hypermath'
+import { C, setC } from './C'
+
+const _color = new Color()
 
 const same = (v1, v2) => {
   for (let i = 0; i < v1.length; i++) {
@@ -20,17 +22,20 @@ const same = (v1, v2) => {
 const debug = () => {
   const R = C.runtime
 
-  R.vertices.push({ vertex: R.rootVertex, color: new Color(0x0000ff) })
+  R.vertices.push({
+    vertex: R.rootVertex,
+    color: _color.set(0x0000ff).getHex(),
+  })
   for (let i = 0; i < R.rootVertices.length; i++) {
     R.vertices.push({
       vertex: R.rootVertices[i],
-      color: new Color(0x00ff00),
+      color: _color.set(0x00ff00).getHex(),
     })
     for (let j = 0; j < i; j++) {
       R.edges.push({
         vertex1: R.rootVertices[i],
         vertex2: R.rootVertices[j],
-        color: new Color(0x00ff00),
+        color: _color.set(0x00ff00).getHex(),
       })
     }
   }
@@ -101,13 +106,6 @@ export const initTiling = () => {
 
   R.words.set('', R.rootVertex)
 
-  // const shift = [1.0, 1]
-  // translateVertex(vertex, shift)
-  // R.mirrors.forEach(mirror => translateVertex(mirror, shift))
-  // rootVertices.forEach(vertex =>
-  //   vertices.push({ vertex, color: new Color(0x00ff00) })
-  // )
-
   if (C.DEBUG) {
     debug()
   }
@@ -137,11 +135,9 @@ export const tile = () => {
             continue
           }
           const newWord = shorten(word + String.fromCharCode(97 + k))
-          const color = new Color().setHSL(
-            (newWord.length * 0.17) % 1,
-            0.5,
-            0.5
-          )
+          const color = _color
+            .setHSL((newWord.length * 0.17) % 1, 0.5, 0.5)
+            .getHex()
           if (R.words.has(newWord)) {
             const rv = R.words.get(newWord)
             link(word, newWord, v, rv, color)
@@ -205,5 +201,21 @@ function link(word, newWord, v, rv, color) {
       })
       return true
     }
+  }
+}
+
+onmessage = ({ data }) => {
+  console.log('worker received', data.C.order)
+  try {
+    setC(data.C)
+    if (data.init) {
+      initTiling()
+    }
+    tile()
+    console.log('worker posting', data.C.order)
+    postMessage({ C, uuid: data.uuid })
+  } catch (e) {
+    e.uuid = data.uuid
+    throw e
   }
 }

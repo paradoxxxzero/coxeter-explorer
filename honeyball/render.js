@@ -11,7 +11,7 @@ import {
   Scene,
   SphereGeometry,
   Vector2,
-  WebGLRenderer
+  WebGLRenderer,
 } from 'three'
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
@@ -31,6 +31,7 @@ const colors = {
   edges: 0x3949ab,
   vertices: 0x03a9f4,
 }
+const _color = new Color()
 
 export const initialize3d = () => {
   clock = new Clock()
@@ -166,7 +167,7 @@ const plotVertices = () => {
     }
     dummy.updateMatrix()
     instancedVertex.setMatrixAt(i, dummy.matrix)
-    instancedVertex.setColorAt(i, color)
+    instancedVertex.setColorAt(i, _color.set(color))
   }
   // instancedVertex.instanceMatrix.setUsage(StreamDrawUsage)
   // instancedVertex.instanceColor.setUsage(StreamDrawUsage)
@@ -239,7 +240,7 @@ const plotEdges = () => {
     dummy.lookAt(...vertex3d2)
     dummy.updateMatrix()
     instancedEdge.setMatrixAt(i, dummy.matrix)
-    instancedEdge.setColorAt(i, edge.color)
+    instancedEdge.setColorAt(i, _color.set(edge.color))
   }
   group.add(instancedEdge)
 }
