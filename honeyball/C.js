@@ -1,4 +1,4 @@
-export const C = {
+export const defaultC = {
   p: 5,
   q: 2,
   r: 2,
@@ -15,9 +15,12 @@ export const C = {
   dimensions: 4,
   order: 10,
   segments: 16,
+  curve: true,
   vertices: false,
   edges: true,
 }
+
+export const C = { ...defaultC }
 
 export const getC = () => {
   if (location.hash) {

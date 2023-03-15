@@ -1,5 +1,5 @@
 import { Vector2 } from 'three'
-import { C, getC, setC } from './honeyball/C'
+import { C, getC, setC, defaultC } from './honeyball/C'
 import { interactions } from './honeyball/interact'
 import { max } from './honeyball/math'
 import { R, setR } from './honeyball/R'
@@ -100,6 +100,7 @@ const restore = () => {
   })
   document.querySelector('#order').value = C.order
   document.querySelector('#segments').value = C.segments
+  document.querySelector('#curve').checked = C.curve
   document.querySelector('#vertices').checked = C.vertices
   document.querySelector('#edges').checked = C.edges
 }
@@ -109,6 +110,13 @@ const update = async event => {
   const newC = {}
   newC.dimensions = document.querySelector('#d4').checked ? 4 : 3
 
+  if (target === 'curve') {
+    document.querySelector('#segments').style.display = document.querySelector(
+      '#curve'
+    ).checked
+      ? 'inline'
+      : 'none'
+  }
   if (target === 'd4') {
     const setK = (d, v) => {
       document.querySelector(`#${d}`).value = v
@@ -151,6 +159,7 @@ const update = async event => {
   })
 
   newC.order = +document.querySelector('#order').value
+  newC.curve = document.querySelector('#curve').checked
   newC.segments = +document.querySelector('#segments').value
   newC.vertices = document.querySelector('#vertices').checked
   newC.edges = document.querySelector('#edges').checked
@@ -173,7 +182,9 @@ const update = async event => {
 
   if (
     mustRedraw ||
-    ['x', 'y', 'z', 'w', 'order', 'segments'].some(key => changed.includes(key))
+    ['x', 'y', 'z', 'w', 'order', 'segments', 'curve'].some(key =>
+      changed.includes(key)
+    )
   ) {
     if (target === 'order' && R.ranges[C.order - 1]) {
       plot(R.ranges[C.order - 1])
@@ -242,26 +253,7 @@ document.getElementById('space').addEventListener('click', () => {
     kill(tiling)
     document.body.classList.remove('processing')
     tiling = new Tiling()
-    setC({
-      p: 5,
-      q: 2,
-      r: 2,
-      s: 3,
-      t: 2,
-      u: 4,
-
-      // v:
-      x: 1,
-      y: 0,
-      z: 0,
-      w: 0,
-
-      dimensions: 4,
-      order: 10,
-      segments: 16,
-      vertices: false,
-      edges: true,
-    })
+    setC(defaultC, true)
     restore()
     update()
   } else {

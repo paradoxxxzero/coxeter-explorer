@@ -180,7 +180,7 @@ function link(word, newWord, v, rv, color) {
   if (!W.edgeHashes.has(edgeHash)) {
     W.edgeHashes.add(edgeHash)
     if (!same(v, rv)) {
-      if (C.segments > 1) {
+      if (C.segments > 1 && C.curve) {
         const segmented = xlerp(v, rv, 1 / C.segments)
         for (let j = 0; j < segmented.length - 1; j++) {
           W.edges.push({
