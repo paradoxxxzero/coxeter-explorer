@@ -1,4 +1,4 @@
-import { C } from '../C.js'
+import { W } from '../W'
 
 const MAX_ITERATIONS = 100
 let t
@@ -167,7 +167,6 @@ export const knuthBendix = rules => {
   rules = normalize(rules)
   for (let i = 0; i < MAX_ITERATIONS; i++) {
     const newRules = reduce(rules)
-    // console.log('iteration', i, Object.entries(newRules).sort())
     if (equals(newRules, rules)) {
       newRules._re_cache = new RegExp([...newRules.keys()].join('|'), 'g')
       return newRules
@@ -180,29 +179,29 @@ export const knuthBendix = rules => {
   throw new Error('Max iterations reached')
 }
 
-export const getRules = () =>
+export const getRules = (dimensions, p, q, r, s, t, u) =>
   knuthBendix(
-    C.dimensions === 3
+    dimensions === 3
       ? {
           aa: '',
           bb: '',
           cc: '',
-          ['ab'.repeat(C.p)]: '',
-          ['ac'.repeat(C.q)]: '',
-          ['bc'.repeat(C.r)]: '',
+          ['ab'.repeat(p)]: '',
+          ['ac'.repeat(q)]: '',
+          ['bc'.repeat(r)]: '',
         }
       : {
           aa: '',
           bb: '',
           cc: '',
           dd: '',
-          ['ab'.repeat(C.p)]: '',
-          ['ac'.repeat(C.q)]: '',
-          ['ad'.repeat(C.r)]: '',
-          ['bc'.repeat(C.s)]: '',
-          ['bd'.repeat(C.t)]: '',
-          ['cd'.repeat(C.u)]: '',
+          ['ab'.repeat(p)]: '',
+          ['ac'.repeat(q)]: '',
+          ['ad'.repeat(r)]: '',
+          ['bc'.repeat(s)]: '',
+          ['bd'.repeat(t)]: '',
+          ['cd'.repeat(u)]: '',
         }
   )
 
-export const shorten = word => rewrite(C.runtime.rules, word)
+export const shorten = word => rewrite(W.rules, word)

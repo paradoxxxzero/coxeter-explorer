@@ -1,12 +1,15 @@
 import { Color } from 'three'
-import { abs } from './math'
+import { abs, cos, PI } from './math'
 import { getRules, shorten } from './math/group'
 import {
   getFundamentalSimplexMirrors,
   getFundamentalVertex,
   reflect,
+  getCurvature,
 } from './math/hypermath'
 import { C, setC } from './C'
+import { R, setR } from './R'
+import { W, setW } from './W'
 
 const _color = new Color()
 
@@ -19,46 +22,11 @@ const same = (v1, v2) => {
   return true
 }
 
-const debug = () => {
-  const R = C.runtime
-
-  R.vertices.push({
-    vertex: R.rootVertex,
-    color: _color.set(0x0000ff).getHex(),
-  })
-  for (let i = 0; i < R.rootVertices.length; i++) {
-    R.vertices.push({
-      vertex: R.rootVertices[i],
-      color: _color.set(0x00ff00).getHex(),
-    })
-    for (let j = 0; j < i; j++) {
-      R.edges.push({
-        vertex1: R.rootVertices[i],
-        vertex2: R.rootVertices[j],
-        color: _color.set(0x00ff00).getHex(),
-      })
-    }
-  }
-}
-
 const reflectWord = word => {
-  const R = C.runtime
-  let v = R.rootVertex
-  const reflections = word.split('').reverse().join('')
-  // let reflection = ''
-  let remaining = reflections
-  // for (let i = reflections.length; i > 0; i--) {
-  //   reflection = reflections.slice(0, i)
-  //   if (R.reflections.has(reflection)) {
-  //     v = R.reflections.get(reflection)
-  //     remaining = reflections.slice(i)
-  //     break
-  //   }
-  // }
+  let v = W.rootVertex
 
-  for (let i = 0; i < remaining.length; i++) {
-    v = reflect(v, R.mirrors[remaining[i].charCodeAt(0) - 97])
-    // R.reflections.set(reflection + remaining.slice(0, i + 1), v)
+  for (let i = word.length - 1; i >= 0; i--) {
+    v = reflect(v, W.mirrors[word.charCodeAt(i) - 97])
   }
   return v
 }
@@ -74,109 +42,125 @@ const hash = v => {
   return s
 }
 
-export const initTiling = () => {
-  const R = (C.runtime = {
+export const initTiling = ({ dimensions, p, q, r, s, t, u, x, y, z, w }) => {
+  const newW = {
+    coxeter:
+      dimensions === 3
+        ? [
+            [-1, p, q],
+            [p, -1, r],
+            [q, r, -1],
+          ]
+        : dimensions === 4
+        ? [
+            [-1, p, q, r],
+            [p, -1, s, t],
+            [q, s, -1, u],
+            [r, t, u, -1],
+          ]
+        : null,
+
     vertices: [],
     edges: [],
-    reflections: new Map(),
     words: new Map(),
     edgeHashes: new Set(),
     vertexHashes: new Set(),
-    lastOrder: 0,
     wordsToConsider: [''],
-    mirrors: getFundamentalSimplexMirrors(),
     rootVertices: null,
     rootVertex: null,
+  }
+  newW.gram = newW.coxeter.map(row => row.map(column => -cos(PI / column)))
+  // We need curvature before doing computations
+  setR({
+    curvature: getCurvature(newW.gram),
   })
-  R.rootVertices = R.mirrors.map((_, i) =>
+
+  newW.mirrors = getFundamentalSimplexMirrors(newW.gram)
+
+  newW.rootVertices = newW.mirrors.map((_, i) =>
     getFundamentalVertex(
-      R.mirrors,
-      new Array(C.dimensions)
+      newW.mirrors,
+      new Array(dimensions)
         .fill(0)
-        .map((_, j) => (i === j ? C.curvature || 1 : 0))
+        .map((_, j) => (i === j ? newW.curvature || 1 : 0))
     )
   )
 
-  R.rootVertex = getFundamentalVertex(R.mirrors, [
-    C.x ? 1 : 0,
-    C.y ? 1 : 0,
-    C.z ? 1 : 0,
-    C.w ? 1 : 0,
+  newW.rootVertex = getFundamentalVertex(newW.mirrors, [
+    x ? 1 : 0,
+    y ? 1 : 0,
+    z ? 1 : 0,
+    w ? 1 : 0,
   ])
 
-  R.words.set('', R.rootVertex)
+  newW.words.set('', newW.rootVertex)
 
-  if (C.DEBUG) {
-    debug()
-  }
-
-  try {
-    R.rules = getRules()
-  } catch (e) {
-    console.log(e)
+  newW.rules = getRules(dimensions, p, q, r, s, t, u)
+  setW(newW)
+}
+const flip = (word, k, v) => {
+  const m = String.fromCharCode(97 + k)
+  if (word.slice(-1) === m) {
     return
   }
+  const newWord = shorten(word + m)
+  const color = _color.setHSL((newWord.length * 0.17) % 1, 0.5, 0.5).getHex()
+  if (W.words.has(newWord)) {
+    const rv = W.words.get(newWord)
+    link(word, newWord, v, rv, color)
+    return
+  }
+  const rv = reflectWord(newWord)
+  W.words.set(newWord, rv)
+
+  plot(rv, color)
+  link(word, newWord, v, rv, color)
+  return newWord
 }
 
-export const tile = () => {
-  const R = C.runtime
+const tileFundamentalChamber = () => {
   let fundamentalChamberWords = ['']
-  for (let i = R.lastOrder; i < C.order; i++) {
-    let futurewordsToConsider
-    // Start by filing the fundamental chamber to equilibrate the tiling
-    do {
-      futurewordsToConsider = []
-      for (let j = 0; j < R.wordsToConsider.length; j++) {
-        const word = R.wordsToConsider[j]
-        const v = R.words.get(word)
+  let futurewordsToConsider
+  // Start by filing the fundamental chamber to equilibrate the tiling
+  do {
+    futurewordsToConsider = []
+    for (let j = 0; j < W.wordsToConsider.length; j++) {
+      const word = W.wordsToConsider[j]
+      const v = W.words.get(word)
 
-        for (let k = 0; k < C.dimensions - (i === 0 ? 1 : 0); k++) {
-          if (word.slice(-1) === String.fromCharCode(97 + k)) {
-            continue
-          }
-          const newWord = shorten(word + String.fromCharCode(97 + k))
-          const color = _color
-            .setHSL((newWord.length * 0.17) % 1, 0.5, 0.5)
-            .getHex()
-          if (R.words.has(newWord)) {
-            const rv = R.words.get(newWord)
-            link(word, newWord, v, rv, color)
-          } else {
-            const rv = reflectWord(newWord)
-            R.words.set(newWord, rv)
-
-            plot(rv, color)
-            link(word, newWord, v, rv, color)
-            futurewordsToConsider.push(newWord)
-          }
-        }
+      for (let k = 0; k < C.dimensions - 1; k++) {
+        const rv = flip(word, k, v)
+        rv && futurewordsToConsider.push(rv)
       }
-      if (i === 0) {
-        fundamentalChamberWords.push(...futurewordsToConsider)
-        R.wordsToConsider = futurewordsToConsider
-      }
-    } while (i === 0 && futurewordsToConsider.length)
-    if (i === 0) {
-      R.wordsToConsider = fundamentalChamberWords
-    } else {
-      R.wordsToConsider = futurewordsToConsider
     }
+    fundamentalChamberWords.push(...futurewordsToConsider)
+    W.wordsToConsider = futurewordsToConsider
+  } while (futurewordsToConsider.length)
+  W.wordsToConsider = fundamentalChamberWords
+}
 
-    if (!R.wordsToConsider.length) {
-      R.lastOrder = Infinity
-      return
+export const tile = order => {
+  let futurewordsToConsider
+  // Start by filing the fundamental chamber to equilibrate the tiling
+  futurewordsToConsider = []
+  for (let j = 0; j < W.wordsToConsider.length; j++) {
+    const word = W.wordsToConsider[j]
+    const v = W.words.get(word)
+
+    for (let k = 0; k < C.dimensions; k++) {
+      const rv = flip(word, k, v)
+      rv && futurewordsToConsider.push(rv)
     }
-    R.lastOrder = i + 1
   }
+  W.wordsToConsider = futurewordsToConsider
 }
 
 function plot(rv, color) {
-  const R = C.runtime
   const vertexHash = hash(rv)
-  if (!R.vertexHashes.has(vertexHash)) {
-    R.vertexHashes.add(vertexHash)
+  if (!W.vertexHashes.has(vertexHash)) {
+    W.vertexHashes.add(vertexHash)
 
-    R.vertices.push({
+    W.vertices.push({
       vertex: rv,
       color,
     })
@@ -184,17 +168,16 @@ function plot(rv, color) {
 }
 
 function link(word, newWord, v, rv, color) {
-  const R = C.runtime
   const edgeHash =
     word.length < newWord.length ||
     (word.length === newWord.length && word < newWord)
       ? hash(v) + '/' + hash(rv)
       : hash(rv) + '/' + hash(v)
 
-  if (!R.edgeHashes.has(edgeHash)) {
-    R.edgeHashes.add(edgeHash)
+  if (!W.edgeHashes.has(edgeHash)) {
+    W.edgeHashes.add(edgeHash)
     if (!same(v, rv)) {
-      R.edges.push({
+      W.edges.push({
         vertex1: v,
         vertex2: rv,
         color: color,
@@ -204,18 +187,29 @@ function link(word, newWord, v, rv, color) {
   }
 }
 
-onmessage = ({ data }) => {
-  console.log('worker received', data.C.order)
+onmessage = ({ data: { C, order, uuid } }) => {
   try {
-    setC(data.C)
-    if (data.init) {
-      initTiling()
+    setC(C)
+
+    if (order === 0) {
+      initTiling(C)
+      tileFundamentalChamber()
+    } else {
+      W.vertices = []
+      W.edges = []
+      tile(order)
     }
-    tile()
-    console.log('worker posting', data.C.order)
-    postMessage({ C, uuid: data.uuid })
+    postMessage(
+      {
+        R,
+        vertices: W.vertices,
+        edges: W.edges,
+        uuid: uuid,
+      }
+      // [W.vertices, W.edges]
+    )
   } catch (e) {
-    e.uuid = data.uuid
+    e.uuid = uuid
     throw e
   }
 }

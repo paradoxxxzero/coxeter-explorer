@@ -21,9 +21,10 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
 import { C } from './C'
 import { poincare, xlerp } from './math/hypermath'
-import { abs, max, sqrt } from './math/index'
+import { abs, max, min, sqrt } from './math/index'
 
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
+import { R } from './R'
 export let stats, renderer, camera, scene, controls, clock, composer
 
 const colors = {
@@ -145,16 +146,15 @@ export const clear = () => {
   scene.add(group)
 }
 
-const plotVertices = () => {
-  const R = C.runtime
+const plotVertices = stop => {
   const vertexGeometry = new SphereGeometry(vertexRadius, 16, 16)
   const instancedVertex = new InstancedMesh(
     vertexGeometry,
     new MeshBasicMaterial({}),
-    R.vertices.length
+    stop
   )
-  console.info('Plotting', R.vertices.length, 'vertices')
-  for (let i = 0; i < R.vertices.length; i++) {
+  console.info('Plotting', stop, 'vertices')
+  for (let i = 0; i < stop; i++) {
     const { vertex, color } = R.vertices[i]
     dummy.matrix.identity()
     dummy.matrixWorld.identity()
@@ -174,12 +174,11 @@ const plotVertices = () => {
   group.add(instancedVertex)
 }
 
-const plotEdges = () => {
-  const R = C.runtime
-  R.allEdges = R.edges
+const plotEdges = stop => {
+  R.allEdges = R.edges.slice(0, stop)
   if (C.segments > 1) {
     const segmentedEdges = []
-    for (let i = 0; i < R.edges.length; i++) {
+    for (let i = 0; i < stop; i++) {
       const edge = R.edges[i]
       const segmented = xlerp(edge.vertex1, edge.vertex2, 1 / C.segments)
       for (let j = 0; j < segmented.length - 1; j++) {
@@ -194,7 +193,7 @@ const plotEdges = () => {
   }
   console.info(
     'Plotting',
-    R.edges.length,
+    stop,
     'edges, segmented in',
     R.allEdges.length,
     'segments'
@@ -231,7 +230,7 @@ const plotEdges = () => {
     dummy.position.set(...vertex3d1)
     let sx, sy
     if (C.dimensions === 4) {
-      sx = sy = 1 / max(1, abs(edge.vertex1[3]), abs(edge.vertex2[3]))
+      sx = sy = 1 / min(10, max(1, abs(edge.vertex1[3]), abs(edge.vertex2[3])))
     } else {
       sx = sy = 1
     }
@@ -244,12 +243,12 @@ const plotEdges = () => {
   group.add(instancedEdge)
 }
 
-export const plot = () => {
+export const plot = ({ verticesIndex, edgesIndex }) => {
   if (C.vertices) {
-    plotVertices()
+    plotVertices(verticesIndex)
   }
   if (C.edges) {
-    plotEdges()
+    plotEdges(edgesIndex)
   }
 }
 

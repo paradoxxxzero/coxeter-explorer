@@ -1,19 +1,19 @@
+import { Vector2 } from 'three'
 import { C, getC, setC } from './honeyball/C'
 import { interactions } from './honeyball/interact'
+import { max } from './honeyball/math'
 import {
   camera,
   clear,
   composer,
   initialize3d,
+  plot,
   render,
   renderer,
-  plot,
 } from './honeyball/render'
-import { getCurvature } from './honeyball/math/hypermath'
-import { cos, max, PI } from './honeyball/math'
-import { Vector2 } from 'three'
-import { worker, setProcess } from './honeyball/utlis'
 import Tiling from './honeyball/tiling.worker?worker'
+import { setProcess, worker } from './honeyball/utlis'
+import { setR, R } from './honeyball/R'
 
 const tiling = new Tiling()
 window.C = C
@@ -92,12 +92,15 @@ const restore = () => {
   })
   document.querySelector('#order').value = C.order
   document.querySelector('#segments').value = C.segments
-  document.querySelector('#debug').checked = C.DEBUG
   document.querySelector('#vertices').checked = C.vertices
   document.querySelector('#edges').checked = C.edges
 }
 
 const update = async event => {
+  if (document.getElementById('space').classList.contains('processing')) {
+    restore()
+    return
+  }
   const target = event?.target.id
   const newC = {}
   newC.dimensions = document.querySelector('#d4').checked ? 4 : 3
@@ -126,7 +129,7 @@ const update = async event => {
       document.querySelector('#mirror-w').checked = false
     }
   }
-  if (target.startsWith('mirror-')) {
+  if (target?.startsWith('mirror-')) {
     if (
       'xyzw'
         .split('')
@@ -145,78 +148,85 @@ const update = async event => {
 
   newC.order = +document.querySelector('#order').value
   newC.segments = +document.querySelector('#segments').value
-  newC.DEBUG = document.querySelector('#debug').checked
   newC.vertices = document.querySelector('#vertices').checked
   newC.edges = document.querySelector('#edges').checked
 
   const changed = Object.keys(newC).filter(key => newC[key] !== C[key])
-  const lastOrder = C.order
-  const isOnlyOrderChanged =
-    changed.length === 1 && changed[0] === 'order' && lastOrder < C.order
 
-  let mustRedraw = !C.runtime
+  const lastOrder = C.order
+
+  let mustRedraw = !target
   if (
     mustRedraw ||
     ['p', 'q', 'r', 's', 't', 'u', 'dimensions'].some(key =>
       changed.includes(key)
     )
   ) {
-    newC.coxeter =
-      newC.dimensions === 3
-        ? [
-            [-1, newC.p, newC.q],
-            [newC.p, -1, newC.r],
-            [newC.q, newC.r, -1],
-          ]
-        : newC.dimensions === 4
-        ? [
-            [-1, newC.p, newC.q, newC.r],
-            [newC.p, -1, newC.s, newC.t],
-            [newC.q, newC.s, -1, newC.u],
-            [newC.r, newC.t, newC.u, -1],
-          ]
-        : null
-
-    newC.gram = newC.coxeter.map(row => row.map(column => -cos(PI / column)))
-
-    newC.curvature = getCurvature(newC.gram)
-    document.querySelector('#space').innerHTML = `${
-      newC.curvature === 0
-        ? '&#x1D53C'
-        : newC.curvature > 0
-        ? '&#x1D54A'
-        : '&#x210D'
-    }<sup>${newC.dimensions - 1}</sup>`
     mustRedraw = true
   }
+
   setC(newC, true)
+
   if (
     mustRedraw ||
     ['x', 'y', 'z', 'w', 'order'].some(key => changed.includes(key))
   ) {
-    const t = performance.now()
-    const { C: workerC } = await worker(tiling, {
-      C,
-      init: !isOnlyOrderChanged,
-    })
+    if (target === 'order' && R.orders[C.order - 1]) {
+      clear()
+      plot(R.orders[C.order - 1])
+      render()
+    } else {
+      const startOrder = target === 'order' ? lastOrder : 0
 
-    C.runtime = workerC.runtime
-    console.log('tile', performance.now() - t, 'ms')
-    mustRedraw = true
+      for (let i = startOrder; i < C.order; i++) {
+        const {
+          R: newR,
+          vertices,
+          edges,
+        } = await worker(tiling, {
+          C,
+          order: i,
+        })
+
+        if (i === 0) {
+          setR({ ...newR, orders: {} })
+          document.querySelector('#space').innerHTML = `${
+            R.curvature === 0
+              ? '&#x1D53C'
+              : R.curvature > 0
+              ? '&#x1D54A'
+              : '&#x210D'
+          }<sup>${C.dimensions - 1}</sup>`
+        }
+
+        if (vertices.length || edges.length) {
+          // TODO: Do no reconstruct
+          clear()
+
+          R.vertices = R.vertices.concat(vertices)
+          R.edges = R.edges.concat(edges)
+          R.orders[i] = {
+            verticesIndex: R.vertices.length,
+            edgesIndex: R.edges.length,
+          }
+          const t = performance.now()
+          plot(R.orders[i])
+          render()
+        } else {
+          R.orders[i] = {
+            verticesIndex: R.vertices.length,
+            edgesIndex: R.edges.length,
+          }
+        }
+      }
+    }
+  } else {
+    if (['edges', 'vertices', 'segments'].some(key => changed.includes(key))) {
+      clear()
+      plot(R.orders[C.order - 1])
+    }
+    render()
   }
-  if (
-    mustRedraw ||
-    ['edges', 'vertices', 'segments'].some(key => changed.includes(key))
-  ) {
-    // Don't clear for order
-    clear()
-    const t = performance.now()
-    plot()
-    console.log('plot', performance.now() - t, 'ms')
-  }
-  const t = performance.now()
-  render()
-  console.log('render', performance.now() - t, 'ms')
 }
 
 document.querySelectorAll('input').forEach(input => {

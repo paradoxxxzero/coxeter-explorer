@@ -1,5 +1,4 @@
 export const C = {
-  // coxeter
   p: 5,
   q: 2,
   r: 2,
@@ -18,26 +17,8 @@ export const C = {
   segments: 16,
   vertices: false,
   edges: true,
-  DEBUG: false,
 }
-const SAVED = [
-  'p',
-  'q',
-  'r',
-  's',
-  't',
-  'u',
-  'x',
-  'y',
-  'z',
-  'w',
-  'dimensions',
-  'order',
-  'segments',
-  'vertices',
-  'edges',
-  'DEBUG',
-]
+
 export const getC = () => {
   if (location.hash) {
     try {
@@ -53,10 +34,6 @@ export const getC = () => {
 export const setC = (newC, sync = false) => {
   Object.assign(C, newC)
   if (sync) {
-    location.hash = btoa(
-      JSON.stringify(
-        Object.fromEntries(Object.entries(C).filter(([k]) => SAVED.includes(k)))
-      )
-    )
+    location.hash = btoa(JSON.stringify(C))
   }
 }

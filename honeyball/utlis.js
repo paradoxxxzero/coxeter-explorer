@@ -15,7 +15,6 @@ export const setProcess = f => {
 
 export const worker = async (w, data) => {
   data.uuid = uuid4()
-  console.log('POST', data.C.order)
   processing++
   process(processing)
   w.postMessage(data)
@@ -25,7 +24,6 @@ export const worker = async (w, data) => {
       if (e.data.uuid !== data.uuid) {
         return
       }
-      console.log('GET', e.data.C.order)
       processing--
       process(processing)
 
@@ -33,7 +31,10 @@ export const worker = async (w, data) => {
       w.removeEventListener('message', receive)
     }
     const error = e => {
-      if (e.data.uuid !== data.uuid) {
+      if (!e.uuid) {
+        console.error("Can't call web worker", e)
+      }
+      if (e.uuid !== data.uuid) {
         return
       }
       processing--
