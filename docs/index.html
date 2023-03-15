@@ -2,22 +2,105 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <!-- <link rel="icon" type="image/svg+xml" href="/vite.svg" /> -->
+    <link rel="icon" type="image/png" href="./favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vite App</title>
     <style>
       html,
-      body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
+      body,
+      canvas {
         overflow: hidden;
-        background-color: black;
+        margin: 0;
+        touch-action: none;
+        user-select: none;
+        background: black;
+      }
+
+      #space {
+        position: absolute;
+        bottom: 0.5em;
+        right: 0.5em;
+        font-size: 3em;
+        line-height: 1;
+        color: rgba(255, 255, 255);
+        mix-blend-mode: difference;
+      }
+      #space.processing {
+        animation: processing 1s infinite;
+      }
+      @keyframes processing {
+        0% {
+          opacity: 0;
+        }
+        50% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
+
+      label {
+        white-space: nowrap;
+        font-family: 'Fira Code', monospace;
+        mix-blend-mode: difference;
+        isolation: isolate;
+      }
+      .controls {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        display: flex;
+        flex-wrap: wrap;
+        font-size: 0.9em;
+        align-items: baseline;
+        font-size: 0.75em;
+        margin: 1em;
+        margin-right: 7em;
+      }
+
+      .controls label {
+        margin: 0.2em 0.75em;
+        color: rgba(255, 255, 255, 0.65);
+      }
+
+      .coxeters {
+        position: absolute;
+        top: 0;
+        right: 0;
+        display: flex;
+        justify-content: center;
+        align-items: baseline;
+        margin: 1em;
+        font-size: calc(min(2vmin, 0.75em));
+      }
+
+      .coxeters label {
+        margin: 0.2em 0.25em;
+        color: rgba(255, 255, 255, 0.75);
+      }
+
+      .number {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      input[type='number'] {
+        color: white;
+        border: none;
+        background-color: rgba(150, 150, 150, 0.15);
+        padding: 5px;
+        max-width: 4ch;
+        font-size: 1.5em;
+      }
+
+      .real-estate .controls,
+      .real-estate .coxeters {
+        display: none;
       }
     </style>
-    <script type="module" crossorigin src="./assets/index-47d7c81e.js"></script>
-    <link rel="stylesheet" href="./assets/index-66ee1a4a.css">
+    <script type="module" crossorigin src="./assets/index-5e906850.js"></script>
   </head>
 
   <body>
