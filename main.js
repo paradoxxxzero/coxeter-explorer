@@ -126,6 +126,15 @@ const update = async event => {
       document.querySelector('#mirror-w').checked = false
     }
   }
+  if (target.startsWith('mirror-')) {
+    if (
+      'xyzw'
+        .split('')
+        .every(d => !document.querySelector(`#mirror-${d}`).checked)
+    ) {
+      document.querySelector('#mirror-x').checked = true
+    }
+  }
 
   'pqrstu'.split('').forEach(d => {
     newC[d] = +document.querySelector(`#${d}`).value

@@ -204,7 +204,7 @@ const plotEdges = () => {
     edgeRadius,
     edgeRadius,
     1,
-    4,
+    8,
     1,
     false
   )
@@ -233,8 +233,7 @@ const plotEdges = () => {
     if (C.dimensions === 4) {
       sx = sy = 1 / max(1, abs(edge.vertex1[3]), abs(edge.vertex2[3]))
     } else {
-      sx = 1
-      sy = 1
+      sx = sy = 1
     }
     dummy.scale.set(sx, sy, sqrt(dx * dx + dy * dy + dz * dz))
     dummy.lookAt(...vertex3d2)

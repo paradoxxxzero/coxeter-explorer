@@ -15,7 +15,7 @@ export const C = {
 
   dimensions: 4,
   order: 10,
-  segments: 5,
+  segments: 16,
   vertices: false,
   edges: true,
   DEBUG: false,
