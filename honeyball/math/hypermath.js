@@ -1,5 +1,5 @@
 import { C } from '../C.js'
-import { abs, acos, acosh, cos, max, PI, sin, sqrt } from './index.js'
+import { abs, acos, acosh, cos, sign, sin, sinh, sqrt } from './index.js'
 
 export const det = m => {
   if (m.length === 3) {
@@ -47,7 +47,7 @@ export const det = m => {
 
 export const getCurvature = gram => {
   const determinant = det(gram)
-  return abs(determinant) < 1e-8 ? 0 : Math.sign(determinant)
+  return abs(determinant) < 1e-8 ? 0 : sign(determinant)
 }
 
 export const xdot = (v1, v2, forceCurvature = null) => {
@@ -93,7 +93,7 @@ export const normalize = v => {
   }
 
   const nr =
-    (C.curvature === -1 ? Math.sign(v[v.length - 1]) || 1 : 1) /
+    (C.curvature === -1 ? sign(v[v.length - 1]) || 1 : 1) /
     sqrt(abs(xdot(v, v)))
   for (let i = 0; i < v.length; i++) {
     v[i] *= nr
@@ -112,15 +112,16 @@ export const poincare = v => {
 }
 
 export const slerp = (u, v, step) => {
-  const o = Math.acos(xdot(u, v))
-  const n = Math.sin(o)
+  const o = acos(xdot(u, v))
+  const n = sin(o)
   if (n === 0) {
     return [u, v]
   }
+
   const vertices = [u]
   for (let i = step; i < 1; i += step) {
-    const a = Math.sin((1 - i) * o) / n
-    const b = Math.sin(i * o) / n
+    const a = sin((1 - i) * o) / n
+    const b = sin(i * o) / n
     const s = new Array(C.dimensions)
     for (let j = 0; j < C.dimensions; j++) {
       s[j] = u[j] * a + v[j] * b
@@ -132,15 +133,15 @@ export const slerp = (u, v, step) => {
 }
 
 export const hlerp = (u, v, step) => {
-  const o = Math.acosh(-xdot(u, v))
-  const n = Math.sinh(o)
+  const o = acosh(-xdot(u, v))
+  const n = sinh(o)
   if (n === 0) {
     return [u, v]
   }
   const vertices = [u]
   for (let i = step; i < 1; i += step) {
-    const a = Math.sinh((1 - i) * o) / n
-    const b = Math.sinh(i * o) / n
+    const a = sinh((1 - i) * o) / n
+    const b = sinh(i * o) / n
     const s = new Array(C.dimensions)
     for (let j = 0; j < C.dimensions; j++) {
       s[j] = u[j] * a + v[j] * b
@@ -164,8 +165,8 @@ const hyperbolicTranslate = (vertex, offset) => {
   const [xe, ye, ze] = vertex
   const [xt, yt] = offset
 
-  const cxt = Math.sqrt(1 + xt * xt) // Math.cosh(Math.asinh(xt))
-  const cyt = Math.sqrt(1 + yt * yt) // Math.cosh(Math.asinh(yt))
+  const cxt = sqrt(1 + xt * xt) // cosh(asinh(xt))
+  const cyt = sqrt(1 + yt * yt) // cosh(asinh(yt))
   const a = xe
   const b = ye * yt + ze * cyt
   vertex[0] = a * cxt - b * xt
@@ -176,8 +177,8 @@ const hyperbolicTranslate = (vertex, offset) => {
 const ellipticTranslate = (vertex, offset) => {
   const [xe, ye, ze] = vertex
   const [xt, yt] = offset
-  const cxt = Math.sqrt(1 - xt * xt) // Math.cos(Math.asin(xt))
-  const cyt = Math.sqrt(1 - yt * yt) // Math.cos(Math.asin(yt))
+  const cxt = sqrt(1 - xt * xt) // cos(asin(xt))
+  const cyt = sqrt(1 - yt * yt) // cos(asin(yt))
   const a = xe
   const b = ye * yt + ze * cyt
   vertex[0] = a * cxt + b * xt
@@ -196,22 +197,22 @@ const parabolicTranslate = (vertex, offset) => {
 const rotate = (vertex, theta) => {
   // Rotation is the same as in euclidean space
   const [x, y] = vertex
-  const c = Math.cos(theta)
-  const s = Math.sin(theta)
+  const c = cos(theta)
+  const s = sin(theta)
   vertex[0] = x * c - y * s
   vertex[1] = x * s + y * c
 }
 
 const hyperbolicScale = (vertex, scale) => {
   const [xe, ye, ze] = vertex
-  const nr = scale / Math.sqrt(xe * xe + ye * ye + ze * ze)
+  const nr = scale / sqrt(xe * xe + ye * ye + ze * ze)
   const offset = [vertex[0] * nr, -vertex[1] * nr, vertex[2] * nr]
   hyperbolicTranslate(vertex, offset)
 }
 
 const ellipticScale = (vertex, scale) => {
   const [xe, ye, ze] = vertex
-  const nr = scale / Math.sqrt(xe * xe + ye * ye + ze * ze)
+  const nr = scale / sqrt(xe * xe + ye * ye + ze * ze)
   const offset = [vertex[0] * nr, -vertex[1] * nr, vertex[2] * nr]
   ellipticTranslate(vertex, offset)
 }

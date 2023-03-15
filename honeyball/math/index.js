@@ -10,6 +10,7 @@ export const {
   max,
   round,
   sqrt,
+  sign,
   floor,
   log,
   PI,

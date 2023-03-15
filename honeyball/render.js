@@ -1,4 +1,3 @@
-import Stats from 'stats.js'
 import {
   Clock,
   Color,
@@ -12,7 +11,7 @@ import {
   Scene,
   SphereGeometry,
   Vector2,
-  WebGLRenderer,
+  WebGLRenderer
 } from 'three'
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'

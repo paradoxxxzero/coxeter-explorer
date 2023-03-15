@@ -1,6 +1,7 @@
-import { C } from '../C'
+import { C } from '../C.js'
 
 const MAX_ITERATIONS = 100
+let t
 
 export const sorter = (a, b) => {
   const l = a.length - b.length
@@ -44,6 +45,9 @@ const simplify = rules => {
   rules = [...rules.entries()]
 
   while (rules.length > 0) {
+    if (performance.now() - t > 5000) {
+      throw new Error('Timeout')
+    }
     const [v, w] = rules.pop()
     newRules.delete(v)
 
@@ -159,12 +163,12 @@ const equals = (a, b) => {
 }
 
 export const knuthBendix = rules => {
+  t = performance.now()
   rules = normalize(rules)
   for (let i = 0; i < MAX_ITERATIONS; i++) {
     const newRules = reduce(rules)
     // console.log('iteration', i, Object.entries(newRules).sort())
     if (equals(newRules, rules)) {
-      console.log('iterations', i)
       newRules._re_cache = new RegExp([...newRules.keys()].join('|'), 'g')
       return newRules
     }
