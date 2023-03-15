@@ -149,7 +149,7 @@ export const tile = () => {
             const rv = reflectWord(newWord)
             R.words.set(newWord, rv)
 
-            plot(rv, R, color)
+            plot(rv, color)
             link(word, newWord, v, rv, color)
             futurewordsToConsider.push(newWord)
           }

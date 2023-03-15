@@ -35,8 +35,8 @@ const colors = {
 
 export const initialize3d = () => {
   clock = new Clock()
-  stats = new Stats()
-  document.body.appendChild(stats.dom)
+  // stats = new Stats()
+  // document.body.appendChild(stats.dom)
   renderer = new WebGLRenderer()
 
   renderer.setPixelRatio(window.devicePixelRatio)
@@ -256,10 +256,10 @@ export const plot = () => {
 
 export const render = () => {
   // const delta = clock.getDelta()
-  stats.begin()
+  // stats.begin()
   composer.render()
   // controls.update(delta)
-  stats.end()
+  // stats.end()
 }
 
 export const animate = () => {

@@ -16,43 +16,54 @@ canvas {
 }
 
 #space {
-  font-size: 2.5em;
+  position: absolute;
+  bottom: 0.5em;
+  right: 0.5em;
+  font-size: 3em;
   line-height: 1;
-}
-
-.controls {
-  position: fixed;
-  bottom: 0;
-  right: 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-around;
-  width: 100%;
-  font-size: 0.75em;
+  color: rgba(255, 255, 255);
+  mix-blend-mode: difference;
 }
 label {
-  color: rgba(255, 255, 255, 0.65);
+  white-space: nowrap;
   font-family: 'Fira Code', monospace;
+  mix-blend-mode: difference;
+  isolation: isolate;
 }
-
-.control {
-  margin: 10px;
-  cursor: pointer;
+.controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
   display: flex;
-  align-items: end;
+  flex-wrap: wrap;
+  font-size: 0.9em;
+  align-items: baseline;
+  font-size: 0.75em;
+  margin: 1em;
+  margin-right: 7em;
 }
 
-.control > * {
-  margin: 0.2em;
-  color: white;
-}
-.control-left > * {
+.controls label {
   margin: 0.2em 0.75em;
+  color: rgba(255, 255, 255, 0.65);
 }
 
-.coxeter {
-  font-size: 1.25em;
+.coxeters {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  margin: 1em;
+  font-size: calc(min(2vmin, 0.75em));
 }
+
+.coxeters label {
+  margin: 0.2em 0.25em;
+  color: rgba(255, 255, 255, 0.75);
+}
+
 .number {
   display: flex;
   flex-direction: column;
@@ -62,8 +73,13 @@ label {
 input[type='number'] {
   color: white;
   border: none;
-  background-color: rgba(150, 150, 150, 0.25);
-  font-size: 1.25em;
+  background-color: rgba(150, 150, 150, 0.15);
   padding: 5px;
   max-width: 4ch;
+  font-size: 1.5em;
+}
+
+.real-estate .controls,
+.real-estate .coxeters {
+  display: none;
 }

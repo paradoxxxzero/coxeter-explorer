@@ -11,7 +11,7 @@ import {
 } from './honeyball/render'
 import './style.css'
 import { getCurvature } from './honeyball/math/hypermath'
-import { cos, PI } from './honeyball/math'
+import { cos, max, PI } from './honeyball/math'
 import { Vector2 } from 'three'
 import { tile, initTiling } from './honeyball/tiling'
 
@@ -69,23 +69,6 @@ window.ondeviceorientation = window.onresize = size
 // PQR 2 3 7
 // PQR 3 3 7
 // PQR 5 5 5
-const swapMaybe = (d, n) => {
-  if (n === 4) {
-    if (d === 'q') {
-      return 's'
-    }
-    if (d === 's') {
-      return 'q'
-    }
-    if (d === 'r') {
-      return 'u'
-    }
-    if (d === 'u') {
-      return 'r'
-    }
-  }
-  return d
-}
 
 const restore = () => {
   document.querySelector('#d4').checked = C.dimensions === 4
@@ -93,7 +76,7 @@ const restore = () => {
     el.style.display = C.dimensions === 4 ? 'block' : 'none'
   })
   'pqrstu'.split('').forEach(d => {
-    document.querySelector(`#${swapMaybe(d, C.dimensions)}`).value = C[d]
+    document.querySelector(`#${d}`).value = C[d]
   })
   'xyzw'.split('').forEach(d => {
     document.querySelector(`#mirror-${d}`).checked = !!C[d]
@@ -105,16 +88,38 @@ const restore = () => {
   document.querySelector('#edges').checked = C.edges
 }
 
-const update = () => {
+const update = event => {
+  const target = event?.target.id
   const newC = {}
   newC.dimensions = document.querySelector('#d4').checked ? 4 : 3
 
-  document.querySelectorAll('.d4').forEach(el => {
-    el.style.display = newC.dimensions === 4 ? 'block' : 'none'
-  })
+  if (target === 'd4') {
+    const setK = (d, v) => {
+      document.querySelector(`#${d}`).value = v
+    }
+    const getK = d => +document.querySelector(`#${d}`).value
+
+    document.querySelectorAll('.d4').forEach(el => {
+      el.style.display = newC.dimensions === 4 ? 'block' : 'none'
+    })
+    if (newC.dimensions === 4) {
+      setK('s', getK('q'))
+      setK('u', getK('r'))
+      setK('q', 2)
+      setK('r', 2)
+      setK('t', 2)
+    } else if (newC.dimensions === 3) {
+      setK('q', max(getK('s'), getK('q')))
+      setK('r', max(getK('r'), getK('t'), getK('u')))
+      setK('s', 2)
+      setK('u', 2)
+      setK('t', 2)
+      document.querySelector('#mirror-w').checked = false
+    }
+  }
 
   'pqrstu'.split('').forEach(d => {
-    newC[d] = +document.querySelector(`#${swapMaybe(d, newC.dimensions)}`).value
+    newC[d] = +document.querySelector(`#${d}`).value
   })
   'xyzw'.split('').forEach(d => {
     newC[d] = document.querySelector(`#mirror-${d}`).checked
@@ -125,14 +130,6 @@ const update = () => {
   newC.DEBUG = document.querySelector('#debug').checked
   newC.vertices = document.querySelector('#vertices').checked
   newC.edges = document.querySelector('#edges').checked
-
-  document.querySelector('#space').innerHTML = `${
-    newC.curvature === 0
-      ? '&#x1D53C'
-      : newC.curvature > 0
-      ? '&#x1D54A'
-      : '&#x210D'
-  }<sup>${newC.dimensions - 1}</sup>`
 
   const changed = Object.keys(newC).filter(key => newC[key] !== C[key])
   const lastOrder = C.order
@@ -165,6 +162,13 @@ const update = () => {
     newC.gram = newC.coxeter.map(row => row.map(column => -cos(PI / column)))
 
     newC.curvature = getCurvature(newC.gram)
+    document.querySelector('#space').innerHTML = `${
+      newC.curvature === 0
+        ? '&#x1D53C'
+        : newC.curvature > 0
+        ? '&#x1D54A'
+        : '&#x210D'
+    }<sup>${newC.dimensions - 1}</sup>`
     mustRedraw = true
   }
   setC(newC)
@@ -172,10 +176,10 @@ const update = () => {
     mustRedraw ||
     ['x', 'y', 'z', 'w', 'order'].some(key => changed.includes(key))
   ) {
-    const t = performance.now()
     if (!isOnlyOrderChanged) {
       initTiling()
     }
+    const t = performance.now()
     tile()
     console.log('tile', performance.now() - t, 'ms')
     mustRedraw = true
@@ -186,13 +190,21 @@ const update = () => {
   ) {
     // Don't clear for order
     clear()
+    const t = performance.now()
     plot()
+    console.log('plot', performance.now() - t, 'ms')
   }
+  const t = performance.now()
   render()
+  console.log('render', performance.now() - t, 'ms')
 }
 
 document.querySelectorAll('input').forEach(input => {
   input.addEventListener('change', update)
+})
+
+document.getElementById('space').addEventListener('click', () => {
+  document.body.classList.toggle('real-estate')
 })
 
 getC()
