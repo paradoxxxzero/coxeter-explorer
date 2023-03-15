@@ -9,7 +9,6 @@ import {
   renderer,
   plot,
 } from './honeyball/render'
-import './style.css'
 import { getCurvature } from './honeyball/math/hypermath'
 import { cos, max, PI } from './honeyball/math'
 import { Vector2 } from 'three'
