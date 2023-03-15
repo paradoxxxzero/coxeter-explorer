@@ -103,12 +103,17 @@ const restore = () => {
   document.querySelector('#curve').checked = C.curve
   document.querySelector('#vertices').checked = C.vertices
   document.querySelector('#edges').checked = C.edges
+  document.querySelector('#light').value = C.light
+  document.querySelector('#thickness').value = C.thickness
 }
 
 const update = async event => {
   const target = event?.target.id
   const newC = {}
   newC.dimensions = document.querySelector('#d4').checked ? 4 : 3
+  newC.light = +document.querySelector('#light').value
+  newC.thickness = +document.querySelector('#thickness').value
+  window.bloomPass.strength = newC.light
 
   if (target === 'curve') {
     document.querySelector('#segments').style.display = document.querySelector(
@@ -235,13 +240,15 @@ const update = async event => {
         }
       }
     }
-  } else if (['edges', 'vertices'].some(key => changed.includes(key))) {
+  } else if (
+    ['edges', 'vertices', 'thickness'].some(key => changed.includes(key))
+  ) {
     plot({
       vertices: [0, R.vertices.length],
       edges: [0, R.edges.length],
     })
-    render()
   }
+  render()
 }
 
 document.querySelectorAll('input').forEach(input => {

@@ -41,6 +41,9 @@ export const worker = async (w, data) => {
     const error = e => {
       if (!e.uuid) {
         w.removeEventListener('error', error)
+        if (processing <= 0) {
+          return
+        }
         processing--
         processing = max(0, processing) // FIXME
         process(processing, true)

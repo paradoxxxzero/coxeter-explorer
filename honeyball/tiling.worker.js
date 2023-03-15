@@ -122,7 +122,7 @@ const flip = (word, k, v) => {
 const tileFundamentalChamber = () => {
   let fundamentalChamberWords = ['']
   let futurewordsToConsider
-  let max = 100
+  let max = 25
   // Start by filing the fundamental chamber to equilibrate the tiling
   do {
     futurewordsToConsider = []
@@ -138,7 +138,9 @@ const tileFundamentalChamber = () => {
     fundamentalChamberWords.push(...futurewordsToConsider)
     W.wordsToConsider = futurewordsToConsider
   } while (futurewordsToConsider.length && max--)
-  console.log(max)
+  if (max < 0) {
+    throw new Error('Could not tile fundamental chamber')
+  }
   W.wordsToConsider = fundamentalChamberWords
 }
 

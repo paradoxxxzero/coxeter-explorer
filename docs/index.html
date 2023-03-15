@@ -25,18 +25,18 @@
         color: rgba(255, 255, 255);
         mix-blend-mode: difference;
       }
-      #space.processing {
+      .processing #space {
         animation: processing 1s infinite;
       }
       @keyframes processing {
         0% {
-          opacity: 0;
-        }
-        50% {
           opacity: 1;
         }
-        100% {
+        50% {
           opacity: 0;
+        }
+        100% {
+          opacity: 1;
         }
       }
 
@@ -57,6 +57,7 @@
         font-size: 0.75em;
         margin: 1em;
         margin-right: 7em;
+        font-size: calc(min(2vmin, 0.75em));
       }
 
       .controls label {
@@ -99,8 +100,11 @@
       .real-estate .coxeters {
         display: none;
       }
+      .error * {
+        color: red !important;
+      }
     </style>
-    <script type="module" crossorigin src="./assets/index-5e906850.js"></script>
+    <script type="module" crossorigin src="./assets/index-4156acf1.js"></script>
   </head>
 
   <body>
@@ -113,7 +117,16 @@
       </label>
       <label>
         Segments
-        <input type="number" id="segments" min="1" max="32" step="1" />
+        <input type="checkbox" id="curve" checked />
+        <input type="number" id="segments" min="1" max="256" step="1" />
+      </label>
+      <label>
+        Thickness
+        <input type="number" id="thickness" min="0" max="10" step="0.1" />
+      </label>
+      <label>
+        Light
+        <input type="number" id="light" min="0" max="10" step="0.1" />
       </label>
       <label>
         <input type="checkbox" id="d4" />
@@ -126,10 +139,6 @@
       <label>
         <input type="checkbox" id="edges" />
         Edges
-      </label>
-      <label>
-        <input type="checkbox" id="debug" />
-        Debug
       </label>
     </aside>
     <aside class="coxeters">

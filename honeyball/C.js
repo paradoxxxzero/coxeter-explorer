@@ -18,6 +18,9 @@ export const defaultC = {
   curve: true,
   vertices: false,
   edges: true,
+
+  light: 1.5,
+  thickness: 1,
 }
 
 export const C = { ...defaultC }

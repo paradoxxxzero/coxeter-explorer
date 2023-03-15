@@ -201,9 +201,9 @@ const plotVertices = ([start, stop]) => {
     dummy.quaternion.identity()
     dummy.position.set(...(C.dimensions === 4 ? poincare(vertex) : vertex))
     if (C.dimensions === 4) {
-      dummy.scale.setScalar(1 / max(1, abs(vertex[3])))
+      dummy.scale.setScalar(C.thickness / max(1, abs(vertex[3])))
     } else {
-      dummy.scale.setScalar(1)
+      dummy.scale.setScalar(C.thickness)
     }
     dummy.updateMatrix()
     instancedVertex.setMatrixAt(i, dummy.matrix)
@@ -237,9 +237,9 @@ const plotEdges = ([start, stop]) => {
     dummy.position.set(...vertex3d1)
     let sx, sy
     if (C.dimensions === 4) {
-      sx = sy = 1 / min(10, max(1, abs(edge.vertex1[3]), abs(edge.vertex2[3])))
+      sx = sy = C.thickness / max(1, abs(edge.vertex1[3]), abs(edge.vertex2[3]))
     } else {
-      sx = sy = 1
+      sx = sy = C.thickness
     }
     dummy.scale.set(sx, sy, sqrt(dx * dx + dy * dy + dz * dz))
     dummy.lookAt(...vertex3d2)
