@@ -277,6 +277,18 @@ export const xscale = (vertex, scale) => {
 //   |  cos(xw) * sin(yw) * x + sin(xw) * y + cos(xw) * cos(yw) * z |
 //   |  w                                                           |
 
+// Rxy * Rxz * Ryz:
+//   |  cos†(yz)                         0                     0        ±sin†(yz)                       |
+//   | ±sin†(yz) * sin†(xz)              cos†(xz)              0        ±sin†(xz) * cos†(yz)            |
+//   | ±sin†(yz) * sin†(xy) * cos†(xz)  ±sin†(xz) * sin†(xy)  cos†(xy)  ±sin†(xy) * cos†(xz) * cos†(yz) |
+//   |  sin†(yz) * cos†(xy) * cos†(xz)   sin†(xz) * cos†(xy)  sin†(xy)   cos†(xy) * cos†(xz) * cos†(yz) |
+
+// Rxy * Rxz * Ryz * v:
+//   |  cos†(yz)                       * x                                          ± sin†(yz)                       * w |
+//   | ±sin†(yz) * sin†(xz)            * x + cos†(xz)            * y                ± sin†(xz) * cos†(yz)            * w |
+//   | ±sin†(yz) * sin†(xy) * cos†(xz) * x + sin†(xz) * sin†(xy) * y + cos†(xy) * z ± sin†(xy) * cos†(xz) * cos†(yz) * w |
+//   |  sin†(yz) * cos†(xy) * cos†(xz) * x + cos†(xy) * cos†(xz) * y + sin†(xy) * z   cos†(xy) * cos†(xz) * cos†(yz) * w |
+
 // prettier-ignore
 export const xtranslate = (vertex, offset) => {
   const [x, y, z, w] = vertex
