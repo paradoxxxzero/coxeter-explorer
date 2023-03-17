@@ -98,6 +98,7 @@ export const initTiling = ({ dimensions, p, q, r, s, t, u, x, y, z, w }) => {
   newW.rules = getRules(dimensions, p, q, r, s, t, u)
   setW(newW)
 }
+
 const flip = (word, k, v) => {
   const m = String.fromCharCode(97 + k)
   if (word.slice(-1) === m) {

@@ -215,8 +215,9 @@ const plotVertices = ([start, stop]) => {
 }
 
 const plotEdges = ([start, stop]) => {
-  console.info(`Plotting [${start},${stop}] edges`)
-  const allStop = stop * (C.curve ? C.segments : 1)
+  const segments = C.curve ? C.segments : 1
+  const allStop = stop * segments
+  console.info(`Plotting [${start},${stop}] edges (${allStop})`)
 
   if (allStop > currentEdgesMax) {
     currentEdgesMax = allStop
@@ -231,7 +232,7 @@ const plotEdges = ([start, stop]) => {
     let u = edge.start
     let v = edge.segments[0] || edge.end
 
-    for (let j = 0; j < C.segments + 1; j++) {
+    for (let j = 0; j < segments; j++) {
       const vertex3d1 = C.dimensions === 4 ? poincare(u) : u
       const vertex3d2 = C.dimensions === 4 ? poincare(v) : v
       const dx = vertex3d2[0] - vertex3d1[0]
@@ -250,8 +251,8 @@ const plotEdges = ([start, stop]) => {
       dummy.scale.set(sx, sy, sqrt(dx * dx + dy * dy + dz * dz))
       dummy.lookAt(...vertex3d2)
       dummy.updateMatrix()
-      instancedEdge.setMatrixAt(i * C.segments + j, dummy.matrix)
-      instancedEdge.setColorAt(i * C.segments + j, _color.set(edge.color))
+      instancedEdge.setMatrixAt(i * segments + j, dummy.matrix)
+      instancedEdge.setColorAt(i * segments + j, _color.set(edge.color))
       u = v
       v = edge.segments[j + 1] || edge.end
     }

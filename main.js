@@ -86,6 +86,8 @@ setProcess((level, error) => {
     document.body.classList.remove('error')
   }
 })
+const orbit = '⇹'
+const free = '↭'
 
 const restore = () => {
   document.querySelector('#d4').checked = C.dimensions === 4
@@ -108,6 +110,8 @@ const restore = () => {
   document.querySelector('#edges').checked = C.edges
   document.querySelector('#light').value = C.light
   document.querySelector('#thickness').value = C.thickness
+  document.querySelector('#controls').innerHTML =
+    C.controls === 'orbit' ? orbit : free
 }
 
 const update = async event => {
@@ -117,6 +121,9 @@ const update = async event => {
   newC.light = +document.querySelector('#light').value
   newC.thickness = +document.querySelector('#thickness').value
   window.bloomPass.strength = newC.light
+  newC.controls =
+    document.querySelector('#controls').innerHTML === orbit ? 'orbit' : 'free'
+  window.controls.enabled = newC.controls === 'orbit'
 
   if (target === 'curve') {
     document.querySelector('#segments').style.display = document.querySelector(
@@ -267,6 +274,14 @@ document.getElementById('space').addEventListener('dblclick', () => {
 })
 document.getElementById('space').addEventListener('click', () => {
   document.body.classList.toggle('real-estate')
+})
+document.getElementById('controls').addEventListener('click', () => {
+  C.controls =
+    document.getElementById('controls').innerHTML === orbit ? 'free' : 'orbit'
+  document.getElementById('controls').innerHTML =
+    C.controls === 'orbit' ? orbit : free
+
+  window.controls.enabled = C.controls === 'orbit'
 })
 
 getC()

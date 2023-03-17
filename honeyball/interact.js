@@ -2,6 +2,7 @@ import { render, plot } from './render'
 import interact from 'interactjs'
 import { R } from './R'
 import { xtranslate, xrotate, xscale, xlerp } from './math/hypermath'
+import { C } from './C'
 
 const translate = offset => {
   for (let i = 0; i < R.vertices.length; i++) {
@@ -46,6 +47,9 @@ export const interactions = () => {
   interact('canvas').draggable({
     listeners: {
       move: e => {
+        if (C.controls !== 'free') {
+          return
+        }
         const w2 = window.innerWidth / 2
         const h2 = window.innerHeight / 2
         const radius = Math.min(w2, h2) * 0.9
@@ -53,10 +57,9 @@ export const interactions = () => {
           rotate(-e.dx / (2 * radius))
           scale(-e.dy / (2 * radius))
         } else {
-          const xt = e.shiftKey ? 0 : e.dx / w2
-          const yt = e.shiftKey ? 0 : -e.dy / h2
-          const zt = e.shiftKey ? e.dy / h2 : 0
-          translate([xt, yt, zt])
+          const xt = e.dx / w2
+          const yt = -e.dy / h2
+          translate([xt, yt])
         }
         // controls.enabled = false
         plot(true)

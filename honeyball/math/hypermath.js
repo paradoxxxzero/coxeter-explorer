@@ -165,7 +165,6 @@ export const xlerp = (u, v) => {
 }
 
 export const xrotate = (vertex, theta) => {
-  // Rotation is the same as in euclidean space
   const [x, y] = vertex
   const c = cos(theta)
   const s = sin(theta)
@@ -174,51 +173,110 @@ export const xrotate = (vertex, theta) => {
 }
 
 export const xscale = (vertex, scale) => {
-  const [xe, ye, ze] = vertex
-  const nr = scale / sqrt(xe * xe + ye * ye + ze * ze)
   if (R.curvature !== 0) {
-    const offset = [vertex[0] * nr, -vertex[1] * nr, vertex[2] * nr]
+    const nr = scale / sqrt(xdot(vertex, vertex, 1))
+    const offset = new Array(C.dimensions)
+    for (let i = 0; i < C.dimensions; i++) {
+      offset[i] = vertex[i] * nr * (i % 2 === 0 ? 1 : -1)
+    }
     xtranslate(vertex, offset)
   } else {
-    vertex[0] = xe * (1 - scale)
-    vertex[1] = ye * (1 - scale)
-    vertex[2] = ze * (1 - scale)
+    for (let i = 0; i < C.dimensions; i++) {
+      vertex[i] *= 1 - scale
+    }
   }
 }
 
 // 3D:
 // Rx | 1  0       0       |
-//    | 0  cos(o)  -sin(o) |
-//    | 0  sin(o)  cos(o)  |
-//
-// Ry | cos(p)  0  sin(p)  |
+//    | 0  cos(x)  -sin(x) |
+//    | 0  sin(x)  cos(x)  |
+
+// Ry | cos(y)  0  sin(y)  |
 //    | 0       1  0       |
-//    | -sin(p) 0  cos(p)  |
+//    | -sin(y) 0  cos(y)  |
 
-// Rx * Ry | cos(p)   sin(o) * sin(p)  cos(o) * sin(p) |
-//         | 0        cos(o)           -sin(o)         |
-//         | -sin(p)  sin(o) * cos(p)  cos(o) * cos(p) |
+// Rz | cos(z)  -sin(z) 0 |
+//    | sin(z)  cos(z)  0 |
+//    | 0       0       1 |
 
-// Rx * Ry * v = | cos(p) * x + sin(o) * sin(p) * y + cos(o) * sin(p) * z  |
-//               | cos(o) * y - sin(o) * z                                 |
-//               | -sin(p) * x + sin(o) * cos(p) * y + cos(o) * cos(p) * z |
+// Let't rotate x and y (z is handled in xrotate):
+// Rx * Ry:
+//   | cos(y)   sin(x) * sin(y)  cos(x) * sin(y) |
+//   | 0        cos(x)           -sin(x)         |
+//   | -sin(y)  sin(x) * cos(y)  cos(x) * cos(y) |
 
-export const xtranslate = (vertex, offset) => {
+// Rx * Ry * v:
+//   |  cos(y) * x + sin(x) * sin(y) * y + cos(x) * sin(y) * z |
+//   |  cos(x) * y                       - sin(x)          * z |
+//   | -sin(y) * x + sin(x) * cos(y) * y + cos(x) * cos(y) * z |
+
+// 4D:
+
+// Rxy | 1  0  0        0        |
+//     | 0  1  0        0        |
+//     | 0  0  cos(xy)  -sin(xy) |
+//     | 0  0  sin(xy)  cos(xy)  |
+
+// Rxz | 1  0        0  0        |
+//     | 0  cos(xz)  0  -sin(xz) |
+//     | 0  0        1  0        |
+//     | 0  sin(xz)  0  cos(xz)  |
+
+// Ryz | cos(yz)  0  0  -sin(yz) |
+//     | 0        1  0  0        |
+//     | 0        0  1  0        |
+//     | sin(yz)  0  0  cos(yz)  |
+
+// Rxw | 1  0        0         0 |
+//     | 0  cos(xw)  -sin(xw)  0 |
+//     | 0  sin(xw)  cos(xw)   0 |
+//     | 0  0        0         1 |
+
+// Ryw | cos(yw)  0  -sin(yw)  0 |
+//     | 0        1  0         0 |
+//     | sin(yw)  0  cos(yw)   0 |
+//     | 0        0  0         1 |
+
+// Rzw | cos(zw)  -sin(zw)  0  0 |
+//     | sin(zw)  cos(zw)   0  0 |
+//     | 0        0         1  0 |
+//     | 0        0         0  1 |
+
+// So let's rotate either xz and yz or xw and yw:
+// Logically xy and xz should be handled in xrotate
+
+// Rxz * Ryz:
+//   | cos(yz)             0       0 - sin(yz) |
+//   | -sin(xz) * sin(yz)  cos(xz) 0  -sin(xz) * cos(yz) |
+//   | 0                   0       1  0                  |
+//   | cos(xz) * sin(yz)   sin(xz) 0  cos(xz) * cos(yz)  |
+
+// Rxz * Ryz * v:
+//   | cos(yz) * x - sin(yz) * w |
+//   | -sin(xz) * sin(yz) * x + cos(xz) * y - sin(xz) * cos(yz) * w |
+//   |  z                                                           |
+//   |  cos(xz) * sin(yz) * x + sin(xz) * y + cos(xz) * cos(yz) * w |
+
+// Hyperbolic rotations are essentially the same,
+// but with sinh and cosh instead of sin and cos
+// and no minus signs in the matrixes.
+
+// prettier-ignore
+export const xtranslate = (vertex, offset, perp=false) => {
   const [x, y, z] = vertex
   const [xt, yt, zt] = offset
+  const c = R.curvature
 
-  const cosp = sqrt(1 - R.curvature * xt * xt) // cosh?(asinh?(xt))
-  const coso = sqrt(1 - R.curvature * yt * yt) // cosh?(asinh?(yt))
-  const cosi = sqrt(1 - R.curvature * zt * zt) // cosh?(asinh?(yt))
-  const sinp = xt // sinh?(asinh?(xt))
-  const sino = yt // sinh?(asinh?(yt))
-  const sini = zt // sinh?(asinh?(yt))
+  const cosx = sqrt(1 - c * xt * xt) // cosh?(asinh?(xt))
+  const cosy = sqrt(1 - c * yt * yt) // cosh?(asinh?(yt))
+  const sinx = c * xt // sinh?(asinh?(xt))
+  const siny = yt // sinh?(asinh?(yt))
 
-  if (R.curvature !== 0) {
-    const b = y * sino + z * coso
-    vertex[0] = cosp * x + R.curvature * b * sinp
-    vertex[1] = y * coso - R.curvature * z * sino
-    vertex[2] = -sinp * x + b * cosp
+  if (c !== 0) {
+    vertex[0] =      cosx * x + siny * sinx * y +     cosy * sinx * z
+    vertex[1] =      cosy * y                   - c *        siny * z
+    vertex[2] = -c * sinx * x + siny * cosx * y +     cosy * cosx * z
     if (C.dimensions === 4) {
       vertex[3] = z - zt
     }
