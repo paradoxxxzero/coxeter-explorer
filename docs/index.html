@@ -18,12 +18,29 @@
 
       #space {
         position: absolute;
-        bottom: 0.5em;
-        right: 0.5em;
+        bottom: 0.25em;
+        right: 0.25em;
+        padding: 0.25em;
         font-size: 3em;
         line-height: 1;
         color: rgba(255, 255, 255);
         mix-blend-mode: difference;
+        cursor: pointer;
+      }
+      #controls {
+        position: absolute;
+        top: 0.125em;
+        left: 0.125em;
+        padding: 0.125em;
+        font-size: 5em;
+        line-height: 1;
+        color: rgba(255, 255, 255);
+        mix-blend-mode: difference;
+        cursor: pointer;
+      }
+      #controls:hover,
+      #space:hover {
+        background-color: rgba(255, 255, 255, 0.1);
       }
       .processing #space {
         animation: processing 1s infinite;
@@ -104,12 +121,13 @@
         color: red !important;
       }
     </style>
-    <script type="module" crossorigin src="./assets/index-4156acf1.js"></script>
+    <script type="module" crossorigin src="./assets/index-a78f41a2.js"></script>
   </head>
 
   <body>
     <div id="app"></div>
-    <aside id="space"></aside>
+    <aside id="controls">&#x21AD;</aside>
+    <aside id="space">?<sup>?</sup></aside>
     <aside class="controls">
       <label>
         Order
