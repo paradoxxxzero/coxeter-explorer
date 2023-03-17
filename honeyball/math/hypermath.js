@@ -166,18 +166,22 @@ export const xlerp = (u, v) => {
 
 export const xrotate = (vertex, theta) => {
   const [x, y] = vertex
-  const c = cos(theta)
-  const s = sin(theta)
-  vertex[0] = x * c - y * s
-  vertex[1] = x * s + y * c
+  // Rz / Rzw Rotation:
+  const cosx = cos(theta)
+  const sinx = sin(theta)
+  vertex[0] = x * cosx - y * sinx
+  vertex[1] = x * sinx + y * cosx
+  // vertex[2] = z
+  // vertex[3] = w
 }
 
 export const xscale = (vertex, scale) => {
   if (R.curvature !== 0) {
     const nr = scale / sqrt(xdot(vertex, vertex, 1))
-    const offset = new Array(C.dimensions)
-    for (let i = 0; i < C.dimensions; i++) {
-      offset[i] = vertex[i] * nr * (i % 2 === 0 ? 1 : -1)
+
+    const offset = new Array(C.dimensions - 1)
+    for (let i = 0; i < C.dimensions - 1; i++) {
+      offset[i] = vertex[i] * nr
     }
     xtranslate(vertex, offset)
   } else {
@@ -187,104 +191,129 @@ export const xscale = (vertex, scale) => {
   }
 }
 
+// cos† means cos in spherical coordinates and cosh in hyperbolic coordinates
+// ± means - in spherical coordinates and + in hyperbolic coordinates
+
 // 3D:
-// Rx | 1  0       0       |
-//    | 0  cos(x)  -sin(x) |
-//    | 0  sin(x)  cos(x)  |
+// Rx | 1  0         0       |
+//    | 0  cos†(x)  ±sin†(x) |
+//    | 0  sin†(x)   cos†(x) |
 
-// Ry | cos(y)  0  sin(y)  |
-//    | 0       1  0       |
-//    | -sin(y) 0  cos(y)  |
+// Ry |  cos†(y)  0  sin†(y) |
+//    |  0        1  0       |
+//    | ±sin†(y)  0  cos†(y) |
 
-// Rz | cos(z)  -sin(z) 0 |
-//    | sin(z)  cos(z)  0 |
-//    | 0       0       1 |
+// Rz | cos(z)  -sin(z)  0 |
+//    | sin(z)   cos(z)  0 |
+//    | 0        0       1 |
 
 // Let't rotate x and y (z is handled in xrotate):
 // Rx * Ry:
-//   | cos(y)   sin(x) * sin(y)  cos(x) * sin(y) |
-//   | 0        cos(x)           -sin(x)         |
-//   | -sin(y)  sin(x) * cos(y)  cos(x) * cos(y) |
+//   | cos†(y)   sin†(x) * sin†(y)   cos†(x) * sin†(y) |
+//   | 0         cos†(x)            ±sin†(x)           |
+//   | ±sin†(y)  sin†(x) * cos†(y)   cos†(x) * cos†(y) |
 
 // Rx * Ry * v:
-//   |  cos(y) * x + sin(x) * sin(y) * y + cos(x) * sin(y) * z |
-//   |  cos(x) * y                       - sin(x)          * z |
-//   | -sin(y) * x + sin(x) * cos(y) * y + cos(x) * cos(y) * z |
+//   |  cos†(y) * x + sin†(x) * sin†(y) * y + cos†(x) * sin†(y) * z |
+//   |  cos†(x) * y                         ± sin†(x)           * z |
+//   | ±sin†(y) * x + sin†(x) * cos†(y) * y + cos†(x) * cos†(y) * z |
 
 // 4D:
 
-// Rxy | 1  0  0        0        |
-//     | 0  1  0        0        |
-//     | 0  0  cos(xy)  -sin(xy) |
-//     | 0  0  sin(xy)  cos(xy)  |
+// Rxy | 1  0  0          0        |
+//     | 0  1  0          0        |
+//     | 0  0  cos†(xy)  ±sin†(xy) |
+//     | 0  0  sin†(xy)   cos†(xy) |
 
-// Rxz | 1  0        0  0        |
-//     | 0  cos(xz)  0  -sin(xz) |
-//     | 0  0        1  0        |
-//     | 0  sin(xz)  0  cos(xz)  |
+// Rxz | 1  0         0   0        |
+//     | 0  cos†(xz)  0  ±sin†(xz) |
+//     | 0  0         1   0        |
+//     | 0  sin†(xz)  0   cos†(xz) |
 
-// Ryz | cos(yz)  0  0  -sin(yz) |
-//     | 0        1  0  0        |
-//     | 0        0  1  0        |
-//     | sin(yz)  0  0  cos(yz)  |
+// Ryz | cos†(yz)  0  0  ±sin†(yz) |
+//     | 0         1  0   0        |
+//     | 0         0  1   0        |
+//     | sin†(yz)  0  0   cos†(yz) |
 
-// Rxw | 1  0        0         0 |
+// Rxw | 1  0         0        0 |
 //     | 0  cos(xw)  -sin(xw)  0 |
-//     | 0  sin(xw)  cos(xw)   0 |
-//     | 0  0        0         1 |
+//     | 0  sin(xw)   cos(xw)  0 |
+//     | 0  0          0       1 |
 
 // Ryw | cos(yw)  0  -sin(yw)  0 |
-//     | 0        1  0         0 |
-//     | sin(yw)  0  cos(yw)   0 |
-//     | 0        0  0         1 |
+//     | 0        1   0        0 |
+//     | sin(yw)  0   cos(yw)  0 |
+//     | 0        0   0        1 |
 
 // Rzw | cos(zw)  -sin(zw)  0  0 |
-//     | sin(zw)  cos(zw)   0  0 |
-//     | 0        0         1  0 |
-//     | 0        0         0  1 |
+//     | sin(zw)   cos(zw)  0  0 |
+//     | 0         0        1  0 |
+//     | 0         0        0  1 |
 
 // So let's rotate either xz and yz or xw and yw:
 // Logically xy and xz should be handled in xrotate
 
 // Rxz * Ryz:
-//   | cos(yz)             0       0 - sin(yz) |
-//   | -sin(xz) * sin(yz)  cos(xz) 0  -sin(xz) * cos(yz) |
-//   | 0                   0       1  0                  |
-//   | cos(xz) * sin(yz)   sin(xz) 0  cos(xz) * cos(yz)  |
+//   |  cos†(yz)             0         0  ±sin†(yz)            |
+//   | ±sin†(xz) * sin†(yz)  cos†(xz)  0  ±sin†(xz) * cos†(yz) |
+//   |  0                    0         1   0                   |
+//   |  cos†(xz) * sin†(yz)  sin†(xz)  0   cos†(xz) * cos†(yz) |
 
 // Rxz * Ryz * v:
-//   | cos(yz) * x - sin(yz) * w |
-//   | -sin(xz) * sin(yz) * x + cos(xz) * y - sin(xz) * cos(yz) * w |
-//   |  z                                                           |
-//   |  cos(xz) * sin(yz) * x + sin(xz) * y + cos(xz) * cos(yz) * w |
+//   |  cos†(yz)            * x                ± sin†(yz)            * w |
+//   | ±sin†(xz) * sin†(yz) * x + cos†(xz) * y ± sin†(xz) * cos†(yz) * w |
+//   |  z                                                                |
+//   |  cos†(xz) * sin†(yz) * x + sin†(xz) * y + cos†(xz) * cos†(yz) * w |
 
-// Hyperbolic rotations are essentially the same,
-// but with sinh and cosh instead of sin and cos
-// and no minus signs in the matrixes.
+// Rxw * Ryw:
+//   |  cos(yw)            0        -sin(yw)          0 |
+//   | -sin(xw) * sin(yw)  cos(xw)  -sin(xw) cos(yw)  0 |
+//   |  cos(xw) * sin(yw)  sin(xw)   cos(xw) cos(yw)  0 |
+//   |  0                  0         0                1 |
+
+// Rxw * Ryw * v:
+//   |  cos(yw)           * x               - sin(yw)           * z |
+//   | -sin(xw) * sin(yw) * x + cos(xw) * y - sin(xw) * cos(yw) * z |
+//   |  cos(xw) * sin(yw) * x + sin(xw) * y + cos(xw) * cos(yw) * z |
+//   |  w                                                           |
 
 // prettier-ignore
-export const xtranslate = (vertex, offset, perp=false) => {
-  const [x, y, z] = vertex
+export const xtranslate = (vertex, offset) => {
+  const [x, y, z, w] = vertex
   const [xt, yt, zt] = offset
   const c = R.curvature
-
-  const cosx = sqrt(1 - c * xt * xt) // cosh?(asinh?(xt))
-  const cosy = sqrt(1 - c * yt * yt) // cosh?(asinh?(yt))
-  const sinx = c * xt // sinh?(asinh?(xt))
-  const siny = yt // sinh?(asinh?(yt))
+  
+  const cosx = sqrt(1 - c * xt * xt) // cos†(asin†(xt))
+  const cosy = sqrt(1 - c * yt * yt) // cos†(asin†(yt))
+  const sinx = xt
+  const siny = yt
 
   if (c !== 0) {
-    vertex[0] =      cosx * x + siny * sinx * y +     cosy * sinx * z
-    vertex[1] =      cosy * y                   - c *        siny * z
-    vertex[2] = -c * sinx * x + siny * cosx * y +     cosy * cosx * z
-    if (C.dimensions === 4) {
-      vertex[3] = z - zt
+    if (C.dimensions === 3) {
+      vertex[0] =      x * cosx + y * sinx * siny +     z * sinx * cosy                       
+      vertex[1] =               + y * cosy        - c * z * siny       
+      vertex[2] = -c * x * sinx + y * cosx * siny +     z * cosx * cosy
+    } else {
+      if (zt) {
+        const cosz = sqrt(1 - c * zt * zt) // cos†(asin†(zt))
+        const sinz = zt
+              
+        vertex[0] =       x * cosx                                                - c * w * sinx
+        vertex[1] = - c * x * sinx * siny        +     y * cosy                   - c * w * cosx * siny 
+        vertex[2] = - c * x * cosy * sinx * sinz - c * y * siny * sinz + z * cosz - c * w * cosx * cosy * sinz  
+        vertex[3] =       x * cosy * cosz * sinx +     y * cosz * siny + z * sinz +     w * cosx * cosy * cosz
+      } else {
+        vertex[0] =       x * cosx                                                - c * w * sinx
+        vertex[1] = - c * x * sinx * siny        +     y * cosy                   - c * w * cosx * siny 
+        // vertex[2] = z                                                          
+        vertex[3] =       x * cosy * sinx +     y * siny                          +     w * cosx * cosy
+      }
     }
   } else {
-    vertex[0] = x - xt
+    vertex[0] = x + xt
     vertex[1] = y + yt
-    if (C.dimensions === 4) {
-      vertex[2] = z - zt
+    if (zt) {
+      vertex[2] = z + zt
     }
   }
 }

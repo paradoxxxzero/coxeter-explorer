@@ -186,7 +186,7 @@ const initEdge = () => {
 }
 
 const plotVertices = ([start, stop]) => {
-  console.info(`Plotting [${start},${stop}] vertices`)
+  // console.info(`Plotting [${start},${stop}] vertices`)
   if (stop > currentVerticesMax) {
     currentVerticesMax = stop
     instancedVertex.dispose()
@@ -217,7 +217,7 @@ const plotVertices = ([start, stop]) => {
 const plotEdges = ([start, stop]) => {
   const segments = C.curve ? C.segments : 1
   const allStop = stop * segments
-  console.info(`Plotting [${start},${stop}] edges (${allStop})`)
+  // console.info(`Plotting [${start},${stop}] edges (${allStop})`)
 
   if (allStop > currentEdgesMax) {
     currentEdgesMax = allStop

@@ -276,12 +276,9 @@ document.getElementById('space').addEventListener('click', () => {
   document.body.classList.toggle('real-estate')
 })
 document.getElementById('controls').addEventListener('click', () => {
-  C.controls =
-    document.getElementById('controls').innerHTML === orbit ? 'free' : 'orbit'
   document.getElementById('controls').innerHTML =
-    C.controls === 'orbit' ? orbit : free
-
-  window.controls.enabled = C.controls === 'orbit'
+    document.getElementById('controls').innerHTML === free ? orbit : free
+  update({ target: { id: 'controls' } })
 })
 
 getC()
