@@ -83,6 +83,7 @@ export const initialize3d = () => {
   controls.maxDistance = 100
   controls.addEventListener('change', render)
   controls.update()
+  controls.enabled = false
 
   renderer.domElement.addEventListener('dblclick', () => {
     controls.position0.set(0, 0, controls.position0.z === -1 ? -0.25 : -1, 0, 0)
@@ -215,43 +216,59 @@ const plotVertices = ([start, stop]) => {
 
 const plotEdges = ([start, stop]) => {
   console.info(`Plotting [${start},${stop}] edges`)
+  const allStop = stop * (C.curve ? C.segments : 1)
 
-  if (stop > currentEdgesMax) {
-    currentEdgesMax = stop
+  if (allStop > currentEdgesMax) {
+    currentEdgesMax = allStop
     instancedEdge.dispose()
     group.remove(instancedEdge)
     initEdge()
     start = 0
   }
-  instancedEdge.count = stop
+  instancedEdge.count = allStop
   for (let i = start; i < stop; i++) {
     const edge = R.edges[i]
-    const vertex3d1 = C.dimensions === 4 ? poincare(edge.vertex1) : edge.vertex1
-    const vertex3d2 = C.dimensions === 4 ? poincare(edge.vertex2) : edge.vertex2
-    const dx = vertex3d2[0] - vertex3d1[0]
-    const dy = vertex3d2[1] - vertex3d1[1]
-    const dz = vertex3d2[2] - vertex3d1[2]
-    dummy.matrix.identity()
-    dummy.matrixWorld.identity()
-    dummy.quaternion.identity()
-    dummy.position.set(...vertex3d1)
-    let sx, sy
-    if (C.dimensions === 4) {
-      sx = sy = C.thickness / max(1, abs(edge.vertex1[3]), abs(edge.vertex2[3]))
-    } else {
-      sx = sy = C.thickness
+    let u = edge.start
+    let v = edge.segments[0] || edge.end
+
+    for (let j = 0; j < C.segments + 1; j++) {
+      const vertex3d1 = C.dimensions === 4 ? poincare(u) : u
+      const vertex3d2 = C.dimensions === 4 ? poincare(v) : v
+      const dx = vertex3d2[0] - vertex3d1[0]
+      const dy = vertex3d2[1] - vertex3d1[1]
+      const dz = vertex3d2[2] - vertex3d1[2]
+      dummy.matrix.identity()
+      dummy.matrixWorld.identity()
+      dummy.quaternion.identity()
+      dummy.position.set(...vertex3d1)
+      let sx, sy
+      if (C.dimensions === 4) {
+        sx = sy = C.thickness / max(1, abs(edge.start[3]), abs(edge.end[3]))
+      } else {
+        sx = sy = C.thickness
+      }
+      dummy.scale.set(sx, sy, sqrt(dx * dx + dy * dy + dz * dz))
+      dummy.lookAt(...vertex3d2)
+      dummy.updateMatrix()
+      instancedEdge.setMatrixAt(i * C.segments + j, dummy.matrix)
+      instancedEdge.setColorAt(i * C.segments + j, _color.set(edge.color))
+      u = v
+      v = edge.segments[j + 1] || edge.end
     }
-    dummy.scale.set(sx, sy, sqrt(dx * dx + dy * dy + dz * dz))
-    dummy.lookAt(...vertex3d2)
-    dummy.updateMatrix()
-    instancedEdge.setMatrixAt(i, dummy.matrix)
-    instancedEdge.setColorAt(i, _color.set(edge.color))
   }
   instancedEdge.instanceMatrix.needsUpdate = true
   instancedEdge.instanceColor.needsUpdate = true
 }
 
-export const plot = ({ vertices, edges }) => {
+export const plot = arg => {
+  let vertices, edges
+  if (arg === true) {
+    vertices = [0, R.vertices.length]
+    edges = [0, R.edges.length]
+  } else {
+    vertices = arg.vertices
+    edges = arg.edges
+  }
   instancedVertex.visible = C.vertices
   if (C.vertices) {
     plotVertices(vertices)

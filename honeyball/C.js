@@ -21,6 +21,8 @@ export const defaultC = {
 
   light: 1.5,
   thickness: 1,
+  xshift: 0,
+  yshift: 0,
 }
 
 export const C = { ...defaultC }

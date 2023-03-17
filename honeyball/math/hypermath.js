@@ -116,10 +116,10 @@ export const slerp = (u, v, step) => {
   const o = acos(xdot(u, v))
   const n = sin(o)
   if (n === 0) {
-    return [u, v]
+    return []
   }
 
-  const vertices = [u]
+  const vertices = []
   for (let i = step; i < 1; i += step) {
     const a = sin((1 - i) * o) / n
     const b = sin(i * o) / n
@@ -129,7 +129,6 @@ export const slerp = (u, v, step) => {
     }
     vertices.push(s)
   }
-  vertices.push(v)
   return vertices
 }
 
@@ -137,9 +136,9 @@ export const hlerp = (u, v, step) => {
   const o = acosh(-xdot(u, v))
   const n = sinh(o)
   if (n === 0) {
-    return [u, v]
+    return []
   }
-  const vertices = [u]
+  const vertices = []
   for (let i = step; i < 1; i += step) {
     const a = sinh((1 - i) * o) / n
     const b = sinh(i * o) / n
@@ -149,53 +148,23 @@ export const hlerp = (u, v, step) => {
     }
     vertices.push(s)
   }
-  vertices.push(v)
   return vertices
 }
-export const xlerp = (u, v, curveStep) => {
+export const xlerp = (u, v) => {
+  if (C.segments === 0 || !C.curve) {
+    return []
+  }
+  const curveStep = 1 / C.segments
   if (R.curvature > 0) {
     return slerp(u, v, curveStep)
   } else if (R.curvature < 0) {
     return hlerp(u, v, curveStep)
   } else {
-    return [u, v]
+    return []
   }
 }
 
-const hyperbolicTranslate = (vertex, offset) => {
-  const [xe, ye, ze] = vertex
-  const [xt, yt] = offset
-
-  const cxt = sqrt(1 + xt * xt) // cosh(asinh(xt))
-  const cyt = sqrt(1 + yt * yt) // cosh(asinh(yt))
-  const a = xe
-  const b = ye * yt + ze * cyt
-  vertex[0] = a * cxt - b * xt
-  vertex[1] = ye * cyt + ze * yt
-  vertex[2] = -a * xt + b * cxt
-}
-
-const ellipticTranslate = (vertex, offset) => {
-  const [xe, ye, ze] = vertex
-  const [xt, yt] = offset
-  const cxt = sqrt(1 - xt * xt) // cos(asin(xt))
-  const cyt = sqrt(1 - yt * yt) // cos(asin(yt))
-  const a = xe
-  const b = ye * yt + ze * cyt
-  vertex[0] = a * cxt + b * xt
-  vertex[1] = ye * cyt - ze * yt
-  vertex[2] = -a * xt + b * cxt
-}
-
-const parabolicTranslate = (vertex, offset) => {
-  let [xe, ye] = vertex
-  const [xt, yt] = offset
-
-  vertex[0] = xe - xt
-  vertex[1] = ye + yt
-}
-
-const rotate = (vertex, theta) => {
+export const xrotate = (vertex, theta) => {
   // Rotation is the same as in euclidean space
   const [x, y] = vertex
   const c = cos(theta)
@@ -204,52 +173,63 @@ const rotate = (vertex, theta) => {
   vertex[1] = x * s + y * c
 }
 
-const hyperbolicScale = (vertex, scale) => {
+export const xscale = (vertex, scale) => {
   const [xe, ye, ze] = vertex
   const nr = scale / sqrt(xe * xe + ye * ye + ze * ze)
-  const offset = [vertex[0] * nr, -vertex[1] * nr, vertex[2] * nr]
-  hyperbolicTranslate(vertex, offset)
+  if (R.curvature !== 0) {
+    const offset = [vertex[0] * nr, -vertex[1] * nr, vertex[2] * nr]
+    xtranslate(vertex, offset)
+  } else {
+    vertex[0] = xe * (1 - scale)
+    vertex[1] = ye * (1 - scale)
+    vertex[2] = ze * (1 - scale)
+  }
 }
 
-const ellipticScale = (vertex, scale) => {
-  const [xe, ye, ze] = vertex
-  const nr = scale / sqrt(xe * xe + ye * ye + ze * ze)
-  const offset = [vertex[0] * nr, -vertex[1] * nr, vertex[2] * nr]
-  ellipticTranslate(vertex, offset)
+// 3D:
+// Rx | 1  0       0       |
+//    | 0  cos(o)  -sin(o) |
+//    | 0  sin(o)  cos(o)  |
+//
+// Ry | cos(p)  0  sin(p)  |
+//    | 0       1  0       |
+//    | -sin(p) 0  cos(p)  |
+
+// Rx * Ry | cos(p)   sin(o) * sin(p)  cos(o) * sin(p) |
+//         | 0        cos(o)           -sin(o)         |
+//         | -sin(p)  sin(o) * cos(p)  cos(o) * cos(p) |
+
+// Rx * Ry * v = | cos(p) * x + sin(o) * sin(p) * y + cos(o) * sin(p) * z  |
+//               | cos(o) * y - sin(o) * z                                 |
+//               | -sin(p) * x + sin(o) * cos(p) * y + cos(o) * cos(p) * z |
+
+export const xtranslate = (vertex, offset) => {
+  const [x, y, z] = vertex
+  const [xt, yt, zt] = offset
+
+  const cosp = sqrt(1 - R.curvature * xt * xt) // cosh?(asinh?(xt))
+  const coso = sqrt(1 - R.curvature * yt * yt) // cosh?(asinh?(yt))
+  const cosi = sqrt(1 - R.curvature * zt * zt) // cosh?(asinh?(yt))
+  const sinp = xt // sinh?(asinh?(xt))
+  const sino = yt // sinh?(asinh?(yt))
+  const sini = zt // sinh?(asinh?(yt))
+
+  if (R.curvature !== 0) {
+    const b = y * sino + z * coso
+    vertex[0] = cosp * x + R.curvature * b * sinp
+    vertex[1] = y * coso - R.curvature * z * sino
+    vertex[2] = -sinp * x + b * cosp
+    if (C.dimensions === 4) {
+      vertex[3] = z - zt
+    }
+  } else {
+    vertex[0] = x - xt
+    vertex[1] = y + yt
+    if (C.dimensions === 4) {
+      vertex[2] = z - zt
+    }
+  }
 }
-
-const parabolicScale = (vertex, scale) => {
-  let [xe, ye, ze] = vertex
-
-  vertex[0] = xe * (1 - scale)
-  vertex[1] = ye * (1 - scale)
-  vertex[2] = ze * (1 - scale)
-}
-
-const translations = [
-  hyperbolicTranslate,
-  parabolicTranslate,
-  ellipticTranslate,
-]
-
-export const translateVertex = (vertex, offset) =>
-  translations[R.curvature + 1](vertex, offset)
-
-const scales = [hyperbolicScale, parabolicScale, ellipticScale]
-
-export const scaleVertex = (vertex, factor) =>
-  scales[R.curvature + 1](vertex, factor)
-
-export const rotateVertex = rotate
-
-const transformations = {
-  translate: translateVertex,
-  scale: scaleVertex,
-  rotater: rotateVertex,
-}
-
-export const transformVertex = (type, vertex, parameter) =>
-  transformations[type](vertex, parameter)
 
 export const getFundamentalSimplexMirrors = gram => {
   const mirrors = new Array(C.dimensions)

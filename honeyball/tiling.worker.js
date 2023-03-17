@@ -93,7 +93,6 @@ export const initTiling = ({ dimensions, p, q, r, s, t, u, x, y, z, w }) => {
     z ? 1 : 0,
     w ? 1 : 0,
   ])
-
   newW.words.set('', newW.rootVertex)
 
   newW.rules = getRules(dimensions, p, q, r, s, t, u)
@@ -123,6 +122,7 @@ const tileFundamentalChamber = () => {
   let fundamentalChamberWords = ['']
   let futurewordsToConsider
   let max = 25
+  plot(W.rootVertex, _color.setHSL(0, 0.5, 0.5).getHex())
   // Start by filing the fundamental chamber to equilibrate the tiling
   do {
     futurewordsToConsider = []
@@ -164,7 +164,6 @@ function plot(rv, color) {
   const vertexHash = hash(rv)
   if (!W.vertexHashes.has(vertexHash)) {
     W.vertexHashes.add(vertexHash)
-
     W.vertices.push({
       vertex: rv,
       color,
@@ -182,22 +181,15 @@ function link(word, newWord, v, rv, color) {
   if (!W.edgeHashes.has(edgeHash)) {
     W.edgeHashes.add(edgeHash)
     if (!same(v, rv)) {
-      if (C.segments > 1 && C.curve) {
-        const segmented = xlerp(v, rv, 1 / C.segments)
-        for (let j = 0; j < segmented.length - 1; j++) {
-          W.edges.push({
-            vertex1: segmented[j],
-            vertex2: segmented[j + 1],
-            color: color,
-          })
-        }
-      } else {
-        W.edges.push({
-          vertex1: v,
-          vertex2: rv,
-          color: color,
-        })
-      }
+      const start = v.slice()
+      const end = rv.slice()
+
+      W.edges.push({
+        start,
+        end,
+        color: color,
+        segments: xlerp(start, end),
+      })
       return true
     }
   }

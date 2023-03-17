@@ -17,6 +17,7 @@
     "vite": "^4.1.0"
   },
   "dependencies": {
+    "interactjs": "^1.10.17",
     "stats.js": "^0.17.0",
     "three": "^0.150.0"
   }

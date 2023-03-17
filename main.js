@@ -92,6 +92,9 @@ const restore = () => {
   document.querySelectorAll('.d4').forEach(el => {
     el.style.display = C.dimensions === 4 ? 'block' : 'none'
   })
+  document.querySelector('#segments').style.display = C.curve
+    ? 'inline'
+    : 'none'
   'pqrstu'.split('').forEach(d => {
     document.querySelector(`#${d}`).value = C[d]
   })
@@ -243,10 +246,7 @@ const update = async event => {
   } else if (
     ['edges', 'vertices', 'thickness'].some(key => changed.includes(key))
   ) {
-    plot({
-      vertices: [0, R.vertices.length],
-      edges: [0, R.edges.length],
-    })
+    plot(true)
   }
   render()
 }
@@ -255,17 +255,18 @@ document.querySelectorAll('input').forEach(input => {
   input.addEventListener('change', update)
 })
 
-document.getElementById('space').addEventListener('click', () => {
+document.getElementById('space').addEventListener('dblclick', () => {
   if (document.body.classList.contains('processing')) {
     kill(tiling)
     document.body.classList.remove('processing')
     tiling = new Tiling()
     setC(defaultC, true)
-    restore()
-    update()
-  } else {
-    document.body.classList.toggle('real-estate')
   }
+  restore()
+  update()
+})
+document.getElementById('space').addEventListener('click', () => {
+  document.body.classList.toggle('real-estate')
 })
 
 getC()
