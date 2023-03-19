@@ -109,12 +109,23 @@
         border: none;
         background-color: rgba(150, 150, 150, 0.15);
         padding: 5px;
-        max-width: 4ch;
+        max-width: 5ch;
         font-size: 1.5em;
+      }
+      select {
+        color: white;
+        border: none;
+        background-color: rgba(25, 25, 25);
+        padding: 5px;
+        font-size: 1.5em;
+      }
+      select option {
+        background-color: rgba(25, 25, 25);
       }
 
       .real-estate .controls,
-      .real-estate .coxeters {
+      .real-estate .coxeters,
+      .real-estate #controls {
         display: none;
       }
       .error * {
@@ -139,15 +150,26 @@
       </label>
       <label>
         Thickness
-        <input type="number" id="thickness" min="0" max="10" step="0.1" />
+        <input type="number" id="thickness" min="0" max="10" step="0.01" />
       </label>
       <label>
         Light
-        <input type="number" id="light" min="0" max="10" step="0.1" />
+        <input type="number" id="light" min="0" max="10" step="0.01" />
       </label>
       <label>
         <input type="checkbox" id="d4" />
         4d
+      </label>
+      <label>
+        Projection
+        <select id="projection">
+          <option value="stereographic">Stereographic</option>
+          <option value="orthographic">Orthographic</option>
+          <option value="klein">Klein</option>
+          <option value="inverted">Inverted</option>
+          <option value="jemisphere" class="d3">Jemisphere</option>
+          <option value="upperhalf">Upper Half</option>
+        </select>
       </label>
       <label>
         <input type="checkbox" id="vertices" />

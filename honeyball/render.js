@@ -21,7 +21,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
 import { C } from './C'
-import { poincare } from './math/hypermath'
+import { xproject } from './math/hypermath'
 import { abs, max, min, sqrt } from './math/index'
 
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
@@ -200,7 +200,7 @@ const plotVertices = ([start, stop]) => {
     dummy.matrix.identity()
     dummy.matrixWorld.identity()
     dummy.quaternion.identity()
-    dummy.position.set(...(C.dimensions === 4 ? poincare(vertex) : vertex))
+    dummy.position.set(...xproject(vertex))
     if (C.dimensions === 4) {
       dummy.scale.setScalar(C.thickness / max(1, abs(vertex[3])))
     } else {
@@ -233,23 +233,25 @@ const plotEdges = ([start, stop]) => {
     let v = edge.segments[0] || edge.end
 
     for (let j = 0; j < segments; j++) {
-      const vertex3d1 = C.dimensions === 4 ? poincare(u) : u
-      const vertex3d2 = C.dimensions === 4 ? poincare(v) : v
-      const dx = vertex3d2[0] - vertex3d1[0]
-      const dy = vertex3d2[1] - vertex3d1[1]
-      const dz = vertex3d2[2] - vertex3d1[2]
+      const v1 = xproject(u)
+      const v2 = xproject(v)
+      //
+
       dummy.matrix.identity()
       dummy.matrixWorld.identity()
       dummy.quaternion.identity()
-      dummy.position.set(...vertex3d1)
+      dummy.position.set(...v1)
       let sx, sy
       if (C.dimensions === 4) {
         sx = sy = C.thickness / max(1, abs(edge.start[3]), abs(edge.end[3]))
       } else {
         sx = sy = C.thickness
       }
+      const dx = v2[0] - v1[0]
+      const dy = v2[1] - v1[1]
+      const dz = v2[2] - v1[2]
       dummy.scale.set(sx, sy, sqrt(dx * dx + dy * dy + dz * dz))
-      dummy.lookAt(...vertex3d2)
+      dummy.lookAt(...v2)
       dummy.updateMatrix()
       instancedEdge.setMatrixAt(i * segments + j, dummy.matrix)
       instancedEdge.setColorAt(i * segments + j, _color.set(edge.color))

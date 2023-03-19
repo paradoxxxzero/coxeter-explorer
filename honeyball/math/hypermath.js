@@ -102,13 +102,43 @@ export const normalize = v => {
   return v
 }
 
-export const poincare = v => {
+export const xproject = v => {
+  if (C.dimensions === 3 && C.projection === 'stereographic') {
+    return v
+  }
   v = v.slice()
-  const nr = 1 / (1 - R.curvature * v[v.length - 1])
+  if (C.projection === 'orthographic') {
+    v[v.length - 1] = 0
+    return v
+  }
+
+  const k =
+    -R.curvature *
+      {
+        stereographic: 1,
+        klein: 0,
+        inverted: -1,
+      }[C.projection] || 0
+
+  const nr = 1 / (k + v[v.length - 1])
   for (let i = 0; i < v.length - 1; i++) {
     v[i] *= nr
   }
-  v.length--
+  v[v.length - 1] = ['jemisphere', 'upperhalf'].includes(C.projection)
+    ? 1 / (1 + v[v.length - 1])
+    : 0
+
+  if (C.projection === 'upperhalf') {
+    const nr2 = 2 / (1 + v[0])
+    for (let i = 1; i < v.length; i++) {
+      v[i - 1] = v[i] * nr2
+    }
+    if (C.dimensions === 4) {
+      v[2] *= -1
+    }
+    v[v.length - 1] = 0
+  }
+
   return v
 }
 

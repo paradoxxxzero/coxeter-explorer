@@ -94,6 +94,9 @@ const restore = () => {
   document.querySelectorAll('.d4').forEach(el => {
     el.style.display = C.dimensions === 4 ? 'block' : 'none'
   })
+  document.querySelectorAll('.d3').forEach(el => {
+    el.style.display = C.dimensions === 3 ? 'block' : 'none'
+  })
   document.querySelector('#segments').style.display = C.curve
     ? 'inline'
     : 'none'
@@ -106,6 +109,7 @@ const restore = () => {
   document.querySelector('#order').value = C.order
   document.querySelector('#segments').value = C.segments
   document.querySelector('#curve').checked = C.curve
+  document.querySelector('#projection').value = C.projection
   document.querySelector('#vertices').checked = C.vertices
   document.querySelector('#edges').checked = C.edges
   document.querySelector('#light').value = C.light
@@ -120,6 +124,7 @@ const update = async event => {
   newC.dimensions = document.querySelector('#d4').checked ? 4 : 3
   newC.light = +document.querySelector('#light').value
   newC.thickness = +document.querySelector('#thickness').value
+  newC.projection = document.querySelector('#projection').value
   window.bloomPass.strength = newC.light
   newC.controls =
     document.querySelector('#controls').innerHTML === orbit ? 'orbit' : 'free'
@@ -140,6 +145,9 @@ const update = async event => {
 
     document.querySelectorAll('.d4').forEach(el => {
       el.style.display = newC.dimensions === 4 ? 'block' : 'none'
+    })
+    document.querySelectorAll('.d3').forEach(el => {
+      el.style.display = newC.dimensions === 3 ? 'block' : 'none'
     })
     if (newC.dimensions === 4) {
       setK('s', getK('q'))
@@ -251,14 +259,16 @@ const update = async event => {
       }
     }
   } else if (
-    ['edges', 'vertices', 'thickness'].some(key => changed.includes(key))
+    ['edges', 'vertices', 'thickness', 'projection'].some(key =>
+      changed.includes(key)
+    )
   ) {
     plot(true)
   }
   render()
 }
 
-document.querySelectorAll('input').forEach(input => {
+document.querySelectorAll('input,select').forEach(input => {
   input.addEventListener('change', update)
 })
 

@@ -21,7 +21,8 @@ export const defaultC = {
 
   light: 1.5,
   thickness: 1,
-  controls: 'free',
+  projection: 'stereographic',
+  controls: 'orbit',
 }
 
 export const C = { ...defaultC }
