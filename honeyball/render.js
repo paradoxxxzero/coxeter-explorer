@@ -2,40 +2,119 @@ import {
   Clock,
   Color,
   CylinderGeometry,
+  DirectionalLight,
   Group,
+  HemisphereLight,
   InstancedMesh,
   MeshBasicMaterial,
+  MeshLambertMaterial,
+  NoToneMapping,
   Object3D,
   PerspectiveCamera,
   ReinhardToneMapping,
   Scene,
   SphereGeometry,
+  StreamDrawUsage,
   Vector2,
   WebGLRenderer,
-  StreamDrawUsage,
+  MeshPhysicalMaterial,
+  TextureLoader,
+  sRGBEncoding,
+  EquirectangularReflectionMapping,
 } from 'three'
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
+import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
 import { C } from './C'
 import { xproject } from './math/hypermath'
-import { abs, max, min, sqrt } from './math/index'
+import { abs, max, sqrt } from './math/index'
 
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { R } from './R'
-export let stats, renderer, camera, scene, controls, clock, composer
+export let stats,
+  renderer,
+  camera,
+  scene,
+  controls,
+  clock,
+  composer,
+  bloomPass,
+  ssaoPass,
+  fxaaPass
 
 const group = new Group()
-
-const colors = {
-  background: 0x000000,
-  edges: 0x3949ab,
-  vertices: 0x03a9f4,
-}
 const _color = new Color()
+const loader = new TextureLoader()
+
+const ambiances = {
+  neon: {
+    background: 0x000000,
+    bloom: true,
+    material: new MeshBasicMaterial(),
+    lights: [],
+    ao: false,
+    colorVertex: ({ word }) => {
+      return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
+    },
+    colorEdge: ({ word }) => {
+      return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
+    },
+  },
+  museum: {
+    background: 0xffffff,
+    bloom: false,
+    material: new MeshLambertMaterial({
+      // roughness: 0.5,
+      // metalness: 0.5,
+      // clearcoat: 0.5,
+    }),
+    lights: [new DirectionalLight(), new HemisphereLight()],
+    ao: true,
+    colorVertex: () => {
+      return _color.set(0xaaaaaa)
+    },
+    colorEdge: () => {
+      return _color.set(0xaaaaaa)
+    },
+  },
+  glass: {
+    background: 0x000000,
+    env: () =>
+      new Promise(resolve =>
+        loader.load('ocean.jpg', texture => {
+          texture.encoding = sRGBEncoding
+          texture.mapping = EquirectangularReflectionMapping
+          resolve(texture)
+        })
+      ),
+    bloom: false,
+    material: new MeshPhysicalMaterial({
+      premultipliedAlpha: false,
+      reflectivity: 1,
+      refractionRatio: 0,
+      shininess: 0,
+      metalness: 0,
+      roughness: 0,
+      transmission: 1,
+      clearcoat: 1,
+      clearcoatRoughness: 0.1,
+      thickness: 1,
+      ior: 1.5,
+    }),
+    lights: [new DirectionalLight(), new HemisphereLight()],
+    ao: false,
+    colorVertex: () => {
+      return _color.set(0xaaaaaa)
+    },
+    colorEdge: () => {
+      return _color.set(0xaaaaaa)
+    },
+  },
+}
 
 export const initialize3d = () => {
   clock = new Clock()
@@ -43,18 +122,15 @@ export const initialize3d = () => {
   // document.body.appendChild(stats.dom)
   renderer = new WebGLRenderer()
 
-  renderer.setPixelRatio(window.devicePixelRatio)
+  // renderer.setPixelRatio(window.devicePixelRatio)
   renderer.setSize(window.innerWidth, window.innerHeight)
-  renderer.setClearColor(new Color(colors.background), 1)
-
-  renderer.domElement.id = 'c3d'
 
   document.body.appendChild(renderer.domElement)
   camera = new PerspectiveCamera(
     90,
     window.innerWidth / window.innerHeight,
     0.001,
-    100000
+    1000
   )
   camera.position.set(0, 0, -1)
   camera.up.set(0, 1, 0)
@@ -64,17 +140,10 @@ export const initialize3d = () => {
 
   scene = new Scene()
   scene.add(group)
-  // scene.background = new Color(colors.background)
 
   // scene.fog = new Fog(colors.background, 1, size)
 
-  // const ambientLight = new AmbientLight(0xffffff, 0.75)
-  // scene.add(ambientLight)
-
-  // const pointLight = new PointLight(0xffffff)
-  // camera.add(pointLight)
   camera.updateProjectionMatrix()
-
   scene.add(camera)
 
   controls = new OrbitControls(camera, renderer.domElement)
@@ -93,7 +162,7 @@ export const initialize3d = () => {
   composer = new EffectComposer(renderer)
   composer.addPass(new RenderPass(scene, camera))
 
-  const fxaaPass = new ShaderPass(FXAAShader)
+  fxaaPass = new ShaderPass(FXAAShader)
   const pixelRatio = renderer.getPixelRatio()
   fxaaPass.material.uniforms['resolution'].value.x =
     1 / (window.innerWidth * pixelRatio)
@@ -101,31 +170,29 @@ export const initialize3d = () => {
     1 / (window.innerHeight * pixelRatio)
   composer.addPass(fxaaPass)
 
-  renderer.toneMapping = ReinhardToneMapping
-  renderer.toneMappingExposure = 1.5
-  const bloomPass = new UnrealBloomPass(
+  bloomPass = new UnrealBloomPass(
     new Vector2(window.innerWidth, window.innerHeight),
     1.5,
     0,
     0
   )
   composer.addPass(bloomPass)
-  // const ssaoPass = new SSAOPass(
-  //   scene,
-  //   camera,
-  //   false,
-  //   true
-  //   // window.innerWidth,
-  //   // window.innerHeight
-  // )
-  // ssaoPass.kernelRadius = 4
-  // composer.addPass(ssaoPass)
+
+  ssaoPass = new SSAOPass(scene, camera, window.innerWidth, window.innerHeight)
+  ssaoPass.kernelRadius = 16
+  ssaoPass.minDistance = 0.1
+  ssaoPass.maxDistance = 2
+  // ssaoPass.output = SSAOPass.OUTPUT.Beauty
+  // ssaoPass.output = SSAOPass.OUTPUT.SSAO
+  composer.addPass(ssaoPass)
   // controls = new FirstPersonControls(camera, renderer.domElement)
   // controls.lookSpeed = 0.2
   // animate()
 
   initEdge()
   initVertex()
+
+  changeAmbiance()
 
   return {
     composer,
@@ -134,7 +201,7 @@ export const initialize3d = () => {
     camera,
     controls,
     bloomPass,
-    // ssaoPass,
+    ssaoPass,
     fxaaPass,
   }
 }
@@ -160,9 +227,10 @@ let currentVerticesMax = 5000
 let currentEdgesMax = 50000
 
 const initVertex = () => {
+  const ambiance = ambiances[C.ambiance]
   instancedVertex = new InstancedMesh(
     vertexGeometry,
-    new MeshBasicMaterial(),
+    ambiance.material,
     currentVerticesMax
   )
   instancedVertex.setColorAt(0, new Color())
@@ -173,9 +241,10 @@ const initVertex = () => {
 }
 
 const initEdge = () => {
+  const ambiance = ambiances[C.ambiance]
   instancedEdge = new InstancedMesh(
     edgeGeometry,
-    new MeshBasicMaterial(),
+    ambiance.material,
     currentEdgesMax
   )
   instancedEdge.setColorAt(0, new Color())
@@ -186,6 +255,7 @@ const initEdge = () => {
 }
 
 const plotVertices = ([start, stop]) => {
+  const ambiance = ambiances[C.ambiance]
   // console.info(`Plotting [${start},${stop}] vertices`)
   if (stop > currentVerticesMax) {
     currentVerticesMax = stop
@@ -196,25 +266,26 @@ const plotVertices = ([start, stop]) => {
   }
   instancedVertex.count = stop
   for (let i = start; i < stop; i++) {
-    const { vertex, color } = R.vertices[i]
+    const vertex = R.vertices[i]
     dummy.matrix.identity()
     dummy.matrixWorld.identity()
     dummy.quaternion.identity()
-    dummy.position.set(...xproject(vertex))
+    dummy.position.set(...xproject(vertex.vertex))
     if (C.dimensions === 4) {
-      dummy.scale.setScalar(C.thickness / max(1, abs(vertex[3])))
+      dummy.scale.setScalar(C.thickness / max(1, abs(vertex.vertex[3])))
     } else {
       dummy.scale.setScalar(C.thickness)
     }
     dummy.updateMatrix()
     instancedVertex.setMatrixAt(i, dummy.matrix)
-    instancedVertex.setColorAt(i, _color.set(color))
+    instancedVertex.setColorAt(i, ambiance.colorVertex(vertex))
   }
   instancedVertex.instanceMatrix.needsUpdate = true
   instancedVertex.instanceColor.needsUpdate = true
 }
 
 const plotEdges = ([start, stop]) => {
+  const ambiance = ambiances[C.ambiance]
   const segments = C.curve ? C.segments : 1
   const allStop = stop * segments
   // console.info(`Plotting [${start},${stop}] edges (${allStop})`)
@@ -254,7 +325,7 @@ const plotEdges = ([start, stop]) => {
       dummy.lookAt(...v2)
       dummy.updateMatrix()
       instancedEdge.setMatrixAt(i * segments + j, dummy.matrix)
-      instancedEdge.setColorAt(i * segments + j, _color.set(edge.color))
+      instancedEdge.setColorAt(i * segments + j, ambiance.colorEdge(edge))
       u = v
       v = edge.segments[j + 1] || edge.end
     }
@@ -280,6 +351,39 @@ export const plot = arg => {
   if (C.edges) {
     plotEdges(edges)
   }
+}
+export const changeAmbiance = async () => {
+  const ambiance = ambiances[C.ambiance]
+  if (ambiance.env) {
+    scene.background = await ambiance.env()
+  } else {
+    scene.background = null
+  }
+  renderer.setClearColor(new Color(ambiance.background), 1)
+  // Remove all lights
+  const lightsToRemove = []
+  scene.traverse(child => {
+    if (child.isLight) {
+      lightsToRemove.push(child)
+    }
+  })
+  lightsToRemove.forEach(light => {
+    scene.remove(light)
+  })
+  // Add new lights
+  ambiance.lights.forEach(light => {
+    scene.add(light)
+  })
+  renderer.toneMapping = ambiance.bloom ? ReinhardToneMapping : NoToneMapping
+  renderer.toneMappingExposure = ambiance.bloom ? 1.5 : 1
+  bloomPass.enabled = ambiance.bloom
+  ssaoPass.enabled = ambiance.ao
+
+  // Update materials
+  instancedVertex.material = ambiance.material
+  instancedEdge.material = ambiance.material
+  plot(true)
+  render()
 }
 
 export const render = () => {

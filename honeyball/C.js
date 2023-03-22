@@ -23,6 +23,7 @@ export const defaultC = {
   thickness: 1,
   projection: 'stereographic',
   controls: 'orbit',
+  ambiance: 'neon',
 }
 
 export const C = { ...defaultC }
@@ -42,6 +43,6 @@ export const getC = () => {
 export const setC = (newC, sync = false) => {
   Object.assign(C, newC)
   if (sync) {
-    location.hash = btoa(JSON.stringify(C))
+    window.history.pushState(null, null, '#' + btoa(JSON.stringify(C)))
   }
 }

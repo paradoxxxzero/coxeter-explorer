@@ -10,13 +10,12 @@ import {
   plot,
   render,
   renderer,
+  changeAmbiance,
 } from './honeyball/render'
 import Tiling from './honeyball/tiling.worker?worker'
 import { setProcess, worker, kill } from './honeyball/utlis'
 
 let tiling = new Tiling()
-window.C = C
-Object.assign(window, initialize3d())
 
 const size = () => {
   const subsampling = 1
@@ -114,6 +113,7 @@ const restore = () => {
   document.querySelector('#edges').checked = C.edges
   document.querySelector('#light').value = C.light
   document.querySelector('#thickness').value = C.thickness
+  document.querySelector('#ambiance').value = C.ambiance
   document.querySelector('#controls').innerHTML =
     C.controls === 'orbit' ? orbit : free
 }
@@ -125,6 +125,7 @@ const update = async event => {
   newC.light = +document.querySelector('#light').value
   newC.thickness = +document.querySelector('#thickness').value
   newC.projection = document.querySelector('#projection').value
+  newC.ambiance = document.querySelector('#ambiance').value
   window.bloomPass.strength = newC.light
   newC.controls =
     document.querySelector('#controls').innerHTML === orbit ? 'orbit' : 'free'
@@ -201,7 +202,7 @@ const update = async event => {
     mustRedraw = true
   }
 
-  setC(newC, true)
+  setC(newC, !!event)
 
   if (
     mustRedraw ||
@@ -265,6 +266,10 @@ const update = async event => {
   ) {
     plot(true)
   }
+  if (changed.includes('ambiance') || mustRedraw) {
+    changeAmbiance()
+  }
+
   render()
 }
 
@@ -293,6 +298,14 @@ document.getElementById('controls').addEventListener('click', () => {
 
 getC()
 restore()
+
+Object.assign(window, initialize3d())
 update()
+
+window.addEventListener('popstate', () => {
+  getC()
+  restore()
+  update()
+})
 
 interactions()

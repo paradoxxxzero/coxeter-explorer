@@ -187,7 +187,7 @@ const checkTimeout = () => {
   }
 }
 export const knuthBendix = rules => {
-  const tries = [10, 50, 100, 250].map(i => [i, i]).flat()
+  const tries = [50, 100, 250].map(i => [i, i]).flat()
 
   for (let i = 0; i < tries.length; i++) {
     timeout = tries[i]
@@ -195,7 +195,6 @@ export const knuthBendix = rules => {
       t = performance.now()
       return knuthBendixWithSort(rules, i % 2 ? shortLex : inverseShortLex)
     } catch (e) {
-      console.log(timeout, i)
       if (e.message !== 'Timeout') {
         throw e
       }

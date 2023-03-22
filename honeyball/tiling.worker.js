@@ -1,4 +1,3 @@
-import { Color } from 'three'
 import { abs, cos, PI } from './math'
 import { getRules, shorten } from './math/group'
 import {
@@ -11,8 +10,6 @@ import {
 import { C, setC } from './C'
 import { R, setR } from './R'
 import { W, setW } from './W'
-
-const _color = new Color()
 
 const same = (v1, v2) => {
   for (let i = 0; i < v1.length; i++) {
@@ -104,17 +101,16 @@ const flip = (word, k, v) => {
     return
   }
   const newWord = shorten(word + m)
-  const color = _color.setHSL((newWord.length * 0.17) % 1, 0.5, 0.5).getHex()
   if (W.words.has(newWord)) {
     const rv = W.words.get(newWord)
-    link(word, newWord, v, rv, color)
+    link(word, newWord, v, rv)
     return
   }
   const rv = reflectWord(newWord)
   W.words.set(newWord, rv)
 
-  plot(rv, color)
-  link(word, newWord, v, rv, color)
+  plot(rv, word)
+  link(word, newWord, v, rv)
   return newWord
 }
 
@@ -122,7 +118,7 @@ const tileFundamentalChamber = () => {
   let fundamentalChamberWords = ['']
   let futurewordsToConsider
   let max = 25
-  plot(W.rootVertex, _color.setHSL(0, 0.5, 0.5).getHex())
+  plot(W.rootVertex, '')
   // Start by filing the fundamental chamber to equilibrate the tiling
   do {
     futurewordsToConsider = []
@@ -161,18 +157,18 @@ export const tile = () => {
   W.wordsToConsider = futurewordsToConsider
 }
 
-function plot(rv, color) {
+function plot(rv, word) {
   const vertexHash = hash(rv)
   if (!W.vertexHashes.has(vertexHash)) {
     W.vertexHashes.add(vertexHash)
     W.vertices.push({
       vertex: rv,
-      color,
+      word,
     })
   }
 }
 
-function link(word, newWord, v, rv, color) {
+function link(word, newWord, v, rv) {
   const edgeHash =
     word.length < newWord.length ||
     (word.length === newWord.length && word < newWord)
@@ -188,7 +184,8 @@ function link(word, newWord, v, rv, color) {
       W.edges.push({
         start,
         end,
-        color: color,
+        word,
+        newWord,
         segments: xlerp(start, end),
       })
       return true
