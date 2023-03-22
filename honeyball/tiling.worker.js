@@ -86,7 +86,6 @@ export const initTiling = ({ dimensions, p, q, r, s, t, u, x, y, z, w }) => {
         .map((_, j) => (i === j ? newW.curvature || 1 : 0))
     )
   )
-
   newW.rootVertex = getFundamentalVertex(newW.mirrors, [
     x ? 1 : 0,
     y ? 1 : 0,
@@ -139,6 +138,7 @@ const tileFundamentalChamber = () => {
     fundamentalChamberWords.push(...futurewordsToConsider)
     W.wordsToConsider = futurewordsToConsider
   } while (futurewordsToConsider.length && max--)
+
   if (max < 0) {
     throw new Error('Could not tile fundamental chamber')
   }
@@ -202,7 +202,13 @@ onmessage = ({ data: { C, order, uuid } }) => {
 
     if (order === 0) {
       initTiling(C)
-      tileFundamentalChamber()
+      try {
+        tileFundamentalChamber()
+      } catch (e) {
+        if (e.message === 'Could not tile fundamental chamber') {
+          initTiling(C)
+        }
+      }
     } else {
       W.vertices = []
       W.edges = []

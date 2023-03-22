@@ -1,17 +1,22 @@
 import { W } from '../W'
 
-const MAX_ITERATIONS = 100
-let t
-
-export const sorter = (a, b) => {
+export const shortLex = (a, b) => {
   const l = a.length - b.length
   if (l !== 0) {
-    return l
+    return Math.sign(l)
   }
   return a <= b ? -1 : 1
 }
 
-const normalize = rules => {
+export const inverseShortLex = (a, b) => {
+  const l = a.length - b.length
+  if (l !== 0) {
+    return Math.sign(l)
+  }
+  return a <= b ? 1 : -1
+}
+
+const normalize = (rules, sorter) => {
   const ruleMap = new Map()
   const keys = Object.keys(rules).sort(sorter)
   for (let i = 0; i < keys.length; i++) {
@@ -40,14 +45,12 @@ export const rewrite = (rules, word) => {
   return word
 }
 
-const simplify = rules => {
+const simplify = (rules, sorter) => {
   const newRules = new Map(rules)
   rules = [...rules.entries()]
 
   while (rules.length > 0) {
-    if (performance.now() - t > 5000) {
-      throw new Error('Timeout')
-    }
+    checkTimeout()
     const [v, w] = rules.pop()
     newRules.delete(v)
 
@@ -118,11 +121,12 @@ const findOverlap = (v1, w1, v2, w2) => {
   }
 }
 
-const complete = rules => {
+const complete = (rules, sorter) => {
   const newRules = new Map(rules)
 
   const entries = [...rules.entries()]
   for (let i = 0; i < entries.length; i++) {
+    checkTimeout()
     const [v1, w1] = entries[i]
     for (let j = 0; j < entries.length; j++) {
       if (i === j) continue
@@ -143,7 +147,7 @@ const complete = rules => {
   return newRules
 }
 
-const reduce = rules => complete(simplify(rules))
+const reduce = (rules, sorter) => complete(simplify(rules, sorter), sorter)
 
 const equals = (a, b) => {
   if (a.size !== b.size) {
@@ -162,18 +166,42 @@ const equals = (a, b) => {
   }
 }
 
-export const knuthBendix = rules => {
-  t = performance.now()
-  rules = normalize(rules)
-  for (let i = 0; i < MAX_ITERATIONS; i++) {
-    const newRules = reduce(rules)
+export const knuthBendixWithSort = (rules, sorter) => {
+  rules = normalize(rules, sorter)
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const newRules = reduce(rules, sorter)
     if (equals(newRules, rules)) {
       newRules._re_cache = new RegExp([...newRules.keys()].join('|'), 'g')
       return newRules
     }
     rules = newRules
   }
-  throw new Error('Max iterations reached')
+}
+
+let t, timeout
+const checkTimeout = () => {
+  if (performance.now() - t > timeout) {
+    throw new Error('Timeout')
+  }
+}
+export const knuthBendix = rules => {
+  const tries = [10, 50, 100, 250].map(i => [i, i]).flat()
+
+  for (let i = 0; i < tries.length; i++) {
+    timeout = tries[i]
+    try {
+      t = performance.now()
+      return knuthBendixWithSort(rules, i % 2 ? shortLex : inverseShortLex)
+    } catch (e) {
+      console.log(timeout, i)
+      if (e.message !== 'Timeout') {
+        throw e
+      }
+    }
+  }
+  throw new Error('Timeout')
 }
 
 export const getRules = (dimensions, p, q, r, s, t, u) =>
