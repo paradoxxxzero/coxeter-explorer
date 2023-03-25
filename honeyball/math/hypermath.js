@@ -59,6 +59,52 @@ export const xdot = (v1, v2, forceCurvature = null) => {
   }
   return sum
 }
+export const xcross = (v1, v2, v3, forceCurvature) => {
+  if (typeof v3 === 'number') {
+    forceCurvature = v3
+    v3 = null
+  }
+  const c = forceCurvature === null ? R.curvature : forceCurvature
+  if (!v3) {
+    const [x1, y1, z1] = v1
+    const [x2, y2, z2] = v2
+    return [
+      y1 * z2 - y2 * z1,
+      z1 * x2 - z2 * x1,
+      (c || 1) * (x1 * y2 - x2 * y1),
+    ]
+  }
+  const [x1, y1, z1, w1] = v1
+  const [x2, y2, z2, w2] = v2
+  const [x3, y3, z3, w3] = v3
+  return [
+    +y2 * z3 * w1 -
+      y3 * z2 * w1 -
+      y1 * z3 * w2 +
+      y3 * z1 * w2 +
+      w3 * y1 * z2 -
+      w3 * y2 * z1,
+    -x2 * z3 * w1 +
+      x3 * z2 * w1 +
+      x1 * z3 * w2 -
+      x3 * z1 * w2 -
+      w3 * x1 * z2 +
+      w3 * x2 * z1,
+    +x2 * y3 * w1 -
+      x3 * y2 * w1 -
+      x1 * y3 * w2 +
+      x3 * y1 * w2 +
+      w3 * x1 * y2 -
+      w3 * x2 * y1,
+    (R.curvature || 1) *
+      (-x1 * y2 * z3 +
+        x1 * y3 * z2 +
+        x2 * y1 * z3 -
+        x2 * y3 * z1 -
+        x3 * y1 * z2 +
+        x3 * y2 * z1),
+  ]
+}
 
 export const xdistance = (v1, v2) => {
   if (R.curvature > 0) {

@@ -186,7 +186,7 @@ function link(word, newWord, v, rv) {
         end,
         word,
         newWord,
-        segments: xlerp(start, end),
+        // segments: xlerp(start, end),
       })
       return true
     }

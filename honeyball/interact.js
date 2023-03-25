@@ -14,7 +14,7 @@ const translate = offset => {
     const { start, end } = R.edges[i]
     xtranslate(start, offset)
     xtranslate(end, offset)
-    R.edges[i].segments = xlerp(start, end)
+    // R.edges[i].segments = xlerp(start, end)
   }
 }
 
@@ -27,7 +27,7 @@ const rotate = theta => {
     const { start, end } = R.edges[i]
     xrotate(start, theta)
     xrotate(end, theta)
-    R.edges[i].segments = xlerp(start, end)
+    // R.edges[i].segments = xlerp(start, end)
   }
 }
 
@@ -40,7 +40,7 @@ const scale = factor => {
     const { start, end } = R.edges[i]
     xscale(start, factor)
     xscale(end, factor)
-    R.edges[i].segments = xlerp(start, end)
+    // R.edges[i].segments = xlerp(start, end)
   }
 }
 

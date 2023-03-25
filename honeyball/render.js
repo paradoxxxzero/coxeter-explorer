@@ -3,24 +3,29 @@ import {
   Color,
   CylinderGeometry,
   DirectionalLight,
+  EquirectangularReflectionMapping,
   Group,
   HemisphereLight,
   InstancedMesh,
+  Matrix4,
   MeshBasicMaterial,
   MeshLambertMaterial,
+  MeshPhysicalMaterial,
   NoToneMapping,
   Object3D,
   PerspectiveCamera,
   ReinhardToneMapping,
   Scene,
   SphereGeometry,
+  sRGBEncoding,
   StreamDrawUsage,
+  TextureLoader,
   Vector2,
   WebGLRenderer,
-  MeshPhysicalMaterial,
-  TextureLoader,
-  sRGBEncoding,
-  EquirectangularReflectionMapping,
+  Vector3,
+  InstancedBufferGeometry,
+  InstancedBufferAttribute,
+  Mesh,
 } from 'three'
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
@@ -30,11 +35,14 @@ import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
 import { C } from './C'
-import { xproject } from './math/hypermath'
-import { abs, max, sqrt } from './math/index'
+import { xdot, xproject, xcross } from './math/hypermath'
 
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { R } from './R'
+import { sqrt } from './math'
+import { wrapVertexMaterial } from './shader/wrapVertexMaterial'
+import { wrapEdgeMaterial } from './shader/wrapEdgeMaterial'
+
 export let stats,
   renderer,
   camera,
@@ -42,12 +50,14 @@ export let stats,
   controls,
   clock,
   composer,
+  renderPass,
   bloomPass,
   ssaoPass,
   fxaaPass
 
 const group = new Group()
 const _color = new Color()
+const _matrix = new Matrix4()
 const loader = new TextureLoader()
 
 const ambiances = {
@@ -95,8 +105,6 @@ const ambiances = {
     material: new MeshPhysicalMaterial({
       premultipliedAlpha: false,
       reflectivity: 1,
-      refractionRatio: 0,
-      shininess: 0,
       metalness: 0,
       roughness: 0,
       transmission: 1,
@@ -112,6 +120,21 @@ const ambiances = {
     },
     colorEdge: () => {
       return _color.set(0xaaaaaa)
+    },
+  },
+  wireframe: {
+    background: 0x000000,
+    bloom: false,
+    material: new MeshBasicMaterial({
+      wireframe: true,
+    }),
+    lights: [],
+    ao: false,
+    colorVertex: ({ word }) => {
+      return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
+    },
+    colorEdge: ({ word }) => {
+      return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
     },
   },
 }
@@ -160,7 +183,16 @@ export const initialize3d = () => {
   })
 
   composer = new EffectComposer(renderer)
-  composer.addPass(new RenderPass(scene, camera))
+  renderPass = new RenderPass(scene, camera)
+  composer.addPass(renderPass)
+
+  ssaoPass = new SSAOPass(scene, camera, window.innerWidth, window.innerHeight)
+  ssaoPass.kernelRadius = 16
+  ssaoPass.minDistance = 0.1
+  ssaoPass.maxDistance = 2
+  // ssaoPass.output = SSAOPass.OUTPUT.Beauty
+  // ssaoPass.output = SSAOPass.OUTPUT.SSAO
+  composer.addPass(ssaoPass)
 
   fxaaPass = new ShaderPass(FXAAShader)
   const pixelRatio = renderer.getPixelRatio()
@@ -178,13 +210,6 @@ export const initialize3d = () => {
   )
   composer.addPass(bloomPass)
 
-  ssaoPass = new SSAOPass(scene, camera, window.innerWidth, window.innerHeight)
-  ssaoPass.kernelRadius = 16
-  ssaoPass.minDistance = 0.1
-  ssaoPass.maxDistance = 2
-  // ssaoPass.output = SSAOPass.OUTPUT.Beauty
-  // ssaoPass.output = SSAOPass.OUTPUT.SSAO
-  composer.addPass(ssaoPass)
   // controls = new FirstPersonControls(camera, renderer.domElement)
   // controls.lookSpeed = 0.2
   // animate()
@@ -200,26 +225,12 @@ export const initialize3d = () => {
     scene,
     camera,
     controls,
+    renderPass,
     bloomPass,
     ssaoPass,
     fxaaPass,
   }
 }
-
-const dummy = new Object3D()
-const vertexRadius = 0.06
-const edgeRadius = 0.025
-const vertexGeometry = new SphereGeometry(vertexRadius, 16, 16)
-const edgeGeometry = new CylinderGeometry(
-  edgeRadius,
-  edgeRadius,
-  1,
-  8,
-  1,
-  false
-)
-edgeGeometry.translate(0, 0.5, 0)
-edgeGeometry.rotateX(Math.PI / 2)
 
 let instancedVertex = null
 let instancedEdge = null
@@ -228,29 +239,69 @@ let currentEdgesMax = 50000
 
 const initVertex = () => {
   const ambiance = ambiances[C.ambiance]
-  instancedVertex = new InstancedMesh(
-    vertexGeometry,
-    ambiance.material,
-    currentVerticesMax
+  const vertex3dGeometry = new SphereGeometry(1e-6, 16, 16)
+  const vertexGeometry = new InstancedBufferGeometry().copy(vertex3dGeometry)
+
+  // vertexGeometry.setAttribute("position", new BufferAttribute(new Float32Array(currentVerticesMax * 4), 4)
+  vertexGeometry.setAttribute(
+    'instancePosition',
+    new InstancedBufferAttribute(new Float32Array(currentVerticesMax * 4), 4)
   )
-  instancedVertex.setColorAt(0, new Color())
-  instancedVertex.count = 0
-  instancedVertex.instanceMatrix.setUsage(StreamDrawUsage)
-  instancedVertex.instanceColor.setUsage(StreamDrawUsage)
+  vertexGeometry.setAttribute(
+    'instanceColor',
+    new InstancedBufferAttribute(new Float32Array(currentVerticesMax * 3), 3)
+  )
+
+  // const vertexGeometry = new SphereGeometry(vertexRadius, 16, 16)
+  instancedVertex = new Mesh(
+    vertexGeometry,
+    wrapVertexMaterial(ambiance.material.clone())
+  )
+
+  // instancedVertex.setColorAt(0, new Color())
+  instancedVertex.geometry.instanceCount = 0
+  // instancedVertex.instanceMatrix.setUsage(StreamDrawUsage)
+  // instancedVertex.instanceColor.setUsage(StreamDrawUsage)
   group.add(instancedVertex)
 }
 
 const initEdge = () => {
   const ambiance = ambiances[C.ambiance]
-  instancedEdge = new InstancedMesh(
-    edgeGeometry,
-    ambiance.material,
-    currentEdgesMax
+  const edgeRadius = 0
+  const edge3dGeometry = new CylinderGeometry(
+    edgeRadius,
+    edgeRadius,
+    1,
+    8,
+    C.curve ? C.segments : 1,
+    true
   )
-  instancedEdge.setColorAt(0, new Color())
-  instancedEdge.count = 0
-  instancedEdge.instanceMatrix.setUsage(StreamDrawUsage)
-  instancedEdge.instanceColor.setUsage(StreamDrawUsage)
+  edge3dGeometry.rotateX(Math.PI)
+  edge3dGeometry.translate(0, 0.5, 0)
+  edge3dGeometry.rotateX(Math.PI / 2)
+  const edgeGeometry = new InstancedBufferGeometry().copy(edge3dGeometry)
+
+  edgeGeometry.setAttribute(
+    'instancePositionStart',
+    new InstancedBufferAttribute(new Float32Array(currentEdgesMax * 4), 4)
+  )
+  edgeGeometry.setAttribute(
+    'instancePositionEnd',
+    new InstancedBufferAttribute(new Float32Array(currentEdgesMax * 4), 4)
+  )
+  edgeGeometry.setAttribute(
+    'instanceColor',
+    new InstancedBufferAttribute(new Float32Array(currentEdgesMax * 3), 3)
+  )
+
+  instancedEdge = new Mesh(
+    edgeGeometry,
+    wrapEdgeMaterial(ambiance.material.clone())
+  )
+  // instancedEdge.setColorAt(0, new Color())
+  instancedEdge.geometry.instanceCount = 0
+  // instancedEdge.instanceMatrix.setUsage(StreamDrawUsage)
+  // instancedEdge.instanceColor.setUsage(StreamDrawUsage)
   group.add(instancedEdge)
 }
 
@@ -259,82 +310,211 @@ const plotVertices = ([start, stop]) => {
   // console.info(`Plotting [${start},${stop}] vertices`)
   if (stop > currentVerticesMax) {
     currentVerticesMax = stop
-    instancedVertex.dispose()
     group.remove(instancedVertex)
+    instancedVertex.geometry.dispose()
     initVertex()
+    updateUniforms()
     start = 0
   }
-  instancedVertex.count = stop
+  instancedVertex.geometry.instanceCount = stop
   for (let i = start; i < stop; i++) {
     const vertex = R.vertices[i]
-    dummy.matrix.identity()
-    dummy.matrixWorld.identity()
-    dummy.quaternion.identity()
-    dummy.position.set(...xproject(vertex.vertex))
-    if (C.dimensions === 4) {
-      dummy.scale.setScalar(C.thickness / max(1, abs(vertex.vertex[3])))
-    } else {
-      dummy.scale.setScalar(C.thickness)
-    }
-    dummy.updateMatrix()
-    instancedVertex.setMatrixAt(i, dummy.matrix)
-    instancedVertex.setColorAt(i, ambiance.colorVertex(vertex))
+    // dummy.matrix.identity()
+    // dummy.matrixWorld.identity()
+    // dummy.quaternion.identity()
+    // dummy.position.set(...xproject(vertex.vertex))
+    // // if (C.dimensions === 4) {
+    //   dummy.scale.setScalar(C.thickness / max(1, abs(vertex.vertex[3])))
+    // } else {
+    //   // dummy.scale.setScalar(C.thickness)
+    // }
+    // dummy.updateMatrix()
+    // instancedVertex.setMatrixAt(i, dummy.matrix)
+    const ipos = instancedVertex.geometry.attributes.instancePosition.array
+    ipos[i * 4 + 0] = vertex.vertex[0]
+    ipos[i * 4 + 1] = vertex.vertex[1]
+    ipos[i * 4 + 2] = vertex.vertex[2]
+    ipos[i * 4 + 3] = C.dimensions === 3 ? 1 : vertex.vertex[3]
+
+    const icolor = instancedVertex.geometry.attributes.instanceColor.array
+    ambiance.colorVertex(vertex)
+    icolor[i * 3 + 0] = _color.r
+    icolor[i * 3 + 1] = _color.g
+    icolor[i * 3 + 2] = _color.b
+
+    // instancedVertex.setColorAt(i, ambiance.colorVertex(vertex))
   }
-  instancedVertex.instanceMatrix.needsUpdate = true
-  instancedVertex.instanceColor.needsUpdate = true
+  instancedVertex.geometry.attributes.instancePosition.needsUpdate = true
+  instancedVertex.geometry.attributes.instanceColor.needsUpdate = true
+  // instancedVertex.instanceMatrix.needsUpdate = true
+  // instancedVertex.instanceColor.needsUpdate = true
 }
 
-const plotEdges = ([start, stop]) => {
+const plotEdges = ([start, stop], segmentsChanged = false) => {
   const ambiance = ambiances[C.ambiance]
-  const segments = C.curve ? C.segments : 1
-  const allStop = stop * segments
   // console.info(`Plotting [${start},${stop}] edges (${allStop})`)
 
-  if (allStop > currentEdgesMax) {
-    currentEdgesMax = allStop
-    instancedEdge.dispose()
+  if (stop > currentEdgesMax || segmentsChanged) {
+    currentEdgesMax = stop
+    instancedEdge.geometry.dispose()
+    instancedEdge.material.dispose()
     group.remove(instancedEdge)
     initEdge()
+    updateUniforms()
     start = 0
   }
-  instancedEdge.count = allStop
+  instancedEdge.geometry.instanceCount = stop
   for (let i = start; i < stop; i++) {
     const edge = R.edges[i]
-    let u = edge.start
-    let v = edge.segments[0] || edge.end
+    const iposstart =
+      instancedEdge.geometry.attributes.instancePositionStart.array
+    iposstart[i * 4 + 0] = edge.start[0]
+    iposstart[i * 4 + 1] = edge.start[1]
+    iposstart[i * 4 + 2] = edge.start[2]
+    iposstart[i * 4 + 3] = C.dimensions === 3 ? 1 : edge.start[3]
+    const iposend = instancedEdge.geometry.attributes.instancePositionEnd.array
+    iposend[i * 4 + 0] = edge.end[0]
+    iposend[i * 4 + 1] = edge.end[1]
+    iposend[i * 4 + 2] = edge.end[2]
+    iposend[i * 4 + 3] = C.dimensions === 3 ? 1 : edge.end[3]
 
-    for (let j = 0; j < segments; j++) {
-      const v1 = xproject(u)
-      const v2 = xproject(v)
-      //
+    const icolor = instancedEdge.geometry.attributes.instanceColor.array
+    ambiance.colorEdge(edge)
+    icolor[i * 3 + 0] = _color.r
+    icolor[i * 3 + 1] = _color.g
+    icolor[i * 3 + 2] = _color.b
 
-      dummy.matrix.identity()
-      dummy.matrixWorld.identity()
-      dummy.quaternion.identity()
-      dummy.position.set(...v1)
-      let sx, sy
-      if (C.dimensions === 4) {
-        sx = sy = C.thickness / max(1, abs(edge.start[3]), abs(edge.end[3]))
-      } else {
-        sx = sy = C.thickness
-      }
-      const dx = v2[0] - v1[0]
-      const dy = v2[1] - v1[1]
-      const dz = v2[2] - v1[2]
-      dummy.scale.set(sx, sy, sqrt(dx * dx + dy * dy + dz * dz))
-      dummy.lookAt(...v2)
-      dummy.updateMatrix()
-      instancedEdge.setMatrixAt(i * segments + j, dummy.matrix)
-      instancedEdge.setColorAt(i * segments + j, ambiance.colorEdge(edge))
-      u = v
-      v = edge.segments[j + 1] || edge.end
-    }
+    // const p1 = edge.start
+    // const p2 = edge.end
+
+    // // const u = xproject(p1)
+    // // const v = xproject(p2)
+    // const up = [0, 1, 0]
+    // const u = [...p1]
+    // const v = [...p2]
+    // _matrix.identity()
+    // _matrix.setPosition(...u)
+
+    // const z = new Array(C.dimensions)
+    // for (let i = 0; i < C.dimensions; i++) {
+    //   z[i] = v[i] - u[i]
+    // }
+
+    // const norm = v => {
+    //   let sum = 0
+    //   for (let i = 0; i < C.dimensions; i++) {
+    //     sum += v[i] * v[i]
+    //   }
+    //   sum = sqrt(sum)
+    //   for (let i = 0; i < C.dimensions; i++) {
+    //     v[i] /= sum
+    //   }
+    // }
+
+    // norm(z)
+    // const x = xcross(up, z, 1)
+    // norm(x)
+    // const y = xcross(z, x, 1)
+
+    // _matrix.elements[0] = x[0]
+    // _matrix.elements[1] = x[1]
+    // _matrix.elements[2] = x[2]
+    // _matrix.elements[4] = y[0]
+    // _matrix.elements[5] = y[1]
+    // _matrix.elements[6] = y[2]
+    // _matrix.elements[8] = z[0]
+    // _matrix.elements[9] = z[1]
+    // _matrix.elements[10] = z[2]
+
+    // // _matrix.lookAt(v, u, _up)
+    // // const dw = v[3] - u[3]
+    // let s = 0
+    // for (let i = 0; i < C.dimensions; i++) {
+    //   s += (v[i] - u[i]) ** 2
+    // }
+    // s = sqrt(s)
+    // _matrix.elements[8] *= s
+    // _matrix.elements[9] *= s
+    // _matrix.elements[10] *= s
+    // _matrix.elements[11] *= s
+    // // dummy.matrix.identity()
+    // // dummy.matrixWorld.identity()
+    // // dummy.quaternion.identity()
+    // // dummy.position.set(...u)
+    // // const dx = v[0] - u[0]
+    // // const dy = v[1] - u[1]
+    // // const dz = v[2] - u[2]
+    // // // const dw = v[3] - u[3]
+    // // dummy.scale.set(1, 1, sqrt(dx * dx + dy * dy + dz * dz /*+ dw * dw*/))
+
+    // // dummy.lookAt(...v)
+    // // dummy.updateMatrix()
+
+    // // const u = new Array(C.dimensions).fill(0)
+    // // const v = new Array(C.dimensions).fill(0)
+    // // const w = new Array(C.dimensions).fill(0)
+
+    // // u[2] = 1
+    // // for (let j = 0; j < C.dimensions; j++) {
+    // //   v[j] = p2[j] - p1[j]
+    // //   w[j] = u[j] + v[j]
+    // // }
+    // // const nr = 1 / (1 + xdot(u, v))
+
+    // // for (let j = 0; j < 4; j++) {
+    // //   for (let k = 0; k < 4; k++) {
+    // //     const p = 4 * k + j
+    // //     if (C.dimensions === 3 && (j === 3 || k === 3)) {
+    // //       _matrix.elements[p] = j === k ? 1 : 0
+    // //     } else {
+    // //       _matrix.elements[p] = 1 - w[j] * w[k] * nr + 2 * u[j] * v[k]
+    // //     }
+    // //   }
+    // // }
+
+    // // // _matrix.transpose()
+    // // _matrix.elements[12] = p1[0]
+    // // _matrix.elements[13] = p1[1]
+    // // _matrix.elements[14] = p1[2]
+    // // console.log(_matrix.elements)
+    // // _matrix.elements[15] += p1[3]
+    // // R = I - ((w) / (1 + u.v)) * (w)t + 2 * v * ut
+    // // const R00 = 1 - w[0] * w[0] * nr + 2 * u[0] * v[0]
+    // // const R01 = 1 - w[0] * w[1] * nr + 2 * u[0] * v[1]
+    // // const R02 = 1 - w[0] * w[2] * nr + 2 * u[0] * v[2]
+    // // const R03 = 1 - w[0] * w[3] * nr + 2 * u[0] * v[3]
+    // // const R10 = 1 - w[1] * w[0] * nr + 2 * u[1] * v[0]
+    // // const R11 = 1 - w[1] * w[1] * nr + 2 * u[1] * v[1]
+    // // const R12 = 1 - w[1] * w[2] * nr + 2 * u[1] * v[2]
+    // // const R13 = 1 - w[1] * w[3] * nr + 2 * u[1] * v[3]
+    // // const R20 = 1 - w[2] * w[0] * nr + 2 * u[2] * v[0]
+    // // const R21 = 1 - w[2] * w[1] * nr + 2 * u[2] * v[1]
+    // // const R22 = 1 - w[2] * w[2] * nr + 2 * u[2] * v[2]
+    // // const R23 = 1 - w[2] * w[3] * nr + 2 * u[2] * v[3]
+    // // const R30 = 1 - w[3] * w[0] * nr + 2 * u[3] * v[0]
+    // // const R31 = 1 - w[3] * w[1] * nr + 2 * u[3] * v[1]
+    // // const R32 = 1 - w[3] * w[2] * nr + 2 * u[3] * v[2]
+    // // const R33 = 1 - w[3] * w[3] * nr + 2 * u[3] * v[3]
+    // // // prettier-ignore
+    // // _matrix.set(
+    // //   R00, R01, R02, R03,
+    // //   R10, R11, R12, R13,
+    // //   R20, R21, R22, R23,
+    // //   R30, R31, R32, R33,
+    // // )
+    // // instancedEdge.setMatrixAt(i, _matrix)
+    // instancedEdge.setMatrixAt(i, _matrix)
+    // instancedEdge.setColorAt(i, ambiance.colorEdge(edge))
   }
-  instancedEdge.instanceMatrix.needsUpdate = true
-  instancedEdge.instanceColor.needsUpdate = true
+
+  instancedEdge.geometry.attributes.instancePositionStart.needsUpdate = true
+  instancedEdge.geometry.attributes.instancePositionEnd.needsUpdate = true
+  instancedEdge.geometry.attributes.instanceColor.needsUpdate = true
+  // instancedEdge.instanceMatrix.needsUpdate = true
+  // instancedEdge.instanceColor.needsUpdate = true
 }
 
-export const plot = arg => {
+export const plot = (arg, segmentsChanged = false) => {
   let vertices, edges
   if (arg === true) {
     vertices = [0, R.vertices.length]
@@ -349,7 +529,7 @@ export const plot = arg => {
   }
   instancedEdge.visible = C.edges
   if (C.edges) {
-    plotEdges(edges)
+    plotEdges(edges, segmentsChanged)
   }
 }
 export const changeAmbiance = async () => {
@@ -378,17 +558,50 @@ export const changeAmbiance = async () => {
   renderer.toneMappingExposure = ambiance.bloom ? 1.5 : 1
   bloomPass.enabled = ambiance.bloom
   ssaoPass.enabled = ambiance.ao
+  renderPass.enabled = !ambiance.ao
 
   // Update materials
-  instancedVertex.material = ambiance.material
-  instancedEdge.material = ambiance.material
+  instancedVertex.material = wrapVertexMaterial(ambiance.material.clone())
+  instancedEdge.material = wrapEdgeMaterial(ambiance.material.clone())
+  updateUniforms()
   plot(true)
   render()
+}
+
+export const updateUniforms = () => {
+  if (instancedVertex) {
+    instancedVertex.material.uniforms.curvature.value = R.curvature
+    instancedVertex.material.uniforms.thickness.value = C.thickness
+    instancedVertex.material.uniforms.dimensions.value = C.dimensions
+    instancedEdge.material.uniforms.projection.value = [
+      'stereographic',
+      'orthographic',
+      'klein',
+      'inverted',
+      'jemisphere',
+      'upperhalf',
+    ].indexOf(C.projection)
+  }
+  if (instancedEdge) {
+    instancedEdge.material.uniforms.curvature.value = R.curvature
+    instancedEdge.material.uniforms.thickness.value = C.thickness
+    instancedEdge.material.uniforms.dimensions.value = C.dimensions
+    instancedEdge.material.uniforms.projection.value = [
+      'stereographic',
+      'orthographic',
+      'klein',
+      'inverted',
+      'jemisphere',
+      'upperhalf',
+    ].indexOf(C.projection)
+    instancedEdge.material.uniforms.segments.value = C.curve ? C.segments : 1
+  }
 }
 
 export const render = () => {
   // const delta = clock.getDelta()
   // stats.begin()
+
   composer.render()
   // controls.update(delta)
   // stats.end()

@@ -11,6 +11,7 @@ import {
   render,
   renderer,
   changeAmbiance,
+  updateUniforms,
 } from './honeyball/render'
 import Tiling from './honeyball/tiling.worker?worker'
 import { setProcess, worker, kill } from './honeyball/utlis'
@@ -203,12 +204,11 @@ const update = async event => {
   }
 
   setC(newC, !!event)
+  updateUniforms()
 
   if (
     mustRedraw ||
-    ['x', 'y', 'z', 'w', 'order', 'segments', 'curve'].some(key =>
-      changed.includes(key)
-    )
+    ['x', 'y', 'z', 'w', 'order'].some(key => changed.includes(key))
   ) {
     if (target === 'order' && R.ranges[C.order - 1]) {
       plot(R.ranges[C.order - 1])
@@ -260,16 +260,16 @@ const update = async event => {
       }
     }
   } else if (
-    ['edges', 'vertices', 'thickness', 'projection'].some(key =>
-      changed.includes(key)
+    ['edges', 'vertices', 'thickness', 'projection', 'curve', 'segments'].some(
+      key => changed.includes(key)
     )
   ) {
-    plot(true)
+    plot(true, changed.includes('segments') || changed.includes('curve'))
   }
   if (changed.includes('ambiance') || mustRedraw) {
     changeAmbiance()
+    return
   }
-
   render()
 }
 
