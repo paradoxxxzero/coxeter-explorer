@@ -19,19 +19,19 @@ vec4 xnormalize(in vec4 v) {
 vec4 xproject(in vec4 v) {
   #ifdef D_4
   #ifdef P_STEREOGRAPHIC
-  return vec4(v.xyz / (-curvature + v.w), 1.0);
+  return vec4(v.xyz / (-curvature + v.w), 1.);
   #endif
   #ifdef P_ORTHOGRAPHIC
-  return vec4(v.xyz, 1.0);
+  return vec4(v.xyz, 1.);
   #endif
   #ifdef P_KLEIN
-  return vec4(v.xyz / v.w, 1.0);
+  return vec4(v.xyz / v.w, 1.);
   #endif
   #ifdef P_INVERTED
-  return vec4(v.xyz / (curvature + v.w), 1.0);
+  return vec4(v.xyz / (curvature + v.w), 1.);
   #endif
   #ifdef P_JEMISPHERE
-  return vec4(v.xyz / v.w, 1.0 / v.w);
+  return vec4(v.xyz, 1.);
   #endif
   #ifdef P_UPPERHALF
   v.xyz /= v.w;

@@ -11,16 +11,24 @@ void main() {
   /* BEGIN MAIN */
   vColor.rgb = instanceColor.rgb;
 
-  vec4 mvNormal = vec4(transformedNormal, 0.);
-  vec4 mvPosition = vec4(transformed, 0.);
+  vec4 pos = vec4(position, 0.);
+  vec4 norm = vec4(normal, 0.);
 
-  mvPosition += instancePosition;
+  pos += instancePosition;
 
-  mvPosition += .1 * thickness * mvNormal;
-  mvPosition = xproject(mvPosition);
-  mvPosition = modelViewMatrix * mvPosition;
+  pos += .1 * thickness * norm;
+  pos = xproject(pos);
 
-  gl_Position = projectionMatrix * mvPosition;
+    // <begin_vertex>
+  vec3 transformed = pos.xyz;
+  //
+  // <beginnormal_vertex>
+  vec3 objectNormal = norm.xyz;
+
+  #ifdef USE_TANGENT
+  vec3 objectTangent = vec3(tangent.xyz);
+  #endif
+
   /* END MAIN */
   // gl_Position = projectionMatrix * modelViewMatrix * transformed;
 }

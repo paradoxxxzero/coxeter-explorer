@@ -17,10 +17,9 @@ export const wrapVertexMaterial = material => {
 
     Object.assign(shader.uniforms, material.uniforms)
     if (material instanceof MeshBasicMaterial) {
-      shader.vertexShader = shader.vertexShader.replace(
-        '#include <begin_vertex>',
-        '#include <beginnormal_vertex>\n\t\t#include <defaultnormal_vertex>\n\t\t#include <begin_vertex>'
-      )
+      shader.vertexShader = shader.vertexShader
+        .replace('#if defined ( USE_ENVMAP ) || defined ( USE_SKINNING )', '')
+        .replace('#endif', '')
     }
     shader.vertexShader = [
       ...defines,
@@ -30,12 +29,14 @@ export const wrapVertexMaterial = material => {
       projectionVertexShader.match(
         /\/\* BEGIN INCLUDE \*\/([\s\S]*?)\/\* END INCLUDE \*\//m
       )[1],
-      shader.vertexShader.replace(
-        '#include <project_vertex>',
-        vertexVertexShader.match(
-          /\/\* BEGIN MAIN \*\/([\s\S]*?)\/\* END MAIN \*\//m
-        )[1]
-      ),
+      shader.vertexShader
+        .replace('#include <begin_vertex>', '')
+        .replace(
+          '#include <beginnormal_vertex>',
+          vertexVertexShader.match(
+            /\/\* BEGIN MAIN \*\/([\s\S]*?)\/\* END MAIN \*\//m
+          )[1]
+        ),
     ].join('\n')
   }
   material.customProgramCacheKey = () => {
