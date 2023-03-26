@@ -11,7 +11,7 @@ import {
   render,
   renderer,
   changeAmbiance,
-  updateUniforms,
+  updateMaterials,
 } from './honeyball/render'
 import Tiling from './honeyball/tiling.worker?worker'
 import { setProcess, worker, kill } from './honeyball/utlis'
@@ -204,7 +204,7 @@ const update = async event => {
   }
 
   setC(newC, !!event)
-  updateUniforms()
+  updateMaterials()
 
   if (
     mustRedraw ||
@@ -228,6 +228,7 @@ const update = async event => {
 
         if (i === 0) {
           setR({ ...newR, ranges: {} })
+          updateMaterials()
           document.querySelector('#space').innerHTML = `${
             R.curvature === 0
               ? '&#x1D53C'

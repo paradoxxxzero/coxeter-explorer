@@ -26,6 +26,9 @@ import {
   InstancedBufferGeometry,
   InstancedBufferAttribute,
   Mesh,
+  PointLight,
+  MeshPhongMaterial,
+  AmbientLight,
 } from 'three'
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
@@ -89,6 +92,22 @@ const ambiances = {
     },
     colorEdge: () => {
       return _color.set(0xaaaaaa)
+    },
+  },
+  colorful: {
+    background: 0xffffff,
+    bloom: false,
+    material: new MeshPhongMaterial(),
+    lights: [new AmbientLight(0xff0000, 0.5)],
+    cameraLights: [new PointLight(0xffff00)],
+    ao: false,
+    colorVertex: ({ word }) => {
+      return _color.set(0xffffff)
+      return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
+    },
+    colorEdge: ({ word }) => {
+      return _color.set(0xffffff)
+      return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
     },
   },
   glass: {
@@ -239,7 +258,8 @@ let currentEdgesMax = 50000
 
 const initVertex = () => {
   const ambiance = ambiances[C.ambiance]
-  const vertex3dGeometry = new SphereGeometry(1e-6, 16, 16)
+  const vertex3dGeometry = new SphereGeometry(1e-7, 16, 16)
+  vertex3dGeometry.attributes.position.array.fill(0)
   const vertexGeometry = new InstancedBufferGeometry().copy(vertex3dGeometry)
 
   // vertexGeometry.setAttribute("position", new BufferAttribute(new Float32Array(currentVerticesMax * 4), 4)
@@ -312,8 +332,9 @@ const plotVertices = ([start, stop]) => {
     currentVerticesMax = stop
     group.remove(instancedVertex)
     instancedVertex.geometry.dispose()
+    instancedVertex.material.dispose()
     initVertex()
-    updateUniforms()
+    updateMaterials()
     start = 0
   }
   instancedVertex.geometry.instanceCount = stop
@@ -360,7 +381,7 @@ const plotEdges = ([start, stop], segmentsChanged = false) => {
     instancedEdge.material.dispose()
     group.remove(instancedEdge)
     initEdge()
-    updateUniforms()
+    updateMaterials()
     start = 0
   }
   instancedEdge.geometry.instanceCount = stop
@@ -548,11 +569,14 @@ export const changeAmbiance = async () => {
     }
   })
   lightsToRemove.forEach(light => {
-    scene.remove(light)
+    light.parent.remove(light)
   })
   // Add new lights
   ambiance.lights.forEach(light => {
     scene.add(light)
+  })
+  ;(ambiance.cameraLights || []).forEach(light => {
+    camera.add(light)
   })
   renderer.toneMapping = ambiance.bloom ? ReinhardToneMapping : NoToneMapping
   renderer.toneMappingExposure = ambiance.bloom ? 1.5 : 1
@@ -563,37 +587,35 @@ export const changeAmbiance = async () => {
   // Update materials
   instancedVertex.material = wrapVertexMaterial(ambiance.material.clone())
   instancedEdge.material = wrapEdgeMaterial(ambiance.material.clone())
-  updateUniforms()
+  updateMaterials()
   plot(true)
   render()
 }
 
-export const updateUniforms = () => {
+export const updateMaterials = () => {
   if (instancedVertex) {
     instancedVertex.material.uniforms.curvature.value = R.curvature
     instancedVertex.material.uniforms.thickness.value = C.thickness
-    instancedVertex.material.uniforms.dimensions.value = C.dimensions
-    instancedEdge.material.uniforms.projection.value = [
-      'stereographic',
-      'orthographic',
-      'klein',
-      'inverted',
-      'jemisphere',
-      'upperhalf',
-    ].indexOf(C.projection)
+    if (
+      C.dimensions !== instancedVertex.material._dimensions ||
+      C.projection !== instancedVertex.material._projection
+    ) {
+      instancedVertex.material._dimensions = C.dimensions
+      instancedVertex.material._projection = C.projection
+      instancedVertex.material.needsUpdate = true
+    }
   }
   if (instancedEdge) {
     instancedEdge.material.uniforms.curvature.value = R.curvature
     instancedEdge.material.uniforms.thickness.value = C.thickness
-    instancedEdge.material.uniforms.dimensions.value = C.dimensions
-    instancedEdge.material.uniforms.projection.value = [
-      'stereographic',
-      'orthographic',
-      'klein',
-      'inverted',
-      'jemisphere',
-      'upperhalf',
-    ].indexOf(C.projection)
+    if (
+      C.dimensions !== instancedEdge.material._dimensions ||
+      C.projection !== instancedEdge.material._projection
+    ) {
+      instancedEdge.material._dimensions = C.dimensions
+      instancedEdge.material._projection = C.projection
+      instancedEdge.material.needsUpdate = true
+    }
     instancedEdge.material.uniforms.segments.value = C.curve ? C.segments : 1
   }
 }
