@@ -14,7 +14,7 @@ export const defaultC = {
 
   dimensions: 4,
   order: 10,
-  segments: 16,
+  segments: 32,
   curve: true,
   vertices: false,
   edges: true,

@@ -9,26 +9,22 @@ attribute vec3 instanceColor;
 
 void main() {
   /* BEGIN MAIN */
+  // Set color
   vColor.rgb = instanceColor.rgb;
 
-  vec4 pos = vec4(position, 0.);
-  vec4 norm = vec4(normal, 0.);
+  vec4 pos = vec4(instancePosition);
 
-  pos += instancePosition;
+  // <begin_vertex>
+  vec3 transformed = xproject(pos);
 
-  pos += .1 * thickness * norm;
-  pos = xproject(pos);
+  vec3 norm = vec3(normal);
+  transformed += .1 * thickness * norm / max(1., length(pos));
 
-    // <begin_vertex>
-  vec3 transformed = pos.xyz;
-  //
   // <beginnormal_vertex>
-  vec3 objectNormal = norm.xyz;
+  vec3 objectNormal = norm;
 
   #ifdef USE_TANGENT
   vec3 objectTangent = vec3(tangent.xyz);
   #endif
-
   /* END MAIN */
-  // gl_Position = projectionMatrix * modelViewMatrix * transformed;
 }

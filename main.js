@@ -204,6 +204,7 @@ const update = async event => {
   }
 
   setC(newC, !!event)
+  window.C = C
   updateMaterials()
 
   if (
@@ -228,6 +229,7 @@ const update = async event => {
 
         if (i === 0) {
           setR({ ...newR, ranges: {} })
+          window.R = R
           updateMaterials()
           document.querySelector('#space').innerHTML = `${
             R.curvature === 0

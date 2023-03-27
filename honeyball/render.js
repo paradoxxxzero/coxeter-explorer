@@ -1,4 +1,5 @@
 import {
+  AmbientLight,
   Clock,
   Color,
   CylinderGeometry,
@@ -6,45 +7,38 @@ import {
   EquirectangularReflectionMapping,
   Group,
   HemisphereLight,
-  InstancedMesh,
+  InstancedBufferAttribute,
+  InstancedBufferGeometry,
   Matrix4,
+  Mesh,
   MeshBasicMaterial,
   MeshLambertMaterial,
+  MeshPhongMaterial,
   MeshPhysicalMaterial,
   NoToneMapping,
-  Object3D,
   PerspectiveCamera,
+  PointLight,
   ReinhardToneMapping,
   Scene,
   SphereGeometry,
   sRGBEncoding,
-  StreamDrawUsage,
   TextureLoader,
   Vector2,
   WebGLRenderer,
-  Vector3,
-  InstancedBufferGeometry,
-  InstancedBufferAttribute,
-  Mesh,
-  PointLight,
-  MeshPhongMaterial,
-  AmbientLight,
+  RepeatWrapping,
 } from 'three'
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
-import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
 import { C } from './C'
-import { xdot, xproject, xcross } from './math/hypermath'
 
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { R } from './R'
-import { sqrt } from './math'
-import { wrapVertexMaterial } from './shader/wrapVertexMaterial'
 import { wrapEdgeMaterial } from './shader/wrapEdgeMaterial'
+import { wrapVertexMaterial } from './shader/wrapVertexMaterial'
 
 export let stats,
   renderer,
@@ -55,13 +49,26 @@ export let stats,
   composer,
   renderPass,
   bloomPass,
-  ssaoPass,
   fxaaPass
 
 const group = new Group()
 const _color = new Color()
-const _matrix = new Matrix4()
 const loader = new TextureLoader()
+
+const diffuse = loader.load('Carbon.png')
+diffuse.encoding = sRGBEncoding
+diffuse.wrapS = RepeatWrapping
+diffuse.wrapT = RepeatWrapping
+diffuse.repeat.x = 10
+diffuse.repeat.y = 10
+
+const normalMap = loader.load('Carbon_Normal.png')
+normalMap.wrapS = RepeatWrapping
+normalMap.wrapT = RepeatWrapping
+
+const ocean = loader.load('ocean.jpg')
+ocean.encoding = sRGBEncoding
+ocean.mapping = EquirectangularReflectionMapping
 
 const ambiances = {
   neon: {
@@ -69,7 +76,6 @@ const ambiances = {
     bloom: true,
     material: new MeshBasicMaterial(),
     lights: [],
-    ao: false,
     colorVertex: ({ word }) => {
       return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
     },
@@ -80,13 +86,15 @@ const ambiances = {
   museum: {
     background: 0xffffff,
     bloom: false,
-    material: new MeshLambertMaterial({
-      // roughness: 0.5,
-      // metalness: 0.5,
-      // clearcoat: 0.5,
+    material: new MeshPhysicalMaterial({
+      roughness: 0.5,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.1,
+      map: diffuse,
+      normalMap: normalMap,
     }),
     lights: [new DirectionalLight(), new HemisphereLight()],
-    ao: true,
+    cameraLights: [new PointLight()],
     colorVertex: () => {
       return _color.set(0xaaaaaa)
     },
@@ -97,33 +105,26 @@ const ambiances = {
   colorful: {
     background: 0xffffff,
     bloom: false,
-    material: new MeshPhongMaterial(),
+    material: new MeshPhongMaterial({
+      // transparent: true,
+      // opacity: 0.75,
+    }),
     lights: [new AmbientLight(0xff0000, 0.5)],
-    cameraLights: [new PointLight(0xffff00)],
-    ao: false,
-    colorVertex: ({ word }) => {
+    cameraLights: [new PointLight(0xffff00, 1)],
+    colorVertex: () => {
       return _color.set(0xffffff)
-      return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
     },
-    colorEdge: ({ word }) => {
+    colorEdge: () => {
       return _color.set(0xffffff)
-      return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
     },
   },
   glass: {
     background: 0x000000,
-    env: () =>
-      new Promise(resolve =>
-        loader.load('ocean.jpg', texture => {
-          texture.encoding = sRGBEncoding
-          texture.mapping = EquirectangularReflectionMapping
-          resolve(texture)
-        })
-      ),
+    env: ocean,
     bloom: false,
     material: new MeshPhysicalMaterial({
       premultipliedAlpha: false,
-      reflectivity: 1,
+      reflectivity: 0,
       metalness: 0,
       roughness: 0,
       transmission: 1,
@@ -133,7 +134,6 @@ const ambiances = {
       ior: 1.5,
     }),
     lights: [new DirectionalLight(), new HemisphereLight()],
-    ao: false,
     colorVertex: () => {
       return _color.set(0xaaaaaa)
     },
@@ -148,7 +148,6 @@ const ambiances = {
       wireframe: true,
     }),
     lights: [],
-    ao: false,
     colorVertex: ({ word }) => {
       return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
     },
@@ -205,14 +204,6 @@ export const initialize3d = () => {
   renderPass = new RenderPass(scene, camera)
   composer.addPass(renderPass)
 
-  ssaoPass = new SSAOPass(scene, camera, window.innerWidth, window.innerHeight)
-  ssaoPass.kernelRadius = 16
-  ssaoPass.minDistance = 0.1
-  ssaoPass.maxDistance = 2
-  // ssaoPass.output = SSAOPass.OUTPUT.Beauty
-  // ssaoPass.output = SSAOPass.OUTPUT.SSAO
-  composer.addPass(ssaoPass)
-
   fxaaPass = new ShaderPass(FXAAShader)
   const pixelRatio = renderer.getPixelRatio()
   fxaaPass.material.uniforms['resolution'].value.x =
@@ -246,7 +237,6 @@ export const initialize3d = () => {
     controls,
     renderPass,
     bloomPass,
-    ssaoPass,
     fxaaPass,
   }
 }
@@ -287,18 +277,14 @@ const initVertex = () => {
 
 const initEdge = () => {
   const ambiance = ambiances[C.ambiance]
-  const edgeRadius = 0
   const edge3dGeometry = new CylinderGeometry(
-    edgeRadius,
-    edgeRadius,
+    0,
+    0,
     1,
     8,
     C.curve ? C.segments : 1,
     true
   )
-  edge3dGeometry.rotateX(Math.PI)
-  edge3dGeometry.translate(0, 0.5, 0)
-  edge3dGeometry.rotateX(Math.PI / 2)
   const edgeGeometry = new InstancedBufferGeometry().copy(edge3dGeometry)
 
   edgeGeometry.setAttribute(
@@ -553,10 +539,10 @@ export const plot = (arg, segmentsChanged = false) => {
     plotEdges(edges, segmentsChanged)
   }
 }
-export const changeAmbiance = async () => {
+export const changeAmbiance = () => {
   const ambiance = ambiances[C.ambiance]
   if (ambiance.env) {
-    scene.background = await ambiance.env()
+    scene.background = ambiance.env
   } else {
     scene.background = null
   }
@@ -572,7 +558,7 @@ export const changeAmbiance = async () => {
     light.parent.remove(light)
   })
   // Add new lights
-  ambiance.lights.forEach(light => {
+  ;(ambiance.lights || []).forEach(light => {
     scene.add(light)
   })
   ;(ambiance.cameraLights || []).forEach(light => {
@@ -581,8 +567,6 @@ export const changeAmbiance = async () => {
   renderer.toneMapping = ambiance.bloom ? ReinhardToneMapping : NoToneMapping
   renderer.toneMappingExposure = ambiance.bloom ? 1.5 : 1
   bloomPass.enabled = ambiance.bloom
-  ssaoPass.enabled = ambiance.ao
-  renderPass.enabled = !ambiance.ao
 
   // Update materials
   instancedVertex.material = wrapVertexMaterial(ambiance.material.clone())
