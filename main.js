@@ -20,6 +20,7 @@ let tiling = new Tiling()
 
 const size = () => {
   const subsampling = 1
+
   const width = window.innerWidth * subsampling
   const height = window.innerHeight * subsampling
   const currentCanvas = renderer.domElement
@@ -29,6 +30,9 @@ const size = () => {
     camera.updateProjectionMatrix()
     renderer.setSize(width, height)
     composer.setSize(width, height)
+    const pixelRatio = renderer.getPixelRatio()
+    composer.setPixelRatio(pixelRatio)
+
     window.bloomPass.resolution = new Vector2(width, height)
     window.fxaaPass.material.uniforms['resolution'].value.x =
       1 / (width * renderer.getPixelRatio())

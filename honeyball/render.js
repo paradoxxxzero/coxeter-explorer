@@ -163,7 +163,7 @@ export const initialize3d = () => {
   // document.body.appendChild(stats.dom)
   renderer = new WebGLRenderer()
 
-  // renderer.setPixelRatio(window.devicePixelRatio)
+  renderer.setPixelRatio(window.devicePixelRatio)
   renderer.setSize(window.innerWidth, window.innerHeight)
 
   document.body.appendChild(renderer.domElement)
@@ -201,6 +201,7 @@ export const initialize3d = () => {
   })
 
   composer = new EffectComposer(renderer)
+  composer.setPixelRatio(window.devicePixelRatio)
   renderPass = new RenderPass(scene, camera)
   composer.addPass(renderPass)
 
