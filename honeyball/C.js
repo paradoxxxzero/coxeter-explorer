@@ -5,6 +5,12 @@ export const defaultC = {
   s: 3,
   t: 2,
   u: 4,
+  pDiv: 1,
+  qDiv: 1,
+  rDiv: 1,
+  sDiv: 1,
+  tDiv: 1,
+  uDiv: 1,
 
   // v:
   x: 1,
@@ -18,6 +24,7 @@ export const defaultC = {
   curve: true,
   vertices: false,
   edges: true,
+  stellation: false,
 
   light: 1.5,
   thickness: 1,

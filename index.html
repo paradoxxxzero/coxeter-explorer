@@ -112,6 +112,13 @@
         max-width: 5ch;
         font-size: 1.5em;
       }
+      .stellation input[type='number'] {
+        max-width: 3ch;
+      }
+      .divisor {
+        font-size: 1.2em;
+        font-weight: bold;
+      }
       select {
         color: white;
         border: none;
@@ -146,15 +153,15 @@
       <label>
         Segments
         <input type="checkbox" id="curve" checked />
-        <input type="number" id="segments" min="1" max="1024" step="1" />
+        <input type="number" id="segments" min="1" step="1" />
       </label>
       <label>
         Thickness
-        <input type="number" id="thickness" min="0" max="10" step="0.1" />
+        <input type="number" id="thickness" min="0" step="0.1" />
       </label>
       <label>
         Light
-        <input type="number" id="light" min="0" max="10" step="0.1" />
+        <input type="number" id="light" min="0" step="0.1" />
       </label>
       <label>
         <input type="checkbox" id="d4" />
@@ -180,6 +187,10 @@
         Edges
       </label>
       <label>
+        <input type="checkbox" id="stellation" />
+        Stellation
+      </label>
+      <label>
         Ambiance
         <select id="ambiance">
           <option value="neon">Neon</option>
@@ -198,7 +209,11 @@
       <div class="number">
         <label>
           p
-          <input type="number" id="p" min="2" step="0.5" />
+          <input type="number" id="p" min="2" step="1" />
+          <div class="stellation">
+            <span class="divisor"> / </span>
+            <input type="number" id="p-div" min="1" step="1" />
+          </div>
         </label>
       </div>
       <label>
@@ -209,11 +224,19 @@
       <div class="number">
         <label>
           q
-          <input type="number" id="q" min="2" step="0.5" />
+          <input type="number" id="q" min="2" step="1" />
+          <div class="stellation">
+            <span class="divisor"> / </span>
+            <input type="number" id="q-div" min="1" step="1" />
+          </div>
         </label>
         <label class="d4">
           s
-          <input type="number" id="s" min="2" step="0.5" />
+          <input type="number" id="s" min="2" step="1" />
+          <div class="stellation">
+            <span class="divisor"> / </span>
+            <input type="number" id="s-div" min="1" step="1" />
+          </div>
         </label>
       </div>
       <label>
@@ -224,15 +247,27 @@
       <div class="number">
         <label>
           r
-          <input type="number" id="r" min="2" step="0.5" />
+          <input type="number" id="r" min="2" step="1" />
+          <div class="stellation">
+            <span class="divisor"> / </span>
+            <input type="number" id="r-div" min="1" step="1" />
+          </div>
         </label>
         <label class="d4">
           t
-          <input type="number" id="t" min="2" step="0.5" />
+          <input type="number" id="t" min="2" step="1" />
+          <div class="stellation">
+            <span class="divisor"> / </span>
+            <input type="number" id="t-div" min="1" step="1" />
+          </div>
         </label>
         <label class="d4">
           u
-          <input type="number" id="u" min="2" step="0.5" />
+          <input type="number" id="u" min="2" step="1" />
+          <div class="stellation">
+            <span class="divisor"> / </span>
+            <input type="number" id="u-div" min="1" step="1" />
+          </div>
         </label>
       </div>
       <label class="d4">

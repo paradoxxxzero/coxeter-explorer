@@ -104,8 +104,14 @@ const restore = () => {
   document.querySelector('#segments').style.display = C.curve
     ? 'inline'
     : 'none'
+
+  document.querySelector('#stellation').checked = C.stellation
+  document.querySelectorAll('.stellation').forEach(el => {
+    el.style.display = C.stellation ? 'inline' : 'none'
+  })
   'pqrstu'.split('').forEach(d => {
     document.querySelector(`#${d}`).value = C[d]
+    document.querySelector(`#${d}-div`).value = C[`${d}Div`]
   })
   'xyzw'.split('').forEach(d => {
     document.querySelector(`#mirror-${d}`).checked = !!C[d]
@@ -131,6 +137,7 @@ const update = async event => {
   newC.thickness = +document.querySelector('#thickness').value
   newC.projection = document.querySelector('#projection').value
   newC.ambiance = document.querySelector('#ambiance').value
+  newC.stellation = document.querySelector('#stellation').checked
   window.bloomPass.strength = newC.light
   newC.controls =
     document.querySelector('#controls').innerHTML === orbit ? 'orbit' : 'free'
@@ -142,6 +149,11 @@ const update = async event => {
     ).checked
       ? 'inline'
       : 'none'
+  }
+  if (target === 'stellation') {
+    document.querySelectorAll('.stellation').forEach(el => {
+      el.style.display = newC.stellation ? 'inline' : 'none'
+    })
   }
   if (target === 'd4') {
     const setK = (d, v) => {
@@ -182,6 +194,7 @@ const update = async event => {
 
   'pqrstu'.split('').forEach(d => {
     newC[d] = +document.querySelector(`#${d}`).value
+    newC[`${d}Div`] = +document.querySelector(`#${d}-div`).value
   })
   'xyzw'.split('').forEach(d => {
     newC[d] = document.querySelector(`#mirror-${d}`).checked
@@ -200,9 +213,22 @@ const update = async event => {
   let mustRedraw = !target
   if (
     mustRedraw ||
-    ['p', 'q', 'r', 's', 't', 'u', 'dimensions'].some(key =>
-      changed.includes(key)
-    )
+    [
+      'p',
+      'q',
+      'r',
+      's',
+      't',
+      'u',
+      'pDiv',
+      'qDiv',
+      'rDiv',
+      'sDiv',
+      'tDiv',
+      'uDiv',
+      'stellation',
+      'dimensions',
+    ].some(key => changed.includes(key))
   ) {
     mustRedraw = true
   }

@@ -1,15 +1,14 @@
+import { C, setC } from './C'
 import { abs, cos, PI } from './math'
 import { getRules, shorten } from './math/group'
 import {
+  getCurvature,
   getFundamentalSimplexMirrors,
   getFundamentalVertex,
   reflect,
-  getCurvature,
-  xlerp,
 } from './math/hypermath'
-import { C, setC } from './C'
 import { R, setR } from './R'
-import { W, setW } from './W'
+import { setW, W } from './W'
 
 const same = (v1, v2) => {
   for (let i = 0; i < v1.length; i++) {
@@ -40,7 +39,31 @@ const hash = v => {
   return s
 }
 
-export const initTiling = ({ dimensions, p, q, r, s, t, u, x, y, z, w }) => {
+export const initTiling = C => {
+  const {
+    dimensions,
+    stellation,
+    pDiv,
+    qDiv,
+    rDiv,
+    sDiv,
+    tDiv,
+    uDiv,
+    x,
+    y,
+    z,
+    w,
+  } = C
+  let { p, q, r, s, t, u } = C
+  if (stellation) {
+    p /= pDiv
+    q /= qDiv
+    r /= rDiv
+    s /= sDiv
+    t /= tDiv
+    u /= uDiv
+  }
+
   const newW = {
     coxeter:
       dimensions === 3
@@ -91,7 +114,8 @@ export const initTiling = ({ dimensions, p, q, r, s, t, u, x, y, z, w }) => {
   ])
   newW.words.set('', newW.rootVertex)
 
-  newW.rules = getRules(dimensions, p, q, r, s, t, u)
+  // Rules gets computed on non stellated coxeter group
+  newW.rules = getRules(dimensions, C.p, C.q, C.r, C.s, C.t, C.u)
   setW(newW)
 }
 

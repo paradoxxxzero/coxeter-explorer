@@ -1,9 +1,9 @@
-import { render, plot } from './render'
 import interact from 'interactjs'
-import { R } from './R'
-import { xtranslate, xrotate, xscale, xlerp } from './math/hypermath'
 import { C } from './C'
 import { PI } from './math'
+import { xrotate, xscale, xtranslate } from './math/hypermath'
+import { R } from './R'
+import { plot, render } from './render'
 
 const translate = offset => {
   for (let i = 0; i < R.vertices.length; i++) {

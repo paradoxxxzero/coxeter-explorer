@@ -1,4 +1,3 @@
-import { abs } from '.'
 import { W } from '../W'
 
 export const shortLex = (a, b) => {
@@ -203,12 +202,6 @@ export const knuthBendix = rules => {
   }
   throw new Error('Timeout')
 }
-export const repeat = (s, n) => {
-  if (abs((n % 1) - 0.5) < 1e-6) {
-    n *= 2
-  }
-  return s.repeat(n)
-}
 export const getRules = (dimensions, p, q, r, s, t, u) =>
   knuthBendix(
     dimensions === 3
@@ -216,21 +209,21 @@ export const getRules = (dimensions, p, q, r, s, t, u) =>
           aa: '',
           bb: '',
           cc: '',
-          [repeat('ab', p)]: '',
-          [repeat('ac', q)]: '',
-          [repeat('bc', r)]: '',
+          ['ab'.repeat(p)]: '',
+          ['ac'.repeat(q)]: '',
+          ['bc'.repeat(r)]: '',
         }
       : {
           aa: '',
           bb: '',
           cc: '',
           dd: '',
-          [repeat('ab', p)]: '',
-          [repeat('ac', q)]: '',
-          [repeat('ad', r)]: '',
-          [repeat('bc', s)]: '',
-          [repeat('bd', t)]: '',
-          [repeat('cd', u)]: '',
+          ['ab'.repeat(p)]: '',
+          ['ac'.repeat(q)]: '',
+          ['ad'.repeat(r)]: '',
+          ['bc'.repeat(s)]: '',
+          ['bd'.repeat(t)]: '',
+          ['cd'.repeat(u)]: '',
         }
   )
 
