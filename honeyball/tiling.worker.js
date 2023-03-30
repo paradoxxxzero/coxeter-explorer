@@ -1,5 +1,5 @@
 import { C, setC } from './C'
-import { abs, cos, PI } from './math'
+import { abs, cos, PI, round } from './math'
 import { getRules, shorten } from './math/group'
 import {
   getCurvature,
@@ -28,10 +28,22 @@ const reflectWord = word => {
   return v
 }
 
+const kBuf = new ArrayBuffer(8)
+const kBufAsF64 = new Float64Array(kBuf)
+const kBufAsI32 = new Int32Array(kBuf)
+function hashNumber(n) {
+  if (~~n === n) {
+    return ~~n
+  }
+  kBufAsF64[0] = n
+  return kBufAsI32[0] ^ kBufAsI32[1]
+}
+const precision = 4
+const exp = 10 ** precision
 const hash = v => {
   let s = ''
   for (let i = 0; i < v.length; i++) {
-    s += v[i].toString().slice(0, 6) // toExponential(4)
+    s += hashNumber(round(v[i] * exp) / exp).toString() // toExponential(4)
     if (i < v.length - 1) {
       s += '|'
     }
@@ -193,11 +205,12 @@ function plot(rv, word) {
 }
 
 function link(word, newWord, v, rv) {
-  const edgeHash =
-    word.length < newWord.length ||
-    (word.length === newWord.length && word < newWord)
-      ? hash(v) + '/' + hash(rv)
-      : hash(rv) + '/' + hash(v)
+  const vHash = hash(v)
+  const rvHash = hash(rv)
+  if (vHash === rvHash) {
+    return
+  }
+  const edgeHash = [vHash, rvHash].sort().join('/')
 
   if (!W.edgeHashes.has(edgeHash)) {
     W.edgeHashes.add(edgeHash)

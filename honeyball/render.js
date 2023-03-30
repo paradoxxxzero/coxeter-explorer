@@ -107,13 +107,13 @@ const ambiances = {
       // transparent: true,
       // opacity: 0.75,
     }),
-    lights: [new AmbientLight(0xff0000, 0.5)],
-    cameraLights: [new PointLight(0xffff00, 1)],
-    colorVertex: () => {
-      return _color.set(0xffffff)
+    lights: [new AmbientLight(0xffffff, 0.5)],
+    cameraLights: [new PointLight(0xffffff, 1)],
+    colorVertex: ({ word }) => {
+      return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
     },
-    colorEdge: () => {
-      return _color.set(0xffffff)
+    colorEdge: ({ word }) => {
+      return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
     },
   },
   glass: {

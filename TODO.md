@@ -1,5 +1,2 @@
-- Draw per order
-- Delegate some computation to gpu: projection / segmenting in shader
-- Translations
-- Use webworkers
-- Use distance instead of segments
+- Custom word tree (should be faster than Set)
+- More ambiance / effects
