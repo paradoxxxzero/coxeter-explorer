@@ -40,6 +40,7 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { C } from './C'
 import { R } from './R'
 import { hyperMathMaterial } from './shader/hyperMathMaterial'
+import { GodRayPass } from './shader/GodRayPass'
 
 export let stats, renderer, camera, scene, controls, clock, composer, renderPass
 
@@ -102,10 +103,7 @@ const ambiances = {
   colorful: {
     background: 0xffffff,
     fx: ['fxaa', 'bokeh'],
-    material: new MeshPhongMaterial({
-      // transparent: true,
-      // opacity: 0.75,
-    }),
+    material: new MeshPhongMaterial(),
     lights: [new AmbientLight(0xffffff, 0.5)],
     cameraLights: [new PointLight(0xffffff, 1)],
     color: ({ word }) => {
@@ -115,10 +113,7 @@ const ambiances = {
   pure: {
     background: 0xffffff,
     fx: ['fxaa', 'sao'],
-    material: new MeshLambertMaterial({
-      // transparent: true,
-      // opacity: 0.75,
-    }),
+    material: new MeshLambertMaterial(),
     lights: [new AmbientLight(0x000000, 0.5)],
     cameraLights: [new PointLight(0xffffff, 1)],
     color: ({ word }) => {
@@ -127,18 +122,10 @@ const ambiances = {
   },
   transcendent: {
     background: 0xffffff,
-    fx: ['fxaa', 'godray'],
-    material: new MeshPhysicalMaterial({
-      roughness: 0.5,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.1,
-      map: diffuse,
-      normalMap: normalMap,
-    }),
-    lights: [new DirectionalLight(), new HemisphereLight()],
-    cameraLights: [new PointLight()],
+    fx: ['godray'],
+    material: new MeshBasicMaterial(),
     color: () => {
-      return _color.set(0xaaaaaa)
+      return _color.set(0x000000)
     },
   },
   glass: {
@@ -417,8 +404,10 @@ export const changeAmbiance = () => {
   ;(ambiance.cameraLights || []).forEach(light => {
     camera.add(light)
   })
-  renderer.toneMapping = ambiance.bloom ? ReinhardToneMapping : NoToneMapping
-  renderer.toneMappingExposure = ambiance.bloom ? 1.5 : 1
+  renderer.toneMapping = ambiance.fx.includes('bloom')
+    ? ReinhardToneMapping
+    : NoToneMapping
+  renderer.toneMappingExposure = ambiance.fx.includes('bloom') ? 1.5 : 1
   composer.passes.slice(1).forEach(pass => {
     composer.removePass(pass)
     pass.dispose()
@@ -478,6 +467,10 @@ export const changeAmbiance = () => {
         0
       )
       composer.addPass(bloomPass)
+    } else if (fx === 'godray') {
+      const godrayPass = new GodRayPass(scene, camera)
+      godrayPass.materialDepth = hyperMathMaterial(godrayPass.materialDepth)
+      composer.addPass(godrayPass)
     }
   })
 
@@ -520,7 +513,6 @@ export const updateMaterials = () => {
 export const render = () => {
   // const delta = clock.getDelta()
   // stats.begin()
-
   composer.render()
   // controls.update(delta)
   // stats.end()

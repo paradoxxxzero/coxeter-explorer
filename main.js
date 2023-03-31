@@ -161,7 +161,6 @@ const update = async event => {
   newC.projection = document.querySelector('#projection').value
   newC.ambiance = document.querySelector('#ambiance').value
   newC.stellation = document.querySelector('#stellation').checked
-  // window.bloomPass.strength = newC.light
   newC.controls =
     document.querySelector('#controls').innerHTML === orbit ? 'orbit' : 'free'
   window.controls.enabled = newC.controls === 'orbit'
