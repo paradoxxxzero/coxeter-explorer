@@ -57,11 +57,11 @@ void main() {
     vec3 k = normalize(n - p); // current segment direction
 
   // Inflate
-    vec3 u = normalize(cross(n, p));
-    if(isnan(u.x)) {
-      u = normalize(vec3(3., 8., -128.));
+    vec3 u = cross(n, p);
+    if(length(u) < .000001) {
+      u = p + vec3(n.y, 0, n.z);
     }
-  // vec3 u = normalize(vec3(3., 8., -128.));
+    u = normalize(u);
     vec3 v = normalize(cross(u, k));
 
     norm = v * cos(r * TAU) + cross(v, k) * sin(r * TAU);

@@ -428,8 +428,8 @@ export const changeAmbiance = () => {
       saoPass.params.output = SAOPass.OUTPUT.Default
 
       saoPass.params.saoIntensity = 0.1
-      saoPass.params.saoScale = 18
-      saoPass.params.saoKernelRadius = 100
+      saoPass.params.saoScale = 10
+      saoPass.params.saoKernelRadius = 10
       saoPass.params.saoMinResolution = 0
       saoPass.params.saoBlur = true
       saoPass.params.saoBlurRadius = 8
@@ -439,7 +439,7 @@ export const changeAmbiance = () => {
     } else if (fx === 'bokeh') {
       const bokehPass = new BokehPass(scene, camera, {
         focus: 0.5,
-        aperture: 0.01,
+        aperture: 0.005,
         maxblur: 0.005,
       })
       bokehPass.materialDepth = hyperMathMaterial(bokehPass.materialDepth)

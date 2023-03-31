@@ -135,7 +135,6 @@ const restore = () => {
   document.querySelector('#projection').value = C.projection
   document.querySelector('#vertices').checked = C.vertices
   document.querySelector('#edges').checked = C.edges
-  document.querySelector('#light').value = C.light
   document.querySelector('#vertexThickness').value = C.vertexThickness
   document.querySelector('#vertexThickness').style.display = C.vertices
     ? 'inline'
@@ -155,7 +154,6 @@ const update = async event => {
   const target = event?.target.id
   const newC = {}
   newC.dimensions = document.querySelector('#d4').checked ? 4 : 3
-  newC.light = +document.querySelector('#light').value
   newC.vertexThickness = +document.querySelector('#vertexThickness').value
   newC.edgeThickness = +document.querySelector('#edgeThickness').value
   newC.projection = document.querySelector('#projection').value
@@ -351,14 +349,22 @@ document.getElementById('space').addEventListener('dblclick', () => {
     kill(tiling)
     document.body.classList.remove('processing')
     tiling = new Tiling()
+  } else if (document.body.classList.contains('error')) {
     setC(defaultC, true)
+    restore()
+    update()
   }
-  restore()
-  update()
 })
 document.getElementById('space').addEventListener('click', () => {
-  document.body.classList.toggle('real-estate')
+  if (document.body.classList.contains('processing')) {
+    kill(tiling)
+    document.body.classList.remove('processing')
+    tiling = new Tiling()
+  } else {
+    document.body.classList.toggle('real-estate')
+  }
 })
+
 document.getElementById('controls').addEventListener('click', () => {
   document.getElementById('controls').innerHTML =
     document.getElementById('controls').innerHTML === free ? orbit : free

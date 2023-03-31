@@ -17,12 +17,6 @@ mat3 findRotationMatrix(in vec3 u, in vec3 v) {
   return 2. * outerProduct(w, w) / dot(w, w) - mat3(1.);
 }
 
-float invert(in float v) {
-  float sign_v = sign(v);
-  float sign_v_sq = sign_v * sign_v;
-  return sign_v_sq / (v + sign_v_sq - 1.0);
-}
-
 float xdot(in vec4 v) {
   #ifdef D_4
   return dot(v.xyz, v.xyz) + curvature * v.w * v.w;
@@ -36,34 +30,34 @@ vec4 xnormalize(in vec4 v) {
     return v;
   }
   #ifdef D_4
-  return v.xyzw * invert(sqrt(abs(xdot(v))));
+  return v.xyzw / (sqrt(abs(xdot(v))));
   #else 
-  return vec4(v.xyz * invert(sqrt(abs(xdot(v)))), 1.);
+  return vec4(v.xyz / (sqrt(abs(xdot(v)))), 1.);
   #endif
 }
 
 vec3 xproject(in vec4 v) {
   #ifdef D_4
   #ifdef P_STEREOGRAPHIC
-  return v.xyz * invert(v.w - curvature);
+  return v.xyz / (v.w - curvature);
   #endif
   #ifdef P_ORTHOGRAPHIC
   return v.xyz;
   #endif
   #ifdef P_KLEIN
-  return v.xyz * invert(v.w);
+  return v.xyz / v.w;
   #endif
   #ifdef P_INVERTED
-  return v.xyz * invert(v.w + curvature);
+  return v.xyz / (v.w + curvature);
   #endif
   #ifdef P_JEMISPHERE
   return v.xyz;
   #endif
   #ifdef P_UPPERHALF
-  v.xyz *= invert(v.w);
-  v.w = invert(v.w);
+  v.xyz /= v.w;
+  v.w = 1. / v.w;
 
-  v.xzw *= 2. * invert(1. + v.y);
+  v.xzw *= 2. / (1. + v.y);
   v.w *= -1.;
   return v.xzw;
   #endif
@@ -77,19 +71,19 @@ vec3 xproject(in vec4 v) {
   return vec3(v.xy, 0.);
   #endif
   #ifdef P_KLEIN
-  return vec3(v.xy * invert(v.z), 0.);
+  return vec3(v.xy / v.z, 0.);
   #endif
   #ifdef P_INVERTED
-  return vec3(v.xy * invert(curvature + v.z), 1.);
+  return vec3(v.xy / (curvature + v.z), 1.);
   #endif
   #ifdef P_JEMISPHERE
-  return vec3(v.xy * invert(v.z), invert(v.z));
+  return vec3(v.xy / v.z, 1. / v.z);
   #endif
   #ifdef P_UPPERHALF
-  v.xy *= invert(v.z);
-  v.z = invert(v.z);
+  v.xy /= v.z;
+  v.z = 1. / v.z;
 
-  v.xz *= 2. * invert(1. + v.y);
+  v.xz *= 2. / (1. + v.y);
   v.y = 1.;
   return v.xzy;
   #endif

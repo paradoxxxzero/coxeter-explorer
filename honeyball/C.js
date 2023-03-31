@@ -28,7 +28,6 @@ export const defaultC = {
   edgeThickness: 25,
   stellation: false,
 
-  light: 1.5,
   projection: 'stereographic',
   controls: 'orbit',
   ambiance: 'neon',
