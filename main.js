@@ -32,10 +32,19 @@ const size = () => {
     composer.setSize(width, height)
     const pixelRatio = renderer.getPixelRatio()
     composer.setPixelRatio(pixelRatio)
+
+    const w = width * pixelRatio
+    const h = height * pixelRatio
     composer.passes.forEach(pass => {
       if (pass.material?.uniforms?.['resolution']) {
-        pass.material.uniforms['resolution'].value.x = 1 / (width * pixelRatio)
-        pass.material.uniforms['resolution'].value.y = 1 / (height * pixelRatio)
+        let cw = w
+        let ch = h
+        if (pass.material.uniforms['resolution'].value.x <= 1) {
+          cw = 1 / cw
+          ch = 1 / ch
+        }
+        pass.material.uniforms['resolution'].value.x = cw
+        pass.material.uniforms['resolution'].value.y = ch
       }
       if (pass.resolution) {
         pass.resolution = new Vector2(width, height)

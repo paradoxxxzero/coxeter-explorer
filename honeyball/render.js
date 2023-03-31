@@ -24,6 +24,7 @@ import {
   TextureLoader,
   Vector2,
   WebGLRenderer,
+  MeshLambertMaterial,
 } from 'three'
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
@@ -33,10 +34,11 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
 import { LuminosityShader } from 'three/examples/jsm/shaders/LuminosityShader.js'
 import { SobelOperatorShader } from 'three/examples/jsm/shaders/SobelOperatorShader.js'
+import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass'
+import { SAOPass } from 'three/examples/jsm/postprocessing/SAOPass'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { C } from './C'
 import { R } from './R'
-import { BokehPass } from './shader/BokehPass'
 import { hyperMathMaterial } from './shader/hyperMathMaterial'
 
 export let stats, renderer, camera, scene, controls, clock, composer, renderPass
@@ -63,25 +65,16 @@ ocean.mapping = EquirectangularReflectionMapping
 const ambiances = {
   neon: {
     background: 0x000000,
-    bloom: true,
-    bokeh: false,
-    sobel: false,
-    fxaa: true,
+    fx: ['fxaa', 'bloom'],
     material: new MeshBasicMaterial(),
     lights: [],
-    colorVertex: ({ word }) => {
-      return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
-    },
-    colorEdge: ({ word }) => {
+    color: ({ word }) => {
       return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
     },
   },
   museum: {
     background: 0xffffff,
-    bloom: false,
-    bokeh: false,
-    sobel: false,
-    fxaa: true,
+    fx: ['fxaa'],
     // material: new MeshDepthMaterial(),
     material: new MeshPhysicalMaterial({
       roughness: 0.5,
@@ -92,54 +85,49 @@ const ambiances = {
     }),
     lights: [new DirectionalLight(), new HemisphereLight()],
     cameraLights: [new PointLight()],
-    colorVertex: () => {
-      return _color.set(0xaaaaaa)
-    },
-    colorEdge: () => {
+    color: () => {
       return _color.set(0xaaaaaa)
     },
   },
   bw: {
     background: 0x000000,
-    bloom: false,
-    bokeh: false,
-    sobel: true,
-    fxaa: true,
+    fx: ['fxaa', 'sobel'],
     material: new MeshPhongMaterial(),
     lights: [new AmbientLight(0xcccccc, 0.4)],
     cameraLights: [new PointLight(0xffffff, 1)],
-    colorVertex: () => {
-      return _color.set(0xffff00)
-    },
-    colorEdge: () => {
+    color: () => {
       return _color.set(0xffff00)
     },
   },
   colorful: {
     background: 0xffffff,
-    bloom: false,
-    bokeh: true,
-    sobel: false,
-    fxaa: true,
+    fx: ['fxaa', 'bokeh'],
     material: new MeshPhongMaterial({
       // transparent: true,
       // opacity: 0.75,
     }),
     lights: [new AmbientLight(0xffffff, 0.5)],
     cameraLights: [new PointLight(0xffffff, 1)],
-    colorVertex: ({ word }) => {
+    color: ({ word }) => {
       return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
     },
-    colorEdge: ({ word }) => {
-      return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
+  },
+  pure: {
+    background: 0xffffff,
+    fx: ['fxaa', 'sao'],
+    material: new MeshLambertMaterial({
+      // transparent: true,
+      // opacity: 0.75,
+    }),
+    lights: [new AmbientLight(0x000000, 0.5)],
+    cameraLights: [new PointLight(0xffffff, 1)],
+    color: ({ word }) => {
+      return _color.setHSL((word.length * 0.03) % 1, 0.75, 0.7)
     },
   },
   transcendent: {
     background: 0xffffff,
-    bloom: false,
-    bokeh: false,
-    sobel: false,
-    fxaa: true,
+    fx: ['fxaa', 'godray'],
     material: new MeshPhysicalMaterial({
       roughness: 0.5,
       clearcoat: 1.0,
@@ -149,20 +137,14 @@ const ambiances = {
     }),
     lights: [new DirectionalLight(), new HemisphereLight()],
     cameraLights: [new PointLight()],
-    colorVertex: () => {
-      return _color.set(0xaaaaaa)
-    },
-    colorEdge: () => {
+    color: () => {
       return _color.set(0xaaaaaa)
     },
   },
   glass: {
     background: 0x000000,
     env: ocean,
-    bloom: false,
-    bokeh: false,
-    sobel: false,
-    fxaa: true,
+    fx: ['fxaa'],
     material: new MeshPhysicalMaterial({
       premultipliedAlpha: false,
       reflectivity: 0,
@@ -175,27 +157,18 @@ const ambiances = {
       ior: 1.5,
     }),
     lights: [new DirectionalLight(), new HemisphereLight()],
-    colorVertex: () => {
-      return _color.set(0xaaaaaa)
-    },
-    colorEdge: () => {
+    color: () => {
       return _color.set(0xaaaaaa)
     },
   },
   wireframe: {
     background: 0x000000,
-    bloom: false,
-    bokeh: false,
-    sobel: false,
-    fxaa: true,
+    fx: ['fxaa'],
     material: new MeshBasicMaterial({
       wireframe: true,
     }),
     lights: [],
-    colorVertex: ({ word }) => {
-      return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
-    },
-    colorEdge: ({ word }) => {
+    color: ({ word }) => {
       return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
     },
   },
@@ -294,7 +267,7 @@ const initVertex = () => {
 
   instancedVertex = new Mesh(
     vertexGeometry,
-    hyperMathMaterial(ambiance.material.clone()) // TODO?
+    hyperMathMaterial(ambiance.material)
   )
   vertexGeometry.attributes.instanceTarget.array.fill(NaN)
   instancedVertex.geometry.instanceCount = 0
@@ -326,10 +299,7 @@ const initEdge = () => {
     new InstancedBufferAttribute(new Float32Array(currentEdgesMax * 3), 3)
   )
 
-  instancedEdge = new Mesh(
-    edgeGeometry,
-    hyperMathMaterial(ambiance.material.clone())
-  )
+  instancedEdge = new Mesh(edgeGeometry, hyperMathMaterial(ambiance.material))
   instancedEdge.geometry.instanceCount = 0
   group.add(instancedEdge)
 }
@@ -356,7 +326,7 @@ const plotVertices = ([start, stop]) => {
     ipos[i * 4 + 3] = C.dimensions === 3 ? 1 : vertex.vertex[3]
 
     const icolor = instancedVertex.geometry.attributes.instanceColor.array
-    ambiance.colorVertex(vertex)
+    ambiance.color(vertex, 'vertex')
     icolor[i * 3 + 0] = _color.r
     icolor[i * 3 + 1] = _color.g
     icolor[i * 3 + 2] = _color.b
@@ -393,7 +363,7 @@ const plotEdges = ([start, stop], segmentsChanged = false) => {
     iposend[i * 4 + 3] = C.dimensions === 3 ? 1 : edge.end[3]
 
     const icolor = instancedEdge.geometry.attributes.instanceColor.array
-    ambiance.colorEdge(edge)
+    ambiance.color(edge, 'edge')
     icolor[i * 3 + 0] = _color.r
     icolor[i * 3 + 1] = _color.g
     icolor[i * 3 + 2] = _color.b
@@ -453,52 +423,67 @@ export const changeAmbiance = () => {
     composer.removePass(pass)
     pass.dispose()
   })
-  if (ambiance.fxaa) {
-    const fxaaPass = new ShaderPass(FXAAShader)
-    const pixelRatio = renderer.getPixelRatio()
-    fxaaPass.material.uniforms['resolution'].value.x =
-      1 / (window.innerWidth * pixelRatio)
-    fxaaPass.material.uniforms['resolution'].value.y =
-      1 / (window.innerHeight * pixelRatio)
-    composer.addPass(fxaaPass)
-  }
-  if (ambiance.bokeh) {
-    const bokehPass = new BokehPass(scene, camera, {
-      focus: 0.5,
-      aperture: 0.01,
-      maxblur: 0.005,
-    })
-    composer.addPass(bokehPass)
-  }
-  if (ambiance.sobel) {
-    const effectGrayScale = new ShaderPass(LuminosityShader)
-    composer.addPass(effectGrayScale)
+  ambiance.fx.forEach(fx => {
+    if (fx === 'fxaa') {
+      const fxaaPass = new ShaderPass(FXAAShader)
+      const pixelRatio = renderer.getPixelRatio()
+      fxaaPass.material.uniforms['resolution'].value.x =
+        1 / (window.innerWidth * pixelRatio)
+      fxaaPass.material.uniforms['resolution'].value.y =
+        1 / (window.innerHeight * pixelRatio)
+      composer.addPass(fxaaPass)
+    } else if (fx === 'sao') {
+      const saoPass = new SAOPass(scene, camera, false, true)
+      saoPass.depthMaterial = hyperMathMaterial(saoPass.depthMaterial)
+      saoPass.normalMaterial = hyperMathMaterial(saoPass.normalMaterial)
+      saoPass.params.output = SAOPass.OUTPUT.Default
 
-    // you might want to use a gaussian blur filter before
-    // the next pass to improve the result of the Sobel operator
+      saoPass.params.saoIntensity = 0.1
+      saoPass.params.saoScale = 18
+      saoPass.params.saoKernelRadius = 100
+      saoPass.params.saoMinResolution = 0
+      saoPass.params.saoBlur = true
+      saoPass.params.saoBlurRadius = 8
+      saoPass.params.saoBlurStdDev = 4
+      saoPass.params.saoBlurDepthCutoff = 0.01
+      composer.addPass(saoPass)
+    } else if (fx === 'bokeh') {
+      const bokehPass = new BokehPass(scene, camera, {
+        focus: 0.5,
+        aperture: 0.01,
+        maxblur: 0.005,
+      })
+      bokehPass.materialDepth = hyperMathMaterial(bokehPass.materialDepth)
+      composer.addPass(bokehPass)
+    } else if (fx === 'sobel') {
+      const effectGrayScale = new ShaderPass(LuminosityShader)
+      composer.addPass(effectGrayScale)
 
-    // Sobel operator
+      // you might want to use a gaussian blur filter before
+      // the next pass to improve the result of the Sobel operator
 
-    const effectSobel = new ShaderPass(SobelOperatorShader)
-    effectSobel.uniforms['resolution'].value.x =
-      window.innerWidth * window.devicePixelRatio
-    effectSobel.uniforms['resolution'].value.y =
-      window.innerHeight * window.devicePixelRatio
-    composer.addPass(effectSobel)
-  }
-  if (ambiance.bloom) {
-    const bloomPass = new UnrealBloomPass(
-      new Vector2(window.innerWidth, window.innerHeight),
-      1.5,
-      0,
-      0
-    )
-    composer.addPass(bloomPass)
-  }
+      // Sobel operator
+
+      const effectSobel = new ShaderPass(SobelOperatorShader)
+      effectSobel.uniforms['resolution'].value.x =
+        window.innerWidth * window.devicePixelRatio
+      effectSobel.uniforms['resolution'].value.y =
+        window.innerHeight * window.devicePixelRatio
+      composer.addPass(effectSobel)
+    } else if (fx === 'bloom') {
+      const bloomPass = new UnrealBloomPass(
+        new Vector2(window.innerWidth, window.innerHeight),
+        1.5,
+        0,
+        0
+      )
+      composer.addPass(bloomPass)
+    }
+  })
 
   // Update materials
-  instancedVertex.material = hyperMathMaterial(ambiance.material.clone())
-  instancedEdge.material = hyperMathMaterial(ambiance.material.clone())
+  instancedVertex.material = hyperMathMaterial(ambiance.material)
+  instancedEdge.material = hyperMathMaterial(ambiance.material)
   updateMaterials()
   plot(true)
   render()
@@ -506,7 +491,7 @@ export const changeAmbiance = () => {
 
 export const updateMaterials = () => {
   const update = material => {
-    if (!material) {
+    if (!material?._dimensions) {
       return
     }
     material.uniforms.curvature.value = R.curvature
@@ -525,7 +510,11 @@ export const updateMaterials = () => {
 
   update(instancedVertex.material)
   update(instancedEdge.material)
-  composer.passes.forEach(pass => update(pass.materialDepth))
+  composer.passes.forEach(pass =>
+    Object.values(pass)
+      .filter(value => value?.isMaterial)
+      .forEach(value => update(value))
+  )
 }
 
 export const render = () => {
