@@ -139,7 +139,7 @@
         color: red !important;
       }
     </style>
-    <script type="module" crossorigin src="./assets/index-aa8b73a6.js"></script>
+    <script type="module" crossorigin src="./assets/index-f67918db.js"></script>
   </head>
 
   <body>
@@ -155,10 +155,6 @@
         Segments
         <input type="checkbox" id="curve" checked />
         <input type="number" id="segments" min="1" step="1" />
-      </label>
-      <label>
-        Thickness
-        <input type="number" id="thickness" min="0" step="0.1" />
       </label>
       <label>
         Light
@@ -180,12 +176,14 @@
         </select>
       </label>
       <label>
-        <input type="checkbox" id="vertices" />
         Vertices
+        <input type="checkbox" id="vertices" />
+        <input type="number" id="vertexThickness" min="0" step="1" />
       </label>
       <label>
-        <input type="checkbox" id="edges" />
         Edges
+        <input type="checkbox" id="edges" />
+        <input type="number" id="edgeThickness" min="0" step="1" />
       </label>
       <label>
         <input type="checkbox" id="stellation" />
@@ -197,6 +195,9 @@
           <option value="neon">Neon</option>
           <option value="museum">Museum</option>
           <option value="colorful">Colorful</option>
+          <option value="bw">B&W</option>
+          <option value="transcendent">Transcendent</option>
+          <option value="pure">Pure</option>
           <option value="glass">Glass</option>
           <option value="wireframe">Wireframe</option>
         </select>
