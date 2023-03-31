@@ -299,7 +299,7 @@ let currentEdgesMax = 50000
 
 const initVertex = () => {
   const ambiance = ambiances[C.ambiance]
-  const vertex3dGeometry = new SphereGeometry(1e-7, 16, 16)
+  const vertex3dGeometry = new SphereGeometry(1e-7, 32, 32)
   vertex3dGeometry.attributes.position.array.fill(0)
   const vertexGeometry = new InstancedBufferGeometry().copy(vertex3dGeometry)
 
