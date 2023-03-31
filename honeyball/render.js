@@ -1,7 +1,9 @@
 import {
   AmbientLight,
+  BackSide,
   Clock,
   Color,
+  CustomBlending,
   CylinderGeometry,
   DirectionalLight,
   EquirectangularReflectionMapping,
@@ -11,38 +13,53 @@ import {
   InstancedBufferGeometry,
   Mesh,
   MeshBasicMaterial,
+  MeshDepthMaterial,
+  MeshDistanceMaterial,
+  MeshLambertMaterial,
   MeshPhongMaterial,
   MeshPhysicalMaterial,
   NoToneMapping,
+  PCFShadowMap,
+  PCFSoftShadowMap,
   PerspectiveCamera,
+  PlaneGeometry,
   PointLight,
   ReinhardToneMapping,
   RepeatWrapping,
+  RGBADepthPacking,
   Scene,
   SphereGeometry,
+  SpotLight,
   sRGBEncoding,
   TextureLoader,
   Vector2,
   WebGLRenderer,
-  MeshLambertMaterial,
 } from 'three'
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
+import { SAOPass } from 'three/examples/jsm/postprocessing/SAOPass'
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
 import { LuminosityShader } from 'three/examples/jsm/shaders/LuminosityShader.js'
 import { SobelOperatorShader } from 'three/examples/jsm/shaders/SobelOperatorShader.js'
-import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass'
-import { SAOPass } from 'three/examples/jsm/postprocessing/SAOPass'
-import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { C } from './C'
 import { R } from './R'
-import { hyperMathMaterial } from './shader/hyperMathMaterial'
 import { GodRayPass } from './shader/GodRayPass'
+import { hyperMathMaterial } from './shader/hyperMathMaterial'
 
-export let stats, renderer, camera, scene, controls, clock, composer, renderPass
+export let stats,
+  renderer,
+  camera,
+  scene,
+  controls,
+  clock,
+  composer,
+  renderPass,
+  ground
 
 const group = new Group()
 const _color = new Color()
@@ -67,6 +84,7 @@ const ambiances = {
   neon: {
     background: 0x000000,
     fx: ['fxaa', 'bloom'],
+    shadow: false,
     material: new MeshBasicMaterial(),
     lights: [],
     color: ({ word }) => {
@@ -76,7 +94,8 @@ const ambiances = {
   museum: {
     background: 0xffffff,
     fx: ['fxaa'],
-    // material: new MeshDepthMaterial(),
+    shadow: true,
+    ground: 'plane',
     material: new MeshPhysicalMaterial({
       roughness: 0.5,
       clearcoat: 1.0,
@@ -84,15 +103,55 @@ const ambiances = {
       map: diffuse,
       normalMap: normalMap,
     }),
-    lights: [new DirectionalLight(), new HemisphereLight()],
-    cameraLights: [new PointLight()],
+    lights: [
+      (() => {
+        const light = new SpotLight(0xffffff, 0.2)
+        light.position.set(0, 4, -6)
+        return light
+      })(),
+      (() => {
+        const light = new SpotLight(0xffffff, 0.2)
+        light.position.set(8, 7, 0)
+        return light
+      })(),
+      (() => {
+        const light = new SpotLight(0xffffff, 0.2)
+        light.position.set(-4, 6, 2)
+        return light
+      })(),
+      new AmbientLight(0xaaaaaa, 0.4),
+    ],
+    cameraLights: [
+      (() => {
+        const light = new PointLight(0xffffff, 2.5, 5, 5)
+        light.shadow = null
+        return light
+      })(),
+    ],
     color: () => {
       return _color.set(0xaaaaaa)
+    },
+  },
+  projection: {
+    background: 0xffffff,
+    fx: ['fxaa'],
+    ground: 'sphere',
+    shadow: true,
+    material: new MeshPhongMaterial({
+      transparent: true,
+      opacity: 0.75,
+      blending: CustomBlending,
+    }),
+
+    lights: [new PointLight()],
+    color: ({ word }) => {
+      return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
     },
   },
   bw: {
     background: 0x000000,
     fx: ['fxaa', 'sobel'],
+    shadow: false,
     material: new MeshPhongMaterial(),
     lights: [new AmbientLight(0xcccccc, 0.4)],
     cameraLights: [new PointLight(0xffffff, 1)],
@@ -103,6 +162,7 @@ const ambiances = {
   colorful: {
     background: 0xffffff,
     fx: ['fxaa', 'bokeh'],
+    shadow: false,
     material: new MeshPhongMaterial(),
     lights: [new AmbientLight(0xffffff, 0.5)],
     cameraLights: [new PointLight(0xffffff, 1)],
@@ -113,6 +173,7 @@ const ambiances = {
   pure: {
     background: 0xffffff,
     fx: ['fxaa', 'sao'],
+    shadow: false,
     material: new MeshLambertMaterial(),
     lights: [new AmbientLight(0x000000, 0.5)],
     cameraLights: [new PointLight(0xffffff, 1)],
@@ -123,6 +184,7 @@ const ambiances = {
   transcendent: {
     background: 0xffffff,
     fx: ['godray'],
+    shadow: false,
     material: new MeshBasicMaterial(),
     color: () => {
       return _color.set(0x000000)
@@ -132,6 +194,7 @@ const ambiances = {
     background: 0x000000,
     env: ocean,
     fx: ['fxaa'],
+    shadow: false,
     material: new MeshPhysicalMaterial({
       premultipliedAlpha: false,
       reflectivity: 0,
@@ -151,6 +214,7 @@ const ambiances = {
   wireframe: {
     background: 0x000000,
     fx: ['fxaa'],
+    shadow: false,
     material: new MeshBasicMaterial({
       wireframe: true,
     }),
@@ -216,7 +280,7 @@ export const initialize3d = () => {
   initEdge()
   initVertex()
 
-  changeAmbiance()
+  // changeAmbiance()
 
   return {
     composer,
@@ -258,6 +322,13 @@ const initVertex = () => {
   )
   vertexGeometry.attributes.instanceTarget.array.fill(NaN)
   instancedVertex.geometry.instanceCount = 0
+  instancedVertex.frustumCulled = false
+  instancedVertex.customDepthMaterial = hyperMathMaterial(
+    new MeshDepthMaterial({ depthPacking: RGBADepthPacking })
+  )
+  instancedVertex.customDistanceMaterial = hyperMathMaterial(
+    new MeshDistanceMaterial()
+  )
   group.add(instancedVertex)
 }
 
@@ -288,6 +359,13 @@ const initEdge = () => {
 
   instancedEdge = new Mesh(edgeGeometry, hyperMathMaterial(ambiance.material))
   instancedEdge.geometry.instanceCount = 0
+  instancedEdge.frustumCulled = false
+  instancedEdge.customDepthMaterial = hyperMathMaterial(
+    new MeshDepthMaterial({ depthPacking: RGBADepthPacking })
+  )
+  instancedEdge.customDistanceMaterial = hyperMathMaterial(
+    new MeshDistanceMaterial()
+  )
   group.add(instancedEdge)
 }
 
@@ -300,6 +378,8 @@ const plotVertices = ([start, stop]) => {
     instancedVertex.geometry.dispose()
     instancedVertex.material.dispose()
     initVertex()
+
+    instancedVertex.castShadow = ambiance.shadow
     updateMaterials()
     start = 0
   }
@@ -332,6 +412,7 @@ const plotEdges = ([start, stop], segmentsChanged = false) => {
     instancedEdge.material.dispose()
     group.remove(instancedEdge)
     initEdge()
+    instancedEdge.castShadow = ambiance.shadow
     updateMaterials()
     start = 0
   }
@@ -397,11 +478,64 @@ export const changeAmbiance = () => {
   lightsToRemove.forEach(light => {
     light.parent.remove(light)
   })
+  if (ground) {
+    ground.geometry.dispose()
+    ground.material.dispose()
+    scene.remove(ground)
+  }
+  if (ambiance.shadow) {
+    renderer.shadowMap.type = PCFShadowMap
+    if (ambiance.ground === 'sphere') {
+      ground = new Mesh(
+        new SphereGeometry(20, 32, 32),
+        new MeshPhongMaterial({
+          color: 0xffffff,
+          side: BackSide,
+          depthWrite: false,
+        })
+      )
+    } else if (ambiance.ground === 'plane') {
+      ground = new Mesh(
+        new PlaneGeometry(1000, 1000),
+        new MeshPhongMaterial({
+          color: 0xffffff,
+          depthWrite: false,
+        })
+      )
+      ground.rotation.x = -Math.PI / 2
+      ground.position.y = -3
+    }
+    ground.receiveShadow = true
+    scene.add(ground)
+  } else {
+    ground = null
+  }
+
+  renderer.shadowMap.enabled = ambiance.shadow
+  renderer.shadowMap.type = PCFSoftShadowMap
+  instancedEdge.castShadow = ambiance.shadow
+  instancedVertex.castShadow = ambiance.shadow
   // Add new lights
+  const castShadow = ambiance.shadow
+    ? light => {
+        if (!light.shadow) {
+          return
+        }
+        light.castShadow = true
+        light.shadow.mapSize.width = 2048
+        light.shadow.mapSize.height = 2048
+        light.shadow.camera.near = camera.near
+        light.shadow.camera.far = camera.far
+        light.shadow.camera.fov = camera.fov
+      }
+    : () => {}
+
   ;(ambiance.lights || []).forEach(light => {
+    castShadow(light)
     scene.add(light)
   })
   ;(ambiance.cameraLights || []).forEach(light => {
+    castShadow(light)
     camera.add(light)
   })
   renderer.toneMapping = ambiance.fx.includes('bloom')
@@ -508,6 +642,10 @@ export const updateMaterials = () => {
       .filter(value => value?.isMaterial)
       .forEach(value => update(value))
   )
+  update(instancedVertex.customDepthMaterial)
+  update(instancedVertex.customDistanceMaterial)
+  update(instancedEdge.customDepthMaterial)
+  update(instancedEdge.customDistanceMaterial)
 }
 
 export const render = () => {

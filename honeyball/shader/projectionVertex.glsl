@@ -57,9 +57,9 @@ vec3 xproject(in vec4 v) {
   v.xyz /= v.w;
   v.w = 1. / v.w;
 
-  v.xzw *= 2. / (1. + v.y);
-  v.w *= -1.;
-  return v.xzw;
+  v.xyw *= 2. / (1. + v.z);
+  v.w -= 1.;
+  return v.xwy;
   #endif
   #else
   #ifdef P_STEREOGRAPHIC

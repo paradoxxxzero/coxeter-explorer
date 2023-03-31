@@ -3,6 +3,7 @@ import {
   MeshDepthMaterial,
   ShaderMaterial,
   MeshNormalMaterial,
+  MeshDistanceMaterial,
 } from 'three'
 import hyperMathVertexShader from './hyperMathVertex.glsl'
 import projectionVertexShader from './projectionVertex.glsl'
@@ -24,6 +25,7 @@ export const hyperMathMaterial = material => {
     MeshDepthMaterial,
     ShaderMaterial,
     MeshNormalMaterial,
+    MeshDistanceMaterial,
   ].find(cls => material instanceof cls)
   material._dimensions = C.dimensions
   material.uniforms = {
@@ -44,7 +46,10 @@ export const hyperMathMaterial = material => {
       shader.vertexShader = shader.vertexShader
         .replace('#if defined ( USE_ENVMAP ) || defined ( USE_SKINNING )', '')
         .replace('#endif', '')
-    } else if (material instanceof MeshDepthMaterial) {
+    } else if (
+      material instanceof MeshDepthMaterial ||
+      material instanceof MeshDistanceMaterial
+    ) {
       shader.vertexShader = shader.vertexShader
         .replace('#ifdef USE_DISPLACEMENTMAP', '')
         .replace('#endif', '')
