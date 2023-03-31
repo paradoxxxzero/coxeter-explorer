@@ -1,2 +1,2 @@
 - Custom word tree (should be faster than Set)
-- More ambiance / effects
+- More ambiance / effects / only instanciate effect if used

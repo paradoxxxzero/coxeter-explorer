@@ -32,12 +32,16 @@ const size = () => {
     composer.setSize(width, height)
     const pixelRatio = renderer.getPixelRatio()
     composer.setPixelRatio(pixelRatio)
+    composer.passes.forEach(pass => {
+      if (pass.material) {
+        pass.material.uniforms['resolution'].value.x = 1 / (width * pixelRatio)
+        pass.material.uniforms['resolution'].value.y = 1 / (height * pixelRatio)
+      }
+      if (pass.resolution) {
+        pass.resolution = new Vector2(width, height)
+      }
+    })
 
-    window.bloomPass.resolution = new Vector2(width, height)
-    window.fxaaPass.material.uniforms['resolution'].value.x =
-      1 / (width * renderer.getPixelRatio())
-    window.fxaaPass.material.uniforms['resolution'].value.y =
-      1 / (height * renderer.getPixelRatio())
     if (subsampling !== 1) {
       currentCanvas.style.width = null
       currentCanvas.style.height = null
@@ -138,7 +142,7 @@ const update = async event => {
   newC.projection = document.querySelector('#projection').value
   newC.ambiance = document.querySelector('#ambiance').value
   newC.stellation = document.querySelector('#stellation').checked
-  window.bloomPass.strength = newC.light
+  // window.bloomPass.strength = newC.light
   newC.controls =
     document.querySelector('#controls').innerHTML === orbit ? 'orbit' : 'free'
   window.controls.enabled = newC.controls === 'orbit'

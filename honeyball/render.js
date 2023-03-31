@@ -31,23 +31,14 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
-import { C } from './C'
 
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
+import { C } from './C'
 import { R } from './R'
-import { wrapEdgeMaterial } from './shader/wrapEdgeMaterial'
-import { wrapVertexMaterial } from './shader/wrapVertexMaterial'
+import { BokehPass } from './shader/BokehPass'
+import { hyperMathMaterial } from './shader/hyperMathMaterial'
 
-export let stats,
-  renderer,
-  camera,
-  scene,
-  controls,
-  clock,
-  composer,
-  renderPass,
-  bloomPass,
-  fxaaPass
+export let stats, renderer, camera, scene, controls, clock, composer, renderPass
 
 const group = new Group()
 const _color = new Color()
@@ -72,6 +63,8 @@ const ambiances = {
   neon: {
     background: 0x000000,
     bloom: true,
+    bokeh: false,
+    fxaa: true,
     material: new MeshBasicMaterial(),
     lights: [],
     colorVertex: ({ word }) => {
@@ -84,6 +77,9 @@ const ambiances = {
   museum: {
     background: 0xffffff,
     bloom: false,
+    bokeh: false,
+    fxaa: true,
+    // material: new MeshDepthMaterial(),
     material: new MeshPhysicalMaterial({
       roughness: 0.5,
       clearcoat: 1.0,
@@ -103,6 +99,8 @@ const ambiances = {
   colorful: {
     background: 0xffffff,
     bloom: false,
+    bokeh: true,
+    fxaa: true,
     material: new MeshPhongMaterial({
       // transparent: true,
       // opacity: 0.75,
@@ -116,10 +114,33 @@ const ambiances = {
       return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
     },
   },
+  transcendent: {
+    background: 0xffffff,
+    bloom: false,
+    bokeh: false,
+    fxaa: true,
+    material: new MeshPhysicalMaterial({
+      roughness: 0.5,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.1,
+      map: diffuse,
+      normalMap: normalMap,
+    }),
+    lights: [new DirectionalLight(), new HemisphereLight()],
+    cameraLights: [new PointLight()],
+    colorVertex: () => {
+      return _color.set(0xaaaaaa)
+    },
+    colorEdge: () => {
+      return _color.set(0xaaaaaa)
+    },
+  },
   glass: {
     background: 0x000000,
     env: ocean,
     bloom: false,
+    bokeh: false,
+    fxaa: true,
     material: new MeshPhysicalMaterial({
       premultipliedAlpha: false,
       reflectivity: 0,
@@ -142,6 +163,8 @@ const ambiances = {
   wireframe: {
     background: 0x000000,
     bloom: false,
+    bokeh: false,
+    fxaa: true,
     material: new MeshBasicMaterial({
       wireframe: true,
     }),
@@ -160,7 +183,7 @@ export const initialize3d = () => {
   // stats = new Stats()
   // document.body.appendChild(stats.dom)
   renderer = new WebGLRenderer()
-
+  renderer.autoClear = false
   renderer.setPixelRatio(window.devicePixelRatio)
   renderer.setSize(window.innerWidth, window.innerHeight)
 
@@ -168,8 +191,8 @@ export const initialize3d = () => {
   camera = new PerspectiveCamera(
     90,
     window.innerWidth / window.innerHeight,
-    0.001,
-    1000
+    0.01,
+    100
   )
   camera.position.set(0, 0, -1)
   camera.up.set(0, 1, 0)
@@ -203,22 +226,6 @@ export const initialize3d = () => {
   renderPass = new RenderPass(scene, camera)
   composer.addPass(renderPass)
 
-  fxaaPass = new ShaderPass(FXAAShader)
-  const pixelRatio = renderer.getPixelRatio()
-  fxaaPass.material.uniforms['resolution'].value.x =
-    1 / (window.innerWidth * pixelRatio)
-  fxaaPass.material.uniforms['resolution'].value.y =
-    1 / (window.innerHeight * pixelRatio)
-  composer.addPass(fxaaPass)
-
-  bloomPass = new UnrealBloomPass(
-    new Vector2(window.innerWidth, window.innerHeight),
-    1.5,
-    0,
-    0
-  )
-  composer.addPass(bloomPass)
-
   // controls = new FirstPersonControls(camera, renderer.domElement)
   // controls.lookSpeed = 0.2
   // animate()
@@ -235,8 +242,6 @@ export const initialize3d = () => {
     camera,
     controls,
     renderPass,
-    bloomPass,
-    fxaaPass,
   }
 }
 
@@ -251,9 +256,12 @@ const initVertex = () => {
   vertex3dGeometry.attributes.position.array.fill(0)
   const vertexGeometry = new InstancedBufferGeometry().copy(vertex3dGeometry)
 
-  // vertexGeometry.setAttribute("position", new BufferAttribute(new Float32Array(currentVerticesMax * 4), 4)
   vertexGeometry.setAttribute(
     'instancePosition',
+    new InstancedBufferAttribute(new Float32Array(currentVerticesMax * 4), 4)
+  )
+  vertexGeometry.setAttribute(
+    'instanceTarget',
     new InstancedBufferAttribute(new Float32Array(currentVerticesMax * 4), 4)
   )
   vertexGeometry.setAttribute(
@@ -261,16 +269,12 @@ const initVertex = () => {
     new InstancedBufferAttribute(new Float32Array(currentVerticesMax * 3), 3)
   )
 
-  // const vertexGeometry = new SphereGeometry(vertexRadius, 16, 16)
   instancedVertex = new Mesh(
     vertexGeometry,
-    wrapVertexMaterial(ambiance.material.clone())
+    hyperMathMaterial(ambiance.material.clone()) // TODO?
   )
-
-  // instancedVertex.setColorAt(0, new Color())
+  vertexGeometry.attributes.instanceTarget.array.fill(NaN)
   instancedVertex.geometry.instanceCount = 0
-  // instancedVertex.instanceMatrix.setUsage(StreamDrawUsage)
-  // instancedVertex.instanceColor.setUsage(StreamDrawUsage)
   group.add(instancedVertex)
 }
 
@@ -287,11 +291,11 @@ const initEdge = () => {
   const edgeGeometry = new InstancedBufferGeometry().copy(edge3dGeometry)
 
   edgeGeometry.setAttribute(
-    'instancePositionStart',
+    'instancePosition',
     new InstancedBufferAttribute(new Float32Array(currentEdgesMax * 4), 4)
   )
   edgeGeometry.setAttribute(
-    'instancePositionEnd',
+    'instanceTarget',
     new InstancedBufferAttribute(new Float32Array(currentEdgesMax * 4), 4)
   )
   edgeGeometry.setAttribute(
@@ -301,12 +305,9 @@ const initEdge = () => {
 
   instancedEdge = new Mesh(
     edgeGeometry,
-    wrapEdgeMaterial(ambiance.material.clone())
+    hyperMathMaterial(ambiance.material.clone())
   )
-  // instancedEdge.setColorAt(0, new Color())
   instancedEdge.geometry.instanceCount = 0
-  // instancedEdge.instanceMatrix.setUsage(StreamDrawUsage)
-  // instancedEdge.instanceColor.setUsage(StreamDrawUsage)
   group.add(instancedEdge)
 }
 
@@ -325,17 +326,6 @@ const plotVertices = ([start, stop]) => {
   instancedVertex.geometry.instanceCount = stop
   for (let i = start; i < stop; i++) {
     const vertex = R.vertices[i]
-    // dummy.matrix.identity()
-    // dummy.matrixWorld.identity()
-    // dummy.quaternion.identity()
-    // dummy.position.set(...xproject(vertex.vertex))
-    // // if (C.dimensions === 4) {
-    //   dummy.scale.setScalar(C.thickness / max(1, abs(vertex.vertex[3])))
-    // } else {
-    //   // dummy.scale.setScalar(C.thickness)
-    // }
-    // dummy.updateMatrix()
-    // instancedVertex.setMatrixAt(i, dummy.matrix)
     const ipos = instancedVertex.geometry.attributes.instancePosition.array
     ipos[i * 4 + 0] = vertex.vertex[0]
     ipos[i * 4 + 1] = vertex.vertex[1]
@@ -347,13 +337,9 @@ const plotVertices = ([start, stop]) => {
     icolor[i * 3 + 0] = _color.r
     icolor[i * 3 + 1] = _color.g
     icolor[i * 3 + 2] = _color.b
-
-    // instancedVertex.setColorAt(i, ambiance.colorVertex(vertex))
   }
   instancedVertex.geometry.attributes.instancePosition.needsUpdate = true
   instancedVertex.geometry.attributes.instanceColor.needsUpdate = true
-  // instancedVertex.instanceMatrix.needsUpdate = true
-  // instancedVertex.instanceColor.needsUpdate = true
 }
 
 const plotEdges = ([start, stop], segmentsChanged = false) => {
@@ -372,13 +358,12 @@ const plotEdges = ([start, stop], segmentsChanged = false) => {
   instancedEdge.geometry.instanceCount = stop
   for (let i = start; i < stop; i++) {
     const edge = R.edges[i]
-    const iposstart =
-      instancedEdge.geometry.attributes.instancePositionStart.array
+    const iposstart = instancedEdge.geometry.attributes.instancePosition.array
     iposstart[i * 4 + 0] = edge.start[0]
     iposstart[i * 4 + 1] = edge.start[1]
     iposstart[i * 4 + 2] = edge.start[2]
     iposstart[i * 4 + 3] = C.dimensions === 3 ? 1 : edge.start[3]
-    const iposend = instancedEdge.geometry.attributes.instancePositionEnd.array
+    const iposend = instancedEdge.geometry.attributes.instanceTarget.array
     iposend[i * 4 + 0] = edge.end[0]
     iposend[i * 4 + 1] = edge.end[1]
     iposend[i * 4 + 2] = edge.end[2]
@@ -389,135 +374,11 @@ const plotEdges = ([start, stop], segmentsChanged = false) => {
     icolor[i * 3 + 0] = _color.r
     icolor[i * 3 + 1] = _color.g
     icolor[i * 3 + 2] = _color.b
-
-    // const p1 = edge.start
-    // const p2 = edge.end
-
-    // // const u = xproject(p1)
-    // // const v = xproject(p2)
-    // const up = [0, 1, 0]
-    // const u = [...p1]
-    // const v = [...p2]
-    // _matrix.identity()
-    // _matrix.setPosition(...u)
-
-    // const z = new Array(C.dimensions)
-    // for (let i = 0; i < C.dimensions; i++) {
-    //   z[i] = v[i] - u[i]
-    // }
-
-    // const norm = v => {
-    //   let sum = 0
-    //   for (let i = 0; i < C.dimensions; i++) {
-    //     sum += v[i] * v[i]
-    //   }
-    //   sum = sqrt(sum)
-    //   for (let i = 0; i < C.dimensions; i++) {
-    //     v[i] /= sum
-    //   }
-    // }
-
-    // norm(z)
-    // const x = xcross(up, z, 1)
-    // norm(x)
-    // const y = xcross(z, x, 1)
-
-    // _matrix.elements[0] = x[0]
-    // _matrix.elements[1] = x[1]
-    // _matrix.elements[2] = x[2]
-    // _matrix.elements[4] = y[0]
-    // _matrix.elements[5] = y[1]
-    // _matrix.elements[6] = y[2]
-    // _matrix.elements[8] = z[0]
-    // _matrix.elements[9] = z[1]
-    // _matrix.elements[10] = z[2]
-
-    // // _matrix.lookAt(v, u, _up)
-    // // const dw = v[3] - u[3]
-    // let s = 0
-    // for (let i = 0; i < C.dimensions; i++) {
-    //   s += (v[i] - u[i]) ** 2
-    // }
-    // s = sqrt(s)
-    // _matrix.elements[8] *= s
-    // _matrix.elements[9] *= s
-    // _matrix.elements[10] *= s
-    // _matrix.elements[11] *= s
-    // // dummy.matrix.identity()
-    // // dummy.matrixWorld.identity()
-    // // dummy.quaternion.identity()
-    // // dummy.position.set(...u)
-    // // const dx = v[0] - u[0]
-    // // const dy = v[1] - u[1]
-    // // const dz = v[2] - u[2]
-    // // // const dw = v[3] - u[3]
-    // // dummy.scale.set(1, 1, sqrt(dx * dx + dy * dy + dz * dz /*+ dw * dw*/))
-
-    // // dummy.lookAt(...v)
-    // // dummy.updateMatrix()
-
-    // // const u = new Array(C.dimensions).fill(0)
-    // // const v = new Array(C.dimensions).fill(0)
-    // // const w = new Array(C.dimensions).fill(0)
-
-    // // u[2] = 1
-    // // for (let j = 0; j < C.dimensions; j++) {
-    // //   v[j] = p2[j] - p1[j]
-    // //   w[j] = u[j] + v[j]
-    // // }
-    // // const nr = 1 / (1 + xdot(u, v))
-
-    // // for (let j = 0; j < 4; j++) {
-    // //   for (let k = 0; k < 4; k++) {
-    // //     const p = 4 * k + j
-    // //     if (C.dimensions === 3 && (j === 3 || k === 3)) {
-    // //       _matrix.elements[p] = j === k ? 1 : 0
-    // //     } else {
-    // //       _matrix.elements[p] = 1 - w[j] * w[k] * nr + 2 * u[j] * v[k]
-    // //     }
-    // //   }
-    // // }
-
-    // // // _matrix.transpose()
-    // // _matrix.elements[12] = p1[0]
-    // // _matrix.elements[13] = p1[1]
-    // // _matrix.elements[14] = p1[2]
-    // // console.log(_matrix.elements)
-    // // _matrix.elements[15] += p1[3]
-    // // R = I - ((w) / (1 + u.v)) * (w)t + 2 * v * ut
-    // // const R00 = 1 - w[0] * w[0] * nr + 2 * u[0] * v[0]
-    // // const R01 = 1 - w[0] * w[1] * nr + 2 * u[0] * v[1]
-    // // const R02 = 1 - w[0] * w[2] * nr + 2 * u[0] * v[2]
-    // // const R03 = 1 - w[0] * w[3] * nr + 2 * u[0] * v[3]
-    // // const R10 = 1 - w[1] * w[0] * nr + 2 * u[1] * v[0]
-    // // const R11 = 1 - w[1] * w[1] * nr + 2 * u[1] * v[1]
-    // // const R12 = 1 - w[1] * w[2] * nr + 2 * u[1] * v[2]
-    // // const R13 = 1 - w[1] * w[3] * nr + 2 * u[1] * v[3]
-    // // const R20 = 1 - w[2] * w[0] * nr + 2 * u[2] * v[0]
-    // // const R21 = 1 - w[2] * w[1] * nr + 2 * u[2] * v[1]
-    // // const R22 = 1 - w[2] * w[2] * nr + 2 * u[2] * v[2]
-    // // const R23 = 1 - w[2] * w[3] * nr + 2 * u[2] * v[3]
-    // // const R30 = 1 - w[3] * w[0] * nr + 2 * u[3] * v[0]
-    // // const R31 = 1 - w[3] * w[1] * nr + 2 * u[3] * v[1]
-    // // const R32 = 1 - w[3] * w[2] * nr + 2 * u[3] * v[2]
-    // // const R33 = 1 - w[3] * w[3] * nr + 2 * u[3] * v[3]
-    // // // prettier-ignore
-    // // _matrix.set(
-    // //   R00, R01, R02, R03,
-    // //   R10, R11, R12, R13,
-    // //   R20, R21, R22, R23,
-    // //   R30, R31, R32, R33,
-    // // )
-    // // instancedEdge.setMatrixAt(i, _matrix)
-    // instancedEdge.setMatrixAt(i, _matrix)
-    // instancedEdge.setColorAt(i, ambiance.colorEdge(edge))
   }
 
-  instancedEdge.geometry.attributes.instancePositionStart.needsUpdate = true
-  instancedEdge.geometry.attributes.instancePositionEnd.needsUpdate = true
+  instancedEdge.geometry.attributes.instancePosition.needsUpdate = true
+  instancedEdge.geometry.attributes.instanceTarget.needsUpdate = true
   instancedEdge.geometry.attributes.instanceColor.needsUpdate = true
-  // instancedEdge.instanceMatrix.needsUpdate = true
-  // instancedEdge.instanceColor.needsUpdate = true
 }
 
 export const plot = (arg, segmentsChanged = false) => {
@@ -565,42 +426,66 @@ export const changeAmbiance = () => {
   })
   renderer.toneMapping = ambiance.bloom ? ReinhardToneMapping : NoToneMapping
   renderer.toneMappingExposure = ambiance.bloom ? 1.5 : 1
-  bloomPass.enabled = ambiance.bloom
+  composer.passes.slice(1).forEach(pass => {
+    composer.removePass(pass)
+    pass.dispose()
+  })
+  if (ambiance.fxaa) {
+    const fxaaPass = new ShaderPass(FXAAShader)
+    const pixelRatio = renderer.getPixelRatio()
+    fxaaPass.material.uniforms['resolution'].value.x =
+      1 / (window.innerWidth * pixelRatio)
+    fxaaPass.material.uniforms['resolution'].value.y =
+      1 / (window.innerHeight * pixelRatio)
+    composer.addPass(fxaaPass)
+  }
+  if (ambiance.bloom) {
+    const bloomPass = new UnrealBloomPass(
+      new Vector2(window.innerWidth, window.innerHeight),
+      1.5,
+      0,
+      0
+    )
+    composer.addPass(bloomPass)
+  }
+  if (ambiance.bokeh) {
+    const bokehPass = new BokehPass(scene, camera, {
+      focus: 0.5,
+      aperture: 0.01,
+      maxblur: 0.005,
+    })
+    composer.addPass(bokehPass)
+  }
 
   // Update materials
-  instancedVertex.material = wrapVertexMaterial(ambiance.material.clone())
-  instancedEdge.material = wrapEdgeMaterial(ambiance.material.clone())
+  instancedVertex.material = hyperMathMaterial(ambiance.material.clone())
+  instancedEdge.material = hyperMathMaterial(ambiance.material.clone())
   updateMaterials()
   plot(true)
   render()
 }
 
 export const updateMaterials = () => {
-  if (instancedVertex) {
-    instancedVertex.material.uniforms.curvature.value = R.curvature
-    instancedVertex.material.uniforms.thickness.value = C.thickness
-    if (
-      C.dimensions !== instancedVertex.material._dimensions ||
-      C.projection !== instancedVertex.material._projection
-    ) {
-      instancedVertex.material._dimensions = C.dimensions
-      instancedVertex.material._projection = C.projection
-      instancedVertex.material.needsUpdate = true
+  const update = material => {
+    if (!material) {
+      return
     }
-  }
-  if (instancedEdge) {
-    instancedEdge.material.uniforms.curvature.value = R.curvature
-    instancedEdge.material.uniforms.thickness.value = C.thickness
+    material.uniforms.curvature.value = R.curvature
+    material.uniforms.thickness.value = C.thickness
     if (
-      C.dimensions !== instancedEdge.material._dimensions ||
-      C.projection !== instancedEdge.material._projection
+      C.dimensions !== material._dimensions ||
+      C.projection !== material._projection
     ) {
-      instancedEdge.material._dimensions = C.dimensions
-      instancedEdge.material._projection = C.projection
-      instancedEdge.material.needsUpdate = true
+      material._dimensions = C.dimensions
+      material._projection = C.projection
+      material.needsUpdate = true
     }
-    instancedEdge.material.uniforms.segments.value = C.curve ? C.segments : 1
+    material.uniforms.segments.value = C.curve ? C.segments : 1
   }
+
+  update(instancedVertex.material)
+  update(instancedEdge.material)
+  composer.passes.forEach(pass => update(pass.materialDepth))
 }
 
 export const render = () => {
@@ -616,58 +501,3 @@ export const animate = () => {
   requestAnimationFrame(animate)
   render()
 }
-
-// Draw edges as lines:
-//
-// const MAX = 1000000
-// const plotEdges = () => {
-//   const { edges } = C.runtime
-//   const lineIndex = []
-//   const lineGeometry = new BufferGeometry()
-//   const linePositions = new Float32Array(3 * 2 * edges.length)
-//   lineGeometry.setAttribute(
-//     'position',
-//     new BufferAttribute(linePositions, 3) //.setUsage(StreamDrawUsage)
-//   )
-//   const lineColors = new Float32Array(3 * 2 * edges.length)
-//   lineGeometry.setAttribute(
-//     'color',
-//     new BufferAttribute(lineColors, 3) //.setUsage(StreamDrawUsage)
-//   )
-//   const lineMaterial = new LineBasicMaterial({
-//     vertexColors: true,
-//   })
-//   lineMaterial.linewidth = 5
-
-//   const lines = new LineSegments(lineGeometry, lineMaterial)
-//   // lines.scale.setScalar(0.999)
-
-//   for (let i = 0; i < edges.length; i++) {
-//     const edge = edges[i]
-
-//     const vertex3d1 = C.dimensions === 4 ? poincare(edge.vertex1) : edge.vertex1
-//     const vertex3d2 = C.dimensions === 4 ? poincare(edge.vertex2) : edge.vertex2
-//     linePositions[i * 6 + 0] = vertex3d1[0]
-//     linePositions[i * 6 + 1] = vertex3d1[1]
-//     linePositions[i * 6 + 2] = vertex3d1[2]
-//     linePositions[i * 6 + 3] = vertex3d2[0]
-//     linePositions[i * 6 + 4] = vertex3d2[1]
-//     linePositions[i * 6 + 5] = vertex3d2[2]
-
-//     lineColors[i * 6 + 0] = edge.color.r
-//     lineColors[i * 6 + 1] = edge.color.g
-//     lineColors[i * 6 + 2] = edge.color.b
-//     lineColors[i * 6 + 3] = edge.color.r
-//     lineColors[i * 6 + 4] = edge.color.g
-//     lineColors[i * 6 + 5] = edge.color.b
-
-//     lineIndex.push(i * 2, i * 2 + 1)
-//   }
-
-//   lines.geometry.setIndex(lineIndex)
-//   lines.geometry.setDrawRange(0, lineIndex.length)
-//   lines.geometry.attributes.position.needsUpdate = true
-//   lines.geometry.attributes.color.needsUpdate = true
-//   lines.geometry.computeBoundingSphere()
-//   group.add(lines)
-// }
