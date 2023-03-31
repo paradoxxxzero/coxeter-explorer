@@ -31,7 +31,8 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
-
+import { LuminosityShader } from 'three/examples/jsm/shaders/LuminosityShader.js'
+import { SobelOperatorShader } from 'three/examples/jsm/shaders/SobelOperatorShader.js'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { C } from './C'
 import { R } from './R'
@@ -64,6 +65,7 @@ const ambiances = {
     background: 0x000000,
     bloom: true,
     bokeh: false,
+    sobel: false,
     fxaa: true,
     material: new MeshBasicMaterial(),
     lights: [],
@@ -78,6 +80,7 @@ const ambiances = {
     background: 0xffffff,
     bloom: false,
     bokeh: false,
+    sobel: false,
     fxaa: true,
     // material: new MeshDepthMaterial(),
     material: new MeshPhysicalMaterial({
@@ -96,10 +99,27 @@ const ambiances = {
       return _color.set(0xaaaaaa)
     },
   },
+  bw: {
+    background: 0x000000,
+    bloom: false,
+    bokeh: false,
+    sobel: true,
+    fxaa: true,
+    material: new MeshPhongMaterial(),
+    lights: [new AmbientLight(0xcccccc, 0.4)],
+    cameraLights: [new PointLight(0xffffff, 1)],
+    colorVertex: () => {
+      return _color.set(0xffff00)
+    },
+    colorEdge: () => {
+      return _color.set(0xffff00)
+    },
+  },
   colorful: {
     background: 0xffffff,
     bloom: false,
     bokeh: true,
+    sobel: false,
     fxaa: true,
     material: new MeshPhongMaterial({
       // transparent: true,
@@ -118,6 +138,7 @@ const ambiances = {
     background: 0xffffff,
     bloom: false,
     bokeh: false,
+    sobel: false,
     fxaa: true,
     material: new MeshPhysicalMaterial({
       roughness: 0.5,
@@ -140,6 +161,7 @@ const ambiances = {
     env: ocean,
     bloom: false,
     bokeh: false,
+    sobel: false,
     fxaa: true,
     material: new MeshPhysicalMaterial({
       premultipliedAlpha: false,
@@ -164,6 +186,7 @@ const ambiances = {
     background: 0x000000,
     bloom: false,
     bokeh: false,
+    sobel: false,
     fxaa: true,
     material: new MeshBasicMaterial({
       wireframe: true,
@@ -439,6 +462,30 @@ export const changeAmbiance = () => {
       1 / (window.innerHeight * pixelRatio)
     composer.addPass(fxaaPass)
   }
+  if (ambiance.bokeh) {
+    const bokehPass = new BokehPass(scene, camera, {
+      focus: 0.5,
+      aperture: 0.01,
+      maxblur: 0.005,
+    })
+    composer.addPass(bokehPass)
+  }
+  if (ambiance.sobel) {
+    const effectGrayScale = new ShaderPass(LuminosityShader)
+    composer.addPass(effectGrayScale)
+
+    // you might want to use a gaussian blur filter before
+    // the next pass to improve the result of the Sobel operator
+
+    // Sobel operator
+
+    const effectSobel = new ShaderPass(SobelOperatorShader)
+    effectSobel.uniforms['resolution'].value.x =
+      window.innerWidth * window.devicePixelRatio
+    effectSobel.uniforms['resolution'].value.y =
+      window.innerHeight * window.devicePixelRatio
+    composer.addPass(effectSobel)
+  }
   if (ambiance.bloom) {
     const bloomPass = new UnrealBloomPass(
       new Vector2(window.innerWidth, window.innerHeight),
@@ -447,14 +494,6 @@ export const changeAmbiance = () => {
       0
     )
     composer.addPass(bloomPass)
-  }
-  if (ambiance.bokeh) {
-    const bokehPass = new BokehPass(scene, camera, {
-      focus: 0.5,
-      aperture: 0.01,
-      maxblur: 0.005,
-    })
-    composer.addPass(bokehPass)
   }
 
   // Update materials
@@ -471,7 +510,8 @@ export const updateMaterials = () => {
       return
     }
     material.uniforms.curvature.value = R.curvature
-    material.uniforms.thickness.value = C.thickness
+    material.uniforms.vertexThickness.value = C.vertexThickness
+    material.uniforms.edgeThickness.value = C.edgeThickness
     if (
       C.dimensions !== material._dimensions ||
       C.projection !== material._projection

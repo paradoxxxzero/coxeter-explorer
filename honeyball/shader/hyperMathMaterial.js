@@ -8,7 +8,8 @@ export const hyperMathMaterial = material => {
   material._dimensions = C.dimensions
   material.uniforms = {
     curvature: { value: 0 },
-    thickness: { value: 0 },
+    edgeThickness: { value: 0 },
+    vertexThickness: { value: 0 },
     segments: { value: 3 },
   }
   material.onBeforeCompile = shader => {

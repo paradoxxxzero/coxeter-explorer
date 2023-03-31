@@ -33,7 +33,7 @@ const size = () => {
     const pixelRatio = renderer.getPixelRatio()
     composer.setPixelRatio(pixelRatio)
     composer.passes.forEach(pass => {
-      if (pass.material) {
+      if (pass.material?.uniforms?.['resolution']) {
         pass.material.uniforms['resolution'].value.x = 1 / (width * pixelRatio)
         pass.material.uniforms['resolution'].value.y = 1 / (height * pixelRatio)
       }
@@ -127,7 +127,16 @@ const restore = () => {
   document.querySelector('#vertices').checked = C.vertices
   document.querySelector('#edges').checked = C.edges
   document.querySelector('#light').value = C.light
-  document.querySelector('#thickness').value = C.thickness
+  document.querySelector('#vertexThickness').value = C.vertexThickness
+  document.querySelector('#vertexThickness').style.display = C.vertices
+    ? 'inline'
+    : 'none'
+
+  document.querySelector('#edgeThickness').value = C.edgeThickness
+  document.querySelector('#edgeThickness').style.display = C.edges
+    ? 'inline'
+    : 'none'
+
   document.querySelector('#ambiance').value = C.ambiance
   document.querySelector('#controls').innerHTML =
     C.controls === 'orbit' ? orbit : free
@@ -138,7 +147,8 @@ const update = async event => {
   const newC = {}
   newC.dimensions = document.querySelector('#d4').checked ? 4 : 3
   newC.light = +document.querySelector('#light').value
-  newC.thickness = +document.querySelector('#thickness').value
+  newC.vertexThickness = +document.querySelector('#vertexThickness').value
+  newC.edgeThickness = +document.querySelector('#edgeThickness').value
   newC.projection = document.querySelector('#projection').value
   newC.ambiance = document.querySelector('#ambiance').value
   newC.stellation = document.querySelector('#stellation').checked
@@ -146,14 +156,28 @@ const update = async event => {
   newC.controls =
     document.querySelector('#controls').innerHTML === orbit ? 'orbit' : 'free'
   window.controls.enabled = newC.controls === 'orbit'
+  newC.curve = document.querySelector('#curve').checked
+  newC.vertices = document.querySelector('#vertices').checked
+  newC.edges = document.querySelector('#edges').checked
+  newC.order = +document.querySelector('#order').value
+  newC.segments = +document.querySelector('#segments').value
 
   if (target === 'curve') {
-    document.querySelector('#segments').style.display = document.querySelector(
-      '#curve'
-    ).checked
+    document.querySelector('#segments').style.display = newC.curve
       ? 'inline'
       : 'none'
   }
+  if (target === 'vertices') {
+    document.querySelector('#vertexThickness').style.display = newC.vertices
+      ? 'inline'
+      : 'none'
+  }
+  if (target === 'edges') {
+    document.querySelector('#edgeThickness').style.display = newC.edges
+      ? 'inline'
+      : 'none'
+  }
+
   if (target === 'stellation') {
     document.querySelectorAll('.stellation').forEach(el => {
       el.style.display = newC.stellation ? 'inline' : 'none'
@@ -203,12 +227,6 @@ const update = async event => {
   'xyzw'.split('').forEach(d => {
     newC[d] = document.querySelector(`#mirror-${d}`).checked
   })
-
-  newC.order = +document.querySelector('#order').value
-  newC.curve = document.querySelector('#curve').checked
-  newC.segments = +document.querySelector('#segments').value
-  newC.vertices = document.querySelector('#vertices').checked
-  newC.edges = document.querySelector('#edges').checked
 
   const changed = Object.keys(newC).filter(key => newC[key] !== C[key])
 
@@ -297,9 +315,15 @@ const update = async event => {
       }
     }
   } else if (
-    ['edges', 'vertices', 'thickness', 'projection', 'curve', 'segments'].some(
-      key => changed.includes(key)
-    )
+    [
+      'edges',
+      'vertices',
+      'vertexThickness',
+      'edgeThickness',
+      'projection',
+      'curve',
+      'segments',
+    ].some(key => changed.includes(key))
   ) {
     plot(true, changed.includes('segments') || changed.includes('curve'))
   }

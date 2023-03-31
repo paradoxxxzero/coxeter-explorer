@@ -156,10 +156,6 @@
         <input type="number" id="segments" min="1" step="1" />
       </label>
       <label>
-        Thickness
-        <input type="number" id="thickness" min="0" step="0.1" />
-      </label>
-      <label>
         Light
         <input type="number" id="light" min="0" step="0.1" />
       </label>
@@ -179,12 +175,14 @@
         </select>
       </label>
       <label>
-        <input type="checkbox" id="vertices" />
         Vertices
+        <input type="checkbox" id="vertices" />
+        <input type="number" id="vertexThickness" min="0" step="1" />
       </label>
       <label>
-        <input type="checkbox" id="edges" />
         Edges
+        <input type="checkbox" id="edges" />
+        <input type="number" id="edgeThickness" min="0" step="1" />
       </label>
       <label>
         <input type="checkbox" id="stellation" />
@@ -196,6 +194,7 @@
           <option value="neon">Neon</option>
           <option value="museum">Museum</option>
           <option value="colorful">Colorful</option>
+          <option value="bw">B&W</option>
           <option value="glass">Glass</option>
           <option value="wireframe">Wireframe</option>
         </select>

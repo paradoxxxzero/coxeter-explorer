@@ -1,7 +1,8 @@
 /**/
 /* BEGIN HEADER */
 uniform float curvature;
-uniform float thickness;
+uniform float vertexThickness;
+uniform float edgeThickness;
 uniform float segments;
 
 attribute vec4 instancePosition;
@@ -65,15 +66,15 @@ void main() {
 
     norm = v * cos(r * TAU) + cross(v, k) * sin(r * TAU);
     norm = normalize(norm);
-    sizeFactor = .025;
+    sizeFactor = .001 * edgeThickness;
   } else {
     pos = instancePosition;
     norm = normal;
-    sizeFactor = .075;
+    sizeFactor = .001 * vertexThickness;
   }
   // <begin_vertex>
   vec3 transformed = xproject(pos);
-  transformed += sizeFactor * thickness * norm / max(1., length(pos));
+  transformed += sizeFactor * norm / max(1., length(pos));
 
   // <beginnormal_vertex>
   vec3 objectNormal = norm;

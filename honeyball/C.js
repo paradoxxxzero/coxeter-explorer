@@ -23,11 +23,12 @@ export const defaultC = {
   segments: 32,
   curve: true,
   vertices: false,
+  vertexThickness: 75,
   edges: true,
+  edgeThickness: 25,
   stellation: false,
 
   light: 1.5,
-  thickness: 1,
   projection: 'stereographic',
   controls: 'orbit',
   ambiance: 'neon',
