@@ -31,6 +31,8 @@ export const defaultC = {
   projection: 'stereographic',
   controls: 'orbit',
   ambiance: 'neon',
+  msaa: true,
+  msaaSamples: 8,
 }
 
 export const C = { ...defaultC }

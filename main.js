@@ -1,20 +1,21 @@
 import { Vector2 } from 'three'
-import { C, getC, setC, defaultC } from './honeyball/C'
+import { C, defaultC, getC, setC } from './honeyball/C'
+import { R, setR } from './honeyball/R'
 import { interactions } from './honeyball/interact'
 import { max } from './honeyball/math'
-import { R, setR } from './honeyball/R'
 import {
   camera,
+  changeAmbiance,
   composer,
   initialize3d,
   plot,
   render,
   renderer,
-  changeAmbiance,
+  resetComposerTarget,
   updateMaterials,
 } from './honeyball/render'
 import Tiling from './honeyball/tiling.worker?worker'
-import { setProcess, worker, kill } from './honeyball/utlis'
+import { kill, setProcess, worker } from './honeyball/utlis'
 
 let tiling = new Tiling()
 
@@ -146,6 +147,8 @@ const restore = () => {
     : 'none'
 
   document.querySelector('#ambiance').value = C.ambiance
+  document.querySelector('#msaa').checked = C.msaa
+  document.querySelector('#msaaSamples').value = C.msaaSamples
   document.querySelector('#controls').innerHTML =
     C.controls === 'orbit' ? orbit : free
 }
@@ -167,6 +170,8 @@ const update = async event => {
   newC.edges = document.querySelector('#edges').checked
   newC.order = +document.querySelector('#order').value
   newC.segments = +document.querySelector('#segments').value
+  newC.msaa = document.querySelector('#msaa').checked
+  newC.msaaSamples = +document.querySelector('#msaaSamples').value
 
   if (target === 'curve') {
     document.querySelector('#segments').style.display = newC.curve
@@ -180,6 +185,11 @@ const update = async event => {
   }
   if (target === 'edges') {
     document.querySelector('#edgeThickness').style.display = newC.edges
+      ? 'inline'
+      : 'none'
+  }
+  if (target === 'msaa') {
+    document.querySelector('#msaaSamples').style.display = newC.msaa
       ? 'inline'
       : 'none'
   }
@@ -265,6 +275,17 @@ const update = async event => {
   window.C = C
   updateMaterials()
 
+  if (changed.includes('ambiance') || mustRedraw) {
+    changeAmbiance()
+  }
+  if (
+    changed.includes('msaa') ||
+    changed.includes('msaaSamples') ||
+    mustRedraw
+  ) {
+    resetComposerTarget()
+  }
+
   if (
     mustRedraw ||
     ['x', 'y', 'z', 'w', 'order'].some(key => changed.includes(key))
@@ -333,10 +354,7 @@ const update = async event => {
   ) {
     plot(true, changed.includes('segments') || changed.includes('curve'))
   }
-  if (changed.includes('ambiance') || mustRedraw) {
-    changeAmbiance()
-    return
-  }
+
   render()
 }
 

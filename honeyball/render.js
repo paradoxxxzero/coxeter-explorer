@@ -34,6 +34,7 @@ import {
   TextureLoader,
   Vector2,
   WebGLRenderer,
+  WebGLRenderTarget,
 } from 'three'
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
@@ -43,7 +44,6 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 import { SAOPass } from 'three/examples/jsm/postprocessing/SAOPass'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
-import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
 import { LuminosityShader } from 'three/examples/jsm/shaders/LuminosityShader.js'
 import { SobelOperatorShader } from 'three/examples/jsm/shaders/SobelOperatorShader.js'
 import { C } from './C'
@@ -83,7 +83,7 @@ ocean.mapping = EquirectangularReflectionMapping
 const ambiances = {
   neon: {
     background: 0x000000,
-    fx: ['fxaa', 'bloom'],
+    fx: ['bloom'],
     shadow: false,
     material: new MeshBasicMaterial(),
     lights: [],
@@ -93,7 +93,6 @@ const ambiances = {
   },
   museum: {
     background: 0xffffff,
-    fx: ['fxaa'],
     shadow: true,
     ground: 'plane',
     material: new MeshPhysicalMaterial({
@@ -134,7 +133,6 @@ const ambiances = {
   },
   projection: {
     background: 0xffffff,
-    fx: ['fxaa'],
     ground: 'sphere',
     shadow: true,
     material: new MeshPhongMaterial({
@@ -150,7 +148,7 @@ const ambiances = {
   },
   bw: {
     background: 0x000000,
-    fx: ['fxaa', 'sobel'],
+    fx: ['sobel'],
     shadow: false,
     material: new MeshPhongMaterial(),
     lights: [new AmbientLight(0xcccccc, 0.4)],
@@ -161,18 +159,28 @@ const ambiances = {
   },
   colorful: {
     background: 0xffffff,
-    fx: ['fxaa', 'bokeh'],
+    shadow: false,
+    material: new MeshPhongMaterial(),
+    lights: [new AmbientLight(0xffffff, 1)],
+    cameraLights: [new PointLight(0xffffff, 0.5)],
+    color: ({ word }) => {
+      return _color.setHSL((word.length * 0.03) % 1, 0.5, 0.5)
+    },
+  },
+  bokeh: {
+    background: 0xffffff,
+    fx: ['bokeh'],
     shadow: false,
     material: new MeshPhongMaterial(),
     lights: [new AmbientLight(0xffffff, 0.5)],
     cameraLights: [new PointLight(0xffffff, 1)],
     color: ({ word }) => {
-      return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
+      return _color.setHSL((word.length * 0.17) % 1, 0.7, 0.5)
     },
   },
   pure: {
     background: 0xffffff,
-    fx: ['fxaa', 'sao'],
+    fx: ['sao'],
     shadow: false,
     material: new MeshLambertMaterial(),
     lights: [new AmbientLight(0x000000, 0.5)],
@@ -193,7 +201,6 @@ const ambiances = {
   glass: {
     background: 0x000000,
     env: ocean,
-    fx: ['fxaa'],
     shadow: false,
     material: new MeshPhysicalMaterial({
       premultipliedAlpha: false,
@@ -213,7 +220,6 @@ const ambiances = {
   },
   wireframe: {
     background: 0x000000,
-    fx: ['fxaa'],
     shadow: false,
     material: new MeshBasicMaterial({
       wireframe: true,
@@ -460,6 +466,15 @@ export const plot = (arg, segmentsChanged = false) => {
     plotEdges(edges, segmentsChanged)
   }
 }
+
+export const resetComposerTarget = () => {
+  const size = renderer.getDrawingBufferSize(new Vector2())
+  const renderTarget = new WebGLRenderTarget(size.width, size.height, {
+    samples: C.msaa ? C.msaaSamples : 0,
+  })
+  composer.reset(renderTarget)
+}
+
 export const changeAmbiance = () => {
   const ambiance = ambiances[C.ambiance]
   if (ambiance.env) {
@@ -538,23 +553,18 @@ export const changeAmbiance = () => {
     castShadow(light)
     camera.add(light)
   })
-  renderer.toneMapping = ambiance.fx.includes('bloom')
+  const fxs = ambiance.fx || ['copy']
+  renderer.toneMapping = fxs.includes('bloom')
     ? ReinhardToneMapping
     : NoToneMapping
-  renderer.toneMappingExposure = ambiance.fx.includes('bloom') ? 1.5 : 1
+  renderer.toneMappingExposure = fxs.includes('bloom') ? 1.5 : 1
   composer.passes.slice(1).forEach(pass => {
     composer.removePass(pass)
     pass.dispose()
   })
-  ambiance.fx.forEach(fx => {
-    if (fx === 'fxaa') {
-      const fxaaPass = new ShaderPass(FXAAShader)
-      const pixelRatio = renderer.getPixelRatio()
-      fxaaPass.material.uniforms['resolution'].value.x =
-        1 / (window.innerWidth * pixelRatio)
-      fxaaPass.material.uniforms['resolution'].value.y =
-        1 / (window.innerHeight * pixelRatio)
-      composer.addPass(fxaaPass)
+  fxs.forEach(fx => {
+    if (fx === 'copy') {
+      composer.addPass(composer.copyPass)
     } else if (fx === 'sao') {
       const saoPass = new SAOPass(scene, camera, false, true)
       saoPass.depthMaterial = hyperMathMaterial(saoPass.depthMaterial)
