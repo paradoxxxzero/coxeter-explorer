@@ -92,7 +92,7 @@ const ambiances = {
     },
   },
   museum: {
-    background: 0xffffff,
+    background: 0xbbbbbb,
     shadow: true,
     ground: 'plane',
     material: new MeshPhysicalMaterial({
@@ -118,7 +118,7 @@ const ambiances = {
         light.position.set(-4, 6, 2)
         return light
       })(),
-      new AmbientLight(0xaaaaaa, 0.4),
+      new AmbientLight(0xffffff, 0.4),
     ],
     cameraLights: [
       (() => {
@@ -128,7 +128,7 @@ const ambiances = {
       })(),
     ],
     color: () => {
-      return _color.set(0xaaaaaa)
+      return _color.set(0xffffff)
     },
   },
   projection: {
