@@ -73,7 +73,7 @@
         align-items: baseline;
         font-size: 0.75em;
         margin: 1em;
-        margin-right: 7em;
+        margin-right: 4.5rem;
         font-size: calc(min(1.5vw, 0.75em));
       }
 
@@ -139,7 +139,7 @@
         color: red !important;
       }
     </style>
-    <script type="module" crossorigin src="./assets/index-ab109212.js"></script>
+    <script type="module" crossorigin src="./assets/index-d362fe51.js"></script>
   </head>
 
   <body>
@@ -192,12 +192,18 @@
           <option value="museum">Museum</option>
           <option value="colorful">Colorful</option>
           <option value="bw">B&W</option>
+          <option value="bokeh">Bokeh</option>
           <option value="transcendent">Transcendent</option>
           <option value="projection">Projection</option>
           <option value="pure">Pure</option>
           <option value="glass">Glass</option>
           <option value="wireframe">Wireframe</option>
         </select>
+      </label>
+      <label>
+        MSAA
+        <input type="checkbox" id="msaa" />
+        <input type="number" id="msaaSamples" min="0" step="1" />
       </label>
     </aside>
     <aside class="coxeters">
