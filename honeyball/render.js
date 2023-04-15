@@ -93,10 +93,12 @@ const ambiances = {
   },
   museum: {
     background: 0xbbbbbb,
+    env: ocean,
     shadow: true,
     ground: 'plane',
     material: new MeshPhysicalMaterial({
       roughness: 0.5,
+      reflectivity: 0.25,
       clearcoat: 1.0,
       clearcoatRoughness: 0.1,
       map: diffuse,
@@ -199,7 +201,7 @@ const ambiances = {
     },
   },
   glass: {
-    background: 0x000000,
+    background: ocean,
     env: ocean,
     shadow: false,
     material: new MeshPhysicalMaterial({
@@ -478,11 +480,16 @@ export const resetComposerTarget = () => {
 export const changeAmbiance = () => {
   const ambiance = ambiances[C.ambiance]
   if (ambiance.env) {
-    scene.background = ambiance.env
+    scene.environment = ambiance.env
+  } else {
+    scene.environment = null
+  }
+  if (typeof ambiance.background !== 'number') {
+    scene.background = ambiance.background
   } else {
     scene.background = null
+    renderer.setClearColor(new Color(ambiance.background), 1)
   }
-  renderer.setClearColor(new Color(ambiance.background), 1)
   // Remove all lights
   const lightsToRemove = []
   scene.traverse(child => {
@@ -514,6 +521,9 @@ export const changeAmbiance = () => {
         new PlaneGeometry(1000, 1000),
         new MeshPhongMaterial({
           color: 0xffffff,
+          transparent: true,
+          opacity: 0.5,
+          // blending: MultiplyBlending,
           depthWrite: false,
         })
       )
