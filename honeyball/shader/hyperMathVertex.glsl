@@ -5,8 +5,22 @@ uniform float vertexThickness;
 uniform float edgeThickness;
 uniform float segments;
 
+struct vec5 {
+  vec4 v;
+  float u;
+};
+
+#if DIMENSIONS == 3
+attribute vec3 instancePosition;
+attribute vec3 instanceTarget;
+#elif DIMENSIONS == 4
 attribute vec4 instancePosition;
 attribute vec4 instanceTarget;
+#elif DIMENSIONS == 5
+attribute mat3 instancePosition;
+attribute mat3 instanceTarget;
+#endif
+
 attribute vec3 instanceColor;
 
 const float radial = 8.;
@@ -22,17 +36,35 @@ void main() {
   vColor.rgb = instanceColor.rgb;
   #endif
 
+  #if DIMENSIONS == 3
+  vec3 pos;
+  #elif DIMENSIONS == 4
   vec4 pos;
+  #elif DIMENSIONS == 5
+  vec5 pos;
+  vec5 instancePosition = fromMat(instancePosition);
+  vec5 instanceTarget = fromMat(instanceTarget);
+  #endif
+
   vec3 norm;
   float sizeFactor;
 
-  if(!isnan(instanceTarget.x)) {
+  if(!nan(instanceTarget)) {
     float vid = float(gl_VertexID);
     float h = floor(vid / (radial + 1.)) / (segments);
     float r = mod(vid, radial + 1.) / (radial);
 
     pos = mix(instancePosition, instanceTarget, h);
-    vec4 next = mix(instancePosition, instanceTarget, h + .001);
+
+    #if DIMENSIONS == 3
+    vec3 next;
+    #elif DIMENSIONS == 4
+    vec4 next;
+    #elif DIMENSIONS == 5
+    vec5 next;
+    #endif
+
+    next = mix(instancePosition, instanceTarget, h + .001);
 
   // vec4 u = vec4(1., 0., 0., 0.); // normalize(pos) but this do not work for first vertices;
   // vec4 v = normalize(segment);
@@ -58,7 +90,7 @@ void main() {
 
   // Inflate
     vec3 u = cross(n, p);
-    if(length(u) < .000001) {
+    if(len(u) < .000001) {
       u = p + vec3(n.y, 0, n.z);
     }
     u = normalize(u);
@@ -74,7 +106,7 @@ void main() {
   }
   // <begin_vertex>
   vec3 transformed = xproject(pos);
-  transformed += sizeFactor * norm / max(1., length(pos));
+  transformed += sizeFactor * norm / max(1., len(pos));
 
   // <beginnormal_vertex>
   vec3 objectNormal = norm;

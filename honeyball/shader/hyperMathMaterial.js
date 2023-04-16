@@ -37,8 +37,15 @@ export const hyperMathMaterial = material => {
   }
   material.onBeforeCompile = shader => {
     const defines = [
-      `#define D_${C.dimensions}`,
-      `#define P_${C.projection.toUpperCase()}`,
+      `#define DIMENSIONS ${C.dimensions}`,
+      `#define PROJECTION ${[
+        'stereographic',
+        'orthographic',
+        'klein',
+        'inverted',
+        'jemisphere',
+        'upperhalf',
+      ].indexOf(C.projection)}`,
     ]
 
     Object.assign(shader.uniforms, material.uniforms)

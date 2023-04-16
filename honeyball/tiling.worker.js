@@ -61,19 +61,32 @@ export const initTiling = C => {
     sDiv,
     tDiv,
     uDiv,
+    lDiv,
+    mDiv,
+    nDiv,
+    oDiv,
     x,
     y,
     z,
     w,
+    v,
   } = C
-  let { p, q, r, s, t, u } = C
+  let { p, q, r, s, t, u, l, m, n, o } = C
   if (stellation) {
     p /= pDiv
     q /= qDiv
     r /= rDiv
-    s /= sDiv
-    t /= tDiv
-    u /= uDiv
+    if (C.dimensions >= 4) {
+      s /= sDiv
+      t /= tDiv
+      u /= uDiv
+    }
+    if (C.dimensions >= 4) {
+      l /= lDiv
+      m /= mDiv
+      n /= nDiv
+      o /= oDiv
+    }
   }
 
   const newW = {
@@ -90,6 +103,14 @@ export const initTiling = C => {
             [p, -1, s, t],
             [q, s, -1, u],
             [r, t, u, -1],
+          ]
+        : dimensions === 5
+        ? [
+            [-1, p, q, r, s],
+            [p, -1, t, u, l],
+            [q, t, -1, m, n],
+            [r, u, m, -1, o],
+            [s, l, n, o, -1],
           ]
         : null,
 
@@ -123,6 +144,7 @@ export const initTiling = C => {
     y ? 1 : 0,
     z ? 1 : 0,
     w ? 1 : 0,
+    v ? 1 : 0,
   ])
   newW.words.set('', newW.rootVertex)
 

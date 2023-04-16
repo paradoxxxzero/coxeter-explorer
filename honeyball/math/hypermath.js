@@ -3,47 +3,29 @@ import { abs, acos, acosh, cos, sign, sin, sinh, sqrt } from './index.js'
 import { R } from '../R'
 
 export const det = m => {
-  if (m.length === 3) {
-    return (
-      m[0][0] * m[1][1] * m[2][2] +
-      m[0][1] * m[1][2] * m[2][0] +
-      m[0][2] * m[1][0] * m[2][1] -
-      m[0][2] * m[1][1] * m[2][0] -
-      m[0][1] * m[1][0] * m[2][2] -
-      m[0][0] * m[1][2] * m[2][1]
-    )
-  } else if (m.length === 4) {
-    return (
-      m[0][0] *
-        (m[1][1] * m[2][2] * m[3][3] +
-          m[1][2] * m[2][3] * m[3][1] +
-          m[1][3] * m[2][1] * m[3][2] -
-          m[1][3] * m[2][2] * m[3][1] -
-          m[1][2] * m[2][1] * m[3][3] -
-          m[1][1] * m[2][3] * m[3][2]) +
-      m[0][1] *
-        (m[1][0] * m[2][3] * m[3][2] +
-          m[1][2] * m[2][0] * m[3][3] +
-          m[1][3] * m[2][2] * m[3][0] -
-          m[1][3] * m[2][0] * m[3][2] -
-          m[1][2] * m[2][3] * m[3][0] -
-          m[1][0] * m[2][2] * m[3][3]) +
-      m[0][2] *
-        (m[1][0] * m[2][1] * m[3][3] +
-          m[1][1] * m[2][3] * m[3][0] +
-          m[1][3] * m[2][0] * m[3][1] -
-          m[1][3] * m[2][1] * m[3][0] -
-          m[1][1] * m[2][0] * m[3][3] -
-          m[1][0] * m[2][3] * m[3][1]) +
-      m[0][3] *
-        (m[1][0] * m[2][2] * m[3][1] +
-          m[1][1] * m[2][0] * m[3][2] +
-          m[1][2] * m[2][1] * m[3][0] -
-          m[1][2] * m[2][0] * m[3][1] -
-          m[1][1] * m[2][2] * m[3][0] -
-          m[1][0] * m[2][1] * m[3][2])
-    )
+  if (m.length === 1) {
+    return m[0][0]
   }
+  let sum = 0
+  for (let i = 0; i < m.length; i++) {
+    const cofactor = new Array(m.length - 1)
+      .fill()
+      .map(() => new Array(m.length - 1).fill(0))
+    // Compute the cofactor of m[0][i]:
+    for (let j = 1; j < m.length; j++) {
+      for (let k = 0; k < m.length; k++) {
+        if (k < i) {
+          cofactor[j - 1][k] = m[j][k]
+        } else if (k > i) {
+          cofactor[j - 1][k - 1] = m[j][k]
+        }
+      }
+    }
+
+    const sign = i % 2 === 0 ? 1 : -1
+    sum += m[0][i] * sign * det(cofactor)
+  }
+  return sum
 }
 
 export const getCurvature = gram => {
@@ -59,6 +41,8 @@ export const xdot = (v1, v2, forceCurvature = null) => {
   }
   return sum
 }
+
+// Unused
 export const xcross = (v1, v2, v3, forceCurvature) => {
   if (typeof v3 === 'number') {
     forceCurvature = v3
@@ -419,7 +403,7 @@ export const getFundamentalSimplexMirrors = gram => {
   mirrors[2][2] = sqrt(
     abs(1 - mirrors[2][0] * mirrors[2][0] - mirrors[2][1] * mirrors[2][1])
   )
-  if (C.dimensions === 4) {
+  if (C.dimensions >= 4) {
     mirrors[3][0] = gram[3][0]
     mirrors[3][1] = (gram[3][1] - mirrors[3][0] * mirrors[1][0]) / mirrors[1][1]
     mirrors[3][2] =
@@ -436,6 +420,29 @@ export const getFundamentalSimplexMirrors = gram => {
       )
     )
   }
+  if (C.dimensions >= 5) {
+    mirrors[4][0] = gram[4][0]
+    mirrors[4][1] = (gram[4][1] - mirrors[4][0] * mirrors[1][0]) / mirrors[1][1]
+    mirrors[4][2] =
+      (gram[4][2] -
+        mirrors[4][0] * mirrors[2][0] -
+        mirrors[4][1] * mirrors[2][1]) /
+      mirrors[2][2]
+    mirrors[4][3] =
+      (gram[4][3] -
+        mirrors[4][0] * mirrors[3][0] -
+        mirrors[4][1] * mirrors[3][1] -
+        mirrors[4][2] * mirrors[3][2]) /
+      mirrors[3][3]
+    mirrors[4][4] = sqrt(
+      abs(
+        1 -
+          mirrors[4][0] * mirrors[4][0] -
+          mirrors[4][1] * mirrors[4][1] -
+          mirrors[4][2] * mirrors[4][2]
+      )
+    )
+  }
   mirrors[mirrors.length - 1][mirrors.length - 1] = R.curvature
     ? mirrors[mirrors.length - 1][mirrors.length - 1] * R.curvature
     : 1
@@ -443,17 +450,30 @@ export const getFundamentalSimplexMirrors = gram => {
   return mirrors
 }
 
-export const getFundamentalVertex = (mirrors, [x, y, z, w]) => {
+export const getFundamentalVertex = (mirrors, m) => {
   // solve mirrors for x,y,z,w
   const p = new Array(C.dimensions)
-  p[0] = x
-  p[1] = (y - mirrors[1][0] * p[0]) / mirrors[1][1]
-  p[2] = (z - mirrors[2][0] * p[0] - mirrors[2][1] * p[1]) / mirrors[2][2]
+  p[0] = m[0]
+  p[1] = (m[1] - mirrors[1][0] * p[0]) / mirrors[1][1]
+  p[2] = (m[2] - mirrors[2][0] * p[0] - mirrors[2][1] * p[1]) / mirrors[2][2]
 
-  if (C.dimensions === 4) {
+  if (C.dimensions >= 4) {
     p[3] =
-      (w - mirrors[3][0] * p[0] - mirrors[3][1] * p[1] - mirrors[3][2] * p[2]) /
+      (m[3] -
+        mirrors[3][0] * p[0] -
+        mirrors[3][1] * p[1] -
+        mirrors[3][2] * p[2]) /
       mirrors[3][3]
+  }
+
+  if (C.dimensions >= 5) {
+    p[4] =
+      (m[4] -
+        mirrors[4][0] * p[0] -
+        mirrors[4][1] * p[1] -
+        mirrors[4][2] * p[2] -
+        mirrors[4][3] * p[3]) /
+      mirrors[4][4]
   }
   p[p.length - 1] *= R.curvature || 1
   return normalize(p)

@@ -108,12 +108,12 @@ const orbit = '⇹'
 const free = '↭'
 
 const restore = () => {
-  document.querySelector('#d4').checked = C.dimensions === 4
+  document.querySelector('#dimensions').value = C.dimensions
   document.querySelectorAll('.d4').forEach(el => {
-    el.style.display = C.dimensions === 4 ? 'block' : 'none'
+    el.style.display = C.dimensions >= 4 ? 'block' : 'none'
   })
-  document.querySelectorAll('.d3').forEach(el => {
-    el.style.display = C.dimensions === 3 ? 'block' : 'none'
+  document.querySelectorAll('.d5').forEach(el => {
+    el.style.display = C.dimensions >= 5 ? 'block' : 'none'
   })
   document.querySelector('#segments').style.display = C.curve
     ? 'inline'
@@ -123,11 +123,11 @@ const restore = () => {
   document.querySelectorAll('.stellation').forEach(el => {
     el.style.display = C.stellation ? 'inline' : 'none'
   })
-  'pqrstu'.split('').forEach(d => {
+  'pqrstulmno'.split('').forEach(d => {
     document.querySelector(`#${d}`).value = C[d]
     document.querySelector(`#${d}-div`).value = C[`${d}Div`]
   })
-  'xyzw'.split('').forEach(d => {
+  'xyzwv'.split('').forEach(d => {
     document.querySelector(`#mirror-${d}`).checked = !!C[d]
   })
   document.querySelector('#order').value = C.order
@@ -156,7 +156,7 @@ const restore = () => {
 const update = async event => {
   const target = event?.target.id
   const newC = {}
-  newC.dimensions = document.querySelector('#d4').checked ? 4 : 3
+  newC.dimensions = +document.querySelector('#dimensions').value
   newC.vertexThickness = +document.querySelector('#vertexThickness').value
   newC.edgeThickness = +document.querySelector('#edgeThickness').value
   newC.projection = document.querySelector('#projection').value
@@ -199,17 +199,17 @@ const update = async event => {
       el.style.display = newC.stellation ? 'inline' : 'none'
     })
   }
-  if (target === 'd4') {
+  if (target === 'dimensions') {
     const setK = (d, v) => {
       document.querySelector(`#${d}`).value = v
     }
     const getK = d => +document.querySelector(`#${d}`).value
 
     document.querySelectorAll('.d4').forEach(el => {
-      el.style.display = newC.dimensions === 4 ? 'block' : 'none'
+      el.style.display = newC.dimensions >= 4 ? 'block' : 'none'
     })
-    document.querySelectorAll('.d3').forEach(el => {
-      el.style.display = newC.dimensions === 3 ? 'block' : 'none'
+    document.querySelectorAll('.d5').forEach(el => {
+      el.style.display = newC.dimensions >= 5 ? 'block' : 'none'
     })
     if (newC.dimensions === 4) {
       setK('s', getK('q'))
@@ -228,7 +228,7 @@ const update = async event => {
   }
   if (target?.startsWith('mirror-')) {
     if (
-      'xyzw'
+      'xyzwv'
         .split('')
         .every(d => !document.querySelector(`#mirror-${d}`).checked)
     ) {
@@ -236,11 +236,11 @@ const update = async event => {
     }
   }
 
-  'pqrstu'.split('').forEach(d => {
+  'pqrstulmno'.split('').forEach(d => {
     newC[d] = +document.querySelector(`#${d}`).value
     newC[`${d}Div`] = +document.querySelector(`#${d}-div`).value
   })
-  'xyzw'.split('').forEach(d => {
+  'xyzwv'.split('').forEach(d => {
     newC[d] = document.querySelector(`#mirror-${d}`).checked
   })
 
@@ -258,12 +258,20 @@ const update = async event => {
       's',
       't',
       'u',
+      'l',
+      'm',
+      'n',
+      'o',
       'pDiv',
       'qDiv',
       'rDiv',
       'sDiv',
       'tDiv',
       'uDiv',
+      'lDiv',
+      'mDiv',
+      'nDiv',
+      'oDiv',
       'stellation',
       'dimensions',
     ].some(key => changed.includes(key))
@@ -288,7 +296,7 @@ const update = async event => {
 
   if (
     mustRedraw ||
-    ['x', 'y', 'z', 'w', 'order'].some(key => changed.includes(key))
+    ['x', 'y', 'z', 'w', 'v', 'order'].some(key => changed.includes(key))
   ) {
     if (target === 'order' && R.ranges[C.order - 1]) {
       plot(R.ranges[C.order - 1])
@@ -331,7 +339,7 @@ const update = async event => {
             vertices: [fromVertices, toVertices],
             edges: [fromEdges, toEdges],
           }
-          plot(R.ranges[i])
+          plot(R.ranges[i], target === 'dimensions' && i === 0)
           render()
         } else {
           R.ranges[i] = {

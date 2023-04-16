@@ -156,8 +156,8 @@
         <input type="number" id="segments" min="1" step="1" />
       </label>
       <label>
-        <input type="checkbox" id="d4" />
-        4d
+        <input type="number" id="dimensions" min="3" max="5" step="1" />
+        dimensions
       </label>
       <label>
         Projection
@@ -277,6 +277,44 @@
       <label class="d4">
         <span class="coxeter">——</span>
         <input type="checkbox" id="mirror-w" />
+      </label>
+      <div class="number">
+        <label class="d5">
+          l
+          <input type="number" id="l" min="2" step="1" />
+          <div class="stellation">
+            <span class="divisor"> / </span>
+            <input type="number" id="l-div" min="1" step="1" />
+          </div>
+        </label>
+        <label class="d5">
+          m
+          <input type="number" id="m" min="2" step="1" />
+          <div class="stellation">
+            <span class="divisor"> / </span>
+            <input type="number" id="m-div" min="1" step="1" />
+          </div>
+        </label>
+        <label class="d5">
+          n
+          <input type="number" id="n" min="2" step="1" />
+          <div class="stellation">
+            <span class="divisor"> / </span>
+            <input type="number" id="n-div" min="1" step="1" />
+          </div>
+        </label>
+        <label class="d5">
+          o
+          <input type="number" id="o" min="2" step="1" />
+          <div class="stellation">
+            <span class="divisor"> / </span>
+            <input type="number" id="o-div" min="1" step="1" />
+          </div>
+        </label>
+      </div>
+      <label class="d5">
+        <span class="coxeter">——</span>
+        <input type="checkbox" id="mirror-v" />
       </label>
     </aside>
     <script type="module" src="/main.js"></script>

@@ -310,14 +310,20 @@ const initVertex = () => {
   const vertex3dGeometry = new SphereGeometry(1e-7, 32, 32)
   vertex3dGeometry.attributes.position.array.fill(0)
   const vertexGeometry = new InstancedBufferGeometry().copy(vertex3dGeometry)
-
+  const arity = C.dimensions > 4 ? 9 : C.dimensions
   vertexGeometry.setAttribute(
     'instancePosition',
-    new InstancedBufferAttribute(new Float32Array(currentVerticesMax * 4), 4)
+    new InstancedBufferAttribute(
+      new Float32Array(currentVerticesMax * arity),
+      arity
+    )
   )
   vertexGeometry.setAttribute(
     'instanceTarget',
-    new InstancedBufferAttribute(new Float32Array(currentVerticesMax * 4), 4)
+    new InstancedBufferAttribute(
+      new Float32Array(currentVerticesMax * arity),
+      arity
+    )
   )
   vertexGeometry.setAttribute(
     'instanceColor',
@@ -351,14 +357,20 @@ const initEdge = () => {
     true
   )
   const edgeGeometry = new InstancedBufferGeometry().copy(edge3dGeometry)
-
+  const arity = C.dimensions > 4 ? 9 : C.dimensions
   edgeGeometry.setAttribute(
     'instancePosition',
-    new InstancedBufferAttribute(new Float32Array(currentEdgesMax * 4), 4)
+    new InstancedBufferAttribute(
+      new Float32Array(currentEdgesMax * arity),
+      arity
+    )
   )
   edgeGeometry.setAttribute(
     'instanceTarget',
-    new InstancedBufferAttribute(new Float32Array(currentEdgesMax * 4), 4)
+    new InstancedBufferAttribute(
+      new Float32Array(currentEdgesMax * arity),
+      arity
+    )
   )
   edgeGeometry.setAttribute(
     'instanceColor',
@@ -377,10 +389,10 @@ const initEdge = () => {
   group.add(instancedEdge)
 }
 
-const plotVertices = ([start, stop]) => {
+const plotVertices = ([start, stop], reinit = false) => {
   const ambiance = ambiances[C.ambiance]
   // console.info(`Plotting [${start},${stop}] vertices`)
-  if (stop > currentVerticesMax) {
+  if (stop > currentVerticesMax || reinit) {
     currentVerticesMax = stop
     group.remove(instancedVertex)
     instancedVertex.geometry.dispose()
@@ -391,15 +403,14 @@ const plotVertices = ([start, stop]) => {
     updateMaterials()
     start = 0
   }
+  const arity = C.dimensions > 4 ? 9 : C.dimensions
   instancedVertex.geometry.instanceCount = stop
   for (let i = start; i < stop; i++) {
     const vertex = R.vertices[i]
     const ipos = instancedVertex.geometry.attributes.instancePosition.array
-    ipos[i * 4 + 0] = vertex.vertex[0]
-    ipos[i * 4 + 1] = vertex.vertex[1]
-    ipos[i * 4 + 2] = vertex.vertex[2]
-    ipos[i * 4 + 3] = C.dimensions === 3 ? 1 : vertex.vertex[3]
-
+    for (let j = 0; j < C.dimensions; j++) {
+      ipos[i * arity + j] = vertex.vertex[j]
+    }
     const icolor = instancedVertex.geometry.attributes.instanceColor.array
     ambiance.color(vertex, 'vertex')
     icolor[i * 3 + 0] = _color.r
@@ -410,11 +421,11 @@ const plotVertices = ([start, stop]) => {
   instancedVertex.geometry.attributes.instanceColor.needsUpdate = true
 }
 
-const plotEdges = ([start, stop], segmentsChanged = false) => {
+const plotEdges = ([start, stop], reinit = false) => {
   const ambiance = ambiances[C.ambiance]
   // console.info(`Plotting [${start},${stop}] edges (${allStop})`)
 
-  if (stop > currentEdgesMax || segmentsChanged) {
+  if (stop > currentEdgesMax || reinit) {
     currentEdgesMax = stop
     instancedEdge.geometry.dispose()
     instancedEdge.material.dispose()
@@ -424,19 +435,19 @@ const plotEdges = ([start, stop], segmentsChanged = false) => {
     updateMaterials()
     start = 0
   }
+  const arity = C.dimensions > 4 ? 9 : C.dimensions
   instancedEdge.geometry.instanceCount = stop
   for (let i = start; i < stop; i++) {
     const edge = R.edges[i]
     const iposstart = instancedEdge.geometry.attributes.instancePosition.array
-    iposstart[i * 4 + 0] = edge.start[0]
-    iposstart[i * 4 + 1] = edge.start[1]
-    iposstart[i * 4 + 2] = edge.start[2]
-    iposstart[i * 4 + 3] = C.dimensions === 3 ? 1 : edge.start[3]
+    for (let j = 0; j < C.dimensions; j++) {
+      iposstart[i * arity + j] = edge.start[j]
+    }
+
     const iposend = instancedEdge.geometry.attributes.instanceTarget.array
-    iposend[i * 4 + 0] = edge.end[0]
-    iposend[i * 4 + 1] = edge.end[1]
-    iposend[i * 4 + 2] = edge.end[2]
-    iposend[i * 4 + 3] = C.dimensions === 3 ? 1 : edge.end[3]
+    for (let j = 0; j < C.dimensions; j++) {
+      iposend[i * arity + j] = edge.end[j]
+    }
 
     const icolor = instancedEdge.geometry.attributes.instanceColor.array
     ambiance.color(edge, 'edge')
@@ -450,7 +461,7 @@ const plotEdges = ([start, stop], segmentsChanged = false) => {
   instancedEdge.geometry.attributes.instanceColor.needsUpdate = true
 }
 
-export const plot = (arg, segmentsChanged = false) => {
+export const plot = (arg, reinit = false) => {
   let vertices, edges
   if (arg === true) {
     vertices = [0, R.vertices.length]
@@ -461,11 +472,11 @@ export const plot = (arg, segmentsChanged = false) => {
   }
   instancedVertex.visible = C.vertices
   if (C.vertices) {
-    plotVertices(vertices)
+    plotVertices(vertices, reinit)
   }
   instancedEdge.visible = C.edges
   if (C.edges) {
-    plotEdges(edges, segmentsChanged)
+    plotEdges(edges, reinit)
   }
 }
 

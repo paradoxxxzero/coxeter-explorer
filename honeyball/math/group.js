@@ -202,7 +202,7 @@ export const knuthBendix = rules => {
   }
   throw new Error('Timeout')
 }
-export const getRules = (dimensions, p, q, r, s, t, u) =>
+export const getRules = (dimensions, p, q, r, s, t, u, l, m, n, o) =>
   knuthBendix(
     dimensions === 3
       ? {
@@ -213,7 +213,8 @@ export const getRules = (dimensions, p, q, r, s, t, u) =>
           ['ac'.repeat(q)]: '',
           ['bc'.repeat(r)]: '',
         }
-      : {
+      : dimensions === 4
+      ? {
           aa: '',
           bb: '',
           cc: '',
@@ -224,6 +225,23 @@ export const getRules = (dimensions, p, q, r, s, t, u) =>
           ['bc'.repeat(s)]: '',
           ['bd'.repeat(t)]: '',
           ['cd'.repeat(u)]: '',
+        }
+      : {
+          aa: '',
+          bb: '',
+          cc: '',
+          dd: '',
+          ee: '',
+          ['ab'.repeat(p)]: '',
+          ['ac'.repeat(q)]: '',
+          ['ad'.repeat(r)]: '',
+          ['ae'.repeat(s)]: '',
+          ['bc'.repeat(t)]: '',
+          ['bd'.repeat(u)]: '',
+          ['be'.repeat(l)]: '',
+          ['cd'.repeat(m)]: '',
+          ['ce'.repeat(n)]: '',
+          ['de'.repeat(o)]: '',
         }
   )
 

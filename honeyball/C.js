@@ -5,18 +5,27 @@ export const defaultC = {
   s: 3,
   t: 2,
   u: 4,
+  l: 2,
+  m: 2,
+  n: 2,
+  o: 2,
+
   pDiv: 1,
   qDiv: 1,
   rDiv: 1,
   sDiv: 1,
   tDiv: 1,
   uDiv: 1,
+  lDiv: 1,
+  mDiv: 1,
+  nDiv: 1,
+  oDiv: 1,
 
-  // v:
   x: 1,
   y: 0,
   z: 0,
   w: 0,
+  v: 0,
 
   dimensions: 4,
   order: 10,
