@@ -65,28 +65,6 @@ const size = () => {
 }
 
 window.ondeviceorientation = window.onresize = size
-// size()
-// PQR 3 5 3
-// PQR 4 3 5
-// PQR 5 3 5
-
-// // One ideal point
-// PQR 3 4 4
-// PQR 3 3 6
-// PQR 4 3 6
-// PQR 5 3 6
-
-// // Two ideal points
-// PQR 6 3 6
-// PQR 4 4 4
-// PQR 3 6 3
-
-// // Various non-regular angles
-// PQR 5 3 7
-// PQR 6 3 11
-// PQR 2 3 7
-// PQR 3 3 7
-// PQR 5 5 5
 
 setProcess((level, error) => {
   if (level) {

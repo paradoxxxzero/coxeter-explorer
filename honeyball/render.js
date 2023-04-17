@@ -1,37 +1,24 @@
 import {
-  AmbientLight,
   BackSide,
   Clock,
   Color,
-  CustomBlending,
   CylinderGeometry,
-  DirectionalLight,
-  EquirectangularReflectionMapping,
   Group,
-  HemisphereLight,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
   Mesh,
-  MeshBasicMaterial,
   MeshDepthMaterial,
   MeshDistanceMaterial,
-  MeshLambertMaterial,
   MeshPhongMaterial,
-  MeshPhysicalMaterial,
   NoToneMapping,
   PCFShadowMap,
   PCFSoftShadowMap,
   PerspectiveCamera,
   PlaneGeometry,
-  PointLight,
   ReinhardToneMapping,
-  RepeatWrapping,
   RGBADepthPacking,
   Scene,
   SphereGeometry,
-  SpotLight,
-  sRGBEncoding,
-  TextureLoader,
   Vector2,
   WebGLRenderer,
   WebGLRenderTarget,
@@ -46,7 +33,9 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
 import { LuminosityShader } from 'three/examples/jsm/shaders/LuminosityShader.js'
 import { SobelOperatorShader } from 'three/examples/jsm/shaders/SobelOperatorShader.js'
+import { ambiances } from '../statics'
 import { C } from './C'
+import { interactions } from './interact'
 import { R } from './R'
 import { GodRayPass } from './shader/GodRayPass'
 import { hyperMathMaterial } from './shader/hyperMathMaterial'
@@ -62,178 +51,17 @@ export let stats,
   ground
 
 const group = new Group()
-const _color = new Color()
-const loader = new TextureLoader()
-
-const diffuse = loader.load('Carbon.png')
-diffuse.encoding = sRGBEncoding
-diffuse.wrapS = RepeatWrapping
-diffuse.wrapT = RepeatWrapping
-diffuse.repeat.x = 10
-diffuse.repeat.y = 10
-
-const normalMap = loader.load('Carbon_Normal.png')
-normalMap.wrapS = RepeatWrapping
-normalMap.wrapT = RepeatWrapping
-
-const ocean = loader.load('ocean.jpg')
-ocean.encoding = sRGBEncoding
-ocean.mapping = EquirectangularReflectionMapping
-
-const ambiances = {
-  neon: {
-    background: 0x000000,
-    fx: ['bloom'],
-    shadow: false,
-    material: new MeshBasicMaterial(),
-    lights: [],
-    color: ({ word }) => {
-      return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
-    },
-  },
-  museum: {
-    background: 0xbbbbbb,
-    env: ocean,
-    shadow: true,
-    ground: 'plane',
-    material: new MeshPhysicalMaterial({
-      roughness: 0.5,
-      reflectivity: 0.25,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.1,
-      map: diffuse,
-      normalMap: normalMap,
-    }),
-    lights: [
-      (() => {
-        const light = new SpotLight(0xffffff, 0.2)
-        light.position.set(0, 4, -6)
-        return light
-      })(),
-      (() => {
-        const light = new SpotLight(0xffffff, 0.2)
-        light.position.set(8, 7, 0)
-        return light
-      })(),
-      (() => {
-        const light = new SpotLight(0xffffff, 0.2)
-        light.position.set(-4, 6, 2)
-        return light
-      })(),
-      new AmbientLight(0xffffff, 0.4),
-    ],
-    cameraLights: [
-      (() => {
-        const light = new PointLight(0xffffff, 2.5, 5, 5)
-        light.shadow = null
-        return light
-      })(),
-    ],
-    color: () => {
-      return _color.set(0xffffff)
-    },
-  },
-  projection: {
-    background: 0xffffff,
-    ground: 'sphere',
-    shadow: true,
-    material: new MeshPhongMaterial({
-      transparent: true,
-      opacity: 0.75,
-      blending: CustomBlending,
-    }),
-
-    lights: [new PointLight()],
-    color: ({ word }) => {
-      return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
-    },
-  },
-  bw: {
-    background: 0x000000,
-    fx: ['sobel'],
-    shadow: false,
-    material: new MeshPhongMaterial(),
-    lights: [new AmbientLight(0xcccccc, 0.4)],
-    cameraLights: [new PointLight(0xffffff, 1)],
-    color: () => {
-      return _color.set(0xffff00)
-    },
-  },
-  colorful: {
-    background: 0xffffff,
-    shadow: false,
-    material: new MeshPhongMaterial(),
-    lights: [new AmbientLight(0xffffff, 1)],
-    cameraLights: [new PointLight(0xffffff, 0.5)],
-    color: ({ word }) => {
-      return _color.setHSL((word.length * 0.03) % 1, 0.5, 0.5)
-    },
-  },
-  bokeh: {
-    background: 0xffffff,
-    fx: ['bokeh'],
-    shadow: false,
-    material: new MeshPhongMaterial(),
-    lights: [new AmbientLight(0xffffff, 0.5)],
-    cameraLights: [new PointLight(0xffffff, 1)],
-    color: ({ word }) => {
-      return _color.setHSL((word.length * 0.17) % 1, 0.7, 0.5)
-    },
-  },
-  pure: {
-    background: 0xffffff,
-    fx: ['sao'],
-    shadow: false,
-    material: new MeshLambertMaterial(),
-    lights: [new AmbientLight(0x000000, 0.5)],
-    cameraLights: [new PointLight(0xffffff, 1)],
-    color: ({ word }) => {
-      return _color.setHSL((word.length * 0.03) % 1, 0.75, 0.7)
-    },
-  },
-  transcendent: {
-    background: 0xffffff,
-    fx: ['godray'],
-    shadow: false,
-    material: new MeshBasicMaterial(),
-    color: () => {
-      return _color.set(0x000000)
-    },
-  },
-  glass: {
-    background: ocean,
-    env: ocean,
-    shadow: false,
-    material: new MeshPhysicalMaterial({
-      premultipliedAlpha: false,
-      reflectivity: 0,
-      metalness: 0,
-      roughness: 0,
-      transmission: 1,
-      clearcoat: 1,
-      clearcoatRoughness: 0.1,
-      thickness: 1,
-      ior: 1.5,
-    }),
-    lights: [new DirectionalLight(), new HemisphereLight()],
-    color: () => {
-      return _color.set(0xaaaaaa)
-    },
-  },
-  wireframe: {
-    background: 0x000000,
-    shadow: false,
-    material: new MeshBasicMaterial({
-      wireframe: true,
-    }),
-    lights: [],
-    color: ({ word }) => {
-      return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
-    },
-  },
-}
 
 export const initialize3d = () => {
+  // Hack for strict mode
+  if (renderer) {
+    return {
+      composer,
+      renderer,
+      camera,
+      controls,
+    }
+  }
   clock = new Clock()
   // stats = new Stats()
   // document.body.appendChild(stats.dom)
@@ -243,6 +71,9 @@ export const initialize3d = () => {
   renderer.setSize(window.innerWidth, window.innerHeight)
 
   document.body.appendChild(renderer.domElement)
+
+  interactions()
+
   camera = new PerspectiveCamera(
     90,
     window.innerWidth / window.innerHeight,
@@ -284,7 +115,6 @@ export const initialize3d = () => {
   // controls = new FirstPersonControls(camera, renderer.domElement)
   // controls.lookSpeed = 0.2
   // animate()
-
   initEdge()
   initVertex()
 
@@ -293,10 +123,9 @@ export const initialize3d = () => {
   return {
     composer,
     renderer,
-    scene,
     camera,
     controls,
-    renderPass,
+    first: true,
   }
 }
 
@@ -412,10 +241,10 @@ const plotVertices = ([start, stop], reinit = false) => {
       ipos[i * arity + j] = vertex.vertex[j]
     }
     const icolor = instancedVertex.geometry.attributes.instanceColor.array
-    ambiance.color(vertex, 'vertex')
-    icolor[i * 3 + 0] = _color.r
-    icolor[i * 3 + 1] = _color.g
-    icolor[i * 3 + 2] = _color.b
+    const c = ambiance.color(vertex, 'vertex')
+    icolor[i * 3 + 0] = c.r
+    icolor[i * 3 + 1] = c.g
+    icolor[i * 3 + 2] = c.b
   }
   instancedVertex.geometry.attributes.instancePosition.needsUpdate = true
   instancedVertex.geometry.attributes.instanceColor.needsUpdate = true
@@ -450,10 +279,10 @@ const plotEdges = ([start, stop], reinit = false) => {
     }
 
     const icolor = instancedEdge.geometry.attributes.instanceColor.array
-    ambiance.color(edge, 'edge')
-    icolor[i * 3 + 0] = _color.r
-    icolor[i * 3 + 1] = _color.g
-    icolor[i * 3 + 2] = _color.b
+    const c = ambiance.color(edge, 'edge')
+    icolor[i * 3 + 0] = c.r
+    icolor[i * 3 + 1] = c.g
+    icolor[i * 3 + 2] = c.b
   }
 
   instancedEdge.geometry.attributes.instancePosition.needsUpdate = true

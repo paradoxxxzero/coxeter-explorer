@@ -63,3 +63,11 @@ export const worker = async (w, data) => {
     w.addEventListener('error', error)
   })
 }
+
+export const range = (start, end) => {
+  if (!end) {
+    end = start
+    start = 0
+  }
+  return new Array(end - start).fill().map((_, i) => i + start)
+}

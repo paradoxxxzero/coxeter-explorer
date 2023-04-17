@@ -52,68 +52,18 @@ const hash = v => {
 }
 
 export const initTiling = C => {
-  const {
-    dimensions,
-    stellation,
-    pDiv,
-    qDiv,
-    rDiv,
-    sDiv,
-    tDiv,
-    uDiv,
-    lDiv,
-    mDiv,
-    nDiv,
-    oDiv,
-    x,
-    y,
-    z,
-    w,
-    v,
-  } = C
-  let { p, q, r, s, t, u, l, m, n, o } = C
+  const { dimensions, stellation, coxeter, coxeterDiv, mirrors } = C
+
   if (stellation) {
-    p /= pDiv
-    q /= qDiv
-    r /= rDiv
-    if (C.dimensions >= 4) {
-      s /= sDiv
-      t /= tDiv
-      u /= uDiv
-    }
-    if (C.dimensions >= 4) {
-      l /= lDiv
-      m /= mDiv
-      n /= nDiv
-      o /= oDiv
+    for (let i = 0; i < dimensions; i++) {
+      for (let j = 0; j < dimensions; j++) {
+        coxeter[i][j] /= coxeterDiv[i][j]
+      }
     }
   }
 
   const newW = {
-    coxeter:
-      dimensions === 3
-        ? [
-            [-1, p, q],
-            [p, -1, r],
-            [q, r, -1],
-          ]
-        : dimensions === 4
-        ? [
-            [-1, p, q, r],
-            [p, -1, s, t],
-            [q, s, -1, u],
-            [r, t, u, -1],
-          ]
-        : dimensions === 5
-        ? [
-            [-1, p, q, r, s],
-            [p, -1, t, u, l],
-            [q, t, -1, m, n],
-            [r, u, m, -1, o],
-            [s, l, n, o, -1],
-          ]
-        : null,
-
+    coxeter,
     vertices: [],
     edges: [],
     words: new Map(),
@@ -139,17 +89,11 @@ export const initTiling = C => {
         .map((_, j) => (i === j ? newW.curvature || 1 : 0))
     )
   )
-  newW.rootVertex = getFundamentalVertex(newW.mirrors, [
-    x ? 1 : 0,
-    y ? 1 : 0,
-    z ? 1 : 0,
-    w ? 1 : 0,
-    v ? 1 : 0,
-  ])
+  newW.rootVertex = getFundamentalVertex(newW.mirrors, mirrors)
   newW.words.set('', newW.rootVertex)
 
   // Rules gets computed on non stellated coxeter group
-  newW.rules = getRules(dimensions, C.p, C.q, C.r, C.s, C.t, C.u)
+  newW.rules = getRules(dimensions, C.coxeter)
   setW(newW)
 }
 

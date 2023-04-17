@@ -1,33 +1,21 @@
 export const defaultC = {
-  p: 5,
-  q: 2,
-  r: 2,
-  s: 3,
-  t: 2,
-  u: 4,
-  l: 2,
-  m: 2,
-  n: 2,
-  o: 2,
-
-  pDiv: 1,
-  qDiv: 1,
-  rDiv: 1,
-  sDiv: 1,
-  tDiv: 1,
-  uDiv: 1,
-  lDiv: 1,
-  mDiv: 1,
-  nDiv: 1,
-  oDiv: 1,
-
-  x: 1,
-  y: 0,
-  z: 0,
-  w: 0,
-  v: 0,
-
   dimensions: 4,
+  coxeter: [
+    [-1, 5, 2, 2],
+    [5, -1, 3, 2],
+    [2, 3, -1, 4],
+    [2, 2, 4, -1],
+  ],
+  coxeterDiv: [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ],
+  mirrors: [1, 0, 0, 0],
+  extended: true,
+  stellation: false,
+
   order: 10,
   segments: 32,
   curve: true,
@@ -35,7 +23,6 @@ export const defaultC = {
   vertexThickness: 75,
   edges: true,
   edgeThickness: 25,
-  stellation: false,
 
   projection: 'stereographic',
   controls: 'orbit',
@@ -47,10 +34,12 @@ export const defaultC = {
 export const C = { ...defaultC }
 
 export const getC = () => {
+  const { location } = window
   if (location.hash) {
     try {
       const hash = JSON.parse(atob(location.hash.slice(1)))
-      Object.assign(C, hash)
+      // Object.assign(C, hash)
+      return hash
     } catch (e) {
       console.warn(e)
       location.hash = ''

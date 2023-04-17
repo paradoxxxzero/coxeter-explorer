@@ -32,7 +32,6 @@ export const getCurvature = gram => {
   const determinant = det(gram)
   return abs(determinant) < 1e-8 ? 0 : sign(determinant)
 }
-
 export const xdot = (v1, v2, forceCurvature = null) => {
   const c = forceCurvature === null ? R.curvature : forceCurvature
   let sum = 0
@@ -434,12 +433,14 @@ export const getFundamentalSimplexMirrors = gram => {
         mirrors[4][1] * mirrors[3][1] -
         mirrors[4][2] * mirrors[3][2]) /
       mirrors[3][3]
+
     mirrors[4][4] = sqrt(
       abs(
         1 -
           mirrors[4][0] * mirrors[4][0] -
           mirrors[4][1] * mirrors[4][1] -
-          mirrors[4][2] * mirrors[4][2]
+          mirrors[4][2] * mirrors[4][2] -
+          mirrors[4][3] * mirrors[4][3]
       )
     )
   }

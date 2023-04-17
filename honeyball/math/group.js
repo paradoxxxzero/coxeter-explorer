@@ -187,7 +187,7 @@ const checkTimeout = () => {
   }
 }
 export const knuthBendix = rules => {
-  const tries = [50, 100, 250].map(i => [i, i]).flat()
+  const tries = [50, 100, 250, 500].map(i => [i, i]).flat()
 
   for (let i = 0; i < tries.length; i++) {
     timeout = tries[i]
@@ -202,47 +202,62 @@ export const knuthBendix = rules => {
   }
   throw new Error('Timeout')
 }
-export const getRules = (dimensions, p, q, r, s, t, u, l, m, n, o) =>
-  knuthBendix(
-    dimensions === 3
-      ? {
-          aa: '',
-          bb: '',
-          cc: '',
-          ['ab'.repeat(p)]: '',
-          ['ac'.repeat(q)]: '',
-          ['bc'.repeat(r)]: '',
-        }
-      : dimensions === 4
-      ? {
-          aa: '',
-          bb: '',
-          cc: '',
-          dd: '',
-          ['ab'.repeat(p)]: '',
-          ['ac'.repeat(q)]: '',
-          ['ad'.repeat(r)]: '',
-          ['bc'.repeat(s)]: '',
-          ['bd'.repeat(t)]: '',
-          ['cd'.repeat(u)]: '',
-        }
-      : {
-          aa: '',
-          bb: '',
-          cc: '',
-          dd: '',
-          ee: '',
-          ['ab'.repeat(p)]: '',
-          ['ac'.repeat(q)]: '',
-          ['ad'.repeat(r)]: '',
-          ['ae'.repeat(s)]: '',
-          ['bc'.repeat(t)]: '',
-          ['bd'.repeat(u)]: '',
-          ['be'.repeat(l)]: '',
-          ['cd'.repeat(m)]: '',
-          ['ce'.repeat(n)]: '',
-          ['de'.repeat(o)]: '',
-        }
-  )
+
+const itoa = i => String.fromCharCode(97 + i)
+
+export const getRules = (dimensions, coxeter) => {
+  const rules = {}
+  for (let i = 0; i < dimensions; i++) {
+    rules[itoa(i).repeat(2)] = ''
+  }
+  for (let i = 1; i < dimensions; i++) {
+    for (let j = 0; j < i; j++) {
+      rules[(itoa(j) + itoa(i)).repeat(coxeter[i][j])] = ''
+    }
+  }
+  return knuthBendix(rules)
+
+  // return knuthBendix(
+  //   dimensions === 3
+  //     ? {
+  //         aa: '',
+  //         bb: '',
+  //         cc: '',
+  //         ['ab'.repeat(p)]: '',
+  //         ['ac'.repeat(q)]: '',
+  //         ['bc'.repeat(r)]: '',
+  //       }
+  //     : dimensions === 4
+  //     ? {
+  //         aa: '',
+  //         bb: '',
+  //         cc: '',
+  //         dd: '',
+  //         ['ab'.repeat(p)]: '',
+  //         ['ac'.repeat(q)]: '',
+  //         ['ad'.repeat(r)]: '',
+  //         ['bc'.repeat(s)]: '',
+  //         ['bd'.repeat(t)]: '',
+  //         ['cd'.repeat(u)]: '',
+  //       }
+  //     : {
+  //         aa: '',
+  //         bb: '',
+  //         cc: '',
+  //         dd: '',
+  //         ee: '',
+  //         ['ab'.repeat(p)]: '',
+  //         ['ac'.repeat(q)]: '',
+  //         ['ad'.repeat(r)]: '',
+  //         ['ae'.repeat(s)]: '',
+  //         ['bc'.repeat(t)]: '',
+  //         ['bd'.repeat(u)]: '',
+  //         ['be'.repeat(l)]: '',
+  //         ['cd'.repeat(m)]: '',
+  //         ['ce'.repeat(n)]: '',
+  //         ['de'.repeat(o)]: '',
+  //       }
+  // )
+}
 
 export const shorten = word => rewrite(W.rules, word)

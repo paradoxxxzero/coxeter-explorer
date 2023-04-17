@@ -1,0 +1,136 @@
+html,
+body,
+canvas {
+  overflow: hidden;
+  margin: 0;
+  touch-action: none;
+  user-select: none;
+  background: black;
+}
+
+#space {
+  position: absolute;
+  bottom: 0.25em;
+  right: 0.25em;
+  padding: 0.25em;
+  font-size: 3em;
+  line-height: 1;
+  color: rgba(255, 255, 255);
+  mix-blend-mode: difference;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+#controls {
+  position: absolute;
+  top: 0.125em;
+  left: 0.125em;
+  padding: 0.125em;
+  font-size: 5em;
+  line-height: 1;
+  color: rgba(255, 255, 255);
+  mix-blend-mode: difference;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+#controls:hover,
+#space:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+.processing #space {
+  animation: processing 1s infinite;
+}
+@keyframes processing {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+label {
+  white-space: nowrap;
+  font-family: 'Fira Code', monospace;
+  mix-blend-mode: difference;
+  isolation: isolate;
+}
+.controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.9em;
+  align-items: baseline;
+  font-size: 0.75em;
+  margin: 1em;
+  margin-right: 4.5rem;
+  font-size: calc(min(1.5vw, 0.75em));
+}
+
+.controls label {
+  margin: 0.2em 0.75em;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.coxeters {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  margin: 1em;
+  font-size: calc(min(1.5vw, 0.75em));
+}
+
+.coxeters label {
+  margin: 0.2em 0.25em;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.number {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+input[type='number'] {
+  color: white;
+  border: none;
+  background-color: rgba(150, 150, 150, 0.15);
+  padding: 5px;
+  max-width: 5ch;
+  font-size: 1.5em;
+}
+.stellation input[type='number'] {
+  max-width: 3ch;
+}
+.divisor {
+  font-size: 1.2em;
+  font-weight: bold;
+}
+select {
+  color: white;
+  border: none;
+  background-color: rgba(25, 25, 25);
+  padding: 5px;
+  font-size: 1.5em;
+}
+select option {
+  background-color: rgba(25, 25, 25);
+}
+
+.real-estate .controls,
+.real-estate .coxeters,
+.real-estate #controls {
+  display: none;
+}
+.error * {
+  color: red !important;
+}

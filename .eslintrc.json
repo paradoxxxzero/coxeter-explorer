@@ -12,7 +12,7 @@
     "prettier/prettier": "error",
     "import/no-anonymous-default-export": "off"
   },
-  "extends": ["eslint:recommended", "plugin:prettier/recommended"],
+  "extends": ["eslint:recommended", "react-app", "plugin:prettier/recommended"],
   "globals": {
     "globalThis": false
   }
