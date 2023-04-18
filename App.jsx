@@ -1,5 +1,11 @@
-import { Fragment, useCallback, useEffect, useState } from 'react'
-import { Vector2 } from 'three'
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 import { defaultC, getC, setC as globalSetC } from './honeyball/C'
 import { R, setR } from './honeyball/R'
 import { min } from './honeyball/math'
@@ -14,6 +20,8 @@ import {
 import Tiling from './honeyball/tiling.worker?worker'
 import { range, worker } from './honeyball/utlis'
 import { ambiances, projections } from './statics'
+import { dragMove, gestureMove, keydown, wheel } from './honeyball/interact'
+import interact from 'interactjs'
 
 let tiling = new Tiling()
 const initialC = { ...(getC() || defaultC) }
@@ -24,6 +32,66 @@ export default function App() {
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState()
   const [showUI, setShowUI] = useState(true)
+  const pointers = useRef([])
+  const [gl, setGl] = useState()
+
+  useEffect(() => {
+    const onWheel = e => {
+      if (C.controls === 'orbit') {
+        return
+      }
+      wheel(e)
+    }
+
+    document.addEventListener('wheel', onWheel, { passive: false })
+    return () => document.removeEventListener('wheel', onWheel)
+  }, [C.controls])
+
+  useEffect(() => {
+    document.addEventListener('keydown', keydown)
+    return () => document.removeEventListener('keydown', keydown)
+  }, [])
+
+  useLayoutEffect(() => {
+    if (!gl) {
+      return
+    }
+
+    const pointerdown = e => {
+      pointers.current.push(e.pointerId)
+    }
+    const pointerup = e => {
+      pointers.current = pointers.current.filter(id => id !== e.pointerId)
+    }
+
+    gl.renderer.domElement.addEventListener('pointerdown', pointerdown)
+    gl.renderer.domElement.addEventListener('pointerup', pointerup)
+    const handle = interact(gl.renderer.domElement)
+      .draggable({
+        listeners: {
+          move: e => {
+            if (C.controls !== 'free') {
+              return
+            }
+            dragMove(e, pointers.current)
+          },
+        },
+      })
+      .gesturable({
+        onmove: e => {
+          if (C.controls !== 'free') {
+            return
+          }
+          gestureMove(e, pointers.current)
+        },
+      })
+
+    return () => {
+      gl.renderer.domElement.removeEventListener('pointerdown', pointerdown)
+      gl.renderer.domElement.removeEventListener('pointerup', pointerup)
+      handle.unset()
+    }
+  }, [C.controls, gl])
 
   const setC = useCallback(
     async (newC, sync = true) => {
@@ -140,10 +208,9 @@ export default function App() {
 
       render()
     },
-    [C]
+    [C, processing]
   )
 
-  const [gl, setGl] = useState()
   useEffect(() => {
     globalSetC(initialC)
     const { renderer, camera, composer, controls, first } = initialize3d()
@@ -158,49 +225,7 @@ export default function App() {
 
   const size = useCallback(() => {
     if (!gl) return
-    const { renderer, camera, composer } = gl
-    const subsampling = 1
-
-    const width = window.innerWidth * subsampling
-    const height = window.innerHeight * subsampling
-    const currentCanvas = renderer.domElement
-    if (currentCanvas.width !== width || currentCanvas.height !== height) {
-      camera.aspect = width / height
-      camera.zoom = Math.min(1, width / height)
-      camera.updateProjectionMatrix()
-      renderer.setSize(width, height)
-      composer.setSize(width, height)
-      const pixelRatio = renderer.getPixelRatio()
-      composer.setPixelRatio(pixelRatio)
-
-      const w = width * pixelRatio
-      const h = height * pixelRatio
-      composer.passes.forEach(pass => {
-        if (pass.material?.uniforms?.['resolution']) {
-          let cw = w
-          let ch = h
-          if (pass.material.uniforms['resolution'].value.x <= 1) {
-            cw = 1 / cw
-            ch = 1 / ch
-          }
-          pass.material.uniforms['resolution'].value.x = cw
-          pass.material.uniforms['resolution'].value.y = ch
-        }
-        if (pass.resolution) {
-          pass.resolution = new Vector2(width, height)
-        }
-      })
-
-      if (subsampling !== 1) {
-        currentCanvas.style.width = null
-        currentCanvas.style.height = null
-      } else {
-        currentCanvas.style.width = width + 'px'
-        currentCanvas.style.height = height + 'px'
-      }
-    }
-
-    render()
+    size()
   }, [gl])
 
   useEffect(() => {

@@ -35,7 +35,6 @@ import { LuminosityShader } from 'three/examples/jsm/shaders/LuminosityShader.js
 import { SobelOperatorShader } from 'three/examples/jsm/shaders/SobelOperatorShader.js'
 import { ambiances } from '../statics'
 import { C } from './C'
-import { interactions } from './interact'
 import { R } from './R'
 import { GodRayPass } from './shader/GodRayPass'
 import { hyperMathMaterial } from './shader/hyperMathMaterial'
@@ -71,8 +70,6 @@ export const initialize3d = () => {
   renderer.setSize(window.innerWidth, window.innerHeight)
 
   document.body.appendChild(renderer.domElement)
-
-  interactions()
 
   camera = new PerspectiveCamera(
     90,

@@ -8,6 +8,7 @@ import {
 import hyperMathVertexShader from './hyperMathVertex.glsl'
 import projectionVertexShader from './projectionVertex.glsl'
 import { C } from '../C'
+import { projections } from '../../statics'
 
 const header = hyperMathVertexShader.match(
   /\/\* BEGIN HEADER \*\/([\s\S]*?)\/\* END HEADER \*\//m
@@ -38,14 +39,7 @@ export const hyperMathMaterial = material => {
   material.onBeforeCompile = shader => {
     const defines = [
       `#define DIMENSIONS ${C.dimensions}`,
-      `#define PROJECTION ${[
-        'stereographic',
-        'orthographic',
-        'klein',
-        'inverted',
-        'jemisphere',
-        'upperhalf',
-      ].indexOf(C.projection)}`,
+      `#define PROJECTION ${projections.indexOf(C.projection)}`,
     ]
 
     Object.assign(shader.uniforms, material.uniforms)
