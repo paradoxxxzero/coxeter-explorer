@@ -1,7 +1,6 @@
 import { max } from './math'
 
 let processing = 0
-let process = () => {}
 
 const uuid4 = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -11,20 +10,14 @@ const uuid4 = () => {
   })
 }
 
-export const setProcess = f => {
-  process = f
-}
-
 export const kill = w => {
   w.terminate()
   processing = 0
-  process(processing)
 }
 
 export const worker = async (w, data) => {
   data.uuid = uuid4()
   processing++
-  process(processing)
   w.postMessage(data)
 
   return new Promise((resolve, reject) => {
@@ -32,32 +25,26 @@ export const worker = async (w, data) => {
       if (e.data.uuid !== data.uuid) {
         return
       }
-      w.removeEventListener('message', receive)
       processing--
-      process(processing)
+      w.removeEventListener('message', receive)
+      w.removeEventListener('error', error)
+
+      if (e.data.error) {
+        reject(e.data.error)
+        return
+      }
 
       resolve(e.data)
     }
     const error = e => {
-      if (!e.uuid) {
-        w.removeEventListener('error', error)
-        if (processing <= 0) {
-          return
-        }
-        processing--
-        processing = max(0, processing) // FIXME
-        process(processing, true)
-        console.error("Can't call web worker", e)
-        return
-      }
-      if (e.uuid !== data.uuid) {
-        return
-      }
+      w.removeEventListener('message', receive)
       w.removeEventListener('error', error)
+      if (processing <= 0) {
+        return
+      }
       processing--
-      process(processing, true)
-
-      reject(e)
+      processing = max(0, processing) // FIXME
+      console.error("Can't call web worker", e)
     }
     w.addEventListener('message', receive)
     w.addEventListener('error', error)

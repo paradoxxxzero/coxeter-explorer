@@ -111,7 +111,7 @@ vec3 xproject(in vec4 v) {
 
 vec3 xproject(in vec5 v) {
   #if PROJECTION == 0 // STEREOGRAPHIC
-  return xproject(v.v / (v.u - curvature));
+  return xproject(.5 * v.v / (v.u - curvature));
   #elif PROJECTION == 1 // ORTHOGRAPHIC
   return xproject(v.v);
   #elif PROJECTION == 2 // KLEIN

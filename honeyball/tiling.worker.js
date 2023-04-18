@@ -224,7 +224,6 @@ onmessage = ({ data: { C, order, uuid } }) => {
       // [W.vertices, W.edges]
     )
   } catch (e) {
-    e.uuid = uuid
-    throw e
+    postMessage({ error: e.message, uuid: uuid })
   }
 }

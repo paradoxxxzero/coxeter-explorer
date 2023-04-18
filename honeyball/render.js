@@ -441,12 +441,6 @@ export const changeAmbiance = () => {
     } else if (fx === 'sobel') {
       const effectGrayScale = new ShaderPass(LuminosityShader)
       composer.addPass(effectGrayScale)
-
-      // you might want to use a gaussian blur filter before
-      // the next pass to improve the result of the Sobel operator
-
-      // Sobel operator
-
       const effectSobel = new ShaderPass(SobelOperatorShader)
       effectSobel.uniforms['resolution'].value.x =
         window.innerWidth * window.devicePixelRatio
@@ -472,7 +466,7 @@ export const changeAmbiance = () => {
   instancedVertex.material = hyperMathMaterial(ambiance.material)
   instancedEdge.material = hyperMathMaterial(ambiance.material)
   updateMaterials()
-  plot(true)
+  plot(true, true)
   render()
 }
 

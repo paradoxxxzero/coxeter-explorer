@@ -1,19 +1,19 @@
 import { Fragment, useCallback, useEffect, useState } from 'react'
-import Tiling from './honeyball/tiling.worker?worker'
+import { Vector2 } from 'three'
+import { defaultC, getC, setC as globalSetC } from './honeyball/C'
+import { R, setR } from './honeyball/R'
+import { min } from './honeyball/math'
 import {
   changeAmbiance,
   initialize3d,
   plot,
+  render,
   resetComposerTarget,
   updateMaterials,
-  render,
 } from './honeyball/render'
-import { Vector2 } from 'three'
-import { defaultC, getC, setC as globalSetC } from './honeyball/C'
-import { ambiances, projections } from './statics'
-import { R, setR } from './honeyball/R'
+import Tiling from './honeyball/tiling.worker?worker'
 import { range, worker } from './honeyball/utlis'
-import { abs, min } from './honeyball/math'
+import { ambiances, projections } from './statics'
 
 let tiling = new Tiling()
 const initialC = { ...(getC() || defaultC) }
@@ -21,9 +21,17 @@ const initialC = { ...(getC() || defaultC) }
 export default function App() {
   const [C, _setC] = useState(initialC)
   const [space, setSpace] = useState({ E: '?', N: '?' })
+  const [processing, setProcessing] = useState(false)
+  const [error, setError] = useState()
+  const [showUI, setShowUI] = useState(true)
 
   const setC = useCallback(
     async (newC, sync = true) => {
+      if (processing) {
+        setProcessing(false)
+        tiling.terminate()
+        tiling = new Tiling()
+      }
       const lastOrder = C.order
       const changed = Object.keys(newC).filter(key => newC[key] !== C[key])
       let mustRedraw = C === initialC
@@ -65,21 +73,31 @@ export default function App() {
           const startOrder = changed.includes('order') ? lastOrder : 0
 
           for (let i = startOrder; i < newC.order; i++) {
-            const {
-              R: newR,
-              vertices,
-              edges,
-            } = await worker(tiling, {
-              C: newC,
-              order: i,
-            })
+            setError(null)
+            setProcessing(true)
+            let newR, vertices, edges
+            try {
+              ;({
+                R: newR,
+                vertices,
+                edges,
+              } = await worker(tiling, {
+                C: newC,
+                order: i,
+              }))
+            } catch (e) {
+              setError(e)
+              return
+            } finally {
+              setProcessing(false)
+            }
 
             if (i === 0) {
               setR({ ...newR, ranges: {} })
               window.R = R
               setSpace({
                 E: R.curvature === 0 ? '𝔼' : R.curvature > 0 ? '𝕊' : 'ℍ',
-                N: C.dimensions - abs(R.curvature),
+                N: C.dimensions - 1,
               })
               updateMaterials()
             }
@@ -295,199 +313,208 @@ export default function App() {
   }, [C, gl, setC])
 
   return (
-    <>
+    <div className={error ? 'error' : ''} title={error}>
       <button id="controls" onClick={handleControls}>
         {C.controls === 'orbit' ? '⇹' : '↭'}
       </button>
-      <button id="space">
+      <button
+        id="space"
+        className={processing ? 'processing' : ''}
+        onClick={() => setShowUI(!showUI)}
+      >
         {space.E}
         <sup>{space.N}</sup>
       </button>
-      <aside className="controls">
-        <label>
-          Order
-          <input
-            type="number"
-            name="order"
-            min="1"
-            max="32"
-            step="1"
-            value={C.order}
-            onChange={handleChange}
-          />
-        </label>
-        <label>
-          Segments
-          <input
-            type="checkbox"
-            name="curve"
-            checked={C.curve}
-            onChange={handleChange}
-          />
-          {C.curve ? (
+      {showUI && (
+        <aside className="controls">
+          <label>
+            Order
             <input
               type="number"
-              name="segments"
+              name="order"
               min="1"
               step="1"
-              value={C.segments}
+              value={C.order}
               onChange={handleChange}
             />
-          ) : null}
-        </label>
-        <label>
-          Dimensions
-          <input
-            type="number"
-            name="dimensions"
-            min="3"
-            max="5"
-            step="1"
-            value={C.dimensions}
-            onChange={handleChange}
-          />
-        </label>
-        <label>
-          Projection
-          <select
-            name="projection"
-            value={C.projection}
-            onChange={handleChange}
-          >
-            {projections.map(p => (
-              <option key={p} value={p}>
-                {p.replace(/_/g, ' ').replace(/./, c => c.toUpperCase())}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Vertices
-          <input
-            type="checkbox"
-            name="vertices"
-            checked={C.vertices}
-            onChange={handleChange}
-          />
-          {C.vertices ? (
+          </label>
+          <label>
+            Segments
             <input
-              type="number"
-              name="vertexThickness"
-              min="0"
-              step="1"
-              value={C.vertexThickness}
+              type="checkbox"
+              name="curve"
+              checked={C.curve}
               onChange={handleChange}
             />
-          ) : null}
-        </label>
-        <label>
-          Edges
-          <input
-            type="checkbox"
-            name="edges"
-            checked={C.edges}
-            onChange={handleChange}
-          />
-          {C.edges ? (
-            <input
-              type="number"
-              name="edgeThickness"
-              min="0"
-              step="1"
-              value={C.edgeThickness}
-              onChange={handleChange}
-            />
-          ) : null}
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            name="stellation"
-            checked={C.stellation}
-            onChange={handleChange}
-          />
-          Stellation
-        </label>
-        <label>
-          Ambiance
-          <select name="ambiance" value={C.ambiance} onChange={handleChange}>
-            {Object.keys(ambiances).map(a => (
-              <option key={a} value={a}>
-                {a.replace(/_/g, ' ').replace(/./, c => c.toUpperCase())}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          MSAA
-          <input
-            type="checkbox"
-            name="msaa"
-            checked={C.msaa}
-            onChange={handleChange}
-          />
-          {C.msaa ? (
-            <input
-              type="number"
-              name="msaaSamples"
-              min="0"
-              step="1"
-              value={C.msaaSamples}
-              onChange={handleChange}
-            />
-          ) : null}
-        </label>
-      </aside>
-      <aside className="coxeters">
-        {range(C.dimensions).map(i => (
-          <Fragment key={i}>
-            {i > 0 && (
-              <div className="number">
-                {range(i).map(
-                  j =>
-                    (!C.extended || i === j + 1) && (
-                      <label key={j}>
-                        <input
-                          type="number"
-                          name={`coxeter-${i}-${j}`}
-                          min="2"
-                          step="1"
-                          value={C.coxeter[i][j]}
-                          onChange={handleChange}
-                        />
-                        {C.stellation && (
-                          <div className="stellation">
-                            <span className="divisor"> / </span>
-                            <input
-                              type="number"
-                              name={`coxeter-${i}-${j}-div`}
-                              min="1"
-                              step="1"
-                              value={C.coxeterDiv[i][j]}
-                              onChange={handleChange}
-                            />
-                          </div>
-                        )}
-                      </label>
-                    )
-                )}
-              </div>
-            )}
-
-            <label className="mirror">
-              {i > 0 && <span className="coxeter">——</span>}
+            {C.curve ? (
               <input
-                type="checkbox"
-                name={`mirror-${i}`}
-                checked={!!C.mirrors[i]}
+                type="number"
+                name="segments"
+                min="1"
+                step="1"
+                value={C.segments}
                 onChange={handleChange}
               />
-              {i < C.dimensions - 1 && <span className="coxeter">——</span>}
-            </label>
-          </Fragment>
-        ))}
-        <button onClick={handleExtend}>{C.extended ? 'v' : '^'}</button>
-      </aside>
-    </>
+            ) : null}
+          </label>
+          <label>
+            Dimensions
+            <input
+              type="number"
+              name="dimensions"
+              min="3"
+              max="5"
+              step="1"
+              value={C.dimensions}
+              onChange={handleChange}
+            />
+          </label>
+          <label>
+            Projection
+            <select
+              name="projection"
+              value={C.projection}
+              onChange={handleChange}
+            >
+              {projections.map(p => (
+                <option key={p} value={p}>
+                  {p.replace(/_/g, ' ').replace(/./, c => c.toUpperCase())}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Vertices
+            <input
+              type="checkbox"
+              name="vertices"
+              checked={C.vertices}
+              onChange={handleChange}
+            />
+            {C.vertices ? (
+              <input
+                type="number"
+                name="vertexThickness"
+                min="0"
+                step="1"
+                value={C.vertexThickness}
+                onChange={handleChange}
+              />
+            ) : null}
+          </label>
+          <label>
+            Edges
+            <input
+              type="checkbox"
+              name="edges"
+              checked={C.edges}
+              onChange={handleChange}
+            />
+            {C.edges ? (
+              <input
+                type="number"
+                name="edgeThickness"
+                min="0"
+                step="1"
+                value={C.edgeThickness}
+                onChange={handleChange}
+              />
+            ) : null}
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              name="stellation"
+              checked={C.stellation}
+              onChange={handleChange}
+            />
+            Stellation
+          </label>
+          <label>
+            Ambiance
+            <select name="ambiance" value={C.ambiance} onChange={handleChange}>
+              {Object.keys(ambiances).map(a => (
+                <option key={a} value={a}>
+                  {a.replace(/_/g, ' ').replace(/./, c => c.toUpperCase())}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            MSAA
+            <input
+              type="checkbox"
+              name="msaa"
+              checked={C.msaa}
+              onChange={handleChange}
+            />
+            {C.msaa ? (
+              <input
+                type="number"
+                name="msaaSamples"
+                min="0"
+                step="1"
+                value={C.msaaSamples}
+                onChange={handleChange}
+              />
+            ) : null}
+          </label>
+        </aside>
+      )}
+      {showUI && (
+        <aside className="coxeters">
+          {range(C.dimensions).map(i => (
+            <Fragment key={i}>
+              {i > 0 && (
+                <div className="number">
+                  {range(i).map(
+                    j =>
+                      (!C.extended || i === j + 1) && (
+                        <label key={j}>
+                          <input
+                            type="number"
+                            name={`coxeter-${i}-${j}`}
+                            min="2"
+                            step="1"
+                            value={C.coxeter[i][j]}
+                            onChange={handleChange}
+                          />
+                          {C.stellation && (
+                            <div className="stellation">
+                              <span className="divisor"> / </span>
+                              <input
+                                type="number"
+                                name={`coxeter-${i}-${j}-div`}
+                                min="1"
+                                step="1"
+                                value={C.coxeterDiv[i][j]}
+                                onChange={handleChange}
+                              />
+                            </div>
+                          )}
+                        </label>
+                      )
+                  )}
+                </div>
+              )}
+
+              <label className="mirror">
+                {i > 0 && <span className="coxeter">——</span>}
+                <input
+                  type="checkbox"
+                  name={`mirror-${i}`}
+                  checked={!!C.mirrors[i]}
+                  onChange={handleChange}
+                />
+                {i < C.dimensions - 1 && <span className="coxeter">——</span>}
+              </label>
+            </Fragment>
+          ))}
+          <button id="extend" onClick={handleExtend}>
+            {C.extended ? '⮟' : '⮝'}
+          </button>
+        </aside>
+      )}
+    </div>
   )
 }
