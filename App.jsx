@@ -607,7 +607,7 @@ export default function App({ gl, params, updateParams }) {
             </Fragment>
           ))}
           <button id="extend" onClick={handleExtend}>
-            {params.extended ? '⮟' : '⮝'}
+            {params.extended ? '▼' : '▲'}
           </button>
         </aside>
       )}
