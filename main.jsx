@@ -68,9 +68,23 @@ const AppWithHistory = () => {
 
   const updateParams = useCallback(
     newParams => {
-      const newParams2 = { ...params, ...newParams }
-      setParams(newParams2)
-      syncParams(newParams2)
+      const finalParams = { ...params, ...newParams }
+      setParams(finalParams)
+      // console.log('updateParams', finalParams)
+      if (
+        !finalParams.dimensions ||
+        finalParams.coxeter.find(c => c.find(d => !d)) ||
+        finalParams.coxeterDiv.find(c => c.find(d => !d)) ||
+        (finalParams.curve && !finalParams.segments) ||
+        (finalParams.showVertices && !finalParams.vertexThickness) ||
+        (finalParams.showEdges && !finalParams.edgeThickness) ||
+        (finalParams.msaa && !finalParams.msaaSamples) ||
+        !finalParams.order
+      ) {
+        // console.log('invalid params')
+        return
+      }
+      syncParams(finalParams)
     },
     [params]
   )

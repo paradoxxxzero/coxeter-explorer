@@ -84,9 +84,9 @@ export const keydown = (e, vertices, edges, curvature) => {
     translate([0, -step, 0, 0], vertices, edges, curvature)
   } else if (code === 'PageDown' || code === 'KeyE') {
     translate([0, step, 0, 0], vertices, edges, curvature)
-  } else if (code === 'Digit1') {
+  } else if (code === 'KeyR') {
     rotate(-(PI * 5) / 180, vertices, edges, curvature)
-  } else if (code === 'Digit3') {
+  } else if (code === 'KeyF') {
     rotate((PI * 5) / 180, vertices, edges, curvature)
   } else if (code === 'KeyZ') {
     scale(-step, vertices, edges, curvature)

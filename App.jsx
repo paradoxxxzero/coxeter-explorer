@@ -62,6 +62,12 @@ export default function App({ gl, params, updateParams }) {
 
   useEffect(() => {
     setRuntime(runtime => {
+      if (
+        (params.showVertices && !params.vertexThickness) ||
+        (params.showEdges && !params.edgeThickness)
+      ) {
+        return runtime
+      }
       const newRuntime = {
         ...runtime,
         vertexThickness: params.vertexThickness,
@@ -73,6 +79,8 @@ export default function App({ gl, params, updateParams }) {
       return newRuntime
     })
   }, [
+    params.showVertices,
+    params.showEdges,
     params.vertexThickness,
     params.edgeThickness,
     params.projection,
@@ -81,6 +89,9 @@ export default function App({ gl, params, updateParams }) {
 
   useEffect(() => {
     setRuntime(runtime => {
+      if (params.msaa && !params.msaaSamples) {
+        return runtime
+      }
       const newRuntime = {
         ...runtime,
         msaa: params.msaa,
@@ -107,6 +118,14 @@ export default function App({ gl, params, updateParams }) {
   // Reset plot
   useEffect(() => {
     setRuntime(runtime => {
+      if (
+        !params.dimensions ||
+        params.coxeter.find(c => c.find(d => !d)) ||
+        params.coxeterDiv.find(c => c.find(d => !d)) ||
+        (params.curve && !params.segments)
+      ) {
+        return runtime
+      }
       return {
         ...runtime,
         dimensions: params.dimensions,
@@ -139,10 +158,14 @@ export default function App({ gl, params, updateParams }) {
   }, [runtime.dimensions, runtime.curve, runtime.segments])
 
   useEffect(() => {
-    setRuntime(runtime => ({
-      ...runtime,
-      order: params.order,
-    }))
+    setRuntime(runtime =>
+      params.order
+        ? {
+            ...runtime,
+            order: params.order,
+          }
+        : runtime
+    )
   }, [params.order])
 
   useEffect(() => {
@@ -311,12 +334,12 @@ export default function App({ gl, params, updateParams }) {
 
       if (type === 'checkbox') {
         value = checked
-      } else if (type === 'number') {
+      } else if (type === 'number' && value) {
         value = +value
       }
 
       const newParams = {}
-      if (name === 'dimensions') {
+      if (name === 'dimensions' && value) {
         newParams.coxeter = new Array(value)
           .fill()
           .map(() => new Array(value).fill(2))
@@ -325,7 +348,7 @@ export default function App({ gl, params, updateParams }) {
           .map(() => new Array(value).fill(1))
         newParams.mirrors = new Array(value).fill(0)
 
-        for (let i = 0; i < min(params.dimensions, value); i++) {
+        for (let i = 0; i < min(params.coxeter.length, value); i++) {
           for (let j = 0; j < i; j++) {
             newParams.coxeter[i][j] = params.coxeter[i][j]
             newParams.coxeter[j][i] = params.coxeter[j][i]
