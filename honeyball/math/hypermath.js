@@ -341,10 +341,30 @@ export const xscale = (vertex, scale, curvature) => {
 //   | ±sin†(yz) * sin†(xy) * cos†(xz) * x + sin†(xz) * sin†(xy) * y + cos†(xy) * z ± sin†(xy) * cos†(xz) * cos†(yz) * w |
 //   |  sin†(yz) * cos†(xy) * cos†(xz) * x + cos†(xy) * cos†(xz) * y + sin†(xy) * z   cos†(xy) * cos†(xz) * cos†(yz) * w |
 
+// 5D:
+
+// Rxyz | 1  0  0  0          0          |
+//      | 0  1  0  0          0          |
+//      | 0  0  1  0          0          |
+//      | 0  0  0  cost(xyz) ±sin†(xyz)  |
+//      | 0  0  0  sin†(xyz)  cos†(xyz)  |
+
+// Rxyw | 1  0  0          0          0          |
+//      | 0  1  0          0          0          |
+//      | 0  0  cost(xyw)  0          ±sin†(xyw) |
+//      | 0  0  0          1          0          |
+//      | 0  0  sin†(xyw)  0          cos†(xyw)  |
+
+// Rxzw | 1          0          0   0          0  |
+//      | 0          cost(xzw)  0  ±sin†(xzw)  0  |
+//      | 0          0          1   0          0  |
+//      | 0          sin†(xzw)  0   cos†(xzw)  0  |
+//      | 0          0          0   0          1  |
+
 // prettier-ignore
 export const xtranslate = (vertex, offset, curvature) => {
-  const [x, y, z, w] = vertex
-  const [xt, yt, zt] = offset
+  const [x, y, z, w, v] = vertex
+  const [xt, yt, zt, wt] = offset
   const c = curvature
   const cosx = sqrt(1 - c * xt * xt) // cos†(asin†(xt))
   const cosy = sqrt(1 - c * yt * yt) // cos†(asin†(yt))
@@ -356,7 +376,7 @@ export const xtranslate = (vertex, offset, curvature) => {
       vertex[0] =      x * cosx + y * sinx * siny +     z * sinx * cosy                       
       vertex[1] =               + y * cosy        - c * z * siny       
       vertex[2] = -c * x * sinx + y * cosx * siny +     z * cosx * cosy
-    } else {
+    } else if (vertex.length >= 4) {
       if (zt) {
         const cosz = sqrt(1 - c * zt * zt) // cos†(asin†(zt))
         const sinz = zt
@@ -371,6 +391,18 @@ export const xtranslate = (vertex, offset, curvature) => {
         // vertex[2] = z                                                          
         vertex[3] =       x * cosy * sinx +     y * siny                          +     w * cosx * cosy
       }
+    // } else if (vertex.length === 5) {
+      // ...
+    //   const cosz = sqrt(1 - c * zt * zt) // cos†(asin†(zt))
+    //   const sinz = zt
+    //   const cosw = sqrt(1 - c * wt * wt) // cos†(asin†(wt))
+    //   const sinw = wt
+
+    //   vertex[0] =       x * cosx                                                - c * w * sinx + v * sinx * siny * cosy
+    //   vertex[1] = - c * x * sinx * siny        +     y * cosy                   - c * w * cosx * siny 
+    //   vertex[2] = - c * x * cosy * sinx * sinz - c * y * siny * sinz + z * cosz - c * w * cosx * cosy * sinz  
+    //   vertex[3] =       x * cosy * cosz * sinx +     y * cosz * siny + z * sinz +     w * cosx * cosy * cosz
+    //   vertex[4] =       x * cosy * sinx * sinw +     y * siny * sinw + z * cosw +     w * cosx * cosy * sinw
     }
   } else {
     vertex[0] = x + xt

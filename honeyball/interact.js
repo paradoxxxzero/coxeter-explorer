@@ -54,9 +54,9 @@ export const dragMove = (e, pointers, vertices, edges, curvature) => {
     const xt = -e.dx / w2
     const yt = -e.dy / h2
     if (e.shiftKey || pointers.length > 2) {
-      translate([0, 0, yt], vertices, edges, curvature)
+      translate([0, 0, yt, xt], vertices, edges, curvature)
     } else {
-      translate([xt, yt, 0], vertices, edges, curvature)
+      translate([xt, yt, 0, 0], vertices, edges, curvature)
     }
   }
 }
@@ -73,17 +73,17 @@ export const keydown = (e, vertices, edges, curvature) => {
   const { code } = e
   const step = 0.01
   if (code === 'ArrowLeft' || code === 'KeyA') {
-    translate([-step, 0, 0], vertices, edges, curvature)
+    translate([-step, 0, 0, 0], vertices, edges, curvature)
   } else if (code === 'ArrowRight' || code === 'KeyD') {
-    translate([step, 0, 0], vertices, edges, curvature)
+    translate([step, 0, 0, 0], vertices, edges, curvature)
   } else if (code === 'ArrowUp' || code === 'KeyW') {
-    translate([0, 0, -step], vertices, edges, curvature)
+    translate([0, 0, -step, 0], vertices, edges, curvature)
   } else if (code === 'ArrowDown' || code === 'KeyS') {
-    translate([0, 0, step], vertices, edges, curvature)
+    translate([0, 0, step, 0], vertices, edges, curvature)
   } else if (code === 'PageUp' || code === 'KeyQ') {
-    translate([0, -step, 0], vertices, edges, curvature)
+    translate([0, -step, 0, 0], vertices, edges, curvature)
   } else if (code === 'PageDown' || code === 'KeyE') {
-    translate([0, step, 0], vertices, edges, curvature)
+    translate([0, step, 0, 0], vertices, edges, curvature)
   } else if (code === 'Digit1') {
     rotate(-(PI * 5) / 180, vertices, edges, curvature)
   } else if (code === 'Digit3') {
