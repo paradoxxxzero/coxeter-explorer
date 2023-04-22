@@ -95,9 +95,6 @@ export const initializeGl = () => {
   }
 }
 
-let currentVerticesMax = 5000
-let currentEdgesMax = 50000
-
 export const initVertex = rt => {
   // Handle hot reload
   let existingVertex = rt.scene.getObjectByName('instanced-vertex')
@@ -115,20 +112,20 @@ export const initVertex = rt => {
   vertexGeometry.setAttribute(
     'instancePosition',
     new InstancedBufferAttribute(
-      new Float32Array(currentVerticesMax * arity),
+      new Float32Array(rt.maxVertices * arity),
       arity
     )
   )
   vertexGeometry.setAttribute(
     'instanceTarget',
     new InstancedBufferAttribute(
-      new Float32Array(currentVerticesMax * arity),
+      new Float32Array(rt.maxVertices * arity),
       arity
     )
   )
   vertexGeometry.setAttribute(
     'instanceColor',
-    new InstancedBufferAttribute(new Float32Array(currentVerticesMax * 3), 3)
+    new InstancedBufferAttribute(new Float32Array(rt.maxVertices * 3), 3)
   )
 
   const instancedVertex = new Mesh(
@@ -175,21 +172,15 @@ export const initEdge = rt => {
   const arity = dimensions > 4 ? 9 : dimensions
   edgeGeometry.setAttribute(
     'instancePosition',
-    new InstancedBufferAttribute(
-      new Float32Array(currentEdgesMax * arity),
-      arity
-    )
+    new InstancedBufferAttribute(new Float32Array(rt.maxEdges * arity), arity)
   )
   edgeGeometry.setAttribute(
     'instanceTarget',
-    new InstancedBufferAttribute(
-      new Float32Array(currentEdgesMax * arity),
-      arity
-    )
+    new InstancedBufferAttribute(new Float32Array(rt.maxEdges * arity), arity)
   )
   edgeGeometry.setAttribute(
     'instanceColor',
-    new InstancedBufferAttribute(new Float32Array(currentEdgesMax * 3), 3)
+    new InstancedBufferAttribute(new Float32Array(rt.maxEdges * 3), 3)
   )
 
   const instancedEdge = new Mesh(
@@ -242,12 +233,6 @@ const plotVertices = (rt, range = null) => {
   let start = range ? range[0] : 0
   let stop = range ? range[1] : rt.vertices.length
 
-  if (stop > currentVerticesMax) {
-    // TODO: handle this in APP
-    currentVerticesMax = stop
-    reinitVertex(rt)
-    start = 0
-  }
   const arity = dimensions > 4 ? 9 : dimensions
   instancedVertex.geometry.instanceCount = stop
   for (let i = start; i < stop; i++) {
@@ -273,12 +258,6 @@ const plotEdges = (rt, range = null) => {
   let start = range ? range[0] : 0
   let stop = range ? range[1] : rt.edges.length
 
-  // TODO -> App
-  if (stop > currentEdgesMax) {
-    currentEdgesMax = stop
-    reinitEdge(rt)
-    start = 0
-  }
   const arity = dimensions > 4 ? 9 : dimensions
   instancedEdge.geometry.instanceCount = stop
   for (let i = start; i < stop; i++) {
@@ -572,5 +551,4 @@ export const updateMaterials = ({
   update(instancedVertex.customDistanceMaterial)
   update(instancedEdge.customDepthMaterial)
   update(instancedEdge.customDistanceMaterial)
-  composer.render()
 }

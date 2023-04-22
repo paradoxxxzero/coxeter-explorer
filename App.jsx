@@ -24,6 +24,8 @@ export default function App({ gl, params, updateParams }) {
       vertices: [],
       ranges: [],
       currentOrder: 0,
+      maxVertices: 5000,
+      maxEdges: 50000,
       ...params,
       ...gl,
     }
@@ -67,6 +69,7 @@ export default function App({ gl, params, updateParams }) {
         projection: params.projection,
       }
       updateMaterials(newRuntime)
+      newRuntime.composer.render()
       return newRuntime
     })
   }, [
@@ -223,6 +226,36 @@ export default function App({ gl, params, updateParams }) {
   ])
 
   useEffect(() => {
+    setRuntime(runtime => {
+      if (runtime.vertices.length > runtime.maxVertices) {
+        console.warn(`Extending vertex buffer to ${runtime.vertices.length}`)
+        const newRuntime = {
+          ...runtime,
+          maxVertices: runtime.vertices.length,
+        }
+        reinitVertex(newRuntime)
+        return newRuntime
+      }
+      return runtime
+    })
+  }, [runtime.vertices])
+
+  useEffect(() => {
+    setRuntime(runtime => {
+      if (runtime.edges.length > runtime.maxEdges) {
+        console.warn(`Extending edge buffer to ${runtime.edges.length}`)
+        const newRuntime = {
+          ...runtime,
+          maxEdges: runtime.edges.length,
+        }
+        reinitEdge(newRuntime)
+        return newRuntime
+      }
+      return runtime
+    })
+  }, [runtime.edges])
+
+  useEffect(() => {
     if (runtime.currentOrder > 0) {
       plot(runtime, runtime.currentOrder - 1)
     }
@@ -239,7 +272,7 @@ export default function App({ gl, params, updateParams }) {
   useEffect(() => {
     plot(runtime)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runtime.ambiance])
+  }, [runtime.ambiance, runtime.maxVertices, runtime.maxEdges])
 
   useEffect(() => {
     const onSize = () => {
