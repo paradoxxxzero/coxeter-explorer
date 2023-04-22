@@ -29,7 +29,7 @@ export const hyperMathMaterial = (material, dimensions, projection) => {
   ].find(cls => material instanceof cls)
   material._dimensions = dimensions
   material._projection = projection
-  console.debug('CREAING MAT', material._dimensions, material._projection)
+  // console.debug('CREAING MAT', material._dimensions, material._projection)
   material.uniforms = {
     ...(material.uniforms || {}),
     curvature: { value: 0 },
@@ -38,7 +38,7 @@ export const hyperMathMaterial = (material, dimensions, projection) => {
     segments: { value: 1 },
   }
   material.onBeforeCompile = shader => {
-    console.debug('UPDATING MAT', material._dimensions, material._projection)
+    // console.debug('UPDATING MAT', material._dimensions, material._projection)
     const defines = [
       `#define DIMENSIONS ${material._dimensions}`,
       `#define PROJECTION ${projections.indexOf(material._projection)}`,

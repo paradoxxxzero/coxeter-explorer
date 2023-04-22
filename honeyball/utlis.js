@@ -31,7 +31,7 @@ export const kill = () => {
 export const process = data => {
   data.uuid = uuid4()
   processing++
-  console.debug('POST', data)
+  // console.debug('POST', data)
   tiling.postMessage(data)
 
   return new Promise((resolve, reject) => {
@@ -39,7 +39,7 @@ export const process = data => {
       if (e.data.uuid !== data.uuid) {
         return
       }
-      console.debug('RECEIVE', e.data)
+      // console.debug('RECEIVE', e.data)
       processing--
       tiling.removeEventListener('message', receive)
       tiling.removeEventListener('error', error)

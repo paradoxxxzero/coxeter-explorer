@@ -43,15 +43,14 @@ export default function App({ gl, params, updateParams }) {
   }, [params.controls, updateParams])
 
   useEffect(() => {
-    console.debug('change controls', params.controls)
+    // console.debug('change controls', params.controls)
     setRuntime(runtime => ({ ...runtime, controls: params.controls }))
     runtime.orbitControls.enabled = params.controls === 'orbit'
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runtime.orbitControls, params.controls])
 
   // Ambiance
   useEffect(() => {
-    console.debug('change ambiance')
+    // console.debug('change ambiance')
     setRuntime(runtime => {
       const newRuntime = {
         ...runtime,
@@ -60,13 +59,15 @@ export default function App({ gl, params, updateParams }) {
       changeAmbiance(newRuntime)
       return newRuntime
     })
-    // reinitVertices(newRuntime)
-    // reinitEdges(newRuntime)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.ambiance])
 
   useEffect(() => {
-    console.debug('change materials', params.controls)
+    // console.debug(
+    //   'change materials',
+    //   params.vertexThickness,
+    //   params.edgeThickness,
+    //   params.projection
+    // )
     setRuntime(runtime => {
       const newRuntime = {
         ...runtime,
@@ -77,7 +78,6 @@ export default function App({ gl, params, updateParams }) {
       updateMaterials(newRuntime)
       return newRuntime
     })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     params.vertexThickness,
     params.edgeThickness,
@@ -86,7 +86,7 @@ export default function App({ gl, params, updateParams }) {
   ])
 
   useEffect(() => {
-    console.debug('change msaa', params.msaa, params.msaaSamples)
+    // console.debug('change msaa', params.msaa, params.msaaSamples)
     setRuntime(runtime => {
       const newRuntime = {
         ...runtime,
@@ -96,11 +96,10 @@ export default function App({ gl, params, updateParams }) {
       resetComposerTarget(newRuntime)
       return newRuntime
     })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.msaa, params.msaaSamples])
 
   useEffect(() => {
-    console.debug('change visibility', runtime)
+    // console.debug('change visibility', params.showVertices, params.showEdges)
     setRuntime(runtime => {
       const newRuntime = {
         ...runtime,
@@ -111,12 +110,20 @@ export default function App({ gl, params, updateParams }) {
       show(newRuntime, 'edge')
       return newRuntime
     })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.showVertices, params.showEdges])
 
   // Reset plot
   useEffect(() => {
-    console.debug('change dimension', runtime)
+    // console.debug(
+    //   'change dimension/...',
+    //   params.dimensions,
+    //   params.curve,
+    //   params.segments,
+    //   params.coxeter,
+    //   params.coxeterDiv,
+    //   params.mirrors,
+    //   params.stellation
+    // )
     setRuntime(runtime => {
       return {
         ...runtime,
@@ -133,8 +140,6 @@ export default function App({ gl, params, updateParams }) {
         ranges: [],
       }
     })
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     params.dimensions,
     params.curve,
@@ -146,29 +151,61 @@ export default function App({ gl, params, updateParams }) {
   ])
 
   useEffect(() => {
-    console.debug('reinit vertex', runtime)
+    // console.debug(
+    //   'reinit vertex',
+    //   runtime.dimensions,
+    //   runtime.curve,
+    //   runtime.segments
+    // )
     reinitVertex(runtime)
     reinitEdge(runtime)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runtime.dimensions, runtime.curve, runtime.segments])
 
   useEffect(() => {
-    console.debug('change order', runtime)
-    if (params.order === runtime.currentOrder) {
+    setRuntime(runtime => ({
+      ...runtime,
+      order: params.order,
+    }))
+  }, [params.order])
+
+  useEffect(() => {
+    // console.debug('change order', runtime.order, runtime.currentOrder)
+    setRuntime(runtime => {
+      if (runtime.order < runtime.currentOrder) {
+        console.log(runtime.currentOrder, '->', runtime.order)
+        return {
+          ...runtime,
+          currentOrder: runtime.order,
+        }
+      }
+      return runtime
+    })
+  }, [runtime.order, runtime.currentOrder])
+
+  useEffect(() => {
+    if (runtime.order <= runtime.currentOrder) {
       return
     }
-    if (params.order < runtime.currentOrder) {
-      // TODO slice vertices and edges
+    if (runtime.ranges[runtime.order]) {
       setRuntime(runtime => ({
         ...runtime,
-        order: params.order,
-        ranges: runtime.ranges.slice(params.order - 1),
-        curentOrder: params.order,
+        currentOrder: runtime.order,
       }))
       return
     }
-
-    console.debug('Render', runtime)
+    // console.debug(
+    //   'Render',
+    //   runtime.currentOrder,
+    //   runtime.order,
+    //   runtime.dimensions,
+    //   runtime.curve,
+    //   runtime.segments,
+    //   runtime.coxeter,
+    //   runtime.coxeterDiv,
+    //   runtime.mirrors,
+    //   runtime.stellation
+    // )
     kill()
     setProcessing(false)
     ;(async () => {
@@ -188,35 +225,35 @@ export default function App({ gl, params, updateParams }) {
       } catch (e) {
         setError(e)
         // Change current order to allow user to retry
+        console.warn(e)
         setRuntime(runtime => ({
           ...runtime,
-          currentOrder: params.order,
+          currentOrder: runtime.order,
         }))
-        console.warn(e)
-        return
       } finally {
         setProcessing(false)
       }
-
+      if (!rv) {
+        return
+      }
       setRuntime(runtime => {
         const newRuntime = {
           ...runtime,
-          order: params.order,
           currentOrder: rv.currentOrder,
           curvature: rv.curvature,
           ranges: runtime.ranges.slice(),
           vertices: runtime.vertices.concat(rv.vertices),
           edges: runtime.edges.concat(rv.edges),
         }
-        console.debug(
-          'Rendered',
-          rv.curvature,
-          rv.currentOrder - 1,
-          runtime.edges.length,
-          '->',
-          newRuntime.edges.length,
-          rv.edges.length
-        )
+        // console.debug(
+        //   'Rendered',
+        //   rv.curvature,
+        //   rv.currentOrder - 1,
+        //   runtime.edges.length,
+        //   '->',
+        //   newRuntime.edges.length,
+        //   rv.edges.length
+        // )
         newRuntime.ranges[rv.currentOrder - 1] = {
           vertices: [runtime.vertices.length, newRuntime.vertices.length],
           edges: [runtime.edges.length, newRuntime.edges.length],
@@ -224,9 +261,8 @@ export default function App({ gl, params, updateParams }) {
         return newRuntime
       })
     })()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    params.order,
+    runtime.order,
     runtime.currentOrder,
     runtime.dimensions,
     runtime.curve,
@@ -238,10 +274,13 @@ export default function App({ gl, params, updateParams }) {
   ])
 
   useEffect(() => {
-    console.debug('plot', runtime)
-    plot(runtime, runtime.ranges[runtime.currentOrder])
+    // console.debug('plot', runtime)
+    if (runtime.currentOrder > 0) {
+      plot(runtime, runtime.currentOrder - 1)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    runtime.currentOrder,
     runtime.vertices,
     runtime.edges,
     runtime.ranges,
@@ -250,8 +289,14 @@ export default function App({ gl, params, updateParams }) {
   ])
 
   useEffect(() => {
+    // console.debug('plot full', runtime)
+    plot(runtime)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runtime.ambiance])
+
+  useEffect(() => {
     const onSize = () => {
-      console.debug('size', runtime)
+      // console.debug('size', runtime)
       size(runtime)
     }
     window.addEventListener('resize', onSize)
@@ -325,6 +370,17 @@ export default function App({ gl, params, updateParams }) {
         value = coxeter
       }
 
+      if (name.startsWith('div')) {
+        const [i, j] = name
+          .split('-')
+          .slice(1)
+          .map(x => +x)
+        const coxeterDiv = params.coxeterDiv.map(x => x.slice())
+        coxeterDiv[i][j] = value
+        coxeterDiv[j][i] = value
+        name = 'coxeterDiv'
+        value = coxeterDiv
+      }
       if (name.startsWith('mirror')) {
         const [i] = name
           .split('-')
@@ -520,7 +576,7 @@ export default function App({ gl, params, updateParams }) {
                               <span className="divisor"> / </span>
                               <input
                                 type="number"
-                                name={`coxeter-${i}-${j}-div`}
+                                name={`div-${i}-${j}`}
                                 min="1"
                                 step="1"
                                 value={params.coxeterDiv[i][j]}

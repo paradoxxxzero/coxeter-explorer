@@ -270,11 +270,13 @@ const plotVertices = (rt, range = null) => {
 
 const plotEdges = (rt, range = null) => {
   const ambiance = ambiances[rt.ambiance]
+  console.warn(rt.ambiance)
   const instancedEdge = rt.scene.getObjectByName('instanced-edge')
   const { dimensions } = rt
   let start = range ? range[0] : 0
   let stop = range ? range[1] : rt.edges.length
 
+  // TODO -> App
   if (stop > currentEdgesMax) {
     currentEdgesMax = stop
     reinitEdge(rt)
@@ -311,13 +313,31 @@ export const show = (rt, name) => {
   obj.visible = rt[name === 'vertex' ? 'showVertices' : 'showEdges']
 }
 
-export const plot = (rt, range) => {
-  console.debug('plot', rt.vertices.length, rt.edges.length)
+export const plot = (rt, order = null) => {
+  if (
+    (order === null && rt.ranges.length === 0) ||
+    rt.ranges[order] === undefined
+  ) {
+    return
+  }
+  const range =
+    order !== null
+      ? rt.ranges[order]
+      : {
+          vertices: [
+            rt.ranges[0].vertices[0],
+            rt.ranges[rt.currentOrder - 1].vertices[1],
+          ],
+          edges: [
+            rt.ranges[0].edges[0],
+            rt.ranges[rt.currentOrder - 1].edges[1],
+          ],
+        }
   if (rt.scene.getObjectByName('instanced-vertex').visible) {
-    plotVertices(rt, range)
+    plotVertices(rt, range.vertices)
   }
   if (rt.scene.getObjectByName('instanced-edge').visible) {
-    plotEdges(rt, range)
+    plotEdges(rt, range.edges)
   }
   rt.composer.render()
 }
@@ -334,6 +354,20 @@ export const resetComposerTarget = rt => {
 export const changeAmbiance = rt => {
   const ambiance = ambiances[rt.ambiance]
   const { scene, composer, camera, dimensions, projection } = rt
+  const instancedVertex = rt.scene.getObjectByName('instanced-vertex')
+  const instancedEdge = rt.scene.getObjectByName('instanced-edge')
+
+  instancedVertex.material = hyperMathMaterial(
+    ambiance.material,
+    dimensions,
+    projection
+  )
+  instancedEdge.material = hyperMathMaterial(
+    ambiance.material,
+    dimensions,
+    projection
+  )
+
   if (ambiance.env) {
     scene.environment = ambiance.env
   } else {
@@ -403,8 +437,8 @@ export const changeAmbiance = rt => {
 
   composer.renderer.shadowMap.enabled = ambiance.shadow
   composer.renderer.shadowMap.type = PCFSoftShadowMap
-  rt.scene.getObjectByName('instanced-vertex').castShadow = ambiance.shadow
-  rt.scene.getObjectByName('instanced-edge').castShadow = ambiance.shadow
+  instancedVertex.castShadow = ambiance.shadow
+  instancedEdge.castShadow = ambiance.shadow
   // Add new lights
   const castShadow = ambiance.shadow
     ? light => {
@@ -502,6 +536,7 @@ export const changeAmbiance = rt => {
       composer.addPass(godrayPass)
     }
   })
+  updateMaterials(rt)
   composer.render()
 }
 
@@ -523,15 +558,15 @@ export const updateMaterials = ({
     if (!material?._dimensions) {
       return
     }
-    console.debug(
-      'updateMaterial',
-      curvature,
-      vertexThickness,
-      edgeThickness,
-      dimensions,
-      projection,
-      segments
-    )
+    // console.debug(
+    //   'updateMaterial',
+    //   curvature,
+    //   vertexThickness,
+    //   edgeThickness,
+    //   dimensions,
+    //   projection,
+    //   segments
+    // )
     material.uniforms.curvature.value = curvature
     material.uniforms.vertexThickness.value = vertexThickness
     material.uniforms.edgeThickness.value = edgeThickness
