@@ -14,7 +14,7 @@ const uuid4 = () => {
 
 export const kill = () => {
   if (processing > 0) {
-    console.warn('Killing')
+    console.warn(`Killing worker (${processing})`)
     // tiling.addEventListener(
     //   'error',
     //   e => {

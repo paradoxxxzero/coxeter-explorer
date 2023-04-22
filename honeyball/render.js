@@ -135,7 +135,6 @@ export const initVertex = rt => {
     vertexGeometry,
     hyperMathMaterial(ambiance.material, dimensions, projection)
   )
-  console.info('Creating vertex', instancedVertex)
   vertexGeometry.attributes.instanceTarget.array.fill(NaN)
   instancedVertex.geometry.instanceCount = 0
   instancedVertex.frustumCulled = false
@@ -197,7 +196,6 @@ export const initEdge = rt => {
     edgeGeometry,
     hyperMathMaterial(ambiance.material, dimensions, projection)
   )
-  console.info('Creating edge', instancedEdge)
   instancedEdge.geometry.instanceCount = 0
   instancedEdge.frustumCulled = false
   instancedEdge.customDepthMaterial = hyperMathMaterial(
@@ -270,7 +268,6 @@ const plotVertices = (rt, range = null) => {
 
 const plotEdges = (rt, range = null) => {
   const ambiance = ambiances[rt.ambiance]
-  console.warn(rt.ambiance)
   const instancedEdge = rt.scene.getObjectByName('instanced-edge')
   const { dimensions } = rt
   let start = range ? range[0] : 0
@@ -316,7 +313,7 @@ export const show = (rt, name) => {
 export const plot = (rt, order = null) => {
   if (
     (order === null && rt.ranges.length === 0) ||
-    rt.ranges[order] === undefined
+    (order !== null && order >= rt.ranges.length)
   ) {
     return
   }
@@ -389,13 +386,7 @@ export const changeAmbiance = rt => {
   lightsToRemove.forEach(light => {
     light.parent.remove(light)
   })
-  let ground = null
-
-  scene.traverse(mesh => {
-    if (mesh.name === 'ground') {
-      ground = mesh
-    }
-  })
+  let ground = scene.getObjectByName('ground')
 
   if (ground) {
     ground.geometry.dispose()
@@ -425,14 +416,12 @@ export const changeAmbiance = rt => {
           depthWrite: false,
         })
       )
-      ground.name = 'ground'
       ground.rotation.x = -Math.PI / 2
       ground.position.y = -3
     }
+    ground.name = 'ground'
     ground.receiveShadow = true
     scene.add(ground)
-  } else {
-    ground = null
   }
 
   composer.renderer.shadowMap.enabled = ambiance.shadow
@@ -558,15 +547,6 @@ export const updateMaterials = ({
     if (!material?._dimensions) {
       return
     }
-    // console.debug(
-    //   'updateMaterial',
-    //   curvature,
-    //   vertexThickness,
-    //   edgeThickness,
-    //   dimensions,
-    //   projection,
-    //   segments
-    // )
     material.uniforms.curvature.value = curvature
     material.uniforms.vertexThickness.value = vertexThickness
     material.uniforms.edgeThickness.value = edgeThickness

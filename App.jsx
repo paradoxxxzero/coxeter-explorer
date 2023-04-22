@@ -32,7 +32,6 @@ export default function App({ gl, params, updateParams }) {
 
     return runtime
   })
-  console.info('RENDER', runtime)
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState()
   const [showUI, setShowUI] = useState(true)
@@ -43,14 +42,12 @@ export default function App({ gl, params, updateParams }) {
   }, [params.controls, updateParams])
 
   useEffect(() => {
-    // console.debug('change controls', params.controls)
     setRuntime(runtime => ({ ...runtime, controls: params.controls }))
     runtime.orbitControls.enabled = params.controls === 'orbit'
   }, [runtime.orbitControls, params.controls])
 
   // Ambiance
   useEffect(() => {
-    // console.debug('change ambiance')
     setRuntime(runtime => {
       const newRuntime = {
         ...runtime,
@@ -62,12 +59,6 @@ export default function App({ gl, params, updateParams }) {
   }, [params.ambiance])
 
   useEffect(() => {
-    // console.debug(
-    //   'change materials',
-    //   params.vertexThickness,
-    //   params.edgeThickness,
-    //   params.projection
-    // )
     setRuntime(runtime => {
       const newRuntime = {
         ...runtime,
@@ -86,7 +77,6 @@ export default function App({ gl, params, updateParams }) {
   ])
 
   useEffect(() => {
-    // console.debug('change msaa', params.msaa, params.msaaSamples)
     setRuntime(runtime => {
       const newRuntime = {
         ...runtime,
@@ -99,7 +89,6 @@ export default function App({ gl, params, updateParams }) {
   }, [params.msaa, params.msaaSamples])
 
   useEffect(() => {
-    // console.debug('change visibility', params.showVertices, params.showEdges)
     setRuntime(runtime => {
       const newRuntime = {
         ...runtime,
@@ -114,16 +103,6 @@ export default function App({ gl, params, updateParams }) {
 
   // Reset plot
   useEffect(() => {
-    // console.debug(
-    //   'change dimension/...',
-    //   params.dimensions,
-    //   params.curve,
-    //   params.segments,
-    //   params.coxeter,
-    //   params.coxeterDiv,
-    //   params.mirrors,
-    //   params.stellation
-    // )
     setRuntime(runtime => {
       return {
         ...runtime,
@@ -151,12 +130,6 @@ export default function App({ gl, params, updateParams }) {
   ])
 
   useEffect(() => {
-    // console.debug(
-    //   'reinit vertex',
-    //   runtime.dimensions,
-    //   runtime.curve,
-    //   runtime.segments
-    // )
     reinitVertex(runtime)
     reinitEdge(runtime)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -170,10 +143,8 @@ export default function App({ gl, params, updateParams }) {
   }, [params.order])
 
   useEffect(() => {
-    // console.debug('change order', runtime.order, runtime.currentOrder)
     setRuntime(runtime => {
       if (runtime.order < runtime.currentOrder) {
-        console.log(runtime.currentOrder, '->', runtime.order)
         return {
           ...runtime,
           currentOrder: runtime.order,
@@ -194,22 +165,9 @@ export default function App({ gl, params, updateParams }) {
       }))
       return
     }
-    // console.debug(
-    //   'Render',
-    //   runtime.currentOrder,
-    //   runtime.order,
-    //   runtime.dimensions,
-    //   runtime.curve,
-    //   runtime.segments,
-    //   runtime.coxeter,
-    //   runtime.coxeterDiv,
-    //   runtime.mirrors,
-    //   runtime.stellation
-    // )
     kill()
     setProcessing(false)
     ;(async () => {
-      console.warn(runtime.currentOrder)
       setError(null)
       setProcessing(true)
       let rv
@@ -245,15 +203,6 @@ export default function App({ gl, params, updateParams }) {
           vertices: runtime.vertices.concat(rv.vertices),
           edges: runtime.edges.concat(rv.edges),
         }
-        // console.debug(
-        //   'Rendered',
-        //   rv.curvature,
-        //   rv.currentOrder - 1,
-        //   runtime.edges.length,
-        //   '->',
-        //   newRuntime.edges.length,
-        //   rv.edges.length
-        // )
         newRuntime.ranges[rv.currentOrder - 1] = {
           vertices: [runtime.vertices.length, newRuntime.vertices.length],
           edges: [runtime.edges.length, newRuntime.edges.length],
@@ -274,7 +223,6 @@ export default function App({ gl, params, updateParams }) {
   ])
 
   useEffect(() => {
-    // console.debug('plot', runtime)
     if (runtime.currentOrder > 0) {
       plot(runtime, runtime.currentOrder - 1)
     }
@@ -289,14 +237,12 @@ export default function App({ gl, params, updateParams }) {
   ])
 
   useEffect(() => {
-    // console.debug('plot full', runtime)
     plot(runtime)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runtime.ambiance])
 
   useEffect(() => {
     const onSize = () => {
-      // console.debug('size', runtime)
       size(runtime)
     }
     window.addEventListener('resize', onSize)

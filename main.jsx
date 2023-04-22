@@ -68,7 +68,6 @@ const AppWithHistory = () => {
 
   const updateParams = useCallback(
     newParams => {
-      // console.debug('updateParams', newParams)
       const newParams2 = { ...params, ...newParams }
       setParams(newParams2)
       syncParams(newParams2)
