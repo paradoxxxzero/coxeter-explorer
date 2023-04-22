@@ -1,4 +1,3 @@
-import { C, setC } from './C'
 import { abs, cos, PI, round } from './math'
 import { getRules, shorten } from './math/group'
 import {
@@ -7,7 +6,6 @@ import {
   getFundamentalVertex,
   reflect,
 } from './math/hypermath'
-import { R, setR } from './R'
 import { setW, W } from './W'
 
 const same = (v1, v2) => {
@@ -23,7 +21,7 @@ const reflectWord = word => {
   let v = W.rootVertex
 
   for (let i = word.length - 1; i >= 0; i--) {
-    v = reflect(v, W.mirrors[word.charCodeAt(i) - 97])
+    v = reflect(v, W.mirrors[word.charCodeAt(i) - 97], W.curvature)
   }
   return v
 }
@@ -51,9 +49,15 @@ const hash = v => {
   return s
 }
 
-export const initTiling = C => {
-  const { dimensions, stellation, coxeter, coxeterDiv, mirrors } = C
-
+export const initTiling = (
+  dimensions,
+  stellation,
+  coxeter,
+  coxeterDiv,
+  mirrors
+) => {
+  // Rules gets computed on non stellated coxeter group
+  const rules = getRules(dimensions, coxeter)
   if (stellation) {
     for (let i = 0; i < dimensions; i++) {
       for (let j = 0; j < dimensions; j++) {
@@ -72,28 +76,24 @@ export const initTiling = C => {
     wordsToConsider: [''],
     rootVertices: null,
     rootVertex: null,
+    rules,
   }
   newW.gram = newW.coxeter.map(row => row.map(column => -cos(PI / column)))
-  // We need curvature before doing computations
-  setR({
-    curvature: getCurvature(newW.gram),
-  })
-
-  newW.mirrors = getFundamentalSimplexMirrors(newW.gram)
+  newW.curvature = getCurvature(newW.gram)
+  newW.mirrors = getFundamentalSimplexMirrors(newW.gram, newW.curvature)
 
   newW.rootVertices = newW.mirrors.map((_, i) =>
     getFundamentalVertex(
       newW.mirrors,
       new Array(dimensions)
         .fill(0)
-        .map((_, j) => (i === j ? newW.curvature || 1 : 0))
+        .map((_, j) => (i === j ? newW.curvature || 1 : 0)),
+      newW.curvature
     )
   )
-  newW.rootVertex = getFundamentalVertex(newW.mirrors, mirrors)
+  newW.rootVertex = getFundamentalVertex(newW.mirrors, mirrors, newW.curvature)
   newW.words.set('', newW.rootVertex)
 
-  // Rules gets computed on non stellated coxeter group
-  newW.rules = getRules(dimensions, C.coxeter)
   setW(newW)
 }
 
@@ -120,6 +120,7 @@ const tileFundamentalChamber = () => {
   let fundamentalChamberWords = ['']
   let futurewordsToConsider
   let max = 25
+  const dimensions = W.rootVertex.length
   plot(W.rootVertex, '')
   // Start by filing the fundamental chamber to equilibrate the tiling
   do {
@@ -128,7 +129,7 @@ const tileFundamentalChamber = () => {
       const word = W.wordsToConsider[j]
       const v = W.words.get(word)
 
-      for (let k = 0; k < C.dimensions - 1; k++) {
+      for (let k = 0; k < dimensions - 1; k++) {
         const rv = flip(word, k, v)
         rv && futurewordsToConsider.push(rv)
       }
@@ -151,7 +152,7 @@ export const tile = () => {
     const word = W.wordsToConsider[j]
     const v = W.words.get(word)
 
-    for (let k = 0; k < C.dimensions; k++) {
+    for (let k = 0; k < v.length; k++) {
       const rv = flip(word, k, v)
       rv && futurewordsToConsider.push(rv)
     }
@@ -188,7 +189,6 @@ function link(word, newWord, v, rv) {
         start,
         end,
         word,
-        newWord,
         // segments: xlerp(start, end),
       })
       return true
@@ -196,17 +196,25 @@ function link(word, newWord, v, rv) {
   }
 }
 
-onmessage = ({ data: { C, order, uuid } }) => {
+onmessage = ({
+  data: {
+    dimensions,
+    coxeter,
+    coxeterDiv,
+    stellation,
+    mirrors,
+    currentOrder,
+    uuid,
+  },
+}) => {
   try {
-    setC(C)
-
-    if (order === 0) {
-      initTiling(C)
+    if (currentOrder === 0) {
+      initTiling(dimensions, stellation, coxeter, coxeterDiv, mirrors)
       try {
         tileFundamentalChamber()
       } catch (e) {
         if (e.message === 'Could not tile fundamental chamber') {
-          initTiling(C)
+          initTiling(dimensions, stellation, coxeter, coxeterDiv, mirrors)
         }
       }
     } else {
@@ -216,9 +224,10 @@ onmessage = ({ data: { C, order, uuid } }) => {
     }
     postMessage(
       {
-        R,
+        curvature: W.curvature,
         vertices: W.vertices,
         edges: W.edges,
+        currentOrder: currentOrder + 1,
         uuid: uuid,
       }
       // [W.vertices, W.edges]

@@ -1,270 +1,285 @@
-import {
-  Fragment,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react'
-import { defaultC, getC, setC as globalSetC } from './honeyball/C'
-import { R, setR } from './honeyball/R'
+import { Fragment, useCallback, useEffect, useState } from 'react'
+import { size } from './honeyball/event'
+import { useInteractions } from './honeyball/interact'
 import { min } from './honeyball/math'
 import {
   changeAmbiance,
-  initialize3d,
+  initEdge,
+  initVertex,
   plot,
-  render,
+  reinitEdge,
+  reinitVertex,
   resetComposerTarget,
+  show,
   updateMaterials,
 } from './honeyball/render'
-import Tiling from './honeyball/tiling.worker?worker'
-import { range, worker } from './honeyball/utlis'
+import { kill, range, process } from './honeyball/utlis'
 import { ambiances, projections } from './statics'
-import { dragMove, gestureMove, keydown, wheel } from './honeyball/interact'
-import interact from 'interactjs'
 
-let tiling = new Tiling()
-const initialC = { ...(getC() || defaultC) }
+export default function App({ gl, params, updateParams }) {
+  const [runtime, setRuntime] = useState(() => {
+    const runtime = {
+      curvature: 0,
+      edges: [],
+      vertices: [],
+      ranges: [],
+      currentOrder: 0,
+      ...params,
+      ...gl,
+    }
+    initVertex(runtime)
+    initEdge(runtime)
 
-export default function App() {
-  const [C, _setC] = useState(initialC)
-  const [space, setSpace] = useState({ E: '?', N: '?' })
+    return runtime
+  })
+  console.info('RENDER', runtime)
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState()
   const [showUI, setShowUI] = useState(true)
-  const pointers = useRef([])
-  const [gl, setGl] = useState()
+
+  // Controls
+  const handleControls = useCallback(() => {
+    updateParams({ controls: params.controls === 'orbit' ? 'free' : 'orbit' })
+  }, [params.controls, updateParams])
 
   useEffect(() => {
-    const onWheel = e => {
-      if (C.controls === 'orbit') {
-        return
+    console.debug('change controls', params.controls)
+    setRuntime(runtime => ({ ...runtime, controls: params.controls }))
+    runtime.orbitControls.enabled = params.controls === 'orbit'
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runtime.orbitControls, params.controls])
+
+  // Ambiance
+  useEffect(() => {
+    console.debug('change ambiance')
+    setRuntime(runtime => {
+      const newRuntime = {
+        ...runtime,
+        ambiance: params.ambiance,
       }
-      wheel(e)
-    }
-
-    document.addEventListener('wheel', onWheel, { passive: false })
-    return () => document.removeEventListener('wheel', onWheel)
-  }, [C.controls])
+      changeAmbiance(newRuntime)
+      return newRuntime
+    })
+    // reinitVertices(newRuntime)
+    // reinitEdges(newRuntime)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.ambiance])
 
   useEffect(() => {
-    document.addEventListener('keydown', keydown)
-    return () => document.removeEventListener('keydown', keydown)
-  }, [])
+    console.debug('change materials', params.controls)
+    setRuntime(runtime => {
+      const newRuntime = {
+        ...runtime,
+        vertexThickness: params.vertexThickness,
+        edgeThickness: params.edgeThickness,
+        projection: params.projection,
+      }
+      updateMaterials(newRuntime)
+      return newRuntime
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    params.vertexThickness,
+    params.edgeThickness,
+    params.projection,
+    runtime.curvature,
+  ])
 
-  useLayoutEffect(() => {
-    if (!gl) {
+  useEffect(() => {
+    console.debug('change msaa', params.msaa, params.msaaSamples)
+    setRuntime(runtime => {
+      const newRuntime = {
+        ...runtime,
+        msaa: params.msaa,
+        msaaSamples: params.msaaSamples,
+      }
+      resetComposerTarget(newRuntime)
+      return newRuntime
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.msaa, params.msaaSamples])
+
+  useEffect(() => {
+    console.debug('change visibility', runtime)
+    setRuntime(runtime => {
+      const newRuntime = {
+        ...runtime,
+        showVertices: params.showVertices,
+        showEdges: params.showEdges,
+      }
+      show(newRuntime, 'vertex')
+      show(newRuntime, 'edge')
+      return newRuntime
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.showVertices, params.showEdges])
+
+  // Reset plot
+  useEffect(() => {
+    console.debug('change dimension', runtime)
+    setRuntime(runtime => {
+      return {
+        ...runtime,
+        dimensions: params.dimensions,
+        curve: params.curve,
+        segments: params.segments,
+        coxeter: params.coxeter,
+        coxeterDiv: params.coxeterDiv,
+        stellation: params.stellation,
+        mirrors: params.mirrors,
+        currentOrder: 0,
+        edges: [],
+        vertices: [],
+        ranges: [],
+      }
+    })
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    params.dimensions,
+    params.curve,
+    params.segments,
+    params.coxeter,
+    params.coxeterDiv,
+    params.mirrors,
+    params.stellation,
+  ])
+
+  useEffect(() => {
+    console.debug('reinit vertex', runtime)
+    reinitVertex(runtime)
+    reinitEdge(runtime)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runtime.dimensions, runtime.curve, runtime.segments])
+
+  useEffect(() => {
+    console.debug('change order', runtime)
+    if (params.order === runtime.currentOrder) {
+      return
+    }
+    if (params.order < runtime.currentOrder) {
+      // TODO slice vertices and edges
+      setRuntime(runtime => ({
+        ...runtime,
+        order: params.order,
+        ranges: runtime.ranges.slice(params.order - 1),
+        curentOrder: params.order,
+      }))
       return
     }
 
-    const pointerdown = e => {
-      pointers.current.push(e.pointerId)
-    }
-    const pointerup = e => {
-      pointers.current = pointers.current.filter(id => id !== e.pointerId)
-    }
-
-    gl.renderer.domElement.addEventListener('pointerdown', pointerdown)
-    gl.renderer.domElement.addEventListener('pointerup', pointerup)
-    const handle = interact(gl.renderer.domElement)
-      .draggable({
-        listeners: {
-          move: e => {
-            if (C.controls !== 'free') {
-              return
-            }
-            dragMove(e, pointers.current)
-          },
-        },
-      })
-      .gesturable({
-        onmove: e => {
-          if (C.controls !== 'free') {
-            return
-          }
-          gestureMove(e, pointers.current)
-        },
-      })
-
-    return () => {
-      gl.renderer.domElement.removeEventListener('pointerdown', pointerdown)
-      gl.renderer.domElement.removeEventListener('pointerup', pointerup)
-      handle.unset()
-    }
-  }, [C.controls, gl])
-
-  const setC = useCallback(
-    async (newC, sync = true) => {
-      if (processing) {
+    console.debug('Render', runtime)
+    kill()
+    setProcessing(false)
+    ;(async () => {
+      console.warn(runtime.currentOrder)
+      setError(null)
+      setProcessing(true)
+      let rv
+      try {
+        rv = await process({
+          dimensions: runtime.dimensions,
+          coxeter: runtime.coxeter,
+          coxeterDiv: runtime.coxeterDiv,
+          stellation: runtime.stellation,
+          mirrors: runtime.mirrors,
+          currentOrder: runtime.currentOrder,
+        })
+      } catch (e) {
+        setError(e)
+        // Change current order to allow user to retry
+        setRuntime(runtime => ({
+          ...runtime,
+          currentOrder: params.order,
+        }))
+        console.warn(e)
+        return
+      } finally {
         setProcessing(false)
-        tiling.terminate()
-        tiling = new Tiling()
-      }
-      const lastOrder = C.order
-      const changed = Object.keys(newC).filter(key => newC[key] !== C[key])
-      let mustRedraw = C === initialC
-
-      _setC(newC)
-
-      if (
-        mustRedraw ||
-        ['coxeter', 'coxeterDiv', 'stellation', 'dimensions'].some(key =>
-          changed.includes(key)
-        )
-      ) {
-        mustRedraw = true
       }
 
-      globalSetC(newC, sync)
-      window.C = newC
-      updateMaterials()
-
-      if (changed.includes('ambiance') || mustRedraw) {
-        changeAmbiance()
-      }
-      if (
-        changed.includes('msaa') ||
-        changed.includes('msaaSamples') ||
-        mustRedraw
-      ) {
-        resetComposerTarget()
-      }
-
-      if (
-        mustRedraw ||
-        ['mirrors', 'order'].some(key => changed.includes(key))
-      ) {
-        if (changed.includes('order') && R.ranges[newC.order - 1]) {
-          plot(R.ranges[newC.order - 1])
-          render()
-        } else {
-          const startOrder = changed.includes('order') ? lastOrder : 0
-
-          for (let i = startOrder; i < newC.order; i++) {
-            setError(null)
-            setProcessing(true)
-            let newR, vertices, edges
-            try {
-              ;({
-                R: newR,
-                vertices,
-                edges,
-              } = await worker(tiling, {
-                C: newC,
-                order: i,
-              }))
-            } catch (e) {
-              setError(e)
-              return
-            } finally {
-              setProcessing(false)
-            }
-
-            if (i === 0) {
-              setR({ ...newR, ranges: {} })
-              window.R = R
-              setSpace({
-                E: R.curvature === 0 ? '𝔼' : R.curvature > 0 ? '𝕊' : 'ℍ',
-                N: C.dimensions - 1,
-              })
-              updateMaterials()
-            }
-
-            if (vertices.length || edges.length) {
-              const fromVertices = R.vertices.length
-              R.vertices = R.vertices.concat(vertices)
-              const toVertices = R.vertices.length
-              const fromEdges = R.edges.length
-              R.edges = R.edges.concat(edges)
-              const toEdges = R.edges.length
-
-              R.ranges[i] = {
-                vertices: [fromVertices, toVertices],
-                edges: [fromEdges, toEdges],
-              }
-              plot(R.ranges[i], changed.includes('dimensions') && i === 0)
-              render()
-            } else {
-              R.ranges[i] = {
-                vertices: [R.vertices.length, R.vertices.length],
-                edges: [R.edges.length, R.edges.length],
-              }
-            }
-          }
+      setRuntime(runtime => {
+        const newRuntime = {
+          ...runtime,
+          order: params.order,
+          currentOrder: rv.currentOrder,
+          curvature: rv.curvature,
+          ranges: runtime.ranges.slice(),
+          vertices: runtime.vertices.concat(rv.vertices),
+          edges: runtime.edges.concat(rv.edges),
         }
-      } else if (
-        [
-          'edges',
-          'vertices',
-          'vertexThickness',
-          'edgeThickness',
-          'projection',
-          'curve',
-          'segments',
-        ].some(key => changed.includes(key))
-      ) {
-        plot(true, changed.includes('segments') || changed.includes('curve'))
-      }
-
-      render()
-    },
-    [C, processing]
-  )
-
-  useEffect(() => {
-    globalSetC(initialC)
-    const { renderer, camera, composer, controls, first } = initialize3d()
-    controls.enabled = initialC.controls === 'orbit'
-    if (first) {
-      setC(initialC)
-    }
-    setGl({ renderer, camera, composer, controls })
-
+        console.debug(
+          'Rendered',
+          rv.curvature,
+          rv.currentOrder - 1,
+          runtime.edges.length,
+          '->',
+          newRuntime.edges.length,
+          rv.edges.length
+        )
+        newRuntime.ranges[rv.currentOrder - 1] = {
+          vertices: [runtime.vertices.length, newRuntime.vertices.length],
+          edges: [runtime.edges.length, newRuntime.edges.length],
+        }
+        return newRuntime
+      })
+    })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const size = useCallback(() => {
-    if (!gl) return
-    size()
-  }, [gl])
-
-  useEffect(() => {
-    window.addEventListener('resize', size)
-    window.addEventListener('orientationchange', size)
-    return () => {
-      window.removeEventListener('resize', size)
-      window.removeEventListener('orientationchange', size)
-    }
-  }, [size])
-
-  const popstate = useCallback(() => {
-    const newC = getC()
-    console.log(newC)
-    if (newC) {
-      setC(newC, false)
-    }
-  }, [setC])
+  }, [
+    params.order,
+    runtime.currentOrder,
+    runtime.dimensions,
+    runtime.curve,
+    runtime.segments,
+    runtime.coxeter,
+    runtime.coxeterDiv,
+    runtime.mirrors,
+    runtime.stellation,
+  ])
 
   useEffect(() => {
-    window.addEventListener('popstate', popstate)
-    return () => {
-      window.removeEventListener('popstate', popstate)
+    console.debug('plot', runtime)
+    plot(runtime, runtime.ranges[runtime.currentOrder])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    runtime.vertices,
+    runtime.edges,
+    runtime.ranges,
+    runtime.showVertices,
+    runtime.showEdges,
+  ])
+
+  useEffect(() => {
+    const onSize = () => {
+      console.debug('size', runtime)
+      size(runtime)
     }
-  }, [popstate])
+    window.addEventListener('resize', onSize)
+    window.addEventListener('orientationchange', onSize)
+    return () => {
+      window.removeEventListener('resize', onSize)
+      window.removeEventListener('orientationchange', onSize)
+    }
+  }, [runtime])
+
+  // Interact
+  useInteractions(runtime)
 
   const handleExtend = useCallback(() => {
-    const newC = { ...C }
-    if (C.extended) {
-      for (let i = 0; i < newC.dimensions; i++) {
+    const newParams = {
+      extended: !params.extended,
+    }
+
+    if (params.extended) {
+      for (let i = 0; i < params.dimensions; i++) {
         for (let j = 0; j < i - 1; j++) {
-          newC.coxeter[i][j] = 2
-          newC.coxeter[j][i] = 2
+          params.coxeter[i][j] = 2
+          params.coxeter[j][i] = 2
         }
       }
     }
-    newC.extended = !C.extended
-    setC(newC)
-  }, [C, setC])
+    updateParams(newParams)
+  }, [params.extended, params.dimensions, params.coxeter, updateParams])
 
   const handleChange = useCallback(
     e => {
@@ -276,25 +291,25 @@ export default function App() {
         value = +value
       }
 
-      const newC = { ...C }
+      const newParams = {}
       if (name === 'dimensions') {
-        newC.coxeter = new Array(value)
+        newParams.coxeter = new Array(value)
           .fill()
           .map(() => new Array(value).fill(2))
-        newC.coxeterDiv = new Array(value)
+        newParams.coxeterDiv = new Array(value)
           .fill()
           .map(() => new Array(value).fill(1))
-        newC.mirrors = new Array(value).fill(0)
+        newParams.mirrors = new Array(value).fill(0)
 
-        for (let i = 0; i < min(C.dimensions, value); i++) {
+        for (let i = 0; i < min(params.dimensions, value); i++) {
           for (let j = 0; j < i; j++) {
-            newC.coxeter[i][j] = C.coxeter[i][j]
-            newC.coxeter[j][i] = C.coxeter[j][i]
+            newParams.coxeter[i][j] = params.coxeter[i][j]
+            newParams.coxeter[j][i] = params.coxeter[j][i]
           }
-          newC.mirrors[i] = C.mirrors[i]
+          newParams.mirrors[i] = params.mirrors[i]
         }
         for (let i = 0; i < value; i++) {
-          newC.coxeter[i][i] = -1
+          newParams.coxeter[i][i] = -1
         }
       }
 
@@ -303,7 +318,7 @@ export default function App() {
           .split('-')
           .slice(1)
           .map(x => +x)
-        const coxeter = C.coxeter.map(x => x.slice())
+        const coxeter = params.coxeter.map(x => x.slice())
         coxeter[i][j] = value
         coxeter[j][i] = value
         name = 'coxeter'
@@ -316,39 +331,31 @@ export default function App() {
           .slice(1)
           .map(x => +x)
         name = 'mirrors'
-        value = C.mirrors.map((x, j) => ((j === i ? value : x) ? 1 : 0))
+        value = params.mirrors.map((x, j) => ((j === i ? value : x) ? 1 : 0))
         if (value.reduce((a, b) => a + b, 0) === 0) {
           value[0] = 1
         }
       }
 
-      newC[name] = value
+      newParams[name] = value
 
-      setC(newC)
+      updateParams(newParams)
     },
-    [C, setC]
+    [params, updateParams]
   )
-
-  const handleControls = useCallback(() => {
-    const newC = { ...C }
-    newC.controls = C.controls === 'orbit' ? 'free' : 'orbit'
-    setC(newC)
-    const { controls } = gl
-    controls.enabled = newC.controls === 'orbit'
-  }, [C, gl, setC])
 
   return (
     <div className={error ? 'error' : ''} title={error}>
       <button id="controls" onClick={handleControls}>
-        {C.controls === 'orbit' ? '⇹' : '↭'}
+        {runtime.controls === 'orbit' ? '⇹' : '↭'}
       </button>
       <button
         id="space"
         className={processing ? 'processing' : ''}
         onClick={() => setShowUI(!showUI)}
       >
-        {space.E}
-        <sup>{space.N}</sup>
+        {runtime.curvature === 0 ? '𝔼' : runtime.curvature > 0 ? '𝕊' : 'ℍ'}
+        <sup>{runtime.dimensions}</sup>
       </button>
       {showUI && (
         <aside className="controls">
@@ -359,7 +366,7 @@ export default function App() {
               name="order"
               min="1"
               step="1"
-              value={C.order}
+              value={params.order}
               onChange={handleChange}
             />
           </label>
@@ -368,16 +375,16 @@ export default function App() {
             <input
               type="checkbox"
               name="curve"
-              checked={C.curve}
+              checked={params.curve}
               onChange={handleChange}
             />
-            {C.curve ? (
+            {params.curve ? (
               <input
                 type="number"
                 name="segments"
                 min="1"
                 step="1"
-                value={C.segments}
+                value={params.segments}
                 onChange={handleChange}
               />
             ) : null}
@@ -390,7 +397,7 @@ export default function App() {
               min="3"
               max="5"
               step="1"
-              value={C.dimensions}
+              value={params.dimensions}
               onChange={handleChange}
             />
           </label>
@@ -398,7 +405,7 @@ export default function App() {
             Projection
             <select
               name="projection"
-              value={C.projection}
+              value={params.projection}
               onChange={handleChange}
             >
               {projections.map(p => (
@@ -412,17 +419,17 @@ export default function App() {
             Vertices
             <input
               type="checkbox"
-              name="vertices"
-              checked={C.vertices}
+              name="showVertices"
+              checked={params.showVertices}
               onChange={handleChange}
             />
-            {C.vertices ? (
+            {params.showVertices ? (
               <input
                 type="number"
                 name="vertexThickness"
                 min="0"
                 step="1"
-                value={C.vertexThickness}
+                value={params.vertexThickness}
                 onChange={handleChange}
               />
             ) : null}
@@ -431,17 +438,17 @@ export default function App() {
             Edges
             <input
               type="checkbox"
-              name="edges"
-              checked={C.edges}
+              name="showEdges"
+              checked={params.showEdges}
               onChange={handleChange}
             />
-            {C.edges ? (
+            {params.showEdges ? (
               <input
                 type="number"
                 name="edgeThickness"
                 min="0"
                 step="1"
-                value={C.edgeThickness}
+                value={params.edgeThickness}
                 onChange={handleChange}
               />
             ) : null}
@@ -450,14 +457,18 @@ export default function App() {
             <input
               type="checkbox"
               name="stellation"
-              checked={C.stellation}
+              checked={params.stellation}
               onChange={handleChange}
             />
             Stellation
           </label>
           <label>
             Ambiance
-            <select name="ambiance" value={C.ambiance} onChange={handleChange}>
+            <select
+              name="ambiance"
+              value={params.ambiance}
+              onChange={handleChange}
+            >
               {Object.keys(ambiances).map(a => (
                 <option key={a} value={a}>
                   {a.replace(/_/g, ' ').replace(/./, c => c.toUpperCase())}
@@ -470,16 +481,16 @@ export default function App() {
             <input
               type="checkbox"
               name="msaa"
-              checked={C.msaa}
+              checked={params.msaa}
               onChange={handleChange}
             />
-            {C.msaa ? (
+            {params.msaa ? (
               <input
                 type="number"
                 name="msaaSamples"
                 min="0"
                 step="1"
-                value={C.msaaSamples}
+                value={params.msaaSamples}
                 onChange={handleChange}
               />
             ) : null}
@@ -488,23 +499,23 @@ export default function App() {
       )}
       {showUI && (
         <aside className="coxeters">
-          {range(C.dimensions).map(i => (
+          {range(params.dimensions).map(i => (
             <Fragment key={i}>
               {i > 0 && (
                 <div className="number">
                   {range(i).map(
                     j =>
-                      (!C.extended || i === j + 1) && (
+                      (!params.extended || i === j + 1) && (
                         <label key={j}>
                           <input
                             type="number"
                             name={`coxeter-${i}-${j}`}
                             min="2"
                             step="1"
-                            value={C.coxeter[i][j]}
+                            value={params.coxeter[i][j]}
                             onChange={handleChange}
                           />
-                          {C.stellation && (
+                          {params.stellation && (
                             <div className="stellation">
                               <span className="divisor"> / </span>
                               <input
@@ -512,7 +523,7 @@ export default function App() {
                                 name={`coxeter-${i}-${j}-div`}
                                 min="1"
                                 step="1"
-                                value={C.coxeterDiv[i][j]}
+                                value={params.coxeterDiv[i][j]}
                                 onChange={handleChange}
                               />
                             </div>
@@ -528,15 +539,17 @@ export default function App() {
                 <input
                   type="checkbox"
                   name={`mirror-${i}`}
-                  checked={!!C.mirrors[i]}
+                  checked={!!params.mirrors[i]}
                   onChange={handleChange}
                 />
-                {i < C.dimensions - 1 && <span className="coxeter">——</span>}
+                {i < params.dimensions - 1 && (
+                  <span className="coxeter">——</span>
+                )}
               </label>
             </Fragment>
           ))}
           <button id="extend" onClick={handleExtend}>
-            {C.extended ? '⮟' : '⮝'}
+            {params.extended ? '⮟' : '⮝'}
           </button>
         </aside>
       )}

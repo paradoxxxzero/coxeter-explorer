@@ -7,7 +7,6 @@ import {
 } from 'three'
 import hyperMathVertexShader from './hyperMathVertex.glsl'
 import projectionVertexShader from './projectionVertex.glsl'
-import { C } from '../C'
 import { projections } from '../../statics'
 
 const header = hyperMathVertexShader.match(
@@ -20,7 +19,7 @@ const include = projectionVertexShader.match(
   /\/\* BEGIN INCLUDE \*\/([\s\S]*?)\/\* END INCLUDE \*\//m
 )[1]
 
-export const hyperMathMaterial = material => {
+export const hyperMathMaterial = (material, dimensions, projection) => {
   material = material.clone()
   material.vertexColors = ![
     MeshDepthMaterial,
@@ -28,18 +27,21 @@ export const hyperMathMaterial = material => {
     MeshNormalMaterial,
     MeshDistanceMaterial,
   ].find(cls => material instanceof cls)
-  material._dimensions = C.dimensions
+  material._dimensions = dimensions
+  material._projection = projection
+  console.debug('CREAING MAT', material._dimensions, material._projection)
   material.uniforms = {
     ...(material.uniforms || {}),
     curvature: { value: 0 },
     edgeThickness: { value: 0 },
     vertexThickness: { value: 0 },
-    segments: { value: 3 },
+    segments: { value: 1 },
   }
   material.onBeforeCompile = shader => {
+    console.debug('UPDATING MAT', material._dimensions, material._projection)
     const defines = [
-      `#define DIMENSIONS ${C.dimensions}`,
-      `#define PROJECTION ${projections.indexOf(C.projection)}`,
+      `#define DIMENSIONS ${material._dimensions}`,
+      `#define PROJECTION ${projections.indexOf(material._projection)}`,
     ]
 
     Object.assign(shader.uniforms, material.uniforms)
@@ -71,7 +73,7 @@ export const hyperMathMaterial = material => {
     ].join('\n')
   }
   material.customProgramCacheKey = () => {
-    return `hypermath_${material.constructor.name}_${C.dimensions}_${C.projection}`
+    return `hypermath_${material.constructor.name}_${material._dimensions}_${material._projection}`
   }
   return material
 }

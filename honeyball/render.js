@@ -1,9 +1,7 @@
 import {
   BackSide,
-  Clock,
   Color,
   CylinderGeometry,
-  Group,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
   Mesh,
@@ -34,44 +32,20 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { LuminosityShader } from 'three/examples/jsm/shaders/LuminosityShader.js'
 import { SobelOperatorShader } from 'three/examples/jsm/shaders/SobelOperatorShader.js'
 import { ambiances } from '../statics'
-import { C } from './C'
-import { R } from './R'
 import { GodRayPass } from './shader/GodRayPass'
 import { hyperMathMaterial } from './shader/hyperMathMaterial'
 
-export let stats,
-  renderer,
-  camera,
-  scene,
-  controls,
-  clock,
-  composer,
-  renderPass,
-  ground
-
-const group = new Group()
-
-export const initialize3d = () => {
-  // Hack for strict mode
-  if (renderer) {
-    return {
-      composer,
-      renderer,
-      camera,
-      controls,
-    }
-  }
-  clock = new Clock()
+export const initializeGl = () => {
   // stats = new Stats()
   // document.body.appendChild(stats.dom)
-  renderer = new WebGLRenderer()
+  const renderer = new WebGLRenderer()
   renderer.autoClear = false
   renderer.setPixelRatio(window.devicePixelRatio)
   renderer.setSize(window.innerWidth, window.innerHeight)
 
   document.body.appendChild(renderer.domElement)
 
-  camera = new PerspectiveCamera(
+  const camera = new PerspectiveCamera(
     90,
     window.innerWidth / window.innerHeight,
     0.01,
@@ -83,60 +57,61 @@ export const initialize3d = () => {
   camera.zoom = Math.min(1, window.innerWidth / window.innerHeight)
   camera.updateProjectionMatrix()
 
-  scene = new Scene()
-  scene.add(group)
-
+  const scene = new Scene()
   // scene.fog = new Fog(colors.background, 1, size)
 
   camera.updateProjectionMatrix()
   scene.add(camera)
 
-  controls = new OrbitControls(camera, renderer.domElement)
-  controls.target.set(0, 0, 0)
-  controls.minDistance = 0
-  controls.maxDistance = 100
-  controls.addEventListener('change', render)
-  controls.update()
-  controls.enabled = false
+  const orbitControls = new OrbitControls(camera, renderer.domElement)
+  orbitControls.target.set(0, 0, 0)
+  orbitControls.minDistance = 0
+  orbitControls.maxDistance = 100
+  orbitControls.addEventListener('change', () => composer.render())
+  orbitControls.update()
+  orbitControls.enabled = false
 
   renderer.domElement.addEventListener('dblclick', () => {
-    controls.position0.set(0, 0, controls.position0.z === -1 ? -0.25 : -1, 0, 0)
-    controls.reset()
+    orbitControls.position0.set(
+      0,
+      0,
+      orbitControls.position0.z === -1 ? -0.25 : -1,
+      0,
+      0
+    )
+    orbitControls.reset()
   })
 
-  composer = new EffectComposer(renderer)
+  const composer = new EffectComposer(renderer)
   composer.setPixelRatio(window.devicePixelRatio)
-  renderPass = new RenderPass(scene, camera)
+  const renderPass = new RenderPass(scene, camera)
   composer.addPass(renderPass)
-
-  // controls = new FirstPersonControls(camera, renderer.domElement)
-  // controls.lookSpeed = 0.2
-  // animate()
-  initEdge()
-  initVertex()
-
-  // changeAmbiance()
 
   return {
     composer,
-    renderer,
     camera,
-    controls,
-    first: true,
+    scene,
+    orbitControls,
   }
 }
 
-let instancedVertex = null
-let instancedEdge = null
 let currentVerticesMax = 5000
 let currentEdgesMax = 50000
 
-const initVertex = () => {
-  const ambiance = ambiances[C.ambiance]
+export const initVertex = rt => {
+  // Handle hot reload
+  let existingVertex = rt.scene.getObjectByName('instanced-vertex')
+  if (existingVertex) {
+    console.warn('Vertex already exists, skipping init')
+    return existingVertex
+  }
+  const ambiance = ambiances[rt.ambiance]
+  const { dimensions, projection } = rt
+
   const vertex3dGeometry = new SphereGeometry(1e-7, 32, 32)
   vertex3dGeometry.attributes.position.array.fill(0)
   const vertexGeometry = new InstancedBufferGeometry().copy(vertex3dGeometry)
-  const arity = C.dimensions > 4 ? 9 : C.dimensions
+  const arity = dimensions > 4 ? 9 : dimensions
   vertexGeometry.setAttribute(
     'instancePosition',
     new InstancedBufferAttribute(
@@ -156,34 +131,49 @@ const initVertex = () => {
     new InstancedBufferAttribute(new Float32Array(currentVerticesMax * 3), 3)
   )
 
-  instancedVertex = new Mesh(
+  const instancedVertex = new Mesh(
     vertexGeometry,
-    hyperMathMaterial(ambiance.material)
+    hyperMathMaterial(ambiance.material, dimensions, projection)
   )
+  console.info('Creating vertex', instancedVertex)
   vertexGeometry.attributes.instanceTarget.array.fill(NaN)
   instancedVertex.geometry.instanceCount = 0
   instancedVertex.frustumCulled = false
   instancedVertex.customDepthMaterial = hyperMathMaterial(
-    new MeshDepthMaterial({ depthPacking: RGBADepthPacking })
+    new MeshDepthMaterial({ depthPacking: RGBADepthPacking }),
+    dimensions,
+    projection
   )
   instancedVertex.customDistanceMaterial = hyperMathMaterial(
-    new MeshDistanceMaterial()
+    new MeshDistanceMaterial(),
+    dimensions,
+    projection
   )
-  group.add(instancedVertex)
+  instancedVertex.castShadow = ambiance.shadow
+  instancedVertex.name = 'instanced-vertex'
+  instancedVertex.visible = rt.showVertices
+  rt.scene.add(instancedVertex)
+  return instancedVertex
 }
 
-const initEdge = () => {
-  const ambiance = ambiances[C.ambiance]
+export const initEdge = rt => {
+  let existingEdge = rt.scene.getObjectByName('instanced-edge')
+  if (existingEdge) {
+    console.warn('Edge already exists, skipping init')
+    return existingEdge
+  }
+  const ambiance = ambiances[rt.ambiance]
+  const { dimensions, curve, segments, projection } = rt
   const edge3dGeometry = new CylinderGeometry(
     0,
     0,
     1,
     8,
-    C.curve ? C.segments : 1,
+    curve ? segments : 1,
     true
   )
   const edgeGeometry = new InstancedBufferGeometry().copy(edge3dGeometry)
-  const arity = C.dimensions > 4 ? 9 : C.dimensions
+  const arity = dimensions > 4 ? 9 : dimensions
   edgeGeometry.setAttribute(
     'instancePosition',
     new InstancedBufferAttribute(
@@ -203,38 +193,69 @@ const initEdge = () => {
     new InstancedBufferAttribute(new Float32Array(currentEdgesMax * 3), 3)
   )
 
-  instancedEdge = new Mesh(edgeGeometry, hyperMathMaterial(ambiance.material))
+  const instancedEdge = new Mesh(
+    edgeGeometry,
+    hyperMathMaterial(ambiance.material, dimensions, projection)
+  )
+  console.info('Creating edge', instancedEdge)
   instancedEdge.geometry.instanceCount = 0
   instancedEdge.frustumCulled = false
   instancedEdge.customDepthMaterial = hyperMathMaterial(
-    new MeshDepthMaterial({ depthPacking: RGBADepthPacking })
+    new MeshDepthMaterial({ depthPacking: RGBADepthPacking }),
+    dimensions,
+    projection
   )
   instancedEdge.customDistanceMaterial = hyperMathMaterial(
-    new MeshDistanceMaterial()
+    new MeshDistanceMaterial(),
+    dimensions,
+    projection
   )
-  group.add(instancedEdge)
+  instancedEdge.castShadow = ambiance.shadow
+  instancedEdge.name = 'instanced-edge'
+  instancedEdge.visible = rt.showEdges
+  rt.scene.add(instancedEdge)
+  return instancedEdge
 }
 
-const plotVertices = ([start, stop], reinit = false) => {
-  const ambiance = ambiances[C.ambiance]
-  // console.info(`Plotting [${start},${stop}] vertices`)
-  if (stop > currentVerticesMax || reinit) {
-    currentVerticesMax = stop
-    group.remove(instancedVertex)
-    instancedVertex.geometry.dispose()
-    instancedVertex.material.dispose()
-    initVertex()
+export const reinitVertex = rt => {
+  const oldInstancedVertex = rt.scene.getObjectByName('instanced-vertex')
+  rt.scene.remove(oldInstancedVertex)
+  oldInstancedVertex.geometry.dispose()
+  oldInstancedVertex.material.dispose()
+  const instancedVertex = initVertex(rt)
+  updateMaterials({ ...rt, instancedVertex })
+  return instancedVertex
+}
 
-    instancedVertex.castShadow = ambiance.shadow
-    updateMaterials()
+export const reinitEdge = rt => {
+  const oldInstancedEdge = rt.scene.getObjectByName('instanced-edge')
+  rt.scene.remove(oldInstancedEdge)
+  oldInstancedEdge.geometry.dispose()
+  oldInstancedEdge.material.dispose()
+  const instancedEdge = initEdge(rt)
+  updateMaterials({ ...rt, instancedEdge })
+  return instancedEdge
+}
+
+const plotVertices = (rt, range = null) => {
+  const ambiance = ambiances[rt.ambiance]
+  const instancedVertex = rt.scene.getObjectByName('instanced-vertex')
+  const { dimensions } = rt
+  let start = range ? range[0] : 0
+  let stop = range ? range[1] : rt.vertices.length
+
+  if (stop > currentVerticesMax) {
+    // TODO: handle this in APP
+    currentVerticesMax = stop
+    reinitVertex(rt)
     start = 0
   }
-  const arity = C.dimensions > 4 ? 9 : C.dimensions
+  const arity = dimensions > 4 ? 9 : dimensions
   instancedVertex.geometry.instanceCount = stop
   for (let i = start; i < stop; i++) {
-    const vertex = R.vertices[i]
+    const vertex = rt.vertices[i]
     const ipos = instancedVertex.geometry.attributes.instancePosition.array
-    for (let j = 0; j < C.dimensions; j++) {
+    for (let j = 0; j < dimensions; j++) {
       ipos[i * arity + j] = vertex.vertex[j]
     }
     const icolor = instancedVertex.geometry.attributes.instanceColor.array
@@ -247,31 +268,29 @@ const plotVertices = ([start, stop], reinit = false) => {
   instancedVertex.geometry.attributes.instanceColor.needsUpdate = true
 }
 
-const plotEdges = ([start, stop], reinit = false) => {
-  const ambiance = ambiances[C.ambiance]
-  // console.info(`Plotting [${start},${stop}] edges (${allStop})`)
+const plotEdges = (rt, range = null) => {
+  const ambiance = ambiances[rt.ambiance]
+  const instancedEdge = rt.scene.getObjectByName('instanced-edge')
+  const { dimensions } = rt
+  let start = range ? range[0] : 0
+  let stop = range ? range[1] : rt.edges.length
 
-  if (stop > currentEdgesMax || reinit) {
+  if (stop > currentEdgesMax) {
     currentEdgesMax = stop
-    instancedEdge.geometry.dispose()
-    instancedEdge.material.dispose()
-    group.remove(instancedEdge)
-    initEdge()
-    instancedEdge.castShadow = ambiance.shadow
-    updateMaterials()
+    reinitEdge(rt)
     start = 0
   }
-  const arity = C.dimensions > 4 ? 9 : C.dimensions
+  const arity = dimensions > 4 ? 9 : dimensions
   instancedEdge.geometry.instanceCount = stop
   for (let i = start; i < stop; i++) {
-    const edge = R.edges[i]
+    const edge = rt.edges[i]
     const iposstart = instancedEdge.geometry.attributes.instancePosition.array
-    for (let j = 0; j < C.dimensions; j++) {
+    for (let j = 0; j < dimensions; j++) {
       iposstart[i * arity + j] = edge.start[j]
     }
 
     const iposend = instancedEdge.geometry.attributes.instanceTarget.array
-    for (let j = 0; j < C.dimensions; j++) {
+    for (let j = 0; j < dimensions; j++) {
       iposend[i * arity + j] = edge.end[j]
     }
 
@@ -287,35 +306,34 @@ const plotEdges = ([start, stop], reinit = false) => {
   instancedEdge.geometry.attributes.instanceColor.needsUpdate = true
 }
 
-export const plot = (arg, reinit = false) => {
-  let vertices, edges
-  if (arg === true) {
-    vertices = [0, R.vertices.length]
-    edges = [0, R.edges.length]
-  } else {
-    vertices = arg.vertices
-    edges = arg.edges
-  }
-  instancedVertex.visible = C.vertices
-  if (C.vertices) {
-    plotVertices(vertices, reinit)
-  }
-  instancedEdge.visible = C.edges
-  if (C.edges) {
-    plotEdges(edges, reinit)
-  }
+export const show = (rt, name) => {
+  const obj = rt.scene.getObjectByName(`instanced-${name}`)
+  obj.visible = rt[name === 'vertex' ? 'showVertices' : 'showEdges']
 }
 
-export const resetComposerTarget = () => {
-  const size = renderer.getDrawingBufferSize(new Vector2())
+export const plot = (rt, range) => {
+  console.debug('plot', rt.vertices.length, rt.edges.length)
+  if (rt.scene.getObjectByName('instanced-vertex').visible) {
+    plotVertices(rt, range)
+  }
+  if (rt.scene.getObjectByName('instanced-edge').visible) {
+    plotEdges(rt, range)
+  }
+  rt.composer.render()
+}
+
+export const resetComposerTarget = rt => {
+  const size = rt.composer.renderer.getDrawingBufferSize(new Vector2())
   const renderTarget = new WebGLRenderTarget(size.width, size.height, {
-    samples: C.msaa ? C.msaaSamples : 0,
+    samples: rt.msaa ? rt.msaaSamples : 0,
   })
-  composer.reset(renderTarget)
+  rt.composer.reset(renderTarget)
+  rt.composer.render()
 }
 
-export const changeAmbiance = () => {
-  const ambiance = ambiances[C.ambiance]
+export const changeAmbiance = rt => {
+  const ambiance = ambiances[rt.ambiance]
+  const { scene, composer, camera, dimensions, projection } = rt
   if (ambiance.env) {
     scene.environment = ambiance.env
   } else {
@@ -325,7 +343,7 @@ export const changeAmbiance = () => {
     scene.background = ambiance.background
   } else {
     scene.background = null
-    renderer.setClearColor(new Color(ambiance.background), 1)
+    composer.renderer.setClearColor(new Color(ambiance.background), 1)
   }
   // Remove all lights
   const lightsToRemove = []
@@ -337,13 +355,22 @@ export const changeAmbiance = () => {
   lightsToRemove.forEach(light => {
     light.parent.remove(light)
   })
+  let ground = null
+
+  scene.traverse(mesh => {
+    if (mesh.name === 'ground') {
+      ground = mesh
+    }
+  })
+
   if (ground) {
     ground.geometry.dispose()
     ground.material.dispose()
     scene.remove(ground)
   }
+
   if (ambiance.shadow) {
-    renderer.shadowMap.type = PCFShadowMap
+    composer.renderer.shadowMap.type = PCFShadowMap
     if (ambiance.ground === 'sphere') {
       ground = new Mesh(
         new SphereGeometry(20, 32, 32),
@@ -364,6 +391,7 @@ export const changeAmbiance = () => {
           depthWrite: false,
         })
       )
+      ground.name = 'ground'
       ground.rotation.x = -Math.PI / 2
       ground.position.y = -3
     }
@@ -373,10 +401,10 @@ export const changeAmbiance = () => {
     ground = null
   }
 
-  renderer.shadowMap.enabled = ambiance.shadow
-  renderer.shadowMap.type = PCFSoftShadowMap
-  instancedEdge.castShadow = ambiance.shadow
-  instancedVertex.castShadow = ambiance.shadow
+  composer.renderer.shadowMap.enabled = ambiance.shadow
+  composer.renderer.shadowMap.type = PCFSoftShadowMap
+  rt.scene.getObjectByName('instanced-vertex').castShadow = ambiance.shadow
+  rt.scene.getObjectByName('instanced-edge').castShadow = ambiance.shadow
   // Add new lights
   const castShadow = ambiance.shadow
     ? light => {
@@ -401,10 +429,10 @@ export const changeAmbiance = () => {
     camera.add(light)
   })
   const fxs = ambiance.fx || ['copy']
-  renderer.toneMapping = fxs.includes('bloom')
+  composer.renderer.toneMapping = fxs.includes('bloom')
     ? ReinhardToneMapping
     : NoToneMapping
-  renderer.toneMappingExposure = fxs.includes('bloom') ? 1.5 : 1
+  composer.renderer.toneMappingExposure = fxs.includes('bloom') ? 1.5 : 1
   composer.passes.slice(1).forEach(pass => {
     composer.removePass(pass)
     pass.dispose()
@@ -414,8 +442,16 @@ export const changeAmbiance = () => {
       composer.addPass(composer.copyPass)
     } else if (fx === 'sao') {
       const saoPass = new SAOPass(scene, camera, false, true)
-      saoPass.depthMaterial = hyperMathMaterial(saoPass.depthMaterial)
-      saoPass.normalMaterial = hyperMathMaterial(saoPass.normalMaterial)
+      saoPass.depthMaterial = hyperMathMaterial(
+        saoPass.depthMaterial,
+        dimensions,
+        projection
+      )
+      saoPass.normalMaterial = hyperMathMaterial(
+        saoPass.normalMaterial,
+        dimensions,
+        projection
+      )
       saoPass.params.output = SAOPass.OUTPUT.Default
 
       saoPass.params.saoIntensity = 0.1
@@ -433,7 +469,11 @@ export const changeAmbiance = () => {
         aperture: 0.005,
         maxblur: 0.005,
       })
-      bokehPass.materialDepth = hyperMathMaterial(bokehPass.materialDepth)
+      bokehPass.materialDepth = hyperMathMaterial(
+        bokehPass.materialDepth,
+        dimensions,
+        projection
+      )
       composer.addPass(bokehPass)
     } else if (fx === 'sobel') {
       const effectGrayScale = new ShaderPass(LuminosityShader)
@@ -454,36 +494,56 @@ export const changeAmbiance = () => {
       composer.addPass(bloomPass)
     } else if (fx === 'godray') {
       const godrayPass = new GodRayPass(scene, camera)
-      godrayPass.materialDepth = hyperMathMaterial(godrayPass.materialDepth)
+      godrayPass.materialDepth = hyperMathMaterial(
+        godrayPass.materialDepth,
+        dimensions,
+        projection
+      )
       composer.addPass(godrayPass)
     }
   })
-
-  // Update materials
-  instancedVertex.material = hyperMathMaterial(ambiance.material)
-  instancedEdge.material = hyperMathMaterial(ambiance.material)
-  updateMaterials()
-  plot(true, true)
-  render()
+  composer.render()
 }
 
-export const updateMaterials = () => {
+export const updateMaterials = ({
+  composer,
+  scene,
+  dimensions,
+  curvature,
+  projection,
+  curve,
+  segments,
+  vertexThickness,
+  edgeThickness,
+}) => {
+  segments = curve ? segments : 1
+  const instancedVertex = scene.getObjectByName('instanced-vertex')
+  const instancedEdge = scene.getObjectByName('instanced-edge')
   const update = material => {
     if (!material?._dimensions) {
       return
     }
-    material.uniforms.curvature.value = R.curvature
-    material.uniforms.vertexThickness.value = C.vertexThickness
-    material.uniforms.edgeThickness.value = C.edgeThickness
+    console.debug(
+      'updateMaterial',
+      curvature,
+      vertexThickness,
+      edgeThickness,
+      dimensions,
+      projection,
+      segments
+    )
+    material.uniforms.curvature.value = curvature
+    material.uniforms.vertexThickness.value = vertexThickness
+    material.uniforms.edgeThickness.value = edgeThickness
     if (
-      C.dimensions !== material._dimensions ||
-      C.projection !== material._projection
+      dimensions !== material._dimensions ||
+      projection !== material._projection
     ) {
-      material._dimensions = C.dimensions
-      material._projection = C.projection
+      material._dimensions = dimensions
+      material._projection = projection
       material.needsUpdate = true
     }
-    material.uniforms.segments.value = C.curve ? C.segments : 1
+    material.uniforms.segments.value = segments
   }
 
   update(instancedVertex.material)
@@ -497,17 +557,5 @@ export const updateMaterials = () => {
   update(instancedVertex.customDistanceMaterial)
   update(instancedEdge.customDepthMaterial)
   update(instancedEdge.customDistanceMaterial)
-}
-
-export const render = () => {
-  // const delta = clock.getDelta()
-  // stats.begin()
   composer.render()
-  // controls.update(delta)
-  // stats.end()
-}
-
-export const animate = () => {
-  requestAnimationFrame(animate)
-  render()
 }

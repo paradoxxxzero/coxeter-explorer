@@ -1,6 +1,4 @@
-import { C } from '../C.js'
 import { abs, acos, acosh, cos, sign, sin, sinh, sqrt } from './index.js'
-import { R } from '../R'
 
 export const det = m => {
   if (m.length === 1) {
@@ -32,29 +30,27 @@ export const getCurvature = gram => {
   const determinant = det(gram)
   return abs(determinant) < 1e-8 ? 0 : sign(determinant)
 }
-export const xdot = (v1, v2, forceCurvature = null) => {
-  const c = forceCurvature === null ? R.curvature : forceCurvature
+export const xdot = (v1, v2, curvature) => {
   let sum = 0
   for (let i = 0; i < v1.length; i++) {
-    sum += v1[i] * v2[i] * (i === v1.length - 1 ? c || 1 : 1)
+    sum += v1[i] * v2[i] * (i === v1.length - 1 ? curvature || 1 : 1)
   }
   return sum
 }
 
 // Unused
-export const xcross = (v1, v2, v3, forceCurvature) => {
+export const xcross = (v1, v2, v3, curvature) => {
   if (typeof v3 === 'number') {
-    forceCurvature = v3
+    curvature = v3
     v3 = null
   }
-  const c = forceCurvature === null ? R.curvature : forceCurvature
   if (!v3) {
     const [x1, y1, z1] = v1
     const [x2, y2, z2] = v2
     return [
       y1 * z2 - y2 * z1,
       z1 * x2 - z2 * x1,
-      (c || 1) * (x1 * y2 - x2 * y1),
+      (curvature || 1) * (x1 * y2 - x2 * y1),
     ]
   }
   const [x1, y1, z1, w1] = v1
@@ -79,7 +75,7 @@ export const xcross = (v1, v2, v3, forceCurvature) => {
       x3 * y1 * w2 +
       w3 * x1 * y2 -
       w3 * x2 * y1,
-    (R.curvature || 1) *
+    (curvature || 1) *
       (-x1 * y2 * z3 +
         x1 * y3 * z2 +
         x2 * y1 * z3 -
@@ -89,33 +85,33 @@ export const xcross = (v1, v2, v3, forceCurvature) => {
   ]
 }
 
-export const xdistance = (v1, v2) => {
-  if (R.curvature > 0) {
-    return acos(xdot(v1, v2))
+export const xdistance = (v1, v2, curvature) => {
+  if (curvature > 0) {
+    return acos(xdot(v1, v2, curvature))
   }
-  if (R.curvature < 0) {
-    return acosh(-xdot(v1, v2))
+  if (curvature < 0) {
+    return acosh(-xdot(v1, v2, curvature))
   }
-  return sqrt(xdot(v1, v2))
+  return sqrt(xdot(v1, v2, curvature))
 }
 
-export const reflect = (v, n) => {
+export const reflect = (v, n, curvature) => {
   v = v.slice()
-  const vn2 = 2 * xdot(v, n)
+  const vn2 = 2 * xdot(v, n, curvature)
   for (let i = 0; i < v.length; i++) {
-    v[i] -= vn2 * (R.curvature || i !== v.length - 1 ? n[i] : 0)
+    v[i] -= vn2 * (curvature || i !== v.length - 1 ? n[i] : 0)
   }
   return v
 }
 
-export const normalize = v => {
+export const normalize = (v, curvature) => {
   v = v.slice()
   // if (v[v.length - 1] < 0) {
   //   for (let i = 0; i < v.length; i++) {
   //     v[i] *= -v[i]
   //   }
   // }
-  if (R.curvature === 0) {
+  if (curvature === 0) {
     for (let i = 0; i < v.length; i++) {
       v[i] /= v[v.length - 1]
     }
@@ -123,46 +119,46 @@ export const normalize = v => {
   }
 
   const nr =
-    (R.curvature === -1 ? sign(v[v.length - 1]) || 1 : 1) /
-    sqrt(abs(xdot(v, v)))
+    (curvature === -1 ? sign(v[v.length - 1]) || 1 : 1) /
+    sqrt(abs(xdot(v, v, curvature)))
   for (let i = 0; i < v.length; i++) {
     v[i] *= nr
   }
   return v
 }
 
-export const xproject = v => {
-  if (C.dimensions === 3 && C.projection === 'stereographic') {
+export const xproject = (v, projection, curvature) => {
+  if (v.length === 3 && projection === 'stereographic') {
     return v
   }
   v = v.slice()
-  if (C.projection === 'orthographic') {
+  if (projection === 'orthographic') {
     v[v.length - 1] = 0
     return v
   }
 
   const k =
-    -R.curvature *
+    -curvature *
       {
         stereographic: 1,
         klein: 0,
         inverted: -1,
-      }[C.projection] || 0
+      }[projection] || 0
 
   const nr = 1 / (k + v[v.length - 1])
   for (let i = 0; i < v.length - 1; i++) {
     v[i] *= nr
   }
-  v[v.length - 1] = ['jemisphere', 'upperhalf'].includes(C.projection)
+  v[v.length - 1] = ['jemisphere', 'upperhalf'].includes(projection)
     ? 1 / (1 + v[v.length - 1])
     : 0
 
-  if (C.projection === 'upperhalf') {
+  if (projection === 'upperhalf') {
     const nr2 = 2 / (1 + v[0])
     for (let i = 1; i < v.length; i++) {
       v[i - 1] = v[i] * nr2
     }
-    if (C.dimensions === 4) {
+    if (v.length === 4) {
       v[2] *= -1
     }
     v[v.length - 1] = 0
@@ -172,7 +168,7 @@ export const xproject = v => {
 }
 
 export const slerp = (u, v, step) => {
-  const o = acos(xdot(u, v))
+  const o = acos(xdot(u, v, 1))
   const n = sin(o)
   if (n === 0) {
     return []
@@ -182,8 +178,8 @@ export const slerp = (u, v, step) => {
   for (let i = step; i < 1; i += step) {
     const a = sin((1 - i) * o) / n
     const b = sin(i * o) / n
-    const s = new Array(C.dimensions)
-    for (let j = 0; j < C.dimensions; j++) {
+    const s = new Array(u.length)
+    for (let j = 0; j < u.length; j++) {
       s[j] = u[j] * a + v[j] * b
     }
     vertices.push(s)
@@ -192,7 +188,7 @@ export const slerp = (u, v, step) => {
 }
 
 export const hlerp = (u, v, step) => {
-  const o = acosh(-xdot(u, v))
+  const o = acosh(-xdot(u, v, -1))
   const n = sinh(o)
   if (n === 0) {
     return []
@@ -201,22 +197,19 @@ export const hlerp = (u, v, step) => {
   for (let i = step; i < 1; i += step) {
     const a = sinh((1 - i) * o) / n
     const b = sinh(i * o) / n
-    const s = new Array(C.dimensions)
-    for (let j = 0; j < C.dimensions; j++) {
+    const s = new Array(u.length)
+    for (let j = 0; j < u.length; j++) {
       s[j] = u[j] * a + v[j] * b
     }
     vertices.push(s)
   }
   return vertices
 }
-export const xlerp = (u, v) => {
-  if (C.segments === 0 || !C.curve) {
-    return []
-  }
-  const curveStep = 1 / C.segments
-  if (R.curvature > 0) {
+export const xlerp = (u, v, segments, curvature) => {
+  const curveStep = 1 / segments
+  if (curvature > 0) {
     return slerp(u, v, curveStep)
-  } else if (R.curvature < 0) {
+  } else if (curvature < 0) {
     return hlerp(u, v, curveStep)
   } else {
     return []
@@ -234,17 +227,17 @@ export const xrotate = (vertex, theta) => {
   // vertex[3] = w
 }
 
-export const xscale = (vertex, scale) => {
-  if (R.curvature !== 0) {
+export const xscale = (vertex, scale, curvature) => {
+  if (curvature !== 0) {
     const nr = scale / sqrt(xdot(vertex, vertex, 1))
 
-    const offset = new Array(C.dimensions - 1)
-    for (let i = 0; i < C.dimensions - 1; i++) {
+    const offset = new Array(vertex.length - 1)
+    for (let i = 0; i < vertex.length - 1; i++) {
       offset[i] = vertex[i] * nr
     }
-    xtranslate(vertex, offset)
+    xtranslate(vertex, offset, curvature)
   } else {
-    for (let i = 0; i < C.dimensions; i++) {
+    for (let i = 0; i < vertex.length; i++) {
       vertex[i] *= 1 - scale
     }
   }
@@ -349,18 +342,17 @@ export const xscale = (vertex, scale) => {
 //   |  sin†(yz) * cos†(xy) * cos†(xz) * x + cos†(xy) * cos†(xz) * y + sin†(xy) * z   cos†(xy) * cos†(xz) * cos†(yz) * w |
 
 // prettier-ignore
-export const xtranslate = (vertex, offset) => {
+export const xtranslate = (vertex, offset, curvature) => {
   const [x, y, z, w] = vertex
   const [xt, yt, zt] = offset
-  const c = R.curvature
-  
+  const c = curvature
   const cosx = sqrt(1 - c * xt * xt) // cos†(asin†(xt))
   const cosy = sqrt(1 - c * yt * yt) // cos†(asin†(yt))
   const sinx = xt
   const siny = yt
 
   if (c !== 0) {
-    if (C.dimensions === 3) {
+    if (vertex.length === 3) {
       vertex[0] =      x * cosx + y * sinx * siny +     z * sinx * cosy                       
       vertex[1] =               + y * cosy        - c * z * siny       
       vertex[2] = -c * x * sinx + y * cosx * siny +     z * cosx * cosy
@@ -389,10 +381,11 @@ export const xtranslate = (vertex, offset) => {
   }
 }
 
-export const getFundamentalSimplexMirrors = gram => {
-  const mirrors = new Array(C.dimensions)
+export const getFundamentalSimplexMirrors = (gram, curvature) => {
+  const dimensions = gram[0].length
+  const mirrors = new Array(dimensions)
     .fill()
-    .map(() => new Array(C.dimensions).fill(0))
+    .map(() => new Array(dimensions).fill(0))
 
   mirrors[0][0] = 1
   mirrors[1][0] = gram[1][0]
@@ -402,7 +395,7 @@ export const getFundamentalSimplexMirrors = gram => {
   mirrors[2][2] = sqrt(
     abs(1 - mirrors[2][0] * mirrors[2][0] - mirrors[2][1] * mirrors[2][1])
   )
-  if (C.dimensions >= 4) {
+  if (dimensions >= 4) {
     mirrors[3][0] = gram[3][0]
     mirrors[3][1] = (gram[3][1] - mirrors[3][0] * mirrors[1][0]) / mirrors[1][1]
     mirrors[3][2] =
@@ -419,7 +412,7 @@ export const getFundamentalSimplexMirrors = gram => {
       )
     )
   }
-  if (C.dimensions >= 5) {
+  if (dimensions >= 5) {
     mirrors[4][0] = gram[4][0]
     mirrors[4][1] = (gram[4][1] - mirrors[4][0] * mirrors[1][0]) / mirrors[1][1]
     mirrors[4][2] =
@@ -444,21 +437,22 @@ export const getFundamentalSimplexMirrors = gram => {
       )
     )
   }
-  mirrors[mirrors.length - 1][mirrors.length - 1] = R.curvature
-    ? mirrors[mirrors.length - 1][mirrors.length - 1] * R.curvature
+  mirrors[mirrors.length - 1][mirrors.length - 1] = curvature
+    ? mirrors[mirrors.length - 1][mirrors.length - 1] * curvature
     : 1
 
   return mirrors
 }
 
-export const getFundamentalVertex = (mirrors, m) => {
-  // solve mirrors for x,y,z,w
-  const p = new Array(C.dimensions)
+export const getFundamentalVertex = (mirrors, m, curvature) => {
+  // solve mirrors for x,y,z,w,v
+  const dimensions = m.length
+  const p = new Array(dimensions)
   p[0] = m[0]
   p[1] = (m[1] - mirrors[1][0] * p[0]) / mirrors[1][1]
   p[2] = (m[2] - mirrors[2][0] * p[0] - mirrors[2][1] * p[1]) / mirrors[2][2]
 
-  if (C.dimensions >= 4) {
+  if (dimensions >= 4) {
     p[3] =
       (m[3] -
         mirrors[3][0] * p[0] -
@@ -467,7 +461,7 @@ export const getFundamentalVertex = (mirrors, m) => {
       mirrors[3][3]
   }
 
-  if (C.dimensions >= 5) {
+  if (dimensions >= 5) {
     p[4] =
       (m[4] -
         mirrors[4][0] * p[0] -
@@ -476,6 +470,6 @@ export const getFundamentalVertex = (mirrors, m) => {
         mirrors[4][3] * p[3]) /
       mirrors[4][4]
   }
-  p[p.length - 1] *= R.curvature || 1
-  return normalize(p)
+  p[p.length - 1] *= curvature || 1
+  return normalize(p, curvature)
 }

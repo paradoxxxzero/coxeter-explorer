@@ -1,20 +1,19 @@
-import { render } from 'react-dom'
 import { Vector2 } from 'three'
 
-export const size = gl => {
-  const { renderer, camera, composer } = gl
+export const size = rt => {
+  const { camera, composer } = rt
   const subsampling = 1
 
   const width = window.innerWidth * subsampling
   const height = window.innerHeight * subsampling
-  const currentCanvas = renderer.domElement
+  const currentCanvas = composer.renderer.domElement
   if (currentCanvas.width !== width || currentCanvas.height !== height) {
     camera.aspect = width / height
     camera.zoom = Math.min(1, width / height)
     camera.updateProjectionMatrix()
-    renderer.setSize(width, height)
+    composer.renderer.setSize(width, height)
     composer.setSize(width, height)
-    const pixelRatio = renderer.getPixelRatio()
+    const pixelRatio = composer.renderer.getPixelRatio()
     composer.setPixelRatio(pixelRatio)
 
     const w = width * pixelRatio
@@ -44,5 +43,5 @@ export const size = gl => {
     }
   }
 
-  render()
+  composer.render()
 }
