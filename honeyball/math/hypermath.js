@@ -218,13 +218,14 @@ export const xlerp = (u, v, segments, curvature) => {
 
 export const xrotate = (vertex, theta) => {
   const [x, y] = vertex
-  // Rz / Rzw Rotation:
+  // Rz / Rzw / Rzwv Rotation:
   const cosx = cos(theta)
   const sinx = sin(theta)
   vertex[0] = x * cosx - y * sinx
   vertex[1] = x * sinx + y * cosx
   // vertex[2] = z
   // vertex[3] = w
+  // vertex[4] = v
 }
 
 export const xscale = (vertex, scale, curvature) => {
@@ -343,23 +344,65 @@ export const xscale = (vertex, scale, curvature) => {
 
 // 5D:
 
-// Rxyz | 1  0  0  0          0          |
-//      | 0  1  0  0          0          |
-//      | 0  0  1  0          0          |
-//      | 0  0  0  cost(xyz) ±sin†(xyz)  |
-//      | 0  0  0  sin†(xyz)  cos†(xyz)  |
+// Rxyz | 1  0  0  0           0         |
+//      | 0  1  0  0           0         |
+//      | 0  0  1  0           0         |
+//      | 0  0  0  cos†(xyz)  ±sin†(xyz) |
+//      | 0  0  0  sin†(xyz)   cos†(xyz) |
 
-// Rxyw | 1  0  0          0          0          |
-//      | 0  1  0          0          0          |
-//      | 0  0  cost(xyw)  0          ±sin†(xyw) |
-//      | 0  0  0          1          0          |
-//      | 0  0  sin†(xyw)  0          cos†(xyw)  |
+// Rxyw | 1  0  0          0   0         |
+//      | 0  1  0          0   0         |
+//      | 0  0  cos†(xyw)  0  ±sin†(xyw) |
+//      | 0  0  0          1   0         |
+//      | 0  0  sin†(xyw)  0   cos†(xyw) |
 
-// Rxzw | 1          0          0   0          0  |
-//      | 0          cost(xzw)  0  ±sin†(xzw)  0  |
-//      | 0          0          1   0          0  |
-//      | 0          sin†(xzw)  0   cos†(xzw)  0  |
-//      | 0          0          0   0          1  |
+// Rxzw | 1  0          0  0   0         |
+//      | 0  cos†(xzw)  0  0  ±sin†(xzw) |
+//      | 0  0          1  0   0         |
+//      | 0  0          0  1   0         |
+//      | 0  sin†(xzw)  0  0   cos†(xzw) |
+
+// Ryzw | cos†(yzw)  0  0  0  ±sin†(yzw) |
+//      | 0          1  0  0   0         |
+//      | 0          0  1  0   0         |
+//      | 0          0  0  1   0         |
+//      | sin†(yzw)  0  0  0   cos†(yzw) |
+
+// Rxyv | 1  0  0          0         0 |
+//      | 0  1  0          0         0 |
+//      | 0  0  cos(xyv)  -sin(xyv)  0 |
+//      | 0  0  sin(xyv)   cos(xyv)  0 |
+//      | 0  0  0          0         1 |
+
+// Rxzv | 1  0         0   0         0 |
+//      | 0  cos(xzv)  0  -sin(xzv)  0 |
+//      | 0  0         1   0         0 |
+//      | 0  sin(xzv)  0   cos(xzv)  0 |
+//      | 0  0         0   0         1 |
+
+// Ryzv | cos(yzv)  0  0  -sin(yzv)  0 |
+//      | 0         1  0   0         0 |
+//      | 0         0  1   0         0 |
+//      | sin(yzv)  0  0   cos(yzv)  0 |
+//      | 0         0  0   0         1 |
+
+// Rxwv | 1  0          0         0  0 |
+//      | 0  cos(xwv)  -sin(xwv)  0  0 |
+//      | 0  sin(xwv)   cos(xwv)  0  0 |
+//      | 0  0          0         1  0 |
+//      | 0  0          0         0  1 |
+
+// Rywv | cos(ywv)  0  -sin(ywv)  0  0 |
+//      | 0         1   0         0  0 |
+//      | sin(ywv)  0   cos(ywv)  0  0 |
+//      | 0         0   0         1  0 |
+//      | 0         0   0         0  1 |
+
+// Rzwv | cos(zwv)  -sin(zwv)  0  0  0 |
+//      | sin(zwv)   cos(zwv)  0  0  0 |
+//      | 0          0         1  0  0 |
+//      | 0          0         0  1  0 |
+//      | 0          0         0  0  1 |
 
 // prettier-ignore
 export const xtranslate = (vertex, offset, curvature) => {
