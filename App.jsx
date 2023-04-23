@@ -297,6 +297,7 @@ export default function App({ gl, params, updateParams }) {
   }, [runtime.edges])
 
   useEffect(() => {
+    // Order plot
     if (runtime.currentOrder > 0) {
       plot(runtime, runtime.currentOrder - 1)
     }
@@ -311,9 +312,16 @@ export default function App({ gl, params, updateParams }) {
   ])
 
   useEffect(() => {
+    // Full plot
     plot(runtime)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runtime.ambiance, runtime.maxVertices, runtime.maxEdges])
+  }, [
+    runtime.ambiance,
+    runtime.showVertices,
+    runtime.showEdges,
+    runtime.maxVertices,
+    runtime.maxEdges,
+  ])
 
   useEffect(() => {
     const onSize = () => {
