@@ -451,57 +451,20 @@ export const getFundamentalSimplexMirrors = (gram, curvature) => {
     .map(() => new Array(dimensions).fill(0))
 
   mirrors[0][0] = 1
+  for (let i = 1; i < dimensions; i++) {
+    for (let j = 0; j < i; j++) {
+      let sum = 0
+      for (let k = 0; k < j; k++) {
+        sum += mirrors[i][k] * mirrors[j][k]
+      }
 
-  mirrors[1][0] = gram[1][0]
-  mirrors[1][1] = sqrt(abs(1 - mirrors[1][0] * mirrors[1][0]))
-
-  mirrors[2][0] = gram[2][0]
-  mirrors[2][1] = (gram[2][1] - mirrors[2][0] * mirrors[1][0]) / mirrors[1][1]
-  mirrors[2][2] = sqrt(
-    abs(1 - mirrors[2][0] * mirrors[2][0] - mirrors[2][1] * mirrors[2][1])
-  )
-  if (dimensions >= 4) {
-    mirrors[3][0] = gram[3][0]
-    mirrors[3][1] = (gram[3][1] - mirrors[3][0] * mirrors[1][0]) / mirrors[1][1]
-    mirrors[3][2] =
-      (gram[3][2] -
-        mirrors[3][0] * mirrors[2][0] -
-        mirrors[3][1] * mirrors[2][1]) /
-      mirrors[2][2]
-    mirrors[3][3] = sqrt(
-      abs(
-        1 -
-          mirrors[3][0] * mirrors[3][0] -
-          mirrors[3][1] * mirrors[3][1] -
-          mirrors[3][2] * mirrors[3][2]
-      )
+      mirrors[i][j] = (gram[i][j] - sum) / mirrors[j][j]
+    }
+    mirrors[i][i] = sqrt(
+      abs(1 - mirrors[i].slice(0, i).reduce((a, b) => a + b * b, 0))
     )
   }
-  if (dimensions >= 5) {
-    mirrors[4][0] = gram[4][0]
-    mirrors[4][1] = (gram[4][1] - mirrors[4][0] * mirrors[1][0]) / mirrors[1][1]
-    mirrors[4][2] =
-      (gram[4][2] -
-        mirrors[4][0] * mirrors[2][0] -
-        mirrors[4][1] * mirrors[2][1]) /
-      mirrors[2][2]
-    mirrors[4][3] =
-      (gram[4][3] -
-        mirrors[4][0] * mirrors[3][0] -
-        mirrors[4][1] * mirrors[3][1] -
-        mirrors[4][2] * mirrors[3][2]) /
-      mirrors[3][3]
 
-    mirrors[4][4] = sqrt(
-      abs(
-        1 -
-          mirrors[4][0] * mirrors[4][0] -
-          mirrors[4][1] * mirrors[4][1] -
-          mirrors[4][2] * mirrors[4][2] -
-          mirrors[4][3] * mirrors[4][3]
-      )
-    )
-  }
   mirrors[mirrors.length - 1][mirrors.length - 1] = curvature
     ? mirrors[mirrors.length - 1][mirrors.length - 1] * curvature
     : 1
@@ -510,31 +473,17 @@ export const getFundamentalSimplexMirrors = (gram, curvature) => {
 }
 
 export const getFundamentalVertex = (mirrors, m, curvature) => {
-  // solve mirrors for x,y,z,w,v
+  // solve linear system for mirrors
   const dimensions = m.length
   const p = new Array(dimensions)
-  p[0] = m[0]
-  p[1] = (m[1] - mirrors[1][0] * p[0]) / mirrors[1][1]
-  p[2] = (m[2] - mirrors[2][0] * p[0] - mirrors[2][1] * p[1]) / mirrors[2][2]
-
-  if (dimensions >= 4) {
-    p[3] =
-      (m[3] -
-        mirrors[3][0] * p[0] -
-        mirrors[3][1] * p[1] -
-        mirrors[3][2] * p[2]) /
-      mirrors[3][3]
+  for (let i = 0; i < dimensions; i++) {
+    let sum = 0
+    for (let j = 0; j < i; j++) {
+      sum += mirrors[i][j] * p[j]
+    }
+    p[i] = (m[i] - sum) / mirrors[i][i]
   }
 
-  if (dimensions >= 5) {
-    p[4] =
-      (m[4] -
-        mirrors[4][0] * p[0] -
-        mirrors[4][1] * p[1] -
-        mirrors[4][2] * p[2] -
-        mirrors[4][3] * p[3]) /
-      mirrors[4][4]
-  }
   p[p.length - 1] *= curvature || 1
   return normalize(p, curvature)
 }
