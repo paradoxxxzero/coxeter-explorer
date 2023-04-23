@@ -216,48 +216,6 @@ export const getRules = (dimensions, coxeter) => {
     }
   }
   return knuthBendix(rules)
-
-  // return knuthBendix(
-  //   dimensions === 3
-  //     ? {
-  //         aa: '',
-  //         bb: '',
-  //         cc: '',
-  //         ['ab'.repeat(p)]: '',
-  //         ['ac'.repeat(q)]: '',
-  //         ['bc'.repeat(r)]: '',
-  //       }
-  //     : dimensions === 4
-  //     ? {
-  //         aa: '',
-  //         bb: '',
-  //         cc: '',
-  //         dd: '',
-  //         ['ab'.repeat(p)]: '',
-  //         ['ac'.repeat(q)]: '',
-  //         ['ad'.repeat(r)]: '',
-  //         ['bc'.repeat(s)]: '',
-  //         ['bd'.repeat(t)]: '',
-  //         ['cd'.repeat(u)]: '',
-  //       }
-  //     : {
-  //         aa: '',
-  //         bb: '',
-  //         cc: '',
-  //         dd: '',
-  //         ee: '',
-  //         ['ab'.repeat(p)]: '',
-  //         ['ac'.repeat(q)]: '',
-  //         ['ad'.repeat(r)]: '',
-  //         ['ae'.repeat(s)]: '',
-  //         ['bc'.repeat(t)]: '',
-  //         ['bd'.repeat(u)]: '',
-  //         ['be'.repeat(l)]: '',
-  //         ['cd'.repeat(m)]: '',
-  //         ['ce'.repeat(n)]: '',
-  //         ['de'.repeat(o)]: '',
-  //       }
-  // )
 }
 
 export const shorten = word => rewrite(W.rules, word)

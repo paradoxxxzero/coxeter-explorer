@@ -5,20 +5,26 @@ uniform float vertexThickness;
 uniform float edgeThickness;
 uniform float segments;
 
-struct vec5 {
-  vec4 v;
-  float u;
-};
-
 #if DIMENSIONS == 3
 attribute vec3 instancePosition;
 attribute vec3 instanceTarget;
 #elif DIMENSIONS == 4
 attribute vec4 instancePosition;
 attribute vec4 instanceTarget;
-#elif DIMENSIONS == 5
+#elif DIMENSIONS >= 5
 attribute mat3 instancePosition;
 attribute mat3 instanceTarget;
+
+struct vec5 {
+  vec4 v;
+  float u;
+};
+#endif
+#if DIMENSIONS >= 6
+struct vec6 {
+  vec4 v;
+  vec2 u;
+};
 #endif
 
 attribute vec3 instanceColor;
@@ -44,6 +50,10 @@ void main() {
   vec5 pos;
   vec5 instancePosition = fromMat(instancePosition);
   vec5 instanceTarget = fromMat(instanceTarget);
+  #elif DIMENSIONS == 6
+  vec6 pos;
+  vec6 instancePosition = fromMat(instancePosition);
+  vec6 instanceTarget = fromMat(instanceTarget);
   #endif
 
   vec3 norm;
@@ -62,6 +72,8 @@ void main() {
     vec4 next;
     #elif DIMENSIONS == 5
     vec5 next;
+    #elif DIMENSIONS == 6
+    vec6 next;
     #endif
 
     next = mix(instancePosition, instanceTarget, h + .001);

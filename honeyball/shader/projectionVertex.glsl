@@ -9,6 +9,7 @@ bool nan(in vec4 v) {
   return isnan(v.x) || isnan(v.y) || isnan(v.z) || isnan(v.w);
 }
 
+#if DIMENSIONS == 5
 bool nan(in vec5 v) {
   return isnan(v.v.x) || isnan(v.v.y) || isnan(v.v.z) || isnan(v.v.w) || isnan(v.u);
 }
@@ -16,6 +17,15 @@ bool nan(in vec5 v) {
 vec5 mix(in vec5 a, in vec5 b, in float t) {
   return vec5(mix(a.v, b.v, t), mix(a.u, b.u, t));
 }
+#elif DIMENSIONS == 6
+bool nan(in vec6 v) {
+  return isnan(v.v.x) || isnan(v.v.y) || isnan(v.v.z) || isnan(v.v.w) || isnan(v.u.x) || isnan(v.u.y);
+}
+
+vec6 mix(in vec6 a, in vec6 b, in float t) {
+  return vec6(mix(a.v, b.v, t), mix(a.u, b.u, t));
+}
+#endif
 
 float len(in vec3 v) {
   return length(v);
@@ -25,9 +35,15 @@ float len(in vec4 v) {
   return length(v);
 }
 
+#if DIMENSIONS == 5
 float len(in vec5 v) {
   return sqrt(dot(v.v, v.v) + v.u * v.u);
 }
+#elif DIMENSIONS == 6
+float len(in vec6 v) {
+  return sqrt(dot(v.v, v.v) + dot(v.u, v.u));
+}
+#endif
 
 float xdot(in vec3 v) {
   return dot(v.xy, v.xy) + curvature * v.z * v.z;
@@ -37,9 +53,15 @@ float xdot(in vec4 v) {
   return dot(v.xyz, v.xyz) + curvature * v.w * v.w;
 }
 
+#if DIMENSIONS == 5
 float xdot(in vec5 v) {
   return dot(v.v, v.v) + curvature * v.u * v.u;
 }
+#elif DIMENSIONS == 6
+float xdot(in vec6 v) {
+  return dot(v.v, v.v) + v.u.x * v.u.x + curvature * v.u.y * v.u.y;
+}
+#endif
 
 vec3 xnormalize(in vec3 v) {
   if(curvature == 0.0) {
@@ -55,6 +77,7 @@ vec4 xnormalize(in vec4 v) {
   return v / (sqrt(abs(xdot(v))));
 }
 
+#if DIMENSIONS == 5
 vec5 xnormalize(in vec5 v) {
   if(curvature == 0.0) {
     return v;
@@ -62,6 +85,15 @@ vec5 xnormalize(in vec5 v) {
   float n = sqrt(abs(xdot(v)));
   return vec5(v.v / n, v.u / n);
 }
+#elif DIMENSIONS == 6
+vec6 xnormalize(in vec6 v) {
+  if(curvature == 0.0) {
+    return v;
+  }
+  float n = sqrt(abs(xdot(v)));
+  return vec6(v.v / n, v.u / n);
+}
+#endif
 
 vec3 xproject(in vec3 v) {
   #if PROJECTION == 0 // STEREOGRAPHIC
@@ -108,7 +140,7 @@ vec3 xproject(in vec4 v) {
   return v.xwy;
   #endif
 }
-
+#if DIMENSIONS >= 5
 vec3 xproject(in vec5 v) {
   #if PROJECTION == 0 // STEREOGRAPHIC
   return xproject(v.v / (v.u * .25 - curvature));
@@ -124,10 +156,35 @@ vec3 xproject(in vec5 v) {
   return xproject(v.v);
   #endif
 }
+#endif
 
+#if DIMENSIONS >= 6
+vec3 xproject(in vec6 v) {
+  #if PROJECTION == 0 // STEREOGRAPHIC
+  return xproject(vec5(v.v / (v.u.y * .25 - curvature), v.u.x / (v.u.y * .25 - curvature)));
+  #elif PROJECTION == 1 // ORTHOGRAPHIC
+  return xproject(v.v);
+  #elif PROJECTION == 2 // KLEIN
+  return xproject(v.v / v.u.x);
+  #elif PROJECTION == 3 // INVERTED
+  return xproject(v.v / (v.u.x + curvature));
+  #elif PROJECTION == 4 // JEMISPHERE
+  return xproject(v.v);
+  #elif PROJECTION == 5 // UPPERHALF
+  return xproject(v.v);
+  #endif
+}
+#endif
+
+#if DIMENSIONS == 5
 vec5 fromMat(in mat3 m) {
   return vec5(vec4(m[0], m[1][0]), m[1][1]);
 }
+#elif DIMENSIONS == 6
+vec6 fromMat(in mat3 m) {
+  return vec6(vec4(m[0], m[1][0]), vec2(m[1][1], m[1][2]));
+}
+#endif
 /* END INCLUDE */
 
 // mat4 findRotationMatrix(in vec4 u, in vec4 v) {

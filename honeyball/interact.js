@@ -43,7 +43,7 @@ const scale = (factor, vertices, edges, curvature) => {
   }
 }
 
-export const dragMove = (e, vertices, edges, curvature, shift) => {
+export const dragMove = (e, dimensions, vertices, edges, curvature, shift) => {
   const w2 = window.innerWidth / 2
   const h2 = window.innerHeight / 2
   const radius = Math.min(w2, h2) * 0.9
@@ -53,10 +53,27 @@ export const dragMove = (e, vertices, edges, curvature, shift) => {
   } else {
     const xt = -e.dx / w2
     const yt = -e.dy / h2
-    if (e.shiftKey !== !!shift) {
-      translate([0, 0, yt, xt], vertices, edges, curvature)
+    if (e.altKey || shift === 2) {
+      translate(
+        [0, 0, 0, 0, xt, yt].slice(0, dimensions),
+        vertices,
+        edges,
+        curvature
+      )
+    } else if (e.shiftKey || shift === 1) {
+      translate(
+        [0, 0, xt, yt, 0, 0].slice(0, dimensions),
+        vertices,
+        edges,
+        curvature
+      )
     } else {
-      translate([xt, yt, 0, 0], vertices, edges, curvature)
+      translate(
+        [xt, yt, 0, 0, 0, 0].slice(0, dimensions),
+        vertices,
+        edges,
+        curvature
+      )
     }
   }
 }
@@ -118,6 +135,7 @@ export const useInteractions = runtime => {
             }
             dragMove(
               e,
+              runtime.dimensions,
               runtime.vertices,
               runtime.edges,
               runtime.curvature,
