@@ -481,8 +481,8 @@ export default function App({ gl, params, updateParams }) {
             <input
               type="number"
               name="dimensions"
-              min="3"
-              max="6"
+              min="2"
+              max="9"
               step="1"
               value={params.dimensions}
               onChange={handleChange}

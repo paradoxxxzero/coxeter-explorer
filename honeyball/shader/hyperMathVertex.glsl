@@ -5,7 +5,10 @@ uniform float vertexThickness;
 uniform float edgeThickness;
 uniform float segments;
 
-#if DIMENSIONS == 3
+#if DIMENSIONS == 2
+attribute vec2 instancePosition;
+attribute vec2 instanceTarget;
+#elif DIMENSIONS == 3
 attribute vec3 instancePosition;
 attribute vec3 instanceTarget;
 #elif DIMENSIONS == 4
@@ -26,6 +29,25 @@ struct vec6 {
   vec2 u;
 };
 #endif
+#if DIMENSIONS >= 7
+struct vec7 {
+  vec4 v;
+  vec3 u;
+};
+#endif
+#if DIMENSIONS >= 8
+struct vec8 {
+  vec4 v;
+  vec4 u;
+};
+#endif
+#if DIMENSIONS >= 9
+struct vec9 {
+  vec4 v;
+  vec4 u;
+  float t;
+};
+#endif
 
 attribute vec3 instanceColor;
 
@@ -42,7 +64,9 @@ void main() {
   vColor.rgb = instanceColor.rgb;
   #endif
 
-  #if DIMENSIONS == 3
+  #if DIMENSIONS == 2
+  vec2 pos;
+  #elif DIMENSIONS == 3
   vec3 pos;
   #elif DIMENSIONS == 4
   vec4 pos;
@@ -54,6 +78,18 @@ void main() {
   vec6 pos;
   vec6 instancePosition = fromMat(instancePosition);
   vec6 instanceTarget = fromMat(instanceTarget);
+  #elif DIMENSIONS == 7
+  vec7 pos;
+  vec7 instancePosition = fromMat(instancePosition);
+  vec7 instanceTarget = fromMat(instanceTarget);
+  #elif DIMENSIONS == 8
+  vec8 pos;
+  vec8 instancePosition = fromMat(instancePosition);
+  vec8 instanceTarget = fromMat(instanceTarget);
+  #elif DIMENSIONS == 9
+  vec9 pos;
+  vec9 instancePosition = fromMat(instancePosition);
+  vec9 instanceTarget = fromMat(instanceTarget);
   #endif
 
   vec3 norm;
@@ -66,7 +102,9 @@ void main() {
 
     pos = mix(instancePosition, instanceTarget, h);
 
-    #if DIMENSIONS == 3
+    #if DIMENSIONS == 2
+    vec2 next;
+    #elif DIMENSIONS == 3
     vec3 next;
     #elif DIMENSIONS == 4
     vec4 next;
@@ -74,6 +112,12 @@ void main() {
     vec5 next;
     #elif DIMENSIONS == 6
     vec6 next;
+    #elif DIMENSIONS == 7
+    vec7 next;
+    #elif DIMENSIONS == 8
+    vec8 next;
+    #elif DIMENSIONS == 9
+    vec9 next;
     #endif
 
     next = mix(instancePosition, instanceTarget, h + .001);

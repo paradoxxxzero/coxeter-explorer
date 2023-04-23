@@ -13,7 +13,6 @@ const translate = (offset, vertices, edges, curvature) => {
     const { start, end } = edges[i]
     xtranslate(start, offset, curvature)
     xtranslate(end, offset, curvature)
-    // edges[i].segments = xlerp(start, end)
   }
 }
 
@@ -26,7 +25,6 @@ const rotate = (theta, vertices, edges, curvature) => {
     const { start, end } = edges[i]
     xrotate(start, theta, curvature)
     xrotate(end, theta, curvature)
-    // edges[i].segments = xlerp(start, end)
   }
 }
 
@@ -39,7 +37,6 @@ const scale = (factor, vertices, edges, curvature) => {
     const { start, end } = edges[i]
     xscale(start, factor, curvature)
     xscale(end, factor, curvature)
-    // edges[i].segments = xlerp(start, end)
   }
 }
 
@@ -53,28 +50,21 @@ export const dragMove = (e, dimensions, vertices, edges, curvature, shift) => {
   } else {
     const xt = -e.dx / w2
     const yt = -e.dy / h2
-    if (e.altKey || shift === 2) {
-      translate(
-        [0, 0, 0, 0, xt, yt].slice(0, dimensions),
-        vertices,
-        edges,
-        curvature
-      )
-    } else if (e.shiftKey || shift === 1) {
-      translate(
-        [0, 0, xt, yt, 0, 0].slice(0, dimensions),
-        vertices,
-        edges,
-        curvature
-      )
-    } else {
-      translate(
-        [xt, yt, 0, 0, 0, 0].slice(0, dimensions),
-        vertices,
-        edges,
-        curvature
-      )
+    const offset = new Array(dimensions).fill(0)
+    if (!shift && e.shiftKey) {
+      shift = 1
+    } else if (!shift && e.altKey) {
+      shift = 2
+    } else if (!shift && e.ctrKey) {
+      shift = 3
+    } else if (!shift && e.metaKey) {
+      shift = 4
     }
+
+    offset[shift * 2] = xt
+    offset[shift * 2 + 1] = yt
+
+    translate(offset, vertices, edges, curvature)
   }
 }
 
