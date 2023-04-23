@@ -1,3 +1,4 @@
+import { exp } from '.'
 import { W } from '../W'
 
 export const shortLex = (a, b) => {
@@ -186,8 +187,10 @@ const checkTimeout = () => {
     throw new Error('Timeout')
   }
 }
-export const knuthBendix = rules => {
-  const tries = [50, 100, 250, 500].map(i => [i, i]).flat()
+export const knuthBendix = (rules, dimensions) => {
+  const tries = [50, 100, 250, exp(dimensions) * 100, exp(dimensions) * 200]
+    .map(i => [i, i])
+    .flat()
 
   for (let i = 0; i < tries.length; i++) {
     timeout = tries[i]
@@ -215,7 +218,7 @@ export const getRules = (dimensions, coxeter) => {
       rules[(itoa(j) + itoa(i)).repeat(coxeter[i][j])] = ''
     }
   }
-  return knuthBendix(rules)
+  return knuthBendix(rules, dimensions)
 }
 
 export const shorten = word => rewrite(W.rules, word)

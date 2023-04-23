@@ -316,6 +316,7 @@ export const plot = (rt, order = null) => {
     plotEdges(rt, range.edges)
   }
   rt.composer.render()
+  document.title = `Honeyball^${rt.dimensions} - ${rt.vertices.length} vertices, ${rt.edges.length} edges`
 }
 
 export const resetComposerTarget = rt => {

@@ -13,6 +13,7 @@ export const {
   sign,
   floor,
   log,
+  exp,
   PI,
 } = Math
 
