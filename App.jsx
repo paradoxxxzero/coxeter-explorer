@@ -13,7 +13,7 @@ import {
   show,
   updateMaterials,
 } from './honeyball/render'
-import { kill, range, process } from './honeyball/utlis'
+import { kill, process, range } from './honeyball/utlis'
 import { ambiances, projections } from './statics'
 
 export default function App({ gl, params, updateParams }) {
@@ -413,7 +413,7 @@ export default function App({ gl, params, updateParams }) {
         onClick={() => setShowUI(!showUI)}
       >
         {runtime.curvature === 0 ? '𝔼' : runtime.curvature > 0 ? '𝕊' : 'ℍ'}
-        <sup>{runtime.dimensions}</sup>
+        <sup>{runtime.dimensions - 1}</sup>
       </button>
       {showUI && (
         <aside className="controls">

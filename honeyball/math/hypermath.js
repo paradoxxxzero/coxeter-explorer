@@ -262,9 +262,9 @@ export const xscale = (vertex, scale, curvature) => {
 
 // Let't rotate x and y (z is handled in xrotate):
 // Rx * Ry:
-//   | cos†(y)   sin†(x) * sin†(y)   cos†(x) * sin†(y) |
-//   | 0         cos†(x)            ±sin†(x)           |
-//   | ±sin†(y)  sin†(x) * cos†(y)   cos†(x) * cos†(y) |
+//   |  cos†(y)   sin†(x) * sin†(y)   cos†(x) * sin†(y) |
+//   |  0         cos†(x)            ±sin†(x)           |
+//   | ±sin†(y)   sin†(x) * cos†(y)   cos†(x) * cos†(y) |
 
 // Rx * Ry * v:
 //   |  cos†(y) * x + sin†(x) * sin†(y) * y + cos†(x) * sin†(y) * z |
@@ -404,55 +404,43 @@ export const xscale = (vertex, scale, curvature) => {
 //      | 0          0         0  1  0 |
 //      | 0          0         0  0  1 |
 
+const nxrotate = (vertex, offset, curvature) => {
+  // For now consider only rotations that change the time-wise dimension
+  // So offset is the list of rotation like these:
+  // 3D
+  // [xt, yt] -> [Ry, Rx] (Rz keeps the z axis fixed)
+  // 4D
+  // [xt, yt, zt] -> [Ryz, Rxz, Rxy] (Rxw, Ryw, Rzw keep the w axis fixed)
+  // 5D
+  // [xt, yt, zt, wt] -> [Ryzw, Rxzw, Rxyw, Rxyz] (Rxyv, Rxzv, Ryzv, Rxwv, Rywv, Rzwv keep the v axis fixed)
+  const d = vertex.length
+  const c = curvature
+  for (let i = 0; i < d - 1; i++) {
+    const t = offset[i]
+    if (t !== 0) {
+      // i === 0 => x should rotate so Ry, Ryz, Ryzw, Ryzwv, Ryzwvu...
+
+      // cost is cosh(asinh(t)) if c === -1
+      // cost is cos(asin(t)) if c === 1
+      const cost = sqrt(1 - c * t * t)
+      const sint = t
+
+      let vi = vertex[i]
+      let vh = vertex[d - 1]
+      vertex[i] = cost * vi + -c * sint * vh
+      vertex[d - 1] = sint * vi + cost * vh
+    }
+  }
+}
+
 // prettier-ignore
 export const xtranslate = (vertex, offset, curvature) => {
-  const [x, y, z, w, v] = vertex
-  const [xt, yt, zt, wt] = offset
-  const c = curvature
-  const cosx = sqrt(1 - c * xt * xt) // cos†(asin†(xt))
-  const cosy = sqrt(1 - c * yt * yt) // cos†(asin†(yt))
-  const sinx = xt
-  const siny = yt
-
-  if (c !== 0) {
-    if (vertex.length === 3) {
-      vertex[0] =      x * cosx + y * sinx * siny +     z * sinx * cosy                       
-      vertex[1] =               + y * cosy        - c * z * siny       
-      vertex[2] = -c * x * sinx + y * cosx * siny +     z * cosx * cosy
-    } else if (vertex.length >= 4) {
-      if (zt) {
-        const cosz = sqrt(1 - c * zt * zt) // cos†(asin†(zt))
-        const sinz = zt
-              
-        vertex[0] =       x * cosx                                                - c * w * sinx
-        vertex[1] = - c * x * sinx * siny        +     y * cosy                   - c * w * cosx * siny 
-        vertex[2] = - c * x * cosy * sinx * sinz - c * y * siny * sinz + z * cosz - c * w * cosx * cosy * sinz  
-        vertex[3] =       x * cosy * cosz * sinx +     y * cosz * siny + z * sinz +     w * cosx * cosy * cosz
-      } else {
-        vertex[0] =       x * cosx                                                - c * w * sinx
-        vertex[1] = - c * x * sinx * siny        +     y * cosy                   - c * w * cosx * siny 
-        // vertex[2] = z                                                          
-        vertex[3] =       x * cosy * sinx +     y * siny                          +     w * cosx * cosy
-      }
-    // } else if (vertex.length === 5) {
-      // ...
-    //   const cosz = sqrt(1 - c * zt * zt) // cos†(asin†(zt))
-    //   const sinz = zt
-    //   const cosw = sqrt(1 - c * wt * wt) // cos†(asin†(wt))
-    //   const sinw = wt
-
-    //   vertex[0] =       x * cosx                                                - c * w * sinx + v * sinx * siny * cosy
-    //   vertex[1] = - c * x * sinx * siny        +     y * cosy                   - c * w * cosx * siny 
-    //   vertex[2] = - c * x * cosy * sinx * sinz - c * y * siny * sinz + z * cosz - c * w * cosx * cosy * sinz  
-    //   vertex[3] =       x * cosy * cosz * sinx +     y * cosz * siny + z * sinz +     w * cosx * cosy * cosz
-    //   vertex[4] =       x * cosy * sinx * sinw +     y * siny * sinw + z * cosw +     w * cosx * cosy * sinw
+  if (curvature === 0) {
+    for (let i = 0; i < offset.length; i++) {
+      vertex[i] += offset[i]
     }
   } else {
-    vertex[0] = x + xt
-    vertex[1] = y + yt
-    if (zt) {
-      vertex[2] = z + zt
-    }
+    nxrotate(vertex, offset, curvature)
   }
 }
 
@@ -463,8 +451,10 @@ export const getFundamentalSimplexMirrors = (gram, curvature) => {
     .map(() => new Array(dimensions).fill(0))
 
   mirrors[0][0] = 1
+
   mirrors[1][0] = gram[1][0]
-  mirrors[1][1] = sqrt(1 - mirrors[1][0] * mirrors[1][0])
+  mirrors[1][1] = sqrt(abs(1 - mirrors[1][0] * mirrors[1][0]))
+
   mirrors[2][0] = gram[2][0]
   mirrors[2][1] = (gram[2][1] - mirrors[2][0] * mirrors[1][0]) / mirrors[1][1]
   mirrors[2][2] = sqrt(
