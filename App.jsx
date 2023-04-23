@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useState } from 'react'
 import { size } from './honeyball/event'
 import { useInteractions } from './honeyball/interact'
-import { min } from './honeyball/math'
+import { floor, min } from './honeyball/math'
 import {
   changeAmbiance,
   initEdge,
@@ -40,13 +40,31 @@ export default function App({ gl, params, updateParams }) {
 
   // Controls
   const handleControls = useCallback(() => {
-    updateParams({ controls: params.controls === 'orbit' ? 'free' : 'orbit' })
-  }, [params.controls, updateParams])
+    let controls, controlsShift
+    const maxControlsShift = floor(params.dimensions / 2) - 1
+    if (params.controls === 'orbit') {
+      controls = 'free'
+      controlsShift = 0
+    } else {
+      if (params.controlsShift >= maxControlsShift) {
+        controls = 'orbit'
+        controlsShift = 0
+      } else {
+        controls = 'free'
+        controlsShift = params.controlsShift + 1
+      }
+    }
+    updateParams({ controls, controlsShift })
+  }, [params.controls, params.controlsShift, params.dimensions, updateParams])
 
   useEffect(() => {
-    setRuntime(runtime => ({ ...runtime, controls: params.controls }))
+    setRuntime(runtime => ({
+      ...runtime,
+      controls: params.controls,
+      controlsShift: params.controlsShift,
+    }))
     runtime.orbitControls.enabled = params.controls === 'orbit'
-  }, [runtime.orbitControls, params.controls])
+  }, [runtime.orbitControls, params.controls, params.controlsShift])
 
   // Ambiance
   useEffect(() => {
@@ -406,6 +424,9 @@ export default function App({ gl, params, updateParams }) {
     <div className={error ? 'error' : ''} title={error}>
       <button id="controls" onClick={handleControls}>
         {runtime.controls === 'orbit' ? '⇹' : '↭'}
+        {runtime.controls === 'free' ? (
+          <sup>{runtime.controlsShift + 1}</sup>
+        ) : null}
       </button>
       <button
         id="space"

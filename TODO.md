@@ -1,1 +1,3 @@
 - Custom word tree (should be faster than Set)
+- N dimensions
+- 4fov 5 fov ... params

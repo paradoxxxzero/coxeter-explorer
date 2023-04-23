@@ -35,6 +35,7 @@ const defaultParams = {
 
   projection: 'stereographic',
   controls: 'orbit',
+  controlsShift: 0,
   ambiance: 'neon',
   msaa: false,
   msaaSamples: 8,

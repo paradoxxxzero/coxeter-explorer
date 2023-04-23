@@ -1,5 +1,5 @@
 import interact from 'interactjs'
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect } from 'react'
 import { PI } from './math'
 import { xrotate, xscale, xtranslate } from './math/hypermath'
 import { plot } from './render'
@@ -43,7 +43,7 @@ const scale = (factor, vertices, edges, curvature) => {
   }
 }
 
-export const dragMove = (e, pointers, vertices, edges, curvature) => {
+export const dragMove = (e, vertices, edges, curvature, shift) => {
   const w2 = window.innerWidth / 2
   const h2 = window.innerHeight / 2
   const radius = Math.min(w2, h2) * 0.9
@@ -53,7 +53,7 @@ export const dragMove = (e, pointers, vertices, edges, curvature) => {
   } else {
     const xt = -e.dx / w2
     const yt = -e.dy / h2
-    if (e.shiftKey || pointers.length > 2) {
+    if (e.shiftKey !== !!shift) {
       translate([0, 0, yt, xt], vertices, edges, curvature)
     } else {
       translate([xt, yt, 0, 0], vertices, edges, curvature)
@@ -61,10 +61,7 @@ export const dragMove = (e, pointers, vertices, edges, curvature) => {
   }
 }
 
-export const gestureMove = (e, pointers, vertices, edges, curvature) => {
-  if (pointers.length > 2) {
-    return
-  }
+export const gestureMove = (e, vertices, edges, curvature, shift) => {
   rotate((PI * e.da) / 180, vertices, edges, curvature)
   scale(e.ds, vertices, edges, curvature)
 }
@@ -98,12 +95,12 @@ export const keydown = (e, vertices, edges, curvature) => {
   return true
 }
 
-export const wheel = (e, vertices, edges, curvature) => {
+export const wheel = (e, vertices, edges, curvature, shift) => {
   const w2 = window.innerWidth / 2
   const h2 = window.innerHeight / 2
   const radius = Math.min(w2, h2) * 0.9
   const delta = (10 * (e.deltaMode === 1 ? e.deltaY * 10 : e.deltaY)) / radius
-  if (e.ctrlKey) {
+  if (e.shiftKey === !!shift) {
     rotate((PI * delta) / 180, vertices, edges, curvature)
   } else {
     scale(-delta / 100, vertices, edges, curvature)
@@ -111,24 +108,7 @@ export const wheel = (e, vertices, edges, curvature) => {
 }
 
 export const useInteractions = runtime => {
-  const pointers = useRef([])
-
   useLayoutEffect(() => {
-    const pointerdown = e => {
-      pointers.current.push(e.pointerId)
-    }
-    const pointerup = e => {
-      pointers.current = pointers.current.filter(id => id !== e.pointerId)
-    }
-
-    runtime.composer.renderer.domElement.addEventListener(
-      'pointerdown',
-      pointerdown
-    )
-    runtime.composer.renderer.domElement.addEventListener(
-      'pointerup',
-      pointerup
-    )
     const handle = interact(runtime.composer.renderer.domElement)
       .draggable({
         listeners: {
@@ -138,10 +118,10 @@ export const useInteractions = runtime => {
             }
             dragMove(
               e,
-              pointers.current,
               runtime.vertices,
               runtime.edges,
-              runtime.curvature
+              runtime.curvature,
+              runtime.controlsShift
             )
             plot(runtime)
           },
@@ -154,24 +134,16 @@ export const useInteractions = runtime => {
           }
           gestureMove(
             e,
-            pointers.current,
             runtime.vertices,
             runtime.edges,
-            runtime.curvature
+            runtime.curvature,
+            runtime.controlsShift
           )
           plot(runtime)
         },
       })
 
     return () => {
-      runtime.composer.renderer.domElement.removeEventListener(
-        'pointerdown',
-        pointerdown
-      )
-      runtime.composer.renderer.domElement.removeEventListener(
-        'pointerup',
-        pointerup
-      )
       handle.unset()
     }
   }, [runtime])
@@ -181,7 +153,13 @@ export const useInteractions = runtime => {
       if (runtime.controls === 'orbit') {
         return
       }
-      wheel(e, runtime.vertices, runtime.edges, runtime.curvature)
+      wheel(
+        e,
+        runtime.vertices,
+        runtime.edges,
+        runtime.curvature,
+        runtime.controlsShift
+      )
       plot(runtime)
     }
 
@@ -191,8 +169,13 @@ export const useInteractions = runtime => {
 
   useEffect(() => {
     const onKeyDown = e => {
-      keydown(e, runtime.vertices, runtime.edges, runtime.curvature) &&
-        plot(runtime)
+      keydown(
+        e,
+        runtime.vertices,
+        runtime.edges,
+        runtime.curvature,
+        runtime.controlsShift
+      ) && plot(runtime)
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
