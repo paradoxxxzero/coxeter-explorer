@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useState } from 'react'
 import { size } from './honeyball/event'
 import { useInteractions } from './honeyball/interact'
-import { floor, min } from './honeyball/math'
+import { floor, max, min, round } from './honeyball/math'
 import {
   changeAmbiance,
   initEdge,
@@ -356,12 +356,21 @@ export default function App({ gl, params, updateParams }) {
 
   const handleChange = useCallback(
     e => {
-      let { name, checked, type, value } = e.target
+      let { name, checked, type, value, ...rest } = e.target
 
       if (type === 'checkbox') {
         value = checked
       } else if (type === 'number' && value) {
         value = +value
+        if (e.target.min) {
+          value = max(value, +e.target.min)
+        }
+        if (e.target.max) {
+          value = min(value, +e.target.max)
+        }
+        if (e.target.step) {
+          value = round(value / +e.target.step) * +e.target.step
+        }
       }
 
       const newParams = {}
