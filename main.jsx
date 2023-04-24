@@ -37,7 +37,10 @@ const defaultParams = {
   controls: 'orbit',
   controlsShift: 0,
   ambiance: 'neon',
-  msaa: false,
+
+  fov3: 90,
+  fov4: 90,
+  msaa: window.devicePixelRatio <= 1,
   msaaSamples: 8,
 }
 

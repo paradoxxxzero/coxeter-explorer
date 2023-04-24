@@ -49,6 +49,23 @@ const hash = v => {
   return s
 }
 
+const matEq = (m1, m2) => {
+  if (m1.length !== m2.length) {
+    return false
+  }
+  if (m1[0].length !== m2[0].length) {
+    return false
+  }
+  for (let i = 0; i < m1.length; i++) {
+    for (let j = 0; j < m1[i].length; j++) {
+      if (abs(m1[i][j] - m2[i][j]) > 1e-8) {
+        return false
+      }
+    }
+  }
+  return true
+}
+
 export const initTiling = (
   dimensions,
   stellation,
@@ -57,7 +74,10 @@ export const initTiling = (
   mirrors
 ) => {
   // Rules gets computed on non stellated coxeter group
-  const rules = getRules(dimensions, coxeter)
+  const rules =
+    W.rules.size && dimensions === W.dimensions && matEq(coxeter, W.coxeter)
+      ? W.rules
+      : getRules(dimensions, coxeter)
   if (stellation) {
     for (let i = 0; i < dimensions; i++) {
       for (let j = 0; j < dimensions; j++) {
@@ -67,6 +87,7 @@ export const initTiling = (
   }
 
   const newW = {
+    dimensions,
     coxeter,
     vertices: [],
     edges: [],

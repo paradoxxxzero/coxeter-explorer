@@ -6,6 +6,7 @@ export const {
   sinh,
   acos,
   acosh,
+  tan,
   min,
   max,
   round,

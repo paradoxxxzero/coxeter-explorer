@@ -11,6 +11,7 @@ import {
   reinitVertex,
   resetComposerTarget,
   show,
+  updateCameraFov,
   updateMaterials,
 } from './honeyball/render'
 import { kill, process, range } from './honeyball/utlis'
@@ -37,6 +38,8 @@ export default function App({ gl, params, updateParams }) {
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState()
   const [showUI, setShowUI] = useState(true)
+
+  const handleUI = useCallback(() => setShowUI(showUI => !showUI), [])
 
   // Controls
   const handleControls = useCallback(() => {
@@ -105,20 +108,38 @@ export default function App({ gl, params, updateParams }) {
     runtime.curvature,
   ])
 
+  // View
+  useEffect(() => {
+    resetComposerTarget(runtime.composer, params.msaa, params.msaaSamples)
+  }, [params.msaa, params.msaaSamples, runtime.composer])
+
+  useEffect(() => {
+    updateCameraFov(runtime.composer, runtime.camera, params.fov3)
+  }, [params.fov3, runtime.camera, runtime.composer])
+
   useEffect(() => {
     setRuntime(runtime => {
-      if (params.msaa && !params.msaaSamples) {
-        return runtime
-      }
       const newRuntime = {
         ...runtime,
-        msaa: params.msaa,
-        msaaSamples: params.msaaSamples,
+        fov4: params.fov4,
+        fov5: params.fov5,
+        fov6: params.fov6,
+        fov7: params.fov7,
+        fov8: params.fov8,
+        fov9: params.fov9,
       }
-      resetComposerTarget(newRuntime)
+      updateMaterials(newRuntime)
+      newRuntime.composer.render()
       return newRuntime
     })
-  }, [params.msaa, params.msaaSamples])
+  }, [
+    params.fov4,
+    params.fov5,
+    params.fov6,
+    params.fov7,
+    params.fov8,
+    params.fov9,
+  ])
 
   useEffect(() => {
     setRuntime(runtime => {
@@ -133,22 +154,33 @@ export default function App({ gl, params, updateParams }) {
     })
   }, [params.showVertices, params.showEdges])
 
+  useEffect(() => {
+    setRuntime(runtime => {
+      if (params.curve && !params.segments) {
+        return runtime
+      }
+      const newRuntime = {
+        ...runtime,
+        curve: params.curve,
+        segments: params.segments,
+      }
+      return newRuntime
+    })
+  }, [params.curve, params.segments])
+
   // Reset plot
   useEffect(() => {
     setRuntime(runtime => {
       if (
         !params.dimensions ||
         params.coxeter.find(c => c.find(d => !d)) ||
-        params.coxeterDiv.find(c => c.find(d => !d)) ||
-        (params.curve && !params.segments)
+        params.coxeterDiv.find(c => c.find(d => !d))
       ) {
         return runtime
       }
       return {
         ...runtime,
         dimensions: params.dimensions,
-        curve: params.curve,
-        segments: params.segments,
         coxeter: params.coxeter,
         coxeterDiv: params.coxeterDiv,
         stellation: params.stellation,
@@ -161,8 +193,6 @@ export default function App({ gl, params, updateParams }) {
     })
   }, [
     params.dimensions,
-    params.curve,
-    params.segments,
     params.coxeter,
     params.coxeterDiv,
     params.mirrors,
@@ -174,6 +204,17 @@ export default function App({ gl, params, updateParams }) {
     reinitEdge(runtime)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runtime.dimensions, runtime.curve, runtime.segments])
+
+  useEffect(() => {
+    kill()
+    setProcessing(false)
+  }, [
+    runtime.dimensions,
+    runtime.coxeter,
+    runtime.coxeterDiv,
+    runtime.mirrors,
+    runtime.stellation,
+  ])
 
   useEffect(() => {
     setRuntime(runtime =>
@@ -209,8 +250,6 @@ export default function App({ gl, params, updateParams }) {
       }))
       return
     }
-    kill()
-    setProcessing(false)
     ;(async () => {
       setError(null)
       setProcessing(true)
@@ -254,12 +293,12 @@ export default function App({ gl, params, updateParams }) {
         return newRuntime
       })
     })()
+    // Can't have ranges here
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     runtime.order,
     runtime.currentOrder,
     runtime.dimensions,
-    runtime.curve,
-    runtime.segments,
     runtime.coxeter,
     runtime.coxeterDiv,
     runtime.mirrors,
@@ -321,6 +360,8 @@ export default function App({ gl, params, updateParams }) {
     runtime.showEdges,
     runtime.maxVertices,
     runtime.maxEdges,
+    runtime.curve,
+    runtime.segments,
   ])
 
   useEffect(() => {
@@ -356,11 +397,11 @@ export default function App({ gl, params, updateParams }) {
 
   const handleChange = useCallback(
     e => {
-      let { name, checked, type, value, ...rest } = e.target
+      let { name, checked, type, value } = e.target
 
       if (type === 'checkbox') {
         value = checked
-      } else if (type === 'number' && value) {
+      } else if (type === 'number' && value && !isNaN(value)) {
         value = +value
         if (e.target.min) {
           value = max(value, +e.target.min)
@@ -392,6 +433,11 @@ export default function App({ gl, params, updateParams }) {
         }
         for (let i = 0; i < value; i++) {
           newParams.coxeter[i][i] = -1
+        }
+        for (let i = 4; i <= value; i++) {
+          if (!params[`fov${i}`]) {
+            newParams[`fov${i}`] = i === 4 ? 90 : 45
+          }
         }
       }
 
@@ -439,16 +485,15 @@ export default function App({ gl, params, updateParams }) {
 
   return (
     <div className={error ? 'error' : ''} title={error}>
-      <button id="controls" onClick={handleControls}>
+      <button className="control-indicator" onClick={handleControls}>
         {runtime.controls === 'orbit' ? '⇹' : '↭'}
         {runtime.controls === 'free' ? (
           <sup>{runtime.controlsShift + 1}</sup>
         ) : null}
       </button>
       <button
-        id="space"
-        className={processing ? 'processing' : ''}
-        onClick={() => setShowUI(!showUI)}
+        className={`space-indicator${processing ? ' processing' : ''}`}
+        onClick={handleUI}
       >
         {runtime.curvature === 0 ? '𝔼' : runtime.curvature > 0 ? '𝕊' : 'ℍ'}
         <sup>{runtime.dimensions - 1}</sup>
@@ -572,6 +617,10 @@ export default function App({ gl, params, updateParams }) {
               ))}
             </select>
           </label>
+        </aside>
+      )}
+      {showUI && (
+        <aside className="view">
           <label>
             MSAA
             <input
@@ -591,6 +640,31 @@ export default function App({ gl, params, updateParams }) {
               />
             ) : null}
           </label>
+          <label>
+            FOV3
+            <input
+              type="number"
+              name="fov3"
+              min="0"
+              step="1"
+              value={params.fov3}
+              onChange={handleChange}
+            />
+          </label>
+          {params.dimensions > 3
+            ? range(params.dimensions - 3).map(i => (
+                <label key={i}>
+                  FOV{i + 4}
+                  <input
+                    type="number"
+                    name={`fov${i + 4}`}
+                    step="1"
+                    value={params[`fov${i + 4}`]}
+                    onChange={handleChange}
+                  />
+                </label>
+              ))
+            : null}
         </aside>
       )}
       {showUI && (
@@ -644,7 +718,7 @@ export default function App({ gl, params, updateParams }) {
               </label>
             </Fragment>
           ))}
-          <button id="extend" onClick={handleExtend}>
+          <button className="extend" onClick={handleExtend}>
             {params.extended ? '▼' : '▲'}
           </button>
         </aside>

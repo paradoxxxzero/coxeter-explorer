@@ -75,6 +75,9 @@ export const gestureMove = (e, vertices, edges, curvature, shift) => {
 
 export const keydown = (e, vertices, edges, curvature) => {
   const { code } = e
+  if (e.target !== document.body) {
+    return
+  }
   const step = 0.01
   if (code === 'ArrowLeft' || code === 'KeyA') {
     translate([-step, 0, 0, 0], vertices, edges, curvature)
@@ -88,9 +91,9 @@ export const keydown = (e, vertices, edges, curvature) => {
     translate([0, -step, 0, 0], vertices, edges, curvature)
   } else if (code === 'PageDown' || code === 'KeyE') {
     translate([0, step, 0, 0], vertices, edges, curvature)
-  } else if (code === 'KeyR') {
+  } else if (code === 'Digit1') {
     rotate(-(PI * 5) / 180, vertices, edges, curvature)
-  } else if (code === 'KeyF') {
+  } else if (code === 'Digit3') {
     rotate((PI * 5) / 180, vertices, edges, curvature)
   } else if (code === 'KeyZ') {
     scale(-step, vertices, edges, curvature)

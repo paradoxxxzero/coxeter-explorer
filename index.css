@@ -8,7 +8,7 @@ canvas {
   background: black;
 }
 
-#space {
+.space-indicator {
   position: absolute;
   bottom: 0.25em;
   right: 0.25em;
@@ -21,7 +21,11 @@ canvas {
   background: none;
   border: none;
 }
-#controls {
+.space-indicator.processing {
+  animation: processing 1s infinite;
+}
+
+.control-indicator {
   position: absolute;
   top: 0.125em;
   left: 0.125em;
@@ -34,13 +38,13 @@ canvas {
   background: none;
   border: none;
 }
-#controls sup {
+.control-indicator sup {
   position: absolute;
   top: 0.25em;
   font-size: 0.3em;
 }
 
-#extend {
+.extend {
   position: absolute;
   bottom: -1.5em;
   right: 0.125em;
@@ -53,14 +57,11 @@ canvas {
   background: none;
   border: none;
 }
-#controls:hover,
-#extend:hover,
-#space:hover {
+
+button:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
-#space.processing {
-  animation: processing 1s infinite;
-}
+
 @keyframes processing {
   0% {
     opacity: 1;
@@ -79,6 +80,7 @@ label {
   mix-blend-mode: difference;
   isolation: isolate;
 }
+
 .controls {
   position: absolute;
   bottom: 0;
@@ -100,6 +102,26 @@ label {
 .controls input,
 .controls select {
   margin-left: 0.25em;
+}
+
+.view {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  font-size: 0.9em;
+  align-items: baseline;
+  font-size: 0.75em;
+  margin: 1em;
+  margin-right: 4.5rem;
+  font-size: calc(min(1.5vw, 0.75em));
+}
+.view label {
+  margin: 0.2em 0.75em;
+  color: rgba(255, 255, 255, 0.65);
 }
 
 .coxeters {

@@ -4,6 +4,24 @@ uniform float curvature;
 uniform float vertexThickness;
 uniform float edgeThickness;
 uniform float segments;
+#if DIMENSIONS >= 4
+uniform float fov4;
+#endif
+#if DIMENSIONS >= 5
+uniform float fov5;
+#endif
+#if DIMENSIONS >= 6
+uniform float fov6;
+#endif
+#if DIMENSIONS >= 7
+uniform float fov7;
+#endif
+#if DIMENSIONS >= 8
+uniform float fov8;
+#endif
+#if DIMENSIONS >= 9
+uniform float fov9;
+#endif
 
 #if DIMENSIONS == 2
 attribute vec2 instancePosition;

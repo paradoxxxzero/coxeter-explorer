@@ -31,7 +31,9 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
 import { LuminosityShader } from 'three/examples/jsm/shaders/LuminosityShader.js'
 import { SobelOperatorShader } from 'three/examples/jsm/shaders/SobelOperatorShader.js'
+import { degToRad } from 'three/src/math/MathUtils'
 import { ambiances } from '../statics'
+import { tan } from './math'
 import { GodRayPass } from './shader/GodRayPass'
 import { hyperMathMaterial } from './shader/hyperMathMaterial'
 
@@ -130,20 +132,18 @@ export const initVertex = rt => {
 
   const instancedVertex = new Mesh(
     vertexGeometry,
-    hyperMathMaterial(ambiance.material, dimensions, projection)
+    hyperMathMaterial(ambiance.material, rt)
   )
   vertexGeometry.attributes.instanceTarget.array.fill(NaN)
   instancedVertex.geometry.instanceCount = 0
   instancedVertex.frustumCulled = false
   instancedVertex.customDepthMaterial = hyperMathMaterial(
     new MeshDepthMaterial({ depthPacking: RGBADepthPacking }),
-    dimensions,
-    projection
+    rt
   )
   instancedVertex.customDistanceMaterial = hyperMathMaterial(
     new MeshDistanceMaterial(),
-    dimensions,
-    projection
+    rt
   )
   instancedVertex.castShadow = ambiance.shadow
   instancedVertex.name = 'instanced-vertex'
@@ -185,19 +185,17 @@ export const initEdge = rt => {
 
   const instancedEdge = new Mesh(
     edgeGeometry,
-    hyperMathMaterial(ambiance.material, dimensions, projection)
+    hyperMathMaterial(ambiance.material, rt)
   )
   instancedEdge.geometry.instanceCount = 0
   instancedEdge.frustumCulled = false
   instancedEdge.customDepthMaterial = hyperMathMaterial(
     new MeshDepthMaterial({ depthPacking: RGBADepthPacking }),
-    dimensions,
-    projection
+    rt
   )
   instancedEdge.customDistanceMaterial = hyperMathMaterial(
     new MeshDistanceMaterial(),
-    dimensions,
-    projection
+    rt
   )
   instancedEdge.castShadow = ambiance.shadow
   instancedEdge.name = 'instanced-edge'
@@ -316,34 +314,34 @@ export const plot = (rt, order = null) => {
     plotEdges(rt, range.edges)
   }
   rt.composer.render()
-  document.title = `Honeyball^${rt.dimensions} - ${rt.vertices.length} vertices, ${rt.edges.length} edges`
+  document.title = `Honeyball^${rt.dimensions} ${
+    rt.currentOrder < rt.order ? `(${rt.currentOrder}/${rt.order})…` : ''
+  }- ${rt.vertices.length} vertices, ${rt.edges.length} edges`
 }
 
-export const resetComposerTarget = rt => {
-  const size = rt.composer.renderer.getDrawingBufferSize(new Vector2())
+export const updateCameraFov = (composer, camera, fov) => {
+  camera.fov = fov
+  camera.updateProjectionMatrix()
+  composer.render()
+}
+
+export const resetComposerTarget = (composer, msaa, msaaSamples) => {
+  const size = composer.renderer.getDrawingBufferSize(new Vector2())
   const renderTarget = new WebGLRenderTarget(size.width, size.height, {
-    samples: rt.msaa ? rt.msaaSamples : 0,
+    samples: msaa ? msaaSamples : 0,
   })
-  rt.composer.reset(renderTarget)
-  rt.composer.render()
+  composer.reset(renderTarget)
+  composer.render()
 }
 
 export const changeAmbiance = rt => {
   const ambiance = ambiances[rt.ambiance]
-  const { scene, composer, camera, dimensions, projection } = rt
+  const { scene, composer, camera } = rt
   const instancedVertex = rt.scene.getObjectByName('instanced-vertex')
   const instancedEdge = rt.scene.getObjectByName('instanced-edge')
 
-  instancedVertex.material = hyperMathMaterial(
-    ambiance.material,
-    dimensions,
-    projection
-  )
-  instancedEdge.material = hyperMathMaterial(
-    ambiance.material,
-    dimensions,
-    projection
-  )
+  instancedVertex.material = hyperMathMaterial(ambiance.material, rt)
+  instancedEdge.material = hyperMathMaterial(ambiance.material, rt)
 
   if (ambiance.env) {
     scene.environment = ambiance.env
@@ -445,16 +443,8 @@ export const changeAmbiance = rt => {
       composer.addPass(composer.copyPass)
     } else if (fx === 'sao') {
       const saoPass = new SAOPass(scene, camera, false, true)
-      saoPass.depthMaterial = hyperMathMaterial(
-        saoPass.depthMaterial,
-        dimensions,
-        projection
-      )
-      saoPass.normalMaterial = hyperMathMaterial(
-        saoPass.normalMaterial,
-        dimensions,
-        projection
-      )
+      saoPass.depthMaterial = hyperMathMaterial(saoPass.depthMaterial, rt)
+      saoPass.normalMaterial = hyperMathMaterial(saoPass.normalMaterial, rt)
       saoPass.params.output = SAOPass.OUTPUT.Default
 
       saoPass.params.saoIntensity = 0.1
@@ -472,11 +462,7 @@ export const changeAmbiance = rt => {
         aperture: 0.005,
         maxblur: 0.005,
       })
-      bokehPass.materialDepth = hyperMathMaterial(
-        bokehPass.materialDepth,
-        dimensions,
-        projection
-      )
+      bokehPass.materialDepth = hyperMathMaterial(bokehPass.materialDepth, rt)
       composer.addPass(bokehPass)
     } else if (fx === 'sobel') {
       const effectGrayScale = new ShaderPass(LuminosityShader)
@@ -497,11 +483,7 @@ export const changeAmbiance = rt => {
       composer.addPass(bloomPass)
     } else if (fx === 'godray') {
       const godrayPass = new GodRayPass(scene, camera)
-      godrayPass.materialDepth = hyperMathMaterial(
-        godrayPass.materialDepth,
-        dimensions,
-        projection
-      )
+      godrayPass.materialDepth = hyperMathMaterial(godrayPass.materialDepth, rt)
       composer.addPass(godrayPass)
     }
   })
@@ -509,36 +491,37 @@ export const changeAmbiance = rt => {
   composer.render()
 }
 
-export const updateMaterials = ({
-  composer,
-  scene,
-  dimensions,
-  curvature,
-  projection,
-  curve,
-  segments,
-  vertexThickness,
-  edgeThickness,
-}) => {
-  segments = curve ? segments : 1
+export const updateMaterials = rt => {
+  const {
+    composer,
+    scene,
+    dimensions,
+    curvature,
+    projection,
+    vertexThickness,
+    edgeThickness,
+  } = rt
+  const segments = rt.curve ? rt.segments : 1
   const instancedVertex = scene.getObjectByName('instanced-vertex')
   const instancedEdge = scene.getObjectByName('instanced-edge')
   const update = material => {
-    if (!material?._dimensions) {
+    if (!material?._rt) {
       return
     }
     material.uniforms.curvature.value = curvature
     material.uniforms.vertexThickness.value = vertexThickness
     material.uniforms.edgeThickness.value = edgeThickness
-    if (
-      dimensions !== material._dimensions ||
-      projection !== material._projection
-    ) {
-      material._dimensions = dimensions
-      material._projection = projection
-      material.needsUpdate = true
-    }
+    material.needsUpdate =
+      dimensions !== material._rt.dimensions ||
+      projection !== material._rt.projection
+    material._rt = rt
     material.uniforms.segments.value = segments
+    for (let i = 4; i <= dimensions; i++) {
+      if (!material.uniforms[`fov${i}`]) {
+        material.uniforms[`fov${i}`] = { value: 1 }
+      }
+      material.uniforms[`fov${i}`].value = tan(degToRad(rt[`fov${i}`]) * 0.5)
+    }
   }
 
   update(instancedVertex.material)

@@ -19,7 +19,7 @@ const include = projectionVertexShader.match(
   /\/\* BEGIN INCLUDE \*\/([\s\S]*?)\/\* END INCLUDE \*\//m
 )[1]
 
-export const hyperMathMaterial = (material, dimensions, projection) => {
+export const hyperMathMaterial = (material, rt) => {
   material = material.clone()
   material.vertexColors = ![
     MeshDepthMaterial,
@@ -27,8 +27,7 @@ export const hyperMathMaterial = (material, dimensions, projection) => {
     MeshNormalMaterial,
     MeshDistanceMaterial,
   ].find(cls => material instanceof cls)
-  material._dimensions = dimensions
-  material._projection = projection
+  material._rt = rt
   material.uniforms = {
     ...(material.uniforms || {}),
     curvature: { value: 0 },
@@ -36,10 +35,15 @@ export const hyperMathMaterial = (material, dimensions, projection) => {
     vertexThickness: { value: 0 },
     segments: { value: 1 },
   }
+  for (let i = 4; i <= rt.dimensions; i++) {
+    material.uniforms[`fov${i}`] = { value: 90 }
+  }
+
   material.onBeforeCompile = shader => {
+    const { dimensions, projection } = material._rt
     const defines = [
-      `#define DIMENSIONS ${material._dimensions}`,
-      `#define PROJECTION ${projections.indexOf(material._projection)}`,
+      `#define DIMENSIONS ${dimensions}`,
+      `#define PROJECTION ${projections.indexOf(projection)}`,
     ]
 
     Object.assign(shader.uniforms, material.uniforms)
@@ -71,7 +75,7 @@ export const hyperMathMaterial = (material, dimensions, projection) => {
     ].join('\n')
   }
   material.customProgramCacheKey = () => {
-    return `hypermath_${material.constructor.name}_${material._dimensions}_${material._projection}`
+    return `hypermath_${material.constructor.name}_${material._rt.dimensions}_${material._rt.projection}`
   }
   return material
 }

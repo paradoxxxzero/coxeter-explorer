@@ -225,15 +225,16 @@ vec3 xproject(in vec3 v) {
   return v.xyz;
 }
 
+#if DIMENSIONS >= 4
 vec3 xproject(in vec4 v) {
   #if PROJECTION == 0 // STEREOGRAPHIC
-  return v.xyz / (v.w - curvature);
+  return v.xyz / (v.w * fov4 - curvature);
   #elif PROJECTION == 1 // ORTHOGRAPHIC
   return v.xyz;
   #elif PROJECTION == 2 // KLEIN
   return v.xyz / v.w;
   #elif PROJECTION == 3 // INVERTED
-  return v.xyz / (v.w + curvature);
+  return v.xyz / (v.w * fov4 + curvature);
   #elif PROJECTION == 4 // JEMISPHERE
   return v.xyz;
   #elif PROJECTION == 5 // UPPERHALF
@@ -245,17 +246,18 @@ vec3 xproject(in vec4 v) {
   return v.xwy;
   #endif
 }
+#endif
 
 #if DIMENSIONS >= 5
 vec3 xproject(in vec5 v) {
   #if PROJECTION == 0 // STEREOGRAPHIC
-  return xproject(v.v / (v.u * .25 - curvature));
+  return xproject(v.v / (v.u * fov5 - curvature));
   #elif PROJECTION == 1 // ORTHOGRAPHIC
   return xproject(v.v);
   #elif PROJECTION == 2 // KLEIN
   return xproject(v.v / v.u);
   #elif PROJECTION == 3 // INVERTED
-  return xproject(v.v / (v.u * .25 + curvature));
+  return xproject(v.v / (v.u * fov5 + curvature));
   #elif PROJECTION == 4 // JEMISPHERE
   return xproject(v.v);
   #elif PROJECTION == 5 // UPPERHALF
@@ -267,17 +269,19 @@ vec3 xproject(in vec5 v) {
 #if DIMENSIONS >= 6
 vec3 xproject(in vec6 v) {
   #if PROJECTION == 0 // STEREOGRAPHIC
-  return xproject(vec5(v.v / (v.u.y * .25 - curvature), v.u.x / (v.u.y * .25 - curvature)));
+  float nr = (v.u.y * fov6 - curvature);
+  return xproject(vec5(v.v / nr, v.u.x / nr));
   #elif PROJECTION == 1 // ORTHOGRAPHIC
-  return xproject(vec5(v.v, v.u));
+  return xproject(vec5(v.v, v.u.x));
   #elif PROJECTION == 2 // KLEIN
   return xproject(vec5(v.v / v.u.y, v.u.x / v.u.y));
   #elif PROJECTION == 3 // INVERTED
-  return xproject(vec5(v.v / (v.u.y * .25 + curvature), v.u.x / (v.u.y * .25 + curvature)));
+  float nr = (v.u.y * fov6 - curvature);
+  return xproject(vec5(v.v / nr, v.u.x / nr));
   #elif PROJECTION == 4 // JEMISPHERE
-  return xproject(vec5(v.v, v.u));
+  return xproject(vec5(v.v, v.u.x));
   #elif PROJECTION == 5 // UPPERHALF
-  return xproject(vec5(v.v, v.u));
+  return xproject(vec5(v.v, v.u.x));
   #endif
 }
 #endif
@@ -285,13 +289,15 @@ vec3 xproject(in vec6 v) {
 #if DIMENSIONS >= 7
 vec3 xproject(in vec7 v) {
   #if PROJECTION == 0 // STEREOGRAPHIC
-  return xproject(vec6(v.v / (v.u.z * .25 - curvature), v.u.xy / (v.u.z * .25 - curvature)));
+  float nr = (v.u.y * fov7 - curvature);
+  return xproject(vec6(v.v / nr, v.u.xy / nr));
   #elif PROJECTION == 1 // ORTHOGRAPHIC
   return xproject(vec6(v.v, v.u.xy));
   #elif PROJECTION == 2 // KLEIN
   return xproject(vec6(v.v / v.u.z, v.u.xy / v.u.z);
   #elif PROJECTION == 3 // INVERTED
-  return xproject(vec6(v.v / (v.u.z * .25 + curvature), v.u.xy / (v.u.z * .25 + curvature)));
+  float nr = (v.u.y * fov7 - curvature);
+  return xproject(vec6(v.v / nr, v.u.xy / nr));
   #elif PROJECTION == 4 // JEMISPHERE
   return xproject(vec6(v.v, v.u.xy));
   #elif PROJECTION == 5 // UPPERHALF
@@ -303,13 +309,15 @@ vec3 xproject(in vec7 v) {
 #if DIMENSIONS >= 8
 vec3 xproject(in vec8 v) {
   #if PROJECTION == 0 // STEREOGRAPHIC
-  return xproject(vec7(v.v / (v.u.w * .25 - curvature), v.u.xyz / (v.u.w * .25 - curvature)));
+  float nr = (v.u.y * fov8 - curvature);
+  return xproject(vec7(v.v / nr, v.u.xyz / nr));
   #elif PROJECTION == 1 // ORTHOGRAPHIC
   return xproject(vec7(v.v, v.u.xyz));
   #elif PROJECTION == 2 // KLEIN
   return xproject(vec7(v.v / v.u.w, v.u.xyz / v.u.w));
   #elif PROJECTION == 3 // INVERTED
-  return xproject(vec7(v.v / (v.u.w * .25 + curvature), v.u.xyz / (v.u.w * .25 + curvature)));
+  float nr = (v.u.y * fov8 - curvature);
+  return xproject(vec7(v.v / nr, v.u.xyz / nr));
   #elif PROJECTION == 4 // JEMISPHERE
   return xproject(vec7(v.v, v.u.xyz));
   #elif PROJECTION == 5 // UPPERHALF
@@ -321,13 +329,15 @@ vec3 xproject(in vec8 v) {
 #if DIMENSIONS >= 9
 vec3 xproject(in vec9 v) {
   #if PROJECTION == 0 // STEREOGRAPHIC
-  return xproject(vec8(v.v / (v.u.w * .25 - curvature), v.u / (v.u.w * .25 - curvature)));
+  float nr = (v.u.y * fov9 - curvature);
+  return xproject(vec8(v.v / nr, v.u / nr));
   #elif PROJECTION == 1 // ORTHOGRAPHIC
   return xproject(vec8(v.v, v.u.xyz));
   #elif PROJECTION == 2 // KLEIN
   return xproject(vec8(v.v / v.u.w, v.u / v.u.w));
   #elif PROJECTION == 3 // INVERTED
-  return xproject(vec8(v.v / (v.u.w * .25 + curvature), v.u / (v.u.w * .25 + curvature)));
+  float nr = (v.u.y * fov9 - curvature);
+  return xproject(vec8(v.v / nr, v.u / nr));
   #elif PROJECTION == 4 // JEMISPHERE
   return xproject(vec8(v.v, v.u));
   #elif PROJECTION == 5 // UPPERHALF
