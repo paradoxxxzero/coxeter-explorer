@@ -24,6 +24,12 @@ canvas {
 .space-indicator.processing {
   animation: processing 1s infinite;
 }
+.space-indicator sub {
+  position: absolute;
+  right: -0.25em;
+  bottom: -0.25em;
+  font-size: 0.3em;
+}
 
 .control-indicator {
   position: absolute;
@@ -78,7 +84,6 @@ label {
   white-space: nowrap;
   font-family: 'Fira Code', monospace;
   mix-blend-mode: difference;
-  isolation: isolate;
 }
 
 .controls {
@@ -107,8 +112,8 @@ label {
 .view {
   position: absolute;
   left: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
   flex-wrap: wrap;
@@ -117,7 +122,14 @@ label {
   font-size: 0.75em;
   margin: 1em;
   margin-right: 4.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   font-size: calc(min(1.5vw, 0.75em));
+  pointer-events: none;
+}
+.view * {
+  pointer-events: all;
 }
 .view label {
   margin: 0.2em 0.75em;
@@ -174,4 +186,7 @@ select option {
 
 .error * {
   color: red !important;
+}
+.warning * {
+  color: orange !important;
 }

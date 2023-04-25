@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useState } from 'react'
 import { size } from './honeyball/event'
 import { useInteractions } from './honeyball/interact'
-import { floor, max, min, round } from './honeyball/math'
+import { PI, cos, floor, max, min, round } from './honeyball/math'
 import {
   changeAmbiance,
   initEdge,
@@ -14,17 +14,32 @@ import {
   updateCameraFov,
   updateMaterials,
 } from './honeyball/render'
-import { kill, process, range } from './honeyball/utlis'
+import { range } from './honeyball/utlis'
 import { ambiances, projections } from './statics'
+import { grouper, tiler } from './honeyball/worker'
+import {
+  getCurvature,
+  getFundamentalSimplexMirrors,
+  getFundamentalVertex,
+} from './honeyball/math/hypermath'
 
 export default function App({ gl, params, updateParams }) {
   const [runtime, setRuntime] = useState(() => {
     const runtime = {
-      curvature: 0,
-      edges: [],
-      vertices: [],
-      ranges: [],
       currentOrder: 0,
+
+      rules: null,
+      curvature: 0,
+      mirrorsPlanes: null,
+      rootVertex: null,
+      words: null,
+      edgeHashes: null,
+      vertexHashes: null,
+      nextWords: null,
+      vertices: null,
+      edges: null,
+      ranges: null,
+
       maxVertices: 5000,
       maxEdges: 50000,
       ...params,
@@ -174,7 +189,7 @@ export default function App({ gl, params, updateParams }) {
       if (
         !params.dimensions ||
         params.coxeter.find(c => c.find(d => !d)) ||
-        params.coxeterDiv.find(c => c.find(d => !d))
+        params.stellation.find(c => c.find(d => !d))
       ) {
         return runtime
       }
@@ -182,20 +197,29 @@ export default function App({ gl, params, updateParams }) {
         ...runtime,
         dimensions: params.dimensions,
         coxeter: params.coxeter,
-        coxeterDiv: params.coxeterDiv,
-        stellation: params.stellation,
         mirrors: params.mirrors,
+        stellated: params.stellated,
+        stellation: params.stellation,
         currentOrder: 0,
-        edges: [],
-        vertices: [],
-        ranges: [],
+
+        rules: null,
+        // curvature: 0,
+        mirrorsPlanes: null,
+        rootVertex: null,
+        words: null,
+        edgeHashes: null,
+        vertexHashes: null,
+        nextWords: null,
+        vertices: null,
+        edges: null,
+        ranges: null,
       }
     })
   }, [
     params.dimensions,
     params.coxeter,
-    params.coxeterDiv,
     params.mirrors,
+    params.stellated,
     params.stellation,
   ])
 
@@ -206,12 +230,12 @@ export default function App({ gl, params, updateParams }) {
   }, [runtime.dimensions, runtime.curve, runtime.segments])
 
   useEffect(() => {
-    kill()
+    tiler.kill()
     setProcessing(false)
   }, [
     runtime.dimensions,
     runtime.coxeter,
-    runtime.coxeterDiv,
+    runtime.stellated,
     runtime.mirrors,
     runtime.stellation,
   ])
@@ -243,7 +267,7 @@ export default function App({ gl, params, updateParams }) {
     if (runtime.order <= runtime.currentOrder) {
       return
     }
-    if (runtime.ranges[runtime.order]) {
+    if (runtime.ranges?.[runtime.order]) {
       setRuntime(runtime => ({
         ...runtime,
         currentOrder: runtime.order,
@@ -253,16 +277,73 @@ export default function App({ gl, params, updateParams }) {
     ;(async () => {
       setError(null)
       setProcessing(true)
-      let rv
+      // Rules gets computed on non stellated coxeter group
+      const newTilingRuntime = {}
+
+      if (runtime.currentOrder === 0) {
+        console.log('Reiniting')
+        try {
+          newTilingRuntime.rules = await grouper.process({
+            dimensions: runtime.dimensions,
+            coxeter: runtime.coxeter,
+          })
+        } catch (e) {
+          console.warn(e)
+        }
+        // Initialize tiling
+        const gram = runtime.coxeter.map((row, i) =>
+          row.map(
+            (column, j) =>
+              -cos(
+                ((runtime.stellated ? runtime.stellation[i][j] : 1) * PI) /
+                  column
+              )
+          )
+        )
+        newTilingRuntime.curvature = getCurvature(gram)
+        newTilingRuntime.mirrorsPlanes = getFundamentalSimplexMirrors(
+          gram,
+          newTilingRuntime.curvature
+        )
+        newTilingRuntime.rootVertex = getFundamentalVertex(
+          runtime.mirrors,
+          newTilingRuntime.mirrorsPlanes,
+          newTilingRuntime.curvature
+        )
+
+        newTilingRuntime.words = new Map([['', newTilingRuntime.rootVertex]])
+        newTilingRuntime.edgeHashes = new Set()
+        newTilingRuntime.vertexHashes = new Set()
+        newTilingRuntime.nextWords = ['']
+        newTilingRuntime.vertices = []
+        newTilingRuntime.edges = []
+        newTilingRuntime.ranges = []
+      }
+
       try {
-        rv = await process({
-          dimensions: runtime.dimensions,
-          coxeter: runtime.coxeter,
-          coxeterDiv: runtime.coxeterDiv,
-          stellation: runtime.stellation,
-          mirrors: runtime.mirrors,
-          currentOrder: runtime.currentOrder,
+        const preprocessRuntime = {
+          ...runtime,
+          ...newTilingRuntime,
+        }
+        const processedRuntime = await tiler.process({
+          currentOrder: preprocessRuntime.currentOrder,
+          curvature: preprocessRuntime.curvature,
+          vertices: preprocessRuntime.vertices,
+          edges: preprocessRuntime.edges,
+          ranges: preprocessRuntime.ranges,
+          words: preprocessRuntime.words,
+          edgeHashes: preprocessRuntime.edgeHashes,
+          vertexHashes: preprocessRuntime.vertexHashes,
+          nextWords: preprocessRuntime.nextWords,
+          rules: preprocessRuntime.rules,
+          mirrorsPlanes: preprocessRuntime.mirrorsPlanes,
+          rootVertex: preprocessRuntime.rootVertex,
+          dimensions: preprocessRuntime.dimensions,
         })
+        setRuntime(runtime => ({
+          ...runtime,
+          ...processedRuntime,
+        }))
       } catch (e) {
         setError(e)
         // Change current order to allow user to retry
@@ -274,24 +355,6 @@ export default function App({ gl, params, updateParams }) {
       } finally {
         setProcessing(false)
       }
-      if (!rv) {
-        return
-      }
-      setRuntime(runtime => {
-        const newRuntime = {
-          ...runtime,
-          currentOrder: rv.currentOrder,
-          curvature: rv.curvature,
-          ranges: runtime.ranges.slice(),
-          vertices: runtime.vertices.concat(rv.vertices),
-          edges: runtime.edges.concat(rv.edges),
-        }
-        newRuntime.ranges[rv.currentOrder - 1] = {
-          vertices: [runtime.vertices.length, newRuntime.vertices.length],
-          edges: [runtime.edges.length, newRuntime.edges.length],
-        }
-        return newRuntime
-      })
     })()
     // Can't have ranges here
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -300,14 +363,14 @@ export default function App({ gl, params, updateParams }) {
     runtime.currentOrder,
     runtime.dimensions,
     runtime.coxeter,
-    runtime.coxeterDiv,
     runtime.mirrors,
+    runtime.stellated,
     runtime.stellation,
   ])
 
   useEffect(() => {
     setRuntime(runtime => {
-      if (runtime.vertices.length > runtime.maxVertices) {
+      if (runtime.vertices?.length > runtime.maxVertices) {
         console.warn(`Extending vertex buffer to ${runtime.vertices.length}`)
         const newRuntime = {
           ...runtime,
@@ -322,7 +385,7 @@ export default function App({ gl, params, updateParams }) {
 
   useEffect(() => {
     setRuntime(runtime => {
-      if (runtime.edges.length > runtime.maxEdges) {
+      if (runtime.edges?.length > runtime.maxEdges) {
         console.warn(`Extending edge buffer to ${runtime.edges.length}`)
         const newRuntime = {
           ...runtime,
@@ -337,9 +400,7 @@ export default function App({ gl, params, updateParams }) {
 
   useEffect(() => {
     // Order plot
-    if (runtime.currentOrder > 0) {
-      plot(runtime, runtime.currentOrder - 1)
-    }
+    plot(runtime, runtime.currentOrder - 1)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     runtime.currentOrder,
@@ -419,7 +480,7 @@ export default function App({ gl, params, updateParams }) {
         newParams.coxeter = new Array(value)
           .fill()
           .map(() => new Array(value).fill(2))
-        newParams.coxeterDiv = new Array(value)
+        newParams.stellation = new Array(value)
           .fill()
           .map(() => new Array(value).fill(1))
         newParams.mirrors = new Array(value).fill(0)
@@ -458,11 +519,11 @@ export default function App({ gl, params, updateParams }) {
           .split('-')
           .slice(1)
           .map(x => +x)
-        const coxeterDiv = params.coxeterDiv.map(x => x.slice())
-        coxeterDiv[i][j] = value
-        coxeterDiv[j][i] = value
-        name = 'coxeterDiv'
-        value = coxeterDiv
+        const stellation = params.stellation.map(x => x.slice())
+        stellation[i][j] = value
+        stellation[j][i] = value
+        name = 'stellation'
+        value = stellation
       }
       if (name.startsWith('mirror')) {
         const [i] = name
@@ -482,9 +543,13 @@ export default function App({ gl, params, updateParams }) {
     },
     [params, updateParams]
   )
-
   return (
-    <div className={error ? 'error' : ''} title={error}>
+    <div
+      className={[error ? 'error' : '', runtime.rules?.warn ? 'warning' : '']
+        .filter(c => c)
+        .join(' ')}
+      title={error}
+    >
       <button className="control-indicator" onClick={handleControls}>
         {runtime.controls === 'orbit' ? '⇹' : '↭'}
         {runtime.controls === 'free' ? (
@@ -497,6 +562,11 @@ export default function App({ gl, params, updateParams }) {
       >
         {runtime.curvature === 0 ? '𝔼' : runtime.curvature > 0 ? '𝕊' : 'ℍ'}
         <sup>{runtime.dimensions - 1}</sup>
+        {runtime.currentOrder < runtime.order ? (
+          <sub>
+            {runtime.currentOrder}/{runtime.order}
+          </sub>
+        ) : null}
       </button>
       {showUI && (
         <aside className="controls">
@@ -597,11 +667,11 @@ export default function App({ gl, params, updateParams }) {
           <label>
             <input
               type="checkbox"
-              name="stellation"
-              checked={params.stellation}
+              name="stellated"
+              checked={params.stellated}
               onChange={handleChange}
             />
-            Stellation
+            Stellated
           </label>
           <label>
             Ambiance
@@ -685,7 +755,7 @@ export default function App({ gl, params, updateParams }) {
                             value={params.coxeter[i][j]}
                             onChange={handleChange}
                           />
-                          {params.stellation && (
+                          {params.stellated && (
                             <div className="stellation">
                               <span className="divisor"> / </span>
                               <input
@@ -693,7 +763,7 @@ export default function App({ gl, params, updateParams }) {
                                 name={`div-${i}-${j}`}
                                 min="1"
                                 step="1"
-                                value={params.coxeterDiv[i][j]}
+                                value={params.stellation[i][j]}
                                 onChange={handleChange}
                               />
                             </div>

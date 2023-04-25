@@ -288,6 +288,9 @@ export const show = (rt, name) => {
 }
 
 export const plot = (rt, order = null) => {
+  if (rt.currentOrder === 0) {
+    return
+  }
   if (
     (order === null && rt.ranges.length === 0) ||
     (order !== null && order >= rt.ranges.length)

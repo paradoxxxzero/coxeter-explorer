@@ -15,7 +15,7 @@ const defaultParams = {
     [2, 3, -1, 4],
     [2, 2, 4, -1],
   ],
-  coxeterDiv: [
+  stellation: [
     [1, 1, 1, 1],
     [1, 1, 1, 1],
     [1, 1, 1, 1],
@@ -23,7 +23,7 @@ const defaultParams = {
   ],
   mirrors: [1, 0, 0, 0],
   extended: true,
-  stellation: false,
+  stellated: false,
 
   order: 10,
   segments: 32,
@@ -78,7 +78,7 @@ const AppWithHistory = () => {
       if (
         !finalParams.dimensions ||
         finalParams.coxeter.find(c => c.find(d => !d)) ||
-        finalParams.coxeterDiv.find(c => c.find(d => !d)) ||
+        finalParams.stellation.find(c => c.find(d => !d)) ||
         (finalParams.curve && !finalParams.segments) ||
         (finalParams.showVertices && !finalParams.vertexThickness) ||
         (finalParams.showEdges && !finalParams.edgeThickness) ||

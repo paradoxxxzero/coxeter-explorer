@@ -472,16 +472,16 @@ export const getFundamentalSimplexMirrors = (gram, curvature) => {
   return mirrors
 }
 
-export const getFundamentalVertex = (mirrors, m, curvature) => {
+export const getFundamentalVertex = (mirrors, mirrorsPlanes, curvature) => {
   // solve linear system for mirrors
-  const dimensions = m.length
+  const dimensions = mirrors.length
   const p = new Array(dimensions)
   for (let i = 0; i < dimensions; i++) {
     let sum = 0
     for (let j = 0; j < i; j++) {
-      sum += mirrors[i][j] * p[j]
+      sum += mirrorsPlanes[i][j] * p[j]
     }
-    p[i] = (m[i] - sum) / mirrors[i][i]
+    p[i] = (mirrors[i] - sum) / mirrorsPlanes[i][i]
   }
 
   p[p.length - 1] *= curvature || 1
