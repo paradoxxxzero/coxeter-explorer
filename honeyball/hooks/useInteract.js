@@ -1,8 +1,8 @@
 import interact from 'interactjs'
 import { useEffect, useLayoutEffect } from 'react'
-import { PI } from './math'
-import { xrotate, xscale, xtranslate } from './math/hypermath'
-import { plot } from './render'
+import { PI } from '../math'
+import { xrotate, xscale, xtranslate } from '../math/hypermath'
+import { plot } from '../render'
 
 const translate = (offset, vertices, edges, curvature) => {
   for (let i = 0; i < vertices.length; i++) {
@@ -117,7 +117,7 @@ export const wheel = (e, vertices, edges, curvature, shift) => {
   }
 }
 
-export const useInteractions = runtime => {
+export const useInteract = runtime => {
   useLayoutEffect(() => {
     const handle = interact(runtime.composer.renderer.domElement)
       .draggable({

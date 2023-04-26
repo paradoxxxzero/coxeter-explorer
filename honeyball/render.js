@@ -98,14 +98,14 @@ export const initializeGl = () => {
 }
 
 export const initVertex = rt => {
-  // Handle hot reload
   let existingVertex = rt.scene.getObjectByName('instanced-vertex')
   if (existingVertex) {
-    console.warn('Vertex already exists, skipping init')
-    return existingVertex
+    rt.scene.remove(existingVertex)
+    existingVertex.geometry.dispose()
+    existingVertex.material.dispose()
   }
   const ambiance = ambiances[rt.ambiance]
-  const { dimensions, projection } = rt
+  const { dimensions } = rt
 
   const vertex3dGeometry = new SphereGeometry(1e-7, 32, 32)
   vertex3dGeometry.attributes.position.array.fill(0)
@@ -149,17 +149,17 @@ export const initVertex = rt => {
   instancedVertex.name = 'instanced-vertex'
   instancedVertex.visible = rt.showVertices
   rt.scene.add(instancedVertex)
-  return instancedVertex
 }
 
 export const initEdge = rt => {
   let existingEdge = rt.scene.getObjectByName('instanced-edge')
   if (existingEdge) {
-    console.warn('Edge already exists, skipping init')
-    return existingEdge
+    rt.scene.remove(existingEdge)
+    existingEdge.geometry.dispose()
+    existingEdge.material.dispose()
   }
   const ambiance = ambiances[rt.ambiance]
-  const { dimensions, curve, segments, projection } = rt
+  const { dimensions, curve, segments } = rt
   const edge3dGeometry = new CylinderGeometry(
     0,
     0,
@@ -201,27 +201,6 @@ export const initEdge = rt => {
   instancedEdge.name = 'instanced-edge'
   instancedEdge.visible = rt.showEdges
   rt.scene.add(instancedEdge)
-  return instancedEdge
-}
-
-export const reinitVertex = rt => {
-  const oldInstancedVertex = rt.scene.getObjectByName('instanced-vertex')
-  rt.scene.remove(oldInstancedVertex)
-  oldInstancedVertex.geometry.dispose()
-  oldInstancedVertex.material.dispose()
-  const instancedVertex = initVertex(rt)
-  updateMaterials({ ...rt, instancedVertex })
-  return instancedVertex
-}
-
-export const reinitEdge = rt => {
-  const oldInstancedEdge = rt.scene.getObjectByName('instanced-edge')
-  rt.scene.remove(oldInstancedEdge)
-  oldInstancedEdge.geometry.dispose()
-  oldInstancedEdge.material.dispose()
-  const instancedEdge = initEdge(rt)
-  updateMaterials({ ...rt, instancedEdge })
-  return instancedEdge
 }
 
 const plotVertices = (rt, range = null) => {

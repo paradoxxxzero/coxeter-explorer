@@ -2,6 +2,25 @@ import { abs, round } from './math'
 import { shorten } from './math/group'
 import { reflect } from './math/hypermath'
 
+let vertexHashes = new Set()
+let edgeHashes = new Set()
+let vertices = []
+let edges = []
+let words = new Map()
+let nextWords = []
+let rules = null
+
+const init = (rootVertex, newRules) => {
+  vertexHashes.clear()
+  edgeHashes.clear()
+  words.clear()
+  words.set('', rootVertex)
+  vertices = []
+  edges = []
+  nextWords = ['']
+  rules = newRules
+}
+
 const same = (v1, v2) => {
   for (let i = 0; i < v1.length; i++) {
     if (abs(v1[i] - v2[i]) > 1e-8) {
@@ -44,12 +63,11 @@ const reflectWord = (state, word) => {
   return v
 }
 
-function plot(state, rv, word) {
-  const { vertexHashes } = state
+function plot(rv, word) {
   const vertexHash = hash(rv)
   if (!vertexHashes.has(vertexHash)) {
     vertexHashes.add(vertexHash)
-    state.vertices.push({
+    vertices.push({
       vertex: rv,
       word,
     })
@@ -57,8 +75,7 @@ function plot(state, rv, word) {
   }
 }
 
-function link(state, word, v, rv) {
-  const { edgeHashes } = state
+function link(word, v, rv) {
   const vHash = hash(v)
   const rvHash = hash(rv)
   if (vHash === rvHash) {
@@ -72,7 +89,7 @@ function link(state, word, v, rv) {
       const start = v.slice()
       const end = rv.slice()
 
-      state.edges.push({
+      edges.push({
         start,
         end,
         word,
@@ -83,8 +100,6 @@ function link(state, word, v, rv) {
 }
 
 const flip = (state, word, k, v) => {
-  const { rules, words } = state
-
   const m = String.fromCharCode(97 + k)
   if (word.slice(-1) === m) {
     return
@@ -92,29 +107,29 @@ const flip = (state, word, k, v) => {
   let newWord = word + m
 
   // Optimisation with word rewriting
-  newWord = shorten(rules.rules, newWord)
+  newWord = shorten(rules, newWord)
   if (words.has(newWord)) {
     const rv = words.get(newWord)
-    link(state, word, v, rv)
+    link(word, v, rv)
     return
   }
   const rv = reflectWord(state, newWord)
 
   words.set(newWord, rv)
   // If the vertex isn't new it probably is on the mirror
-  if (plot(state, rv, newWord)) {
-    link(state, word, v, rv)
+  if (plot(rv, newWord)) {
+    link(word, v, rv)
   }
   return newWord
 }
 
 const tileFundamentalChamber = state => {
-  const { words, rootVertex, nextWords } = state
+  const { rootVertex } = state
   let fundamentalChamberWords = ['']
   let futurewordsToConsider
   const maxChamberSize = 10000
   const dimensions = rootVertex.length
-  plot(state, rootVertex, '')
+  plot(rootVertex, '')
 
   // Start by filing the fundamental chamber to equilibrate the tiling
   let currentWords = nextWords
@@ -145,22 +160,6 @@ const tileFundamentalChamber = state => {
 }
 
 export const tile = state => {
-  const { words, nextWords, currentOrder } = state
-
-  if (currentOrder === 0) {
-    try {
-      return tileFundamentalChamber(state)
-    } catch (e) {
-      state.vertexHashes.clear()
-      state.edgeHashes.clear()
-      state.vertices = []
-      state.edges = []
-      state.words = new Map([['', state.rootVertex]])
-      state.nextWords = ['']
-      console.warn(e)
-    }
-  }
-
   let futurewordsToConsider
   // Start by filing the fundamental chamber to equilibrate the tiling
   futurewordsToConsider = []
@@ -176,20 +175,49 @@ export const tile = state => {
   return futurewordsToConsider
 }
 
-onmessage = ({ data: state }) => {
+onmessage = ({
+  data: {
+    first,
+    curvature,
+    rules,
+    mirrorsPlanes,
+    rootVertex,
+    dimensions,
+    uuid,
+  },
+}) => {
   try {
-    const initialVertexLength = state.vertices.length
-    const initialEdgeLength = state.edges.length
-
-    state.nextWords = tile(state)
-
-    state.ranges[state.currentOrder] = {
-      vertices: [initialVertexLength, state.vertices.length],
-      edges: [initialEdgeLength, state.edges.length],
+    let failed = false
+    if (first) {
+      init(rootVertex, rules)
+      try {
+        nextWords = tileFundamentalChamber({
+          first,
+          curvature,
+          mirrorsPlanes,
+          rootVertex,
+          dimensions,
+        })
+      } catch (e) {
+        failed = true
+        init(rootVertex, rules)
+        console.warn(e)
+      }
     }
-    state.currentOrder++
-    postMessage(state)
+    if (!first || failed) {
+      nextWords = tile({
+        first,
+        curvature,
+        mirrorsPlanes,
+        rootVertex,
+        dimensions,
+      })
+    }
+
+    postMessage({ vertices, edges, uuid })
+    vertices = []
+    edges = []
   } catch (e) {
-    postMessage({ error: e.message, uuid: state.uuid })
+    postMessage({ error: e.message, uuid })
   }
 }

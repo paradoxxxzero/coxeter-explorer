@@ -22,7 +22,7 @@ const defaultParams = {
     [1, 1, 1, 1],
   ],
   mirrors: [1, 0, 0, 0],
-  extended: true,
+  extended: false,
   stellated: false,
 
   order: 10,

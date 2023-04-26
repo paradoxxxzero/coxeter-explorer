@@ -1,55 +1,32 @@
 import { Fragment, useCallback, useEffect, useState } from 'react'
-import { size } from './honeyball/event'
-import { useInteractions } from './honeyball/interact'
-import { PI, cos, floor, max, min, round } from './honeyball/math'
-import {
-  changeAmbiance,
-  initEdge,
-  initVertex,
-  plot,
-  reinitEdge,
-  reinitVertex,
-  resetComposerTarget,
-  show,
-  updateCameraFov,
-  updateMaterials,
-} from './honeyball/render'
+import { useInteract } from './honeyball/hooks/useInteract'
+import { useProcess } from './honeyball/hooks/useProcess'
+import { useRender } from './honeyball/hooks/useRender'
+import { floor, max, min, round } from './honeyball/math'
 import { range } from './honeyball/utlis'
-import { ambiances, projections } from './statics'
 import { grouper, tiler } from './honeyball/worker'
-import {
-  getCurvature,
-  getFundamentalSimplexMirrors,
-  getFundamentalVertex,
-} from './honeyball/math/hypermath'
+import { ambiances, projections } from './statics'
 
 export default function App({ gl, params, updateParams }) {
   const [runtime, setRuntime] = useState(() => {
-    const runtime = {
+    return {
+      ...params,
+      ...gl,
+
       currentOrder: 0,
 
       rules: null,
       curvature: 0,
       mirrorsPlanes: null,
       rootVertex: null,
-      words: null,
-      edgeHashes: null,
-      vertexHashes: null,
-      nextWords: null,
-      vertices: null,
-      edges: null,
-      ranges: null,
-
-      maxVertices: 5000,
+      vertices: [],
+      edges: [],
+      ranges: [],
+      maxVertices: 30000,
       maxEdges: 50000,
-      ...params,
-      ...gl,
     }
-    initVertex(runtime)
-    initEdge(runtime)
-
-    return runtime
   })
+  window.rt = runtime
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState()
   const [showUI, setShowUI] = useState(true)
@@ -78,110 +55,59 @@ export default function App({ gl, params, updateParams }) {
   useEffect(() => {
     setRuntime(runtime => ({
       ...runtime,
+      order: params.order,
       controls: params.controls,
       controlsShift: params.controlsShift,
+      ambiance: params.ambiance,
+      showVertices: params.showVertices,
+      showEdges: params.showEdges,
+      vertexThickness: params.vertexThickness,
+      edgeThickness: params.edgeThickness,
+      projection: params.projection,
+      msaa: params.msaa,
+      msaaSamples: params.msaaSamples,
+      fov3: params.fov3,
+      fov4: params.fov4,
+      fov5: params.fov5,
+      fov6: params.fov6,
+      fov7: params.fov7,
+      fov8: params.fov8,
+      fov9: params.fov9,
+      curve: params.curve,
+      segments: params.segments,
+      dimensions: params.dimensions,
+      coxeter: params.coxeter,
+      mirrors: params.mirrors,
+      stellated: params.stellated,
+      stellation: params.stellation,
     }))
-    runtime.orbitControls.enabled = params.controls === 'orbit'
-  }, [runtime.orbitControls, params.controls, params.controlsShift])
-
-  // Ambiance
-  useEffect(() => {
-    setRuntime(runtime => {
-      const newRuntime = {
-        ...runtime,
-        ambiance: params.ambiance,
-      }
-      changeAmbiance(newRuntime)
-      return newRuntime
-    })
-  }, [params.ambiance])
-
-  useEffect(() => {
-    setRuntime(runtime => {
-      if (
-        (params.showVertices && !params.vertexThickness) ||
-        (params.showEdges && !params.edgeThickness)
-      ) {
-        return runtime
-      }
-      const newRuntime = {
-        ...runtime,
-        vertexThickness: params.vertexThickness,
-        edgeThickness: params.edgeThickness,
-        projection: params.projection,
-      }
-      updateMaterials(newRuntime)
-      newRuntime.composer.render()
-      return newRuntime
-    })
   }, [
-    params.showVertices,
-    params.showEdges,
-    params.vertexThickness,
+    params.order,
+    params.ambiance,
+    params.controls,
+    params.controlsShift,
+    params.coxeter,
+    params.curve,
+    params.dimensions,
     params.edgeThickness,
-    params.projection,
-    runtime.curvature,
-  ])
-
-  // View
-  useEffect(() => {
-    resetComposerTarget(runtime.composer, params.msaa, params.msaaSamples)
-  }, [params.msaa, params.msaaSamples, runtime.composer])
-
-  useEffect(() => {
-    updateCameraFov(runtime.composer, runtime.camera, params.fov3)
-  }, [params.fov3, runtime.camera, runtime.composer])
-
-  useEffect(() => {
-    setRuntime(runtime => {
-      const newRuntime = {
-        ...runtime,
-        fov4: params.fov4,
-        fov5: params.fov5,
-        fov6: params.fov6,
-        fov7: params.fov7,
-        fov8: params.fov8,
-        fov9: params.fov9,
-      }
-      updateMaterials(newRuntime)
-      newRuntime.composer.render()
-      return newRuntime
-    })
-  }, [
+    params.fov3,
     params.fov4,
     params.fov5,
     params.fov6,
     params.fov7,
     params.fov8,
     params.fov9,
+    params.mirrors,
+    params.msaa,
+    params.msaaSamples,
+    params.projection,
+    params.segments,
+    params.showEdges,
+    params.showVertices,
+    params.stellated,
+    params.stellation,
+    params.vertexThickness,
   ])
-
-  useEffect(() => {
-    setRuntime(runtime => {
-      const newRuntime = {
-        ...runtime,
-        showVertices: params.showVertices,
-        showEdges: params.showEdges,
-      }
-      show(newRuntime, 'vertex')
-      show(newRuntime, 'edge')
-      return newRuntime
-    })
-  }, [params.showVertices, params.showEdges])
-
-  useEffect(() => {
-    setRuntime(runtime => {
-      if (params.curve && !params.segments) {
-        return runtime
-      }
-      const newRuntime = {
-        ...runtime,
-        curve: params.curve,
-        segments: params.segments,
-      }
-      return newRuntime
-    })
-  }, [params.curve, params.segments])
 
   // Reset plot
   useEffect(() => {
@@ -195,24 +121,14 @@ export default function App({ gl, params, updateParams }) {
       }
       return {
         ...runtime,
-        dimensions: params.dimensions,
-        coxeter: params.coxeter,
-        mirrors: params.mirrors,
-        stellated: params.stellated,
-        stellation: params.stellation,
         currentOrder: 0,
 
         rules: null,
-        // curvature: 0,
         mirrorsPlanes: null,
         rootVertex: null,
-        words: null,
-        edgeHashes: null,
-        vertexHashes: null,
-        nextWords: null,
-        vertices: null,
-        edges: null,
-        ranges: null,
+        vertices: [],
+        edges: [],
+        ranges: [],
       }
     })
   }, [
@@ -223,13 +139,9 @@ export default function App({ gl, params, updateParams }) {
     params.stellation,
   ])
 
+  // TODO move ?
   useEffect(() => {
-    reinitVertex(runtime)
-    reinitEdge(runtime)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runtime.dimensions, runtime.curve, runtime.segments])
-
-  useEffect(() => {
+    grouper.kill()
     tiler.kill()
     setProcessing(false)
   }, [
@@ -240,212 +152,18 @@ export default function App({ gl, params, updateParams }) {
     runtime.stellation,
   ])
 
-  useEffect(() => {
-    setRuntime(runtime =>
-      params.order
-        ? {
-            ...runtime,
-            order: params.order,
-          }
-        : runtime
-    )
-  }, [params.order])
+  useProcess(runtime, setRuntime, setProcessing, setError)
 
-  useEffect(() => {
-    setRuntime(runtime => {
-      if (runtime.order < runtime.currentOrder) {
-        return {
-          ...runtime,
-          currentOrder: runtime.order,
-        }
-      }
-      return runtime
-    })
-  }, [runtime.order, runtime.currentOrder])
+  useRender(runtime)
 
-  useEffect(() => {
-    if (runtime.order <= runtime.currentOrder) {
-      return
-    }
-    if (runtime.ranges?.[runtime.order]) {
-      setRuntime(runtime => ({
-        ...runtime,
-        currentOrder: runtime.order,
-      }))
-      return
-    }
-    ;(async () => {
-      setError(null)
-      setProcessing(true)
-      // Rules gets computed on non stellated coxeter group
-      const newTilingRuntime = {}
-
-      if (runtime.currentOrder === 0) {
-        console.log('Reiniting')
-        try {
-          newTilingRuntime.rules = await grouper.process({
-            dimensions: runtime.dimensions,
-            coxeter: runtime.coxeter,
-          })
-        } catch (e) {
-          console.warn(e)
-        }
-        // Initialize tiling
-        const gram = runtime.coxeter.map((row, i) =>
-          row.map(
-            (column, j) =>
-              -cos(
-                ((runtime.stellated ? runtime.stellation[i][j] : 1) * PI) /
-                  column
-              )
-          )
-        )
-        newTilingRuntime.curvature = getCurvature(gram)
-        newTilingRuntime.mirrorsPlanes = getFundamentalSimplexMirrors(
-          gram,
-          newTilingRuntime.curvature
-        )
-        newTilingRuntime.rootVertex = getFundamentalVertex(
-          runtime.mirrors,
-          newTilingRuntime.mirrorsPlanes,
-          newTilingRuntime.curvature
-        )
-
-        newTilingRuntime.words = new Map([['', newTilingRuntime.rootVertex]])
-        newTilingRuntime.edgeHashes = new Set()
-        newTilingRuntime.vertexHashes = new Set()
-        newTilingRuntime.nextWords = ['']
-        newTilingRuntime.vertices = []
-        newTilingRuntime.edges = []
-        newTilingRuntime.ranges = []
-      }
-
-      try {
-        const preprocessRuntime = {
-          ...runtime,
-          ...newTilingRuntime,
-        }
-        const processedRuntime = await tiler.process({
-          currentOrder: preprocessRuntime.currentOrder,
-          curvature: preprocessRuntime.curvature,
-          vertices: preprocessRuntime.vertices,
-          edges: preprocessRuntime.edges,
-          ranges: preprocessRuntime.ranges,
-          words: preprocessRuntime.words,
-          edgeHashes: preprocessRuntime.edgeHashes,
-          vertexHashes: preprocessRuntime.vertexHashes,
-          nextWords: preprocessRuntime.nextWords,
-          rules: preprocessRuntime.rules,
-          mirrorsPlanes: preprocessRuntime.mirrorsPlanes,
-          rootVertex: preprocessRuntime.rootVertex,
-          dimensions: preprocessRuntime.dimensions,
-        })
-        setRuntime(runtime => ({
-          ...runtime,
-          ...processedRuntime,
-        }))
-      } catch (e) {
-        setError(e)
-        // Change current order to allow user to retry
-        console.warn(e)
-        setRuntime(runtime => ({
-          ...runtime,
-          currentOrder: runtime.order,
-        }))
-      } finally {
-        setProcessing(false)
-      }
-    })()
-    // Can't have ranges here
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    runtime.order,
-    runtime.currentOrder,
-    runtime.dimensions,
-    runtime.coxeter,
-    runtime.mirrors,
-    runtime.stellated,
-    runtime.stellation,
-  ])
-
-  useEffect(() => {
-    setRuntime(runtime => {
-      if (runtime.vertices?.length > runtime.maxVertices) {
-        console.warn(`Extending vertex buffer to ${runtime.vertices.length}`)
-        const newRuntime = {
-          ...runtime,
-          maxVertices: runtime.vertices.length,
-        }
-        reinitVertex(newRuntime)
-        return newRuntime
-      }
-      return runtime
-    })
-  }, [runtime.vertices])
-
-  useEffect(() => {
-    setRuntime(runtime => {
-      if (runtime.edges?.length > runtime.maxEdges) {
-        console.warn(`Extending edge buffer to ${runtime.edges.length}`)
-        const newRuntime = {
-          ...runtime,
-          maxEdges: runtime.edges.length,
-        }
-        reinitEdge(newRuntime)
-        return newRuntime
-      }
-      return runtime
-    })
-  }, [runtime.edges])
-
-  useEffect(() => {
-    // Order plot
-    plot(runtime, runtime.currentOrder - 1)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    runtime.currentOrder,
-    runtime.vertices,
-    runtime.edges,
-    runtime.ranges,
-    runtime.showVertices,
-    runtime.showEdges,
-  ])
-
-  useEffect(() => {
-    // Full plot
-    plot(runtime)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    runtime.ambiance,
-    runtime.showVertices,
-    runtime.showEdges,
-    runtime.maxVertices,
-    runtime.maxEdges,
-    runtime.curve,
-    runtime.segments,
-  ])
-
-  useEffect(() => {
-    const onSize = () => {
-      size(runtime)
-    }
-    window.addEventListener('resize', onSize)
-    window.addEventListener('orientationchange', onSize)
-    return () => {
-      window.removeEventListener('resize', onSize)
-      window.removeEventListener('orientationchange', onSize)
-    }
-  }, [runtime])
-
-  // Interact
-  useInteractions(runtime)
+  useInteract(runtime)
 
   const handleExtend = useCallback(() => {
     const newParams = {
       extended: !params.extended,
     }
 
-    if (params.extended) {
+    if (!params.extended) {
       for (let i = 0; i < params.dimensions; i++) {
         for (let j = 0; j < i - 1; j++) {
           params.coxeter[i][j] = 2
@@ -745,7 +463,7 @@ export default function App({ gl, params, updateParams }) {
                 <div className="number">
                   {range(i).map(
                     j =>
-                      (!params.extended || i === j + 1) && (
+                      (params.extended || i === j + 1) && (
                         <label key={j}>
                           <input
                             type="number"
@@ -789,7 +507,7 @@ export default function App({ gl, params, updateParams }) {
             </Fragment>
           ))}
           <button className="extend" onClick={handleExtend}>
-            {params.extended ? '▼' : '▲'}
+            {params.extended ? '▲' : '▼'}
           </button>
         </aside>
       )}
