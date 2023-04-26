@@ -7,6 +7,7 @@ class Worker {
     this.workerClass = workerClass
     this.name = name
     this.init()
+    this.times = {}
   }
 
   static uuid4() {
@@ -34,6 +35,7 @@ class Worker {
     data.uuid = Worker.uuid4()
     this.processing++
     // console.debug('POST', data)
+    this.times[data.uuid] = performance.now()
     this.worker.postMessage(data)
 
     return new Promise((resolve, reject) => {
@@ -41,6 +43,9 @@ class Worker {
         if (e.data.uuid !== data.uuid) {
           return
         }
+        const time = performance.now() - this.times[data.uuid]
+        delete this.times[data.uuid]
+        console.debug(`Worker ${this.name} took ${time}ms`)
         // console.debug('RECEIVE', e.data)
         this.processing--
         this.worker.removeEventListener('message', receive)
@@ -59,6 +64,7 @@ class Worker {
         if (this.processing <= 0) {
           return
         }
+        delete this.times[data.uuid]
         this.processing--
         this.processing = max(0, this.processing) // FIXME
         console.error(`Can't call web worker ${this.name}`, e)

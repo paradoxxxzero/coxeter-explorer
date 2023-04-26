@@ -64,7 +64,7 @@ function link(state, word, v, rv) {
   if (vHash === rvHash) {
     return
   }
-  const edgeHash = [vHash, rvHash].sort().join('/')
+  const edgeHash = vHash > rvHash ? `${rvHash}/${vHash}` : `${vHash}/${rvHash}` // vHash > rvHash ? `${rvHash}/${vHash}` : `${vHash}/${rvHash}
 
   if (!edgeHashes.has(edgeHash)) {
     edgeHashes.add(edgeHash)
@@ -101,8 +101,10 @@ const flip = (state, word, k, v) => {
   const rv = reflectWord(state, newWord)
 
   words.set(newWord, rv)
-  const existingVertex = plot(state, rv, newWord)
-  link(state, word, v, rv)
+  // If the vertex isn't new it probably is on the mirror
+  if (plot(state, rv, newWord)) {
+    link(state, word, v, rv)
+  }
   return newWord
 }
 
@@ -110,7 +112,7 @@ const tileFundamentalChamber = state => {
   const { words, rootVertex, nextWords } = state
   let fundamentalChamberWords = ['']
   let futurewordsToConsider
-  const maxChamberSize = 1000
+  const maxChamberSize = 10000
   const dimensions = rootVertex.length
   plot(state, rootVertex, '')
 
@@ -149,6 +151,12 @@ export const tile = state => {
     try {
       return tileFundamentalChamber(state)
     } catch (e) {
+      state.vertexHashes.clear()
+      state.edgeHashes.clear()
+      state.vertices = []
+      state.edges = []
+      state.words = new Map([['', state.rootVertex]])
+      state.nextWords = ['']
       console.warn(e)
     }
   }
@@ -180,7 +188,6 @@ onmessage = ({ data: state }) => {
       edges: [initialEdgeLength, state.edges.length],
     }
     state.currentOrder++
-
     postMessage(state)
   } catch (e) {
     postMessage({ error: e.message, uuid: state.uuid })
