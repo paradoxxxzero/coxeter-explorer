@@ -33,6 +33,7 @@ const defaultParams = {
   showEdges: true,
   edgeThickness: 25,
 
+  grouper: 'knuthbendix',
   projection: 'stereographic',
   controls: 'orbit',
   controlsShift: 0,

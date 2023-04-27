@@ -1,11 +1,11 @@
 import { useEffect } from 'react'
+import { PI, cos } from '../math'
 import {
   getCurvature,
   getFundamentalSimplexMirrors,
   getFundamentalVertex,
 } from '../math/hypermath'
-import { grouper, tiler } from '../worker'
-import { PI, cos } from '../math'
+import { knuthBendixTiler, toddCoxeterTiler } from '../workers/worker'
 
 export const useProcess = (runtime, setRuntime, setProcessing, setError) => {
   useEffect(() => {
@@ -36,16 +36,14 @@ export const useProcess = (runtime, setRuntime, setProcessing, setError) => {
       setProcessing(true)
       // Rules gets computed on non stellated coxeter group
       const newTilingRuntime = {}
+      const worker =
+        runtime.grouper === 'knuthbendix' ? knuthBendixTiler : toddCoxeterTiler
 
       if (runtime.currentOrder === 0) {
-        try {
-          newTilingRuntime.rules = await grouper.process({
-            dimensions: runtime.dimensions,
-            coxeter: runtime.coxeter,
-          })
-        } catch (e) {
-          console.warn(e)
-        }
+        // console.log(
+        //   getCosets(runtime.dimensions, runtime.coxeter, runtime.mirrors)
+        // )
+
         // Initialize tiling
         const gram = runtime.coxeter.map((row, i) =>
           row.map(
@@ -75,13 +73,11 @@ export const useProcess = (runtime, setRuntime, setProcessing, setError) => {
           ...runtime,
           ...newTilingRuntime,
         }
-        const { vertices, edges } = await tiler.process({
-          first: preprocessRuntime.currentOrder === 0,
+        const { vertices, edges } = await worker.process({
+          order: preprocessRuntime.currentOrder,
+          coxeter: preprocessRuntime.coxeter,
           curvature: preprocessRuntime.curvature,
-          rules:
-            preprocessRuntime.currentOrder === 0
-              ? preprocessRuntime.rules.rules
-              : null,
+          mirrors: preprocessRuntime.mirrors,
           mirrorsPlanes: preprocessRuntime.mirrorsPlanes,
           rootVertex: preprocessRuntime.rootVertex,
           dimensions: preprocessRuntime.dimensions,

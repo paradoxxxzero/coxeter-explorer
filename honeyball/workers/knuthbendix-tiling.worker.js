@@ -1,6 +1,6 @@
-import { abs, round } from './math'
-import { shorten } from './math/group'
-import { reflect } from './math/hypermath'
+import { abs, round } from '../math'
+import { getBaseRules, knuthBendix, shorten } from '../math/group'
+import { reflect } from '../math/hypermath'
 
 let vertexHashes = new Set()
 let edgeHashes = new Set()
@@ -177,9 +177,9 @@ export const tile = state => {
 
 onmessage = ({
   data: {
-    first,
+    order,
     curvature,
-    rules,
+    coxeter,
     mirrorsPlanes,
     rootVertex,
     dimensions,
@@ -188,11 +188,17 @@ onmessage = ({
 }) => {
   try {
     let failed = false
-    if (first) {
+    if (order === 0) {
+      const baseRules = getBaseRules(dimensions, coxeter)
+      try {
+        rules = knuthBendix(baseRules, dimensions)
+      } catch (e) {
+        // TODO: Report warning
+        rules = new Map(Object.entries(baseRules))
+      }
       init(rootVertex, rules)
       try {
         nextWords = tileFundamentalChamber({
-          first,
           curvature,
           mirrorsPlanes,
           rootVertex,
@@ -204,9 +210,8 @@ onmessage = ({
         console.warn(e)
       }
     }
-    if (!first || failed) {
+    if (order > 0 || failed) {
       nextWords = tile({
-        first,
         curvature,
         mirrorsPlanes,
         rootVertex,

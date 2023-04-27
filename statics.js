@@ -25,6 +25,8 @@ export const projections = [
   'upperhalf',
 ]
 
+export const groupers = ['knuthbendix', 'toddcoxeter']
+
 const _color = new Color()
 const loader = new TextureLoader()
 

@@ -1,6 +1,6 @@
-import Tiling from './tiling.worker?worker'
-import Group from './group.worker?worker'
-import { max } from './math'
+import KunthBendixTiling from './knuthbendix-tiling.worker?worker'
+import ToddCoxeterTiling from './toddcoxeter-tiling.worker?worker'
+import { max } from '../math'
 
 class Worker {
   constructor(name, workerClass) {
@@ -75,5 +75,5 @@ class Worker {
   }
 }
 
-export const tiler = new Worker('tiler', Tiling)
-export const grouper = new Worker('grouper', Group)
+export const knuthBendixTiler = new Worker('knuthbendix', KunthBendixTiling)
+export const toddCoxeterTiler = new Worker('toddcoxeter', ToddCoxeterTiling)

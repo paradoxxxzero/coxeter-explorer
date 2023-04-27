@@ -3,9 +3,8 @@ import { useInteract } from './honeyball/hooks/useInteract'
 import { useProcess } from './honeyball/hooks/useProcess'
 import { useRender } from './honeyball/hooks/useRender'
 import { floor, max, min, round } from './honeyball/math'
-import { range } from './honeyball/utlis'
-import { grouper, tiler } from './honeyball/worker'
-import { ambiances, projections } from './statics'
+import { ambiances, groupers, projections } from './statics'
+import { knuthBendixTiler, toddCoxeterTiler } from './honeyball/workers/worker'
 
 export default function App({ gl, params, updateParams }) {
   const [runtime, setRuntime] = useState(() => {
@@ -15,7 +14,6 @@ export default function App({ gl, params, updateParams }) {
 
       currentOrder: 0,
 
-      rules: null,
       curvature: 0,
       mirrorsPlanes: null,
       rootVertex: null,
@@ -80,6 +78,7 @@ export default function App({ gl, params, updateParams }) {
       mirrors: params.mirrors,
       stellated: params.stellated,
       stellation: params.stellation,
+      grouper: params.grouper,
     }))
   }, [
     params.order,
@@ -97,6 +96,7 @@ export default function App({ gl, params, updateParams }) {
     params.fov7,
     params.fov8,
     params.fov9,
+    params.grouper,
     params.mirrors,
     params.msaa,
     params.msaaSamples,
@@ -123,7 +123,6 @@ export default function App({ gl, params, updateParams }) {
         ...runtime,
         currentOrder: 0,
 
-        rules: null,
         mirrorsPlanes: null,
         rootVertex: null,
         vertices: [],
@@ -137,12 +136,13 @@ export default function App({ gl, params, updateParams }) {
     params.mirrors,
     params.stellated,
     params.stellation,
+    params.grouper,
   ])
 
   // TODO move ?
   useEffect(() => {
-    grouper.kill()
-    tiler.kill()
+    toddCoxeterTiler.kill()
+    knuthBendixTiler.kill()
     setProcessing(false)
   }, [
     runtime.dimensions,
@@ -150,6 +150,7 @@ export default function App({ gl, params, updateParams }) {
     runtime.stellated,
     runtime.mirrors,
     runtime.stellation,
+    runtime.grouper,
   ])
 
   useProcess(runtime, setRuntime, setProcessing, setError)
@@ -262,12 +263,7 @@ export default function App({ gl, params, updateParams }) {
     [params, updateParams]
   )
   return (
-    <div
-      className={[error ? 'error' : '', runtime.rules?.warn ? 'warning' : '']
-        .filter(c => c)
-        .join(' ')}
-      title={error}
-    >
+    <div className={error ? 'error' : ''} title={error}>
       <button className="control-indicator" onClick={handleControls}>
         {runtime.controls === 'orbit' ? '⇹' : '↭'}
         {runtime.controls === 'free' ? (
@@ -288,6 +284,20 @@ export default function App({ gl, params, updateParams }) {
       </button>
       {showUI && (
         <aside className="controls">
+          <label>
+            Grouper
+            <select
+              name="grouper"
+              value={params.grouper}
+              onChange={handleChange}
+            >
+              {groupers.map(p => (
+                <option key={p} value={p}>
+                  {p.replace(/_/g, ' ').replace(/./, c => c.toUpperCase())}
+                </option>
+              ))}
+            </select>
+          </label>
           <label>
             Order
             <input
@@ -440,7 +450,7 @@ export default function App({ gl, params, updateParams }) {
             />
           </label>
           {params.dimensions > 3
-            ? range(params.dimensions - 3).map(i => (
+            ? [...Array(params.dimensions - 3).keys()].map(i => (
                 <label key={i}>
                   FOV{i + 4}
                   <input
@@ -457,11 +467,11 @@ export default function App({ gl, params, updateParams }) {
       )}
       {showUI && (
         <aside className="coxeters">
-          {range(params.dimensions).map(i => (
+          {[...Array(params.dimensions).keys()].map(i => (
             <Fragment key={i}>
               {i > 0 && (
                 <div className="number">
-                  {range(i).map(
+                  {[...Array(i).keys()].map(
                     j =>
                       (params.extended || i === j + 1) && (
                         <label key={j}>
