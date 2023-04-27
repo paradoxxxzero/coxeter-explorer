@@ -13,17 +13,17 @@ export const getRels = (dimensions, coxeter) => {
   return rules
 }
 
-export const getVerticesCosets = (dimensions, coxeter, mirrors, limit) => {
+export const getVerticesCosetsParams = (dimensions, coxeter, mirrors) => {
   const rels = getRels(dimensions, coxeter)
   const gens = [...Array(dimensions).keys()].map(i => itoa(i)).join('')
   const subgens = mirrors.map((m, i) => (m ? '' : itoa(i))).join('')
-  return solve(gens, subgens, rels, limit)
+  return { gens, subgens, rels }
 }
 
-export const getEdgesCosets = (dimensions, coxeter, mirrors, limit) => {
+export const getEdgesCosetsParams = (dimensions, coxeter, mirrors) => {
   const rels = getRels(dimensions, coxeter)
   const gens = [...Array(dimensions).keys()].map(i => itoa(i)).join('')
-  const edges = {}
+  const params = []
 
   for (let i = 0; i < mirrors.length; i++) {
     if (mirrors[i]) {
@@ -35,11 +35,11 @@ export const getEdgesCosets = (dimensions, coxeter, mirrors, limit) => {
           }
         }
       }
-      edges[itoa(i)] = solve(gens, subgens, rels, limit)
+      params.push({ gens, subgens, rels, edgeMirror: itoa(i) })
     }
   }
 
-  return edges
+  return params
 }
 
 const learn = (cosets, row) => {
@@ -75,27 +75,30 @@ const learn = (cosets, row) => {
   return false
 }
 
-const solve = (gens, subgens, rels, limit) => {
+export const solve = ({ gens, subgens, rels, cosets, rows, words, limit }) => {
   const dimensions = gens.length
   rels = rels.map(rel => [...rel].map(g => gens.indexOf(g)))
   subgens = subgens.split('').map(g => gens.indexOf(g))
 
-  const cosets = {
-    normal: [new Array(dimensions).fill()],
-    reverse: [new Array(dimensions).fill()],
+  if (cosets.normal.length === 0) {
+    cosets.normal.push(new Array(dimensions).fill())
+    cosets.reverse.push(new Array(dimensions).fill())
+
+    for (let i = 0; i < subgens.length; i++) {
+      cosets.normal[0][subgens[i]] = 0
+      cosets.reverse[0][subgens[i]] = 0
+    }
   }
-
-  const rows = rels.map(rel => ({
-    rel,
-    left: 0,
-    right: rel.length - 1,
-    left_coset: 0,
-    right_target: 0,
-  }))
-
-  for (const gen of subgens) {
-    cosets.normal[0][gen] = 0
-    cosets.reverse[0][gen] = 0
+  if (rows.length === 0) {
+    rows.push(
+      ...rels.map(rel => ({
+        rel,
+        left: 0,
+        right: rel.length - 1,
+        left_coset: 0,
+        right_target: 0,
+      }))
+    )
   }
 
   while (rows.length && cosets.normal.length < limit) {
@@ -144,11 +147,11 @@ const solve = (gens, subgens, rels, limit) => {
       }
     }
   }
+  if (words.length === 0) {
+    words[0] = ''
+  }
 
-  const words = new Array(cosets.normal.length).fill()
-  words[0] = ''
-
-  while (words.some(x => x === undefined)) {
+  while (remaining(cosets.normal.length, words)) {
     for (let i = 0; i < words.length; i++) {
       if (words[i] === undefined) {
         continue
@@ -166,5 +169,15 @@ const solve = (gens, subgens, rels, limit) => {
       }
     }
   }
-  return words
+
+  return { cosets, rows, words }
+}
+
+const remaining = (length, words) => {
+  for (let i = 0; i < length; i++) {
+    if (words[i] === undefined) {
+      return true
+    }
+  }
+  return false
 }

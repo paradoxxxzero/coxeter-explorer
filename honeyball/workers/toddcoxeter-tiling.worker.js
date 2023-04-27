@@ -1,5 +1,34 @@
-import { getEdgesCosets, getVerticesCosets } from '../math/coset'
+import {
+  getEdgesCosetsParams,
+  getVerticesCosetsParams,
+  solve,
+} from '../math/coset'
 import { reflect } from '../math/hypermath'
+
+let verticesParams = null
+let edgesParams = null
+
+const initCosets = (dimensions, coxeter, mirrors) => {
+  const defaultParams = () => ({
+    cosets: {
+      normal: [],
+      reverse: [],
+    },
+    rows: [],
+    words: [],
+  })
+
+  verticesParams = {
+    ...getVerticesCosetsParams(dimensions, coxeter, mirrors),
+    ...defaultParams(),
+  }
+  edgesParams = getEdgesCosetsParams(dimensions, coxeter, mirrors).map(
+    edgeParams => ({
+      ...edgeParams,
+      ...defaultParams(),
+    })
+  )
+}
 
 const reflectWord = (state, word) => {
   const { rootVertex, mirrorsPlanes, curvature } = state
@@ -23,36 +52,38 @@ onmessage = ({
     uuid,
   },
 }) => {
-  const previousLimit = order * 100
-  const limit = (order + 1) * 100
+  if (order === 0) {
+    initCosets(dimensions, coxeter, mirrors)
+  }
+  const limit = (order + 1) * 250
   try {
     let vertices = []
     let edges = []
-    const verticesWords = getVerticesCosets(dimensions, coxeter, mirrors, limit)
-    // init(rootVertex, cosets)
-    for (let i = 0; i < verticesWords.length; i++) {
-      const word = verticesWords[i]
-      const vertex = reflectWord({ rootVertex, mirrorsPlanes, curvature }, word)
-      if (i > previousLimit) {
-        vertices.push({
-          vertex,
-          word,
-        })
-      }
-    }
+    let previousLength = verticesParams.words.length
+    verticesParams.limit = limit
 
-    const cosetsEdges = getEdgesCosets(dimensions, coxeter, mirrors, limit)
-    const entries = Object.entries(cosetsEdges)
-    for (let i = 0; i < entries.length; i++) {
-      const [word, edgeWords] = entries[i]
+    solve(verticesParams)
+    // init(rootVertex, cosets)
+    for (let i = previousLength; i < verticesParams.words.length; i++) {
+      const word = verticesParams.words[i]
+      const vertex = reflectWord({ rootVertex, mirrorsPlanes, curvature }, word)
+      vertices.push({
+        vertex,
+        word,
+      })
+    }
+    for (let i = 0; i < edgesParams.length; i++) {
+      const edgeParams = edgesParams[i]
+      const previousLength = edgeParams.words.length
+      edgeParams.limit = limit
+      solve(edgeParams)
       const rootStart = rootVertex
       const rootEnd = reflectWord(
         { rootVertex: rootStart, mirrorsPlanes, curvature },
-        word
+        edgeParams.edgeMirror
       )
-      // TODO: reuse vertices
-      for (let j = 0; j < edgeWords.length; j++) {
-        const word = edgeWords[j]
+      for (let j = previousLength; j < edgeParams.words.length; j++) {
+        const word = edgeParams.words[j]
         const start = reflectWord(
           { rootVertex: rootStart, mirrorsPlanes, curvature },
           word
@@ -61,15 +92,41 @@ onmessage = ({
           { rootVertex: rootEnd, mirrorsPlanes, curvature },
           word
         )
-        if (j > previousLimit) {
-          edges.push({
-            start,
-            end,
-            word,
-          })
-        }
+        edges.push({
+          start,
+          end,
+          word,
+        })
       }
     }
+
+    // const cosetsEdges = getEdgesCosets(dimensions, coxeter, mirrors, limit)
+    // const entries = Object.entries(cosetsEdges)
+    // for (let i = 0; i < entries.length; i++) {
+    //   const [word, edgeWords] = entries[i]
+    //   const rootStart = rootVertex
+    //   const rootEnd = reflectWord(
+    //     { rootVertex: rootStart, mirrorsPlanes, curvature },
+    //     word
+    //   )
+    //   // TODO: reuse vertices
+    //   for (let j = 0; j < edgeWords.length; j++) {
+    //     const word = edgeWords[j]
+    //     const start = reflectWord(
+    //       { rootVertex: rootStart, mirrorsPlanes, curvature },
+    //       word
+    //     )
+    //     const end = reflectWord(
+    //       { rootVertex: rootEnd, mirrorsPlanes, curvature },
+    //       word
+    //     )
+    //     edges.push({
+    //       start,
+    //       end,
+    //       word,
+    //     })
+    //   }
+    // }
 
     postMessage({ vertices, edges, uuid })
   } catch (e) {
