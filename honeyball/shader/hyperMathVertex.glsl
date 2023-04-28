@@ -72,6 +72,7 @@ attribute vec3 instanceColor;
 const float radial = 8.;
 const float TAU = 6.28318530717958647692528676655900576;
 const float EPS = .001;
+const vec3 NOISE = vec3(.000003, -.000002, .000017);
 
 /* END HEADER */
 
@@ -158,18 +159,12 @@ void main() {
     next = xnormalize(next);
 
     vec3 p = xproject(pos);
-    vec3 n = xproject(next);
-
+    vec3 n = xproject(next) + NOISE; // Avoid collinearity
     vec3 k = normalize(p - n); // current segment direction
 
-  // Inflate
-    vec3 v = cross(n, p);
-    if(len(v) < 0.00001) {
-      // Fix collinearity
-      v = normalize(cross(vec3(k.yx, 0), k));
-    }
     // Rodrigues' rotation formula
     // To rotate v around axis k by angle r:
+    vec3 v = normalize(cross(n, p));
     norm = v * cos(r * TAU) + cross(k, v) * sin(r * TAU);// + k * dot(k, v) * (1. - cos(r * TAU));
     norm = normalize(norm);
     sizeFactor = .001 * edgeThickness;

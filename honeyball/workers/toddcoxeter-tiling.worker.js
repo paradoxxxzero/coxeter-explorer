@@ -77,7 +77,7 @@ onmessage = ({
       const previousLength = edgeParams.words.length
       edgeParams.limit = limit
       solve(edgeParams)
-      const rootStart = rootVertex
+      const rootStart = rootVertex.slice()
       const rootEnd = reflectWord(
         { rootVertex: rootStart, mirrorsPlanes, curvature },
         edgeParams.edgeMirror
