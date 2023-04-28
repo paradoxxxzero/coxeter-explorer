@@ -1,17 +1,4 @@
-const itoa = i => String.fromCharCode(97 + i)
-
-export const getRels = (dimensions, coxeter) => {
-  const rules = []
-  for (let i = 0; i < dimensions; i++) {
-    rules.push(itoa(i).repeat(2))
-  }
-  for (let i = 1; i < dimensions; i++) {
-    for (let j = 0; j < i; j++) {
-      rules.push((itoa(j) + itoa(i)).repeat(coxeter[i][j]))
-    }
-  }
-  return rules
-}
+import { getRels, itoa } from '.'
 
 export const getVerticesCosetsParams = (dimensions, coxeter, mirrors) => {
   const rels = getRels(dimensions, coxeter)

@@ -218,7 +218,7 @@ const plotVertices = (rt, range = null) => {
       ipos[i * arity + j] = vertex.vertex[j]
     }
     const icolor = instancedVertex.geometry.attributes.instanceColor.array
-    const c = ambiance.color(vertex, 'vertex')
+    const c = ambiance.color(vertex, 'vertex', dimensions)
     icolor[i * 3 + 0] = c.r
     icolor[i * 3 + 1] = c.g
     icolor[i * 3 + 2] = c.b
@@ -249,7 +249,7 @@ const plotEdges = (rt, range = null) => {
     }
 
     const icolor = instancedEdge.geometry.attributes.instanceColor.array
-    const c = ambiance.color(edge, 'edge')
+    const c = ambiance.color(edge, 'edge', dimensions)
     icolor[i * 3 + 0] = c.r
     icolor[i * 3 + 1] = c.g
     icolor[i * 3 + 2] = c.b
@@ -428,14 +428,16 @@ export const changeAmbiance = rt => {
       saoPass.normalMaterial = hyperMathMaterial(saoPass.normalMaterial, rt)
       saoPass.params.output = SAOPass.OUTPUT.Default
 
-      saoPass.params.saoIntensity = 0.1
+      saoPass.params.saoBias = -0.5
+      saoPass.params.saoIntensity = 0.175
       saoPass.params.saoScale = 10
-      saoPass.params.saoKernelRadius = 10
+      saoPass.params.saoKernelRadius = 50
       saoPass.params.saoMinResolution = 0
       saoPass.params.saoBlur = true
       saoPass.params.saoBlurRadius = 8
       saoPass.params.saoBlurStdDev = 4
       saoPass.params.saoBlurDepthCutoff = 0.01
+
       composer.addPass(saoPass)
     } else if (fx === 'bokeh') {
       const bokehPass = new BokehPass(scene, camera, {

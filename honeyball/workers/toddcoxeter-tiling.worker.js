@@ -100,34 +100,6 @@ onmessage = ({
       }
     }
 
-    // const cosetsEdges = getEdgesCosets(dimensions, coxeter, mirrors, limit)
-    // const entries = Object.entries(cosetsEdges)
-    // for (let i = 0; i < entries.length; i++) {
-    //   const [word, edgeWords] = entries[i]
-    //   const rootStart = rootVertex
-    //   const rootEnd = reflectWord(
-    //     { rootVertex: rootStart, mirrorsPlanes, curvature },
-    //     word
-    //   )
-    //   // TODO: reuse vertices
-    //   for (let j = 0; j < edgeWords.length; j++) {
-    //     const word = edgeWords[j]
-    //     const start = reflectWord(
-    //       { rootVertex: rootStart, mirrorsPlanes, curvature },
-    //       word
-    //     )
-    //     const end = reflectWord(
-    //       { rootVertex: rootEnd, mirrorsPlanes, curvature },
-    //       word
-    //     )
-    //     edges.push({
-    //       start,
-    //       end,
-    //       word,
-    //     })
-    //   }
-    // }
-
     postMessage({ vertices, edges, uuid })
   } catch (e) {
     postMessage({ error: e.message, uuid })

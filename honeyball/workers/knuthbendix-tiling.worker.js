@@ -1,5 +1,5 @@
-import { abs, round } from '../math'
-import { getBaseRules, knuthBendix, shorten } from '../math/group'
+import { abs, getBaseRules, round } from '../math'
+import { knuthBendix, shorten } from '../math/group'
 import { reflect } from '../math/hypermath'
 
 let vertexHashes = new Set()

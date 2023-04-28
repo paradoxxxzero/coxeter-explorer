@@ -15,6 +15,7 @@ import {
   sRGBEncoding,
   TextureLoader,
 } from 'three'
+import { itoa } from './honeyball/math'
 
 export const projections = [
   'stereographic',
@@ -31,7 +32,7 @@ const _color = new Color()
 const loader = new TextureLoader()
 
 const diffuse = loader.load('Carbon.png')
-diffuse.encoding = sRGBEncoding
+diffuse.colorSpace = sRGBEncoding
 diffuse.wrapS = RepeatWrapping
 diffuse.wrapT = RepeatWrapping
 diffuse.repeat.x = 10
@@ -42,8 +43,12 @@ normalMap.wrapS = RepeatWrapping
 normalMap.wrapT = RepeatWrapping
 
 const ocean = loader.load('ocean.jpg')
-ocean.encoding = sRGBEncoding
+ocean.colorSpace = sRGBEncoding
 ocean.mapping = EquirectangularReflectionMapping
+
+const dimensionsRegExps = [...new Array(10).keys()].map(
+  i => new RegExp(itoa(i), 'g')
+)
 
 export const ambiances = {
   neon: {
@@ -130,8 +135,9 @@ export const ambiances = {
     material: new MeshPhongMaterial(),
     lights: [new AmbientLight(0xffffff, 1)],
     cameraLights: [new PointLight(0xffffff, 0.5)],
-    color: ({ word }) => {
-      return _color.setHSL((word.length * 0.03) % 1, 0.5, 0.5)
+    color: ({ word }, type, dimensions) => {
+      const i = word.match(dimensionsRegExps[dimensions - 1])?.length || 0
+      return _color.setHSL((i * 0.07) % 1, 0.5, 0.5)
     },
   },
   bokeh: {
@@ -146,7 +152,7 @@ export const ambiances = {
     },
   },
   pure: {
-    background: 0xffffff,
+    background: 0,
     fx: ['sao'],
     shadow: false,
     material: new MeshLambertMaterial(),

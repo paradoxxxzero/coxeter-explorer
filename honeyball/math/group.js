@@ -205,19 +205,4 @@ export const knuthBendix = (rules, dimensions) => {
   throw new Error('Timeout')
 }
 
-const itoa = i => String.fromCharCode(97 + i)
-
-export const getBaseRules = (dimensions, coxeter) => {
-  const rules = {}
-  for (let i = 0; i < dimensions; i++) {
-    rules[itoa(i).repeat(2)] = ''
-  }
-  for (let i = 1; i < dimensions; i++) {
-    for (let j = 0; j < i; j++) {
-      rules[(itoa(j) + itoa(i)).repeat(coxeter[i][j])] = ''
-    }
-  }
-  return rules
-}
-
 export const shorten = (rules, word) => rewrite(rules, word)
