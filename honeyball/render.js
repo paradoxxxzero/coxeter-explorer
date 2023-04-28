@@ -107,8 +107,7 @@ export const initVertex = rt => {
   const ambiance = ambiances[rt.ambiance]
   const { dimensions } = rt
 
-  const vertex3dGeometry = new SphereGeometry(1e-7, 32, 32)
-  vertex3dGeometry.attributes.position.array.fill(0)
+  const vertex3dGeometry = new SphereGeometry(1, 32, 32)
   const vertexGeometry = new InstancedBufferGeometry().copy(vertex3dGeometry)
   const arity = dimensions > 4 ? 9 : dimensions
   vertexGeometry.setAttribute(
@@ -161,8 +160,8 @@ export const initEdge = rt => {
   const ambiance = ambiances[rt.ambiance]
   const { dimensions, curve, segments } = rt
   const edge3dGeometry = new CylinderGeometry(
-    0,
-    0,
+    1,
+    1,
     1,
     8,
     curve ? segments : 1,

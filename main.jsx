@@ -65,3 +65,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <AppWithHistory />
   // </React.StrictMode>
 )
+
+if (import.meta.hot) {
+  import.meta.hot.accept('./honeyball/render.js', module => {
+    console.debug('Accepting the updated render module!')
+  })
+}

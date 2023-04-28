@@ -243,18 +243,18 @@ export const filterParams = maybeBadParams => {
   // Remove bad params
   Object.entries(params).map(([key, value]) => {
     if (typeof defaultParams[key] === 'number') {
-      if (!value || isNaN(value)) {
+      if (value === '' || isNaN(value)) {
         delete params[key]
       }
     } else if (Array.isArray(defaultParams[key])) {
       // arrays of arrays of numbers
       if (Array.isArray(value[0])) {
-        if (value.find(c => c.find(d => !value || isNaN(d)))) {
+        if (value.find(c => c.find(d => value === '' || isNaN(d)))) {
           delete params[key]
         }
       } else {
         // arrays of numbers
-        if (value.find(c => !value || isNaN(c))) {
+        if (value.find(c => value === '' || isNaN(c))) {
           delete params[key]
         }
       }

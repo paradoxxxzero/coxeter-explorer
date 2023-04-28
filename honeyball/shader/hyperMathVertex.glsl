@@ -71,6 +71,7 @@ attribute vec3 instanceColor;
 
 const float radial = 8.;
 const float TAU = 6.28318530717958647692528676655900576;
+const float EPS = .001;
 
 /* END HEADER */
 
@@ -114,12 +115,6 @@ void main() {
   float sizeFactor;
 
   if(!nan(instanceTarget)) {
-    float vid = float(gl_VertexID);
-    float h = floor(vid / (radial + 1.)) / (segments);
-    float r = mod(vid, radial + 1.) / (radial);
-
-    pos = mix(instancePosition, instanceTarget, h);
-
     #if DIMENSIONS == 2
     vec2 next;
     #elif DIMENSIONS == 3
@@ -138,7 +133,12 @@ void main() {
     vec9 next;
     #endif
 
-    next = mix(instancePosition, instanceTarget, h + .001);
+    float vid = float(gl_VertexID);
+    float h = floor(vid / (radial + 1.)) / (segments);
+    float r = mod(vid, radial + 1.) / (radial);
+
+    pos = mix(instancePosition, instanceTarget, h);
+    next = mix(instancePosition, instanceTarget, h + EPS);
 
   // vec4 u = vec4(1., 0., 0., 0.); // normalize(pos) but this do not work for first vertices;
   // vec4 v = normalize(segment);
@@ -160,17 +160,17 @@ void main() {
     vec3 p = xproject(pos);
     vec3 n = xproject(next);
 
-    vec3 k = normalize(n - p); // current segment direction
+    vec3 k = normalize(p - n); // current segment direction
 
   // Inflate
-    vec3 u = cross(n, p);
-    if(len(u) < .000001) {
-      u = p + vec3(n.y, 0, n.z);
+    vec3 v = cross(n, p);
+    if(len(v) < 0.00001) {
+      // Fix collinearity
+      v = normalize(cross(vec3(k.yx, 0), k));
     }
-    u = normalize(u);
-    vec3 v = normalize(cross(u, k));
-
-    norm = v * cos(r * TAU) + cross(v, k) * sin(r * TAU);
+    // Rodrigues' rotation formula
+    // To rotate v around axis k by angle r:
+    norm = v * cos(r * TAU) + cross(k, v) * sin(r * TAU);// + k * dot(k, v) * (1. - cos(r * TAU));
     norm = normalize(norm);
     sizeFactor = .001 * edgeThickness;
   } else {
@@ -180,7 +180,7 @@ void main() {
   }
   // <begin_vertex>
   vec3 transformed = xproject(pos);
-  transformed += sizeFactor * norm / max(1., len(pos));
+  transformed += sizeFactor * norm / len(pos);
 
   // <beginnormal_vertex>
   vec3 objectNormal = norm;
