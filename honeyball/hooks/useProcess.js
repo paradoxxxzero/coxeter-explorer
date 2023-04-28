@@ -7,7 +7,28 @@ import {
 } from '../math/hypermath'
 import { knuthBendixTiler, toddCoxeterTiler } from '../workers/worker'
 
-export const useProcess = (runtime, setRuntime, setProcessing, setError) => {
+export const useProcess = (runtime, setRuntime) => {
+  useEffect(() => {
+    setRuntime(runtime => ({
+      ...runtime,
+      currentOrder: 0,
+
+      mirrorsPlanes: null,
+      rootVertex: null,
+      vertices: [],
+      edges: [],
+      ranges: [],
+    }))
+  }, [
+    runtime.dimensions,
+    runtime.coxeter,
+    runtime.mirrors,
+    runtime.stellated,
+    runtime.stellation,
+    runtime.grouper,
+    setRuntime,
+  ])
+
   useEffect(() => {
     setRuntime(runtime => {
       if (runtime.order < runtime.currentOrder) {
@@ -32,14 +53,18 @@ export const useProcess = (runtime, setRuntime, setProcessing, setError) => {
       return
     }
     ;(async () => {
-      setError(null)
-      setProcessing(true)
       // Rules gets computed on non stellated coxeter group
       const newTilingRuntime = {}
       const worker =
         runtime.grouper === 'knuthbendix' ? knuthBendixTiler : toddCoxeterTiler
-
+      setRuntime(runtime => ({
+        ...runtime,
+        processing: true,
+        error: null,
+      }))
       if (runtime.currentOrder === 0) {
+        toddCoxeterTiler.kill()
+        knuthBendixTiler.kill()
         // console.log(
         //   getCosets(runtime.dimensions, runtime.coxeter, runtime.mirrors)
         // )
@@ -82,52 +107,47 @@ export const useProcess = (runtime, setRuntime, setProcessing, setError) => {
           rootVertex: preprocessRuntime.rootVertex,
           dimensions: preprocessRuntime.dimensions,
         })
-        setRuntime(runtime => ({
-          ...runtime,
-          ...preprocessRuntime,
-          ranges: [
-            ...runtime.ranges,
-            {
-              vertices: [
-                runtime.vertices.length,
-                runtime.vertices.length + vertices.length,
-              ],
-              edges: [
-                runtime.edges.length,
-                runtime.edges.length + edges.length,
-              ],
-            },
-          ],
-          vertices: runtime.vertices.concat(vertices),
-          edges: runtime.edges.concat(edges),
-          currentOrder: runtime.currentOrder + 1,
-        }))
+        setRuntime(runtime => {
+          if (!runtime.processing) {
+            return runtime
+          }
+          return {
+            ...runtime,
+            ...preprocessRuntime,
+            ranges: [
+              ...runtime.ranges,
+              {
+                vertices: [
+                  runtime.vertices.length,
+                  runtime.vertices.length + vertices.length,
+                ],
+                edges: [
+                  runtime.edges.length,
+                  runtime.edges.length + edges.length,
+                ],
+              },
+            ],
+            vertices: runtime.vertices.concat(vertices),
+            edges: runtime.edges.concat(edges),
+            currentOrder: runtime.currentOrder + 1,
+            processing: false,
+            error: null,
+          }
+        })
       } catch (e) {
-        setError(e)
         // Change current order to allow user to retry
         console.warn(e)
         setRuntime(runtime => ({
           ...runtime,
           currentOrder: runtime.order,
+          error: e.message,
+          processing: false,
         }))
-      } finally {
-        setProcessing(false)
       }
     })()
     // Can't have ranges here
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    setRuntime,
-    setProcessing,
-    setError,
-    runtime.order,
-    runtime.currentOrder,
-    runtime.dimensions,
-    runtime.coxeter,
-    runtime.mirrors,
-    runtime.stellated,
-    runtime.stellation,
-  ])
+  }, [setRuntime, runtime.order, runtime.currentOrder])
 
   useEffect(() => {
     setRuntime(runtime => {

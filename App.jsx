@@ -4,7 +4,6 @@ import { useProcess } from './honeyball/hooks/useProcess'
 import { useRender } from './honeyball/hooks/useRender'
 import { floor, max, min, round } from './honeyball/math'
 import { ambiances, filterParams, groupers, projections } from './statics'
-import { knuthBendixTiler, toddCoxeterTiler } from './honeyball/workers/worker'
 
 export default function App({ gl, params, updateParams }) {
   const [runtime, setRuntime] = useState(() => {
@@ -22,11 +21,11 @@ export default function App({ gl, params, updateParams }) {
       ranges: [],
       maxVertices: 30000,
       maxEdges: 50000,
+      processing: true,
+      error: null,
     }
   })
   window.rt = runtime
-  const [processing, setProcessing] = useState(false)
-  const [error, setError] = useState()
   const [showUI, setShowUI] = useState(true)
 
   const handleUI = useCallback(() => setShowUI(showUI => !showUI), [])
@@ -112,50 +111,7 @@ export default function App({ gl, params, updateParams }) {
   ])
 
   // Reset plot
-  useEffect(() => {
-    setRuntime(runtime => {
-      if (
-        !params.dimensions ||
-        params.coxeter.find(c => c.find(d => !d)) ||
-        params.stellation.find(c => c.find(d => !d))
-      ) {
-        return runtime
-      }
-      return {
-        ...runtime,
-        currentOrder: 0,
-
-        mirrorsPlanes: null,
-        rootVertex: null,
-        vertices: [],
-        edges: [],
-        ranges: [],
-      }
-    })
-  }, [
-    params.dimensions,
-    params.coxeter,
-    params.mirrors,
-    params.stellated,
-    params.stellation,
-    params.grouper,
-  ])
-
-  // TODO move ?
-  useEffect(() => {
-    toddCoxeterTiler.kill()
-    knuthBendixTiler.kill()
-    setProcessing(false)
-  }, [
-    runtime.dimensions,
-    runtime.coxeter,
-    runtime.stellated,
-    runtime.mirrors,
-    runtime.stellation,
-    runtime.grouper,
-  ])
-
-  useProcess(runtime, setRuntime, setProcessing, setError)
+  useProcess(runtime, setRuntime)
 
   useRender(runtime)
 
@@ -265,7 +221,7 @@ export default function App({ gl, params, updateParams }) {
     [params, updateParams]
   )
   return (
-    <div className={error ? 'error' : ''} title={error}>
+    <div className={runtime.error ? 'error' : ''} title={runtime.error}>
       <button className="control-indicator" onClick={handleControls}>
         {runtime.controls === 'orbit' ? '⇹' : '↭'}
         {runtime.controls === 'free' ? (
@@ -273,7 +229,7 @@ export default function App({ gl, params, updateParams }) {
         ) : null}
       </button>
       <button
-        className={`space-indicator${processing ? ' processing' : ''}`}
+        className={`space-indicator${runtime.processing ? ' processing' : ''}`}
         onClick={handleUI}
       >
         {runtime.curvature === 0 ? '𝔼' : runtime.curvature > 0 ? '𝕊' : 'ℍ'}
