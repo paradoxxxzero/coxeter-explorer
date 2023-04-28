@@ -3,7 +3,7 @@ import { useInteract } from './honeyball/hooks/useInteract'
 import { useProcess } from './honeyball/hooks/useProcess'
 import { useRender } from './honeyball/hooks/useRender'
 import { floor, max, min, round } from './honeyball/math'
-import { ambiances, groupers, projections } from './statics'
+import { ambiances, filterParams, groupers, projections } from './statics'
 import { knuthBendixTiler, toddCoxeterTiler } from './honeyball/workers/worker'
 
 export default function App({ gl, params, updateParams }) {
@@ -53,32 +53,34 @@ export default function App({ gl, params, updateParams }) {
   useEffect(() => {
     setRuntime(runtime => ({
       ...runtime,
-      order: params.order,
-      controls: params.controls,
-      controlsShift: params.controlsShift,
-      ambiance: params.ambiance,
-      showVertices: params.showVertices,
-      showEdges: params.showEdges,
-      vertexThickness: params.vertexThickness,
-      edgeThickness: params.edgeThickness,
-      projection: params.projection,
-      msaa: params.msaa,
-      msaaSamples: params.msaaSamples,
-      fov3: params.fov3,
-      fov4: params.fov4,
-      fov5: params.fov5,
-      fov6: params.fov6,
-      fov7: params.fov7,
-      fov8: params.fov8,
-      fov9: params.fov9,
-      curve: params.curve,
-      segments: params.segments,
-      dimensions: params.dimensions,
-      coxeter: params.coxeter,
-      mirrors: params.mirrors,
-      stellated: params.stellated,
-      stellation: params.stellation,
-      grouper: params.grouper,
+      ...filterParams({
+        order: params.order,
+        controls: params.controls,
+        controlsShift: params.controlsShift,
+        ambiance: params.ambiance,
+        showVertices: params.showVertices,
+        showEdges: params.showEdges,
+        vertexThickness: params.vertexThickness,
+        edgeThickness: params.edgeThickness,
+        projection: params.projection,
+        msaa: params.msaa,
+        msaaSamples: params.msaaSamples,
+        fov3: params.fov3,
+        fov4: params.fov4,
+        fov5: params.fov5,
+        fov6: params.fov6,
+        fov7: params.fov7,
+        fov8: params.fov8,
+        fov9: params.fov9,
+        curve: params.curve,
+        segments: params.segments,
+        dimensions: params.dimensions,
+        coxeter: params.coxeter,
+        mirrors: params.mirrors,
+        stellated: params.stellated,
+        stellation: params.stellation,
+        grouper: params.grouper,
+      }),
     }))
   }, [
     params.order,

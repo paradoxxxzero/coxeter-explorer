@@ -197,3 +197,68 @@ export const ambiances = {
     },
   },
 }
+
+export const defaultParams = {
+  dimensions: 4,
+  coxeter: [
+    [-1, 5, 2, 2],
+    [5, -1, 3, 2],
+    [2, 3, -1, 4],
+    [2, 2, 4, -1],
+  ],
+  stellation: [
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+    [1, 1, 1, 1],
+  ],
+  mirrors: [1, 0, 0, 0],
+  extended: false,
+  stellated: false,
+
+  order: 10,
+  segments: 32,
+  curve: true,
+  showVertices: false,
+  vertexThickness: 75,
+  showEdges: true,
+  edgeThickness: 25,
+
+  grouper: 'knuthbendix',
+  projection: 'stereographic',
+  controls: 'orbit',
+  controlsShift: 0,
+  ambiance: 'neon',
+
+  fov3: 90,
+  fov4: 90,
+  msaa: window.devicePixelRatio <= 1,
+  msaaSamples: 8,
+}
+
+export const filterParams = maybeBadParams => {
+  const params = {
+    ...maybeBadParams,
+  }
+  // Remove bad params
+  Object.entries(params).map(([key, value]) => {
+    if (typeof defaultParams[key] === 'number') {
+      if (!value || isNaN(value)) {
+        delete params[key]
+      }
+    } else if (Array.isArray(defaultParams[key])) {
+      // arrays of arrays of numbers
+      if (Array.isArray(value[0])) {
+        if (value.find(c => c.find(d => !value || isNaN(d)))) {
+          delete params[key]
+        }
+      } else {
+        // arrays of numbers
+        if (value.find(c => !value || isNaN(c))) {
+          delete params[key]
+        }
+      }
+    }
+  })
+  return params
+}
