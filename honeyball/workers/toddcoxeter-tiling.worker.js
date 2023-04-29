@@ -16,6 +16,7 @@ const initCosets = (dimensions, coxeter, mirrors) => {
     },
     rows: [],
     words: [],
+    done: false,
   })
 
   verticesParams = {
@@ -55,25 +56,33 @@ onmessage = ({
   if (order === 0) {
     initCosets(dimensions, coxeter, mirrors)
   }
-  const limit = (order + 1) * 250
+  const limit = (order + 1) * (curvature > 0 ? 2500 : 250)
   try {
     let vertices = []
     let edges = []
-    let previousLength = verticesParams.words.length
-    verticesParams.limit = limit
+    if (!verticesParams.done) {
+      let previousLength = verticesParams.words.length
+      verticesParams.limit = limit
 
-    solve(verticesParams)
-    // init(rootVertex, cosets)
-    for (let i = previousLength; i < verticesParams.words.length; i++) {
-      const word = verticesParams.words[i]
-      const vertex = reflectWord({ rootVertex, mirrorsPlanes, curvature }, word)
-      vertices.push({
-        vertex,
-        word,
-      })
+      solve(verticesParams)
+      // init(rootVertex, cosets)
+      for (let i = previousLength; i < verticesParams.words.length; i++) {
+        const word = verticesParams.words[i]
+        const vertex = reflectWord(
+          { rootVertex, mirrorsPlanes, curvature },
+          word
+        )
+        vertices.push({
+          vertex,
+          word,
+        })
+      }
     }
     for (let i = 0; i < edgesParams.length; i++) {
       const edgeParams = edgesParams[i]
+      if (edgeParams.done) {
+        continue
+      }
       const previousLength = edgeParams.words.length
       edgeParams.limit = limit
       solve(edgeParams)
@@ -99,7 +108,6 @@ onmessage = ({
         })
       }
     }
-
     postMessage({ vertices, edges, uuid })
   } catch (e) {
     postMessage({ error: e.message, uuid })

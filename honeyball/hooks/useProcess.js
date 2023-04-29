@@ -9,27 +9,6 @@ import { knuthBendixTiler, toddCoxeterTiler } from '../workers/worker'
 
 export const useProcess = (runtime, setRuntime) => {
   useEffect(() => {
-    setRuntime(runtime => ({
-      ...runtime,
-      currentOrder: 0,
-
-      mirrorsPlanes: null,
-      rootVertex: null,
-      vertices: [],
-      edges: [],
-      ranges: [],
-    }))
-  }, [
-    runtime.dimensions,
-    runtime.coxeter,
-    runtime.mirrors,
-    runtime.stellated,
-    runtime.stellation,
-    runtime.grouper,
-    setRuntime,
-  ])
-
-  useEffect(() => {
     setRuntime(runtime => {
       if (runtime.order < runtime.currentOrder) {
         return {
@@ -42,7 +21,55 @@ export const useProcess = (runtime, setRuntime) => {
   }, [runtime.order, runtime.currentOrder, setRuntime])
 
   useEffect(() => {
+    setRuntime(runtime => {
+      const gram = runtime.coxeter.map((row, i) =>
+        row.map(
+          (column, j) =>
+            -cos(
+              ((runtime.stellated ? runtime.stellation[i][j] : 1) * PI) / column
+            )
+        )
+      )
+      const curvature = getCurvature(gram)
+      const mirrorsPlanes = getFundamentalSimplexMirrors(gram, curvature)
+      const rootVertex = getFundamentalVertex(
+        runtime.mirrors,
+        mirrorsPlanes,
+        curvature
+      )
+      const grouper =
+        runtime.grouper === ''
+          ? curvature > 0 && !runtime.stellated
+            ? 'toddcoxeter'
+            : 'knuthbendix'
+          : runtime.grouper
+      return {
+        ...runtime,
+        currentOrder: 0,
+        grouper,
+        vertices: [],
+        edges: [],
+        ranges: [],
+        curvature,
+        mirrorsPlanes,
+        rootVertex,
+      }
+    })
+  }, [
+    runtime.dimensions,
+    runtime.coxeter,
+    runtime.mirrors,
+    runtime.stellated,
+    runtime.stellation,
+    runtime.grouper,
+    setRuntime,
+  ])
+
+  useEffect(() => {
     if (runtime.order <= runtime.currentOrder) {
+      return
+    }
+    if (!runtime.rootVertex) {
       return
     }
     if (runtime.ranges?.[runtime.order]) {
@@ -54,7 +81,6 @@ export const useProcess = (runtime, setRuntime) => {
     }
     ;(async () => {
       // Rules gets computed on non stellated coxeter group
-      const newTilingRuntime = {}
       const worker =
         runtime.grouper === 'knuthbendix' ? knuthBendixTiler : toddCoxeterTiler
       setRuntime(runtime => ({
@@ -62,47 +88,21 @@ export const useProcess = (runtime, setRuntime) => {
         processing: true,
         error: null,
       }))
+
       if (runtime.currentOrder === 0) {
         toddCoxeterTiler.kill()
         knuthBendixTiler.kill()
-
-        // Initialize tiling
-        const gram = runtime.coxeter.map((row, i) =>
-          row.map(
-            (column, j) =>
-              -cos(
-                ((runtime.stellated ? runtime.stellation[i][j] : 1) * PI) /
-                  column
-              )
-          )
-        )
-        newTilingRuntime.curvature = getCurvature(gram)
-        newTilingRuntime.mirrorsPlanes = getFundamentalSimplexMirrors(
-          gram,
-          newTilingRuntime.curvature
-        )
-        newTilingRuntime.rootVertex = getFundamentalVertex(
-          runtime.mirrors,
-          newTilingRuntime.mirrorsPlanes,
-          newTilingRuntime.curvature
-        )
-
-        newTilingRuntime.ranges = []
       }
 
       try {
-        const preprocessRuntime = {
-          ...runtime,
-          ...newTilingRuntime,
-        }
         const { vertices, edges } = await worker.process({
-          order: preprocessRuntime.currentOrder,
-          coxeter: preprocessRuntime.coxeter,
-          curvature: preprocessRuntime.curvature,
-          mirrors: preprocessRuntime.mirrors,
-          mirrorsPlanes: preprocessRuntime.mirrorsPlanes,
-          rootVertex: preprocessRuntime.rootVertex,
-          dimensions: preprocessRuntime.dimensions,
+          order: runtime.currentOrder,
+          coxeter: runtime.coxeter,
+          curvature: runtime.curvature,
+          mirrors: runtime.mirrors,
+          mirrorsPlanes: runtime.mirrorsPlanes,
+          rootVertex: runtime.rootVertex,
+          dimensions: runtime.dimensions,
         })
         setRuntime(runtime => {
           if (!runtime.processing) {
@@ -110,7 +110,6 @@ export const useProcess = (runtime, setRuntime) => {
           }
           return {
             ...runtime,
-            ...preprocessRuntime,
             ranges: [
               ...runtime.ranges,
               {
@@ -144,7 +143,14 @@ export const useProcess = (runtime, setRuntime) => {
     })()
     // Can't have ranges here
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setRuntime, runtime.order, runtime.currentOrder])
+  }, [
+    setRuntime,
+    runtime.order,
+    runtime.currentOrder,
+    runtime.curvature,
+    runtime.mirrorsPlanes,
+    runtime.rootVertex,
+  ])
 
   useEffect(() => {
     setRuntime(runtime => {

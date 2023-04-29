@@ -38,7 +38,6 @@ const AppWithHistory = () => {
     newParams => {
       const finalParams = { ...params, ...newParams }
       setParams(finalParams)
-      // console.log('updateParams', finalParams)
       if (
         Object.keys(filterParams(finalParams)).length <
         Object.keys(defaultParams).length

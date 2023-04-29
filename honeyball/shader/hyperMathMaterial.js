@@ -45,7 +45,6 @@ export const hyperMathMaterial = (material, rt) => {
       `#define DIMENSIONS ${dimensions}`,
       `#define PROJECTION ${projections.indexOf(projection)}`,
     ]
-    console.log(projection)
 
     Object.assign(shader.uniforms, material.uniforms)
     if (material instanceof MeshBasicMaterial) {

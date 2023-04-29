@@ -6,6 +6,7 @@ import { floor, max, min, round } from './honeyball/math'
 import { ambiances, filterParams, groupers, projections } from './statics'
 import Link from './honeyball/components/Link'
 import Node from './honeyball/components/Node'
+import Value from './honeyball/components/Value'
 
 export default function App({ gl, params, updateParams }) {
   const [runtime, setRuntime] = useState(() => {
@@ -193,7 +194,7 @@ export default function App({ gl, params, updateParams }) {
         value = coxeter
       }
 
-      if (name.startsWith('div')) {
+      if (name.startsWith('stellation')) {
         const [i, j] = name
           .split('-')
           .slice(1)
@@ -216,7 +217,6 @@ export default function App({ gl, params, updateParams }) {
     (index, value) => {
       const mirrors = params.mirrors.slice()
       mirrors[index] = value
-      console.log(mirrors)
       updateParams({ mirrors })
     },
     [params.mirrors, updateParams]
@@ -244,31 +244,41 @@ export default function App({ gl, params, updateParams }) {
       </button>
       {showUI && (
         <aside className="controls">
-          <label>
-            Grouper
-            <select
-              name="grouper"
-              value={params.grouper}
-              onChange={handleChange}
-            >
-              {groupers.map(p => (
-                <option key={p} value={p}>
-                  {p.replace(/_/g, ' ').replace(/./, c => c.toUpperCase())}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Order
-            <input
-              type="number"
-              name="order"
-              min="1"
-              step="1"
-              value={params.order}
-              onChange={handleChange}
-            />
-          </label>
+          {params.extended && (
+            <label>
+              Grouper
+              <select
+                name="grouper"
+                value={params.grouper}
+                onChange={handleChange}
+              >
+                {groupers.map(p => (
+                  <option key={p} value={p}>
+                    {p === ''
+                      ? params.grouper === ''
+                        ? `Auto [${runtime.grouper}]`
+                        : 'Auto'
+                      : p.replace(/_/g, ' ').replace(/./, c => c.toUpperCase())}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {(params.extended ||
+            runtime.grouper === 'knuthbendix' ||
+            runtime.curvature <= 0) && (
+            <label>
+              Order
+              <input
+                type="number"
+                name="order"
+                min="1"
+                step="1"
+                value={params.order}
+                onChange={handleChange}
+              />
+            </label>
+          )}
           <label>
             Segments
             <input
@@ -430,33 +440,22 @@ export default function App({ gl, params, updateParams }) {
           {[...Array(params.dimensions).keys()].map(i => (
             <Fragment key={i}>
               {i > 0 && (
-                <div className="number">
+                <div className="coxeter-column">
                   {[...Array(i).keys()].map(
                     j =>
                       (params.extended || i === j + 1) && (
-                        <label key={j}>
-                          <input
-                            type="number"
-                            name={`coxeter-${i}-${j}`}
-                            min="2"
-                            step="1"
-                            value={params.coxeter[i][j]}
-                            onChange={handleChange}
-                          />
-                          {params.stellated && (
-                            <div className="stellation">
-                              <span className="divisor"> / </span>
-                              <input
-                                type="number"
-                                name={`div-${i}-${j}`}
-                                min="1"
-                                step="1"
-                                value={params.stellation[i][j]}
-                                onChange={handleChange}
-                              />
-                            </div>
-                          )}
-                        </label>
+                        <Value
+                          i={i}
+                          j={j}
+                          value={params.coxeter[i][j]}
+                          stellation={
+                            params.stellated
+                              ? params.stellation[i][j]
+                              : undefined
+                          }
+                          key={`${i}x${j}`}
+                          onChange={handleChange}
+                        />
                       )
                   )}
                 </div>

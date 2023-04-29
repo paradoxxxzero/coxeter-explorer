@@ -26,7 +26,7 @@ export const projections = [
   'upperhalf',
 ]
 
-export const groupers = ['knuthbendix', 'toddcoxeter']
+export const groupers = ['', 'knuthbendix', 'toddcoxeter']
 
 const _color = new Color()
 const loader = new TextureLoader()
@@ -230,7 +230,7 @@ export const defaultParams = {
   showEdges: true,
   edgeThickness: 25,
 
-  grouper: 'knuthbendix',
+  grouper: '',
   projection: 'stereographic',
   controls: 'orbit',
   controlsShift: 0,

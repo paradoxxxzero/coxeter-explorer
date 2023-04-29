@@ -62,10 +62,20 @@ const learn = (cosets, row) => {
   return false
 }
 
-export const solve = ({ gens, subgens, rels, cosets, rows, words, limit }) => {
+export const solve = params => {
+  const {
+    gens,
+    subgens: strSubgens,
+    rels: strRels,
+    cosets,
+    rows,
+    words,
+    limit,
+  } = params
+
   const dimensions = gens.length
-  rels = rels.map(rel => [...rel].map(g => gens.indexOf(g)))
-  subgens = subgens.split('').map(g => gens.indexOf(g))
+  const rels = strRels.map(rel => [...rel].map(g => gens.indexOf(g)))
+  const subgens = strSubgens.split('').map(g => gens.indexOf(g))
 
   if (cosets.normal.length === 0) {
     cosets.normal.push(new Array(dimensions).fill())
@@ -133,6 +143,9 @@ export const solve = ({ gens, subgens, rels, cosets, rows, words, limit }) => {
         break
       }
     }
+  }
+  if (!rows.length) {
+    params.done = true
   }
   if (words.length === 0) {
     words[0] = ''

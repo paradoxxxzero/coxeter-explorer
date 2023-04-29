@@ -149,32 +149,48 @@ label {
   mix-blend-mode: difference;
 }
 
-.coxeters label {
-  margin: 0.2em 0.125em;
-  color: rgba(255, 255, 255, 0.75);
+.coxeter-value {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0.25em 1.5em;
+}
+.coxeter-value.stellated {
+  font-size: 0.9em;
+}
+.coxeter-value .stellation-divisor {
+  color: white;
+  font-size: 2em;
+  font-weight: bold;
+  margin: 0 0.125em;
 }
 
-.link {
+.coxeter-value .stellation {
+  font-size: 1.25em;
+  margin-bottom: 0.25em;
+}
+
+.coxeter-link {
   color: white;
   font-size: 3em;
   width: 1.5em;
   margin: 0 -0.5em;
 }
-.node {
-  color: white;
-  font-size: 3em;
-}
-.node-wrapper {
+.coxeter-node {
   position: relative;
 }
-.node-wrapper input[type='number'] {
+.coxeter-node input[type='number'] {
   font-size: 1.25em;
   position: absolute;
   top: 2.5em;
   left: -0.4em;
 }
+.coxeter-graphic {
+  color: white;
+  font-size: 3em;
+}
 
-.number {
+.coxeter-column {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -188,13 +204,6 @@ input[type='number'] {
   padding: 0.25em;
   max-width: 5ch;
   font-size: 1.5em;
-}
-.stellation input[type='number'] {
-  max-width: 3ch;
-}
-.divisor {
-  font-size: 1.2em;
-  font-weight: bold;
 }
 select {
   color: white;

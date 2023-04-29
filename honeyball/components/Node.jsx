@@ -51,9 +51,9 @@ export default function Node({ index, value, extended, onChange }) {
   }
 
   return (
-    <div className="node-wrapper">
+    <div className="coxeter-node">
       <svg
-        className={`node ${type}`}
+        className={`coxeter-graphic ${type}`}
         viewBox="0 0 32 32"
         width="1em"
         onClick={handleClick}
