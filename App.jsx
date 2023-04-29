@@ -136,6 +136,10 @@ export default function App({ gl, params, updateParams }) {
     updateParams(newParams)
   }, [params.extended, params.dimensions, params.coxeter, updateParams])
 
+  const handleStellated = useCallback(() => {
+    updateParams({ stellated: !params.stellated })
+  }, [params.stellated, updateParams])
+
   const handleChange = useCallback(
     e => {
       let { name, checked, type, value } = e.target
@@ -363,15 +367,6 @@ export default function App({ gl, params, updateParams }) {
             ) : null}
           </label>
           <label>
-            <input
-              type="checkbox"
-              name="stellated"
-              checked={params.stellated}
-              onChange={handleChange}
-            />
-            Stellated
-          </label>
-          <label>
             Ambiance
             <select
               name="ambiance"
@@ -437,42 +432,57 @@ export default function App({ gl, params, updateParams }) {
       )}
       {showUI && (
         <aside className="coxeters">
-          {[...Array(params.dimensions).keys()].map(i => (
-            <Fragment key={i}>
-              {i > 0 && (
-                <div className="coxeter-column">
-                  {[...Array(i).keys()].map(
-                    j =>
-                      (params.extended || i === j + 1) && (
-                        <Value
-                          i={i}
-                          j={j}
-                          value={params.coxeter[i][j]}
-                          stellation={
-                            params.stellated
-                              ? params.stellation[i][j]
-                              : undefined
-                          }
-                          key={`${i}x${j}`}
-                          onChange={handleChange}
-                        />
-                      )
-                  )}
-                </div>
-              )}
-              {i > 0 && <Link />}
-              <Node
-                index={i}
-                value={params.mirrors[i]}
-                extended={params.extended}
-                onChange={handleMirrorChange}
-              />
-              {i < params.dimensions - 1 && <Link />}
-            </Fragment>
-          ))}
-          <button className="extend" onClick={handleExtend}>
-            {params.extended ? '▲' : '▼'}
-          </button>
+          <div className="coxeter-matrix">
+            {[...Array(params.dimensions).keys()].map(i => (
+              <Fragment key={i}>
+                {i > 0 && (
+                  <div className="coxeter-column">
+                    {[...Array(i).keys()].map(
+                      j =>
+                        (params.extended || i === j + 1) && (
+                          <Value
+                            i={i}
+                            j={j}
+                            value={params.coxeter[i][j]}
+                            stellation={
+                              params.stellated
+                                ? params.stellation[i][j]
+                                : undefined
+                            }
+                            key={`${i}x${j}`}
+                            onChange={handleChange}
+                          />
+                        )
+                    )}
+                  </div>
+                )}
+                {i > 0 && <Link />}
+                <Node
+                  index={i}
+                  value={params.mirrors[i]}
+                  extended={params.extended}
+                  onChange={handleMirrorChange}
+                />
+                {i < params.dimensions - 1 && <Link />}
+              </Fragment>
+            ))}
+          </div>
+          <div className="coxeter-toggles">
+            <button
+              className="button"
+              onClick={handleStellated}
+              title="stellated"
+            >
+              {params.stellated ? '⋇' : '÷'}
+            </button>
+            <button
+              className="button"
+              onClick={handleExtend}
+              title="extended mode"
+            >
+              {params.extended ? '▲' : '▼'}
+            </button>
+          </div>
         </aside>
       )}
     </div>

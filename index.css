@@ -50,11 +50,7 @@ canvas {
   font-size: 0.3em;
 }
 
-.extend {
-  position: absolute;
-  bottom: -1.5em;
-  right: 0.125em;
-  padding: 0.25em;
+.button {
   font-size: 2.5em;
   line-height: 1;
   color: rgba(255, 255, 255);
@@ -62,6 +58,8 @@ canvas {
   cursor: pointer;
   background: none;
   border: none;
+  width: 2em;
+  height: 2em;
 }
 
 button:hover {
@@ -78,6 +76,13 @@ button:hover {
   100% {
     opacity: 1;
   }
+}
+
+aside {
+  pointer-events: none;
+}
+aside > * {
+  pointer-events: all;
 }
 
 label {
@@ -126,11 +131,7 @@ label {
   justify-content: center;
   align-items: center;
   font-size: calc(min(1.5vw, 0.75em));
-  pointer-events: none;
   mix-blend-mode: difference;
-}
-.view * {
-  pointer-events: all;
 }
 .view label {
   margin: 0.2em 0.75em;
@@ -141,19 +142,25 @@ label {
   position: absolute;
   top: 0;
   right: 0;
+  font-size: calc(min(1.5vw, 0.75em));
+  mix-blend-mode: difference;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.coxeter-matrix {
   display: flex;
   justify-content: center;
   align-items: flex-start;
   margin: 1em;
-  font-size: calc(min(1.5vw, 0.75em));
-  mix-blend-mode: difference;
 }
 
 .coxeter-value {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: 0.25em 1.5em;
+  margin: 0.25em 0.25em;
 }
 .coxeter-value.stellated {
   font-size: 0.9em;
