@@ -83,7 +83,6 @@ button:hover {
 label {
   white-space: nowrap;
   font-family: 'Fira Code', monospace;
-  mix-blend-mode: difference;
 }
 
 .controls {
@@ -98,6 +97,7 @@ label {
   margin: 1em;
   margin-right: 4.5rem;
   font-size: calc(min(1.5vw, 0.75em));
+  mix-blend-mode: difference;
 }
 
 .controls label {
@@ -127,6 +127,7 @@ label {
   align-items: center;
   font-size: calc(min(1.5vw, 0.75em));
   pointer-events: none;
+  mix-blend-mode: difference;
 }
 .view * {
   pointer-events: all;
@@ -142,9 +143,10 @@ label {
   right: 0;
   display: flex;
   justify-content: center;
-  align-items: baseline;
+  align-items: flex-start;
   margin: 1em;
   font-size: calc(min(1.5vw, 0.75em));
+  mix-blend-mode: difference;
 }
 
 .coxeters label {
@@ -152,10 +154,31 @@ label {
   color: rgba(255, 255, 255, 0.75);
 }
 
+.link {
+  color: white;
+  font-size: 3em;
+  width: 1.5em;
+  margin: 0 -0.5em;
+}
+.node {
+  color: white;
+  font-size: 3em;
+}
+.node-wrapper {
+  position: relative;
+}
+.node-wrapper input[type='number'] {
+  font-size: 1.25em;
+  position: absolute;
+  top: 2.5em;
+  left: -0.4em;
+}
+
 .number {
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin: 0 1.25em;
 }
 
 input[type='number'] {

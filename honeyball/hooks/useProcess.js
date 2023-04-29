@@ -65,9 +65,6 @@ export const useProcess = (runtime, setRuntime) => {
       if (runtime.currentOrder === 0) {
         toddCoxeterTiler.kill()
         knuthBendixTiler.kill()
-        // console.log(
-        //   getCosets(runtime.dimensions, runtime.coxeter, runtime.mirrors)
-        // )
 
         // Initialize tiling
         const gram = runtime.coxeter.map((row, i) =>

@@ -4,6 +4,8 @@ import { useProcess } from './honeyball/hooks/useProcess'
 import { useRender } from './honeyball/hooks/useRender'
 import { floor, max, min, round } from './honeyball/math'
 import { ambiances, filterParams, groupers, projections } from './statics'
+import Link from './honeyball/components/Link'
+import Node from './honeyball/components/Node'
 
 export default function App({ gl, params, updateParams }) {
   const [runtime, setRuntime] = useState(() => {
@@ -202,17 +204,6 @@ export default function App({ gl, params, updateParams }) {
         name = 'stellation'
         value = stellation
       }
-      if (name.startsWith('mirror')) {
-        const [i] = name
-          .split('-')
-          .slice(1)
-          .map(x => +x)
-        name = 'mirrors'
-        value = params.mirrors.map((x, j) => ((j === i ? value : x) ? 1 : 0))
-        if (value.reduce((a, b) => a + b, 0) === 0) {
-          value[0] = 1
-        }
-      }
 
       newParams[name] = value
 
@@ -220,6 +211,17 @@ export default function App({ gl, params, updateParams }) {
     },
     [params, updateParams]
   )
+
+  const handleMirrorChange = useCallback(
+    (index, value) => {
+      const mirrors = params.mirrors.slice()
+      mirrors[index] = value
+      console.log(mirrors)
+      updateParams({ mirrors })
+    },
+    [params.mirrors, updateParams]
+  )
+
   return (
     <div className={runtime.error ? 'error' : ''} title={runtime.error}>
       <button className="control-indicator" onClick={handleControls}>
@@ -459,19 +461,14 @@ export default function App({ gl, params, updateParams }) {
                   )}
                 </div>
               )}
-
-              <label className="mirror">
-                {i > 0 && <span className="coxeter">——</span>}
-                <input
-                  type="checkbox"
-                  name={`mirror-${i}`}
-                  checked={!!params.mirrors[i]}
-                  onChange={handleChange}
-                />
-                {i < params.dimensions - 1 && (
-                  <span className="coxeter">——</span>
-                )}
-              </label>
+              {i > 0 && <Link />}
+              <Node
+                index={i}
+                value={params.mirrors[i]}
+                extended={params.extended}
+                onChange={handleMirrorChange}
+              />
+              {i < params.dimensions - 1 && <Link />}
             </Fragment>
           ))}
           <button className="extend" onClick={handleExtend}>
