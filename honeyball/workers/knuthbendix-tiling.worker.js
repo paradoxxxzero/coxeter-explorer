@@ -116,10 +116,9 @@ const flip = (state, word, k, v) => {
   const rv = reflectWord(state, newWord)
 
   words.set(newWord, rv)
-  // If the vertex isn't new it probably is on the mirror
-  if (plot(rv, newWord)) {
-    link(word, v, rv)
-  }
+
+  plot(rv, newWord)
+  link(word, v, rv)
   return newWord
 }
 

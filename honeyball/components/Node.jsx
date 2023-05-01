@@ -64,6 +64,7 @@ export default function Node({ index, value, extended, onChange }) {
         <input
           type="number"
           value={value}
+          min="0"
           step=".1"
           onChange={e => onChange(index, e.target.value)}
         />

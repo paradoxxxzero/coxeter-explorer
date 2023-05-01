@@ -15,7 +15,7 @@ import {
   sRGBEncoding,
   TextureLoader,
 } from 'three'
-import { itoa } from './honeyball/math'
+import { atoi, itoa } from './honeyball/math'
 
 export const projections = [
   'stereographic',
@@ -61,7 +61,100 @@ export const ambiances = {
       return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
     },
   },
+  colorful: {
+    background: 0xffffff,
+    shadow: false,
+    material: new MeshPhongMaterial(),
+    lights: [new AmbientLight(0xffffff, 1)],
+    cameraLights: [new PointLight(0xffffff, 0.5)],
+    color: ({ word }, type, dimensions) => {
+      const i = word.match(dimensionsRegExps[dimensions - 1])?.length || 0
+      return _color.setHSL((i * 0.07) % 1, 0.5, 0.5)
+    },
+  },
+  reflection: {
+    background: 0xffffff,
+    shadow: false,
+    material: new MeshPhongMaterial(),
+    lights: [new AmbientLight(0xffffff, 0.25)],
+    cameraLights: [new PointLight(0xffffff, 0.75)],
+    color: ({ word }, type, dimensions) => {
+      // const h = word.length ? atoi(word[0]) / dimensions : 0
+
+      // let h = 0
+      // for (let i = 0; i < dimensions; i++) {
+      //   const count = (word.match(dimensiosRegExps[i]) || []).length
+      //   h += ((count / 10) * i) / dimensions
+      // }
+
+      // Get the character with the highest count
+      const counts = dimensionsRegExps.map(r => (word.match(r) || []).length)
+      const max = Math.max(...counts)
+      const h = counts.indexOf(max) / dimensions
+
+      return _color.setHSL(h % 1, 1, 0.8)
+    },
+  },
+  projection: {
+    background: 0xffffff,
+    ground: 'sphere',
+    shadow: true,
+    material: new MeshPhongMaterial({
+      transparent: true,
+      opacity: 0.75,
+      blending: CustomBlending,
+    }),
+
+    lights: [new PointLight()],
+    color: ({ word }) => {
+      return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
+    },
+  },
+  bw: {
+    background: 0x000000,
+    fx: ['sobel'],
+    shadow: false,
+    material: new MeshPhongMaterial(),
+    lights: [new AmbientLight(0xcccccc, 0.4)],
+    cameraLights: [new PointLight(0xffffff, 1)],
+    color: () => {
+      return _color.set(0xffff00)
+    },
+  },
+  pure: {
+    background: 0,
+    fx: ['sao'],
+    shadow: false,
+    material: new MeshLambertMaterial(),
+    lights: [new AmbientLight(0x000000, 0.5)],
+    cameraLights: [new PointLight(0xffffff, 1)],
+    color: ({ word }) => {
+      return _color.setHSL((word.length * 0.03) % 1, 0.75, 0.7)
+    },
+  },
+  glass: {
+    extended: true,
+    background: ocean,
+    env: ocean,
+    shadow: false,
+    material: new MeshPhysicalMaterial({
+      premultipliedAlpha: false,
+      reflectivity: 0,
+      metalness: 0,
+      roughness: 0,
+      transmission: 1,
+      clearcoat: 1,
+      clearcoatRoughness: 0.1,
+      thickness: 1,
+      ior: 1.5,
+    }),
+    lights: [new DirectionalLight(), new HemisphereLight()],
+    color: () => {
+      return _color.set(0xaaaaaa)
+    },
+  },
   museum: {
+    extended: true,
     background: 0xbbbbbb,
     env: ocean,
     shadow: true,
@@ -103,44 +196,8 @@ export const ambiances = {
       return _color.set(0xffffff)
     },
   },
-  projection: {
-    background: 0xffffff,
-    ground: 'sphere',
-    shadow: true,
-    material: new MeshPhongMaterial({
-      transparent: true,
-      opacity: 0.75,
-      blending: CustomBlending,
-    }),
-
-    lights: [new PointLight()],
-    color: ({ word }) => {
-      return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
-    },
-  },
-  bw: {
-    background: 0x000000,
-    fx: ['sobel'],
-    shadow: false,
-    material: new MeshPhongMaterial(),
-    lights: [new AmbientLight(0xcccccc, 0.4)],
-    cameraLights: [new PointLight(0xffffff, 1)],
-    color: () => {
-      return _color.set(0xffff00)
-    },
-  },
-  colorful: {
-    background: 0xffffff,
-    shadow: false,
-    material: new MeshPhongMaterial(),
-    lights: [new AmbientLight(0xffffff, 1)],
-    cameraLights: [new PointLight(0xffffff, 0.5)],
-    color: ({ word }, type, dimensions) => {
-      const i = word.match(dimensionsRegExps[dimensions - 1])?.length || 0
-      return _color.setHSL((i * 0.07) % 1, 0.5, 0.5)
-    },
-  },
   bokeh: {
+    extended: true,
     background: 0xffffff,
     fx: ['bokeh'],
     shadow: false,
@@ -151,18 +208,8 @@ export const ambiances = {
       return _color.setHSL((word.length * 0.17) % 1, 0.7, 0.5)
     },
   },
-  pure: {
-    background: 0,
-    fx: ['sao'],
-    shadow: false,
-    material: new MeshLambertMaterial(),
-    lights: [new AmbientLight(0x000000, 0.5)],
-    cameraLights: [new PointLight(0xffffff, 1)],
-    color: ({ word }) => {
-      return _color.setHSL((word.length * 0.03) % 1, 0.75, 0.7)
-    },
-  },
   transcendent: {
+    extended: true,
     background: 0xffffff,
     fx: ['godray'],
     shadow: false,
@@ -171,27 +218,8 @@ export const ambiances = {
       return _color.set(0x000000)
     },
   },
-  glass: {
-    background: ocean,
-    env: ocean,
-    shadow: false,
-    material: new MeshPhysicalMaterial({
-      premultipliedAlpha: false,
-      reflectivity: 0,
-      metalness: 0,
-      roughness: 0,
-      transmission: 1,
-      clearcoat: 1,
-      clearcoatRoughness: 0.1,
-      thickness: 1,
-      ior: 1.5,
-    }),
-    lights: [new DirectionalLight(), new HemisphereLight()],
-    color: () => {
-      return _color.set(0xaaaaaa)
-    },
-  },
   wireframe: {
+    extended: true,
     background: 0x000000,
     shadow: false,
     material: new MeshBasicMaterial({

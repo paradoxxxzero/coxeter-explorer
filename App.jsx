@@ -373,7 +373,12 @@ export default function App({ gl, params, updateParams }) {
               value={params.ambiance}
               onChange={handleChange}
             >
-              {Object.keys(ambiances).map(a => (
+              {(params.extended
+                ? Object.keys(ambiances)
+                : Object.entries(ambiances)
+                    .filter(([k, { extended }]) => !extended)
+                    .map(([k]) => k)
+              ).map(a => (
                 <option key={a} value={a}>
                   {a.replace(/_/g, ' ').replace(/./, c => c.toUpperCase())}
                 </option>
