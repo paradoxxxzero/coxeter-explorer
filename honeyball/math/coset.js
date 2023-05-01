@@ -1,14 +1,24 @@
-import { getRels, itoa } from '.'
+import { abs, getRels, itoa } from '.'
 
-export const getVerticesCosetsParams = (dimensions, coxeter, mirrors) => {
-  const rels = getRels(dimensions, coxeter)
+export const getVerticesCosetsParams = (
+  dimensions,
+  coxeter,
+  stellation,
+  mirrors
+) => {
+  const rels = getRels(dimensions, coxeter, stellation, mirrors)
   const gens = [...Array(dimensions).keys()].map(i => itoa(i)).join('')
-  const subgens = mirrors.map((m, i) => (m ? '' : itoa(i))).join('')
+  const subgens = mirrors.map((m, i) => (m ? '' : itoa(abs(i)))).join('')
   return { gens, subgens, rels }
 }
 
-export const getEdgesCosetsParams = (dimensions, coxeter, mirrors) => {
-  const rels = getRels(dimensions, coxeter)
+export const getEdgesCosetsParams = (
+  dimensions,
+  coxeter,
+  stellation,
+  mirrors
+) => {
+  const rels = getRels(dimensions, coxeter, stellation, mirrors)
   const gens = [...Array(dimensions).keys()].map(i => itoa(i)).join('')
   const params = []
 

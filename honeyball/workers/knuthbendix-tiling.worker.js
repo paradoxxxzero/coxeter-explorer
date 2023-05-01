@@ -179,6 +179,9 @@ onmessage = ({
     order,
     curvature,
     coxeter,
+    stellated,
+    stellation,
+    mirrors,
     mirrorsPlanes,
     rootVertex,
     dimensions,
@@ -188,7 +191,12 @@ onmessage = ({
   try {
     let failed = false
     if (order === 0) {
-      const baseRules = getBaseRules(dimensions, coxeter)
+      const baseRules = getBaseRules(
+        dimensions,
+        coxeter,
+        stellated ? stellation : null,
+        mirrors
+      )
       try {
         rules = knuthBendix(baseRules, dimensions)
       } catch (e) {

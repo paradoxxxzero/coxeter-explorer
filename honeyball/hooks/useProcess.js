@@ -99,6 +99,8 @@ export const useProcess = (runtime, setRuntime) => {
           order: runtime.currentOrder,
           coxeter: runtime.coxeter,
           curvature: runtime.curvature,
+          stellated: runtime.stellated,
+          stellation: runtime.stellation,
           mirrors: runtime.mirrors,
           mirrorsPlanes: runtime.mirrorsPlanes,
           rootVertex: runtime.rootVertex,

@@ -481,7 +481,7 @@ export const getFundamentalVertex = (mirrors, mirrorsPlanes, curvature) => {
     for (let j = 0; j < i; j++) {
       sum += mirrorsPlanes[i][j] * p[j]
     }
-    p[i] = (mirrors[i] - sum) / mirrorsPlanes[i][i]
+    p[i] = (abs(mirrors[i]) - sum) / mirrorsPlanes[i][i]
   }
 
   p[p.length - 1] *= curvature || 1

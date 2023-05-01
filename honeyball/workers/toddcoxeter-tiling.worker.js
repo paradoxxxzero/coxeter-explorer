@@ -8,7 +8,7 @@ import { reflect } from '../math/hypermath'
 let verticesParams = null
 let edgesParams = null
 
-const initCosets = (dimensions, coxeter, mirrors) => {
+const initCosets = (dimensions, coxeter, stellation, mirrors) => {
   const defaultParams = () => ({
     cosets: {
       normal: [],
@@ -20,15 +20,18 @@ const initCosets = (dimensions, coxeter, mirrors) => {
   })
 
   verticesParams = {
-    ...getVerticesCosetsParams(dimensions, coxeter, mirrors),
+    ...getVerticesCosetsParams(dimensions, coxeter, stellation, mirrors),
     ...defaultParams(),
   }
-  edgesParams = getEdgesCosetsParams(dimensions, coxeter, mirrors).map(
-    edgeParams => ({
-      ...edgeParams,
-      ...defaultParams(),
-    })
-  )
+  edgesParams = getEdgesCosetsParams(
+    dimensions,
+    coxeter,
+    stellation,
+    mirrors
+  ).map(edgeParams => ({
+    ...edgeParams,
+    ...defaultParams(),
+  }))
 }
 
 const reflectWord = (state, word) => {
@@ -47,6 +50,8 @@ onmessage = ({
     curvature,
     mirrorsPlanes,
     coxeter,
+    stellated,
+    stellation,
     mirrors,
     rootVertex,
     dimensions,
@@ -54,7 +59,7 @@ onmessage = ({
   },
 }) => {
   if (order === 0) {
-    initCosets(dimensions, coxeter, mirrors)
+    initCosets(dimensions, coxeter, stellated ? stellation : null, mirrors)
   }
   const limit = (order + 1) * (curvature > 0 ? 2500 : 250)
   try {

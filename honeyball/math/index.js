@@ -32,7 +32,7 @@ export const genPaths = (a, len) =>
 export const itoa = i => String.fromCharCode(97 + i)
 export const atoi = a => a.charCodeAt(0) - 97
 
-export const getRels = (dimensions, coxeter) => {
+export const getRels = (dimensions, coxeter, stellation, mirrors) => {
   const rules = []
   for (let i = 0; i < dimensions; i++) {
     rules.push(itoa(i).repeat(2))
@@ -45,5 +45,7 @@ export const getRels = (dimensions, coxeter) => {
   return rules
 }
 
-export const getBaseRules = (dimensions, coxeter) =>
-  Object.fromEntries(getRels(dimensions, coxeter).map(r => [r, '']))
+export const getBaseRules = (dimensions, coxeter, stellation, mirrors) =>
+  Object.fromEntries(
+    getRels(dimensions, coxeter, stellation, mirrors).map(r => [r, ''])
+  )
