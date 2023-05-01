@@ -81,7 +81,6 @@ export default function App({ gl, params, updateParams }) {
         mirrors: params.mirrors,
         stellated: params.stellated,
         stellation: params.stellation,
-        grouper: params.grouper,
       }),
     }))
   }, [
@@ -100,7 +99,6 @@ export default function App({ gl, params, updateParams }) {
     params.fov7,
     params.fov8,
     params.fov9,
-    params.grouper,
     params.mirrors,
     params.msaa,
     params.msaaSamples,
@@ -112,6 +110,12 @@ export default function App({ gl, params, updateParams }) {
     params.stellation,
     params.vertexThickness,
   ])
+  useEffect(() => {
+    setRuntime(runtime => ({
+      ...runtime,
+      grouper: params.grouper,
+    }))
+  }, [params.grouper])
 
   // Reset plot
   useProcess(runtime, setRuntime)
