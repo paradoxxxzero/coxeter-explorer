@@ -275,7 +275,7 @@ export const filterParams = maybeBadParams => {
     ...maybeBadParams,
   }
   // Remove bad params
-  Object.entries(params).map(([key, value]) => {
+  Object.entries(params).forEach(([key, value]) => {
     if (typeof defaultParams[key] === 'number') {
       if (value === '' || isNaN(value)) {
         delete params[key]
@@ -288,7 +288,14 @@ export const filterParams = maybeBadParams => {
         }
       } else {
         // arrays of numbers
-        if (value.find(c => value === '' || isNaN(c))) {
+        if (
+          value.find(
+            c =>
+              value === '' ||
+              (isNaN(c) && !(key === 'mirrors' && 'sh'.includes(c)))
+          )
+        ) {
+          console.log('rem', key, value)
           delete params[key]
         }
       }

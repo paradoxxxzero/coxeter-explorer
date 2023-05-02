@@ -39,7 +39,9 @@ export const useProcess = (runtime, setRuntime) => {
       )
       const grouper =
         runtime.grouper === ''
-          ? curvature > 0 && !runtime.stellated
+          ? curvature > 0 &&
+            !runtime.stellated &&
+            runtime.mirrors.every(m => !isNaN(m))
             ? 'toddcoxeter'
             : 'knuthbendix'
           : runtime.grouper

@@ -446,30 +446,31 @@ export const xtranslate = (vertex, offset, curvature) => {
 
 export const getFundamentalSimplexMirrors = (gram, curvature) => {
   const dimensions = gram[0].length
-  const mirrors = new Array(dimensions)
+  const mirrorsPlanes = new Array(dimensions)
     .fill()
     .map(() => new Array(dimensions).fill(0))
 
-  mirrors[0][0] = 1
+  mirrorsPlanes[0][0] = 1
   for (let i = 1; i < dimensions; i++) {
     for (let j = 0; j < i; j++) {
       let sum = 0
       for (let k = 0; k < j; k++) {
-        sum += mirrors[i][k] * mirrors[j][k]
+        sum += mirrorsPlanes[i][k] * mirrorsPlanes[j][k]
       }
 
-      mirrors[i][j] = (gram[i][j] - sum) / mirrors[j][j]
+      mirrorsPlanes[i][j] = (gram[i][j] - sum) / mirrorsPlanes[j][j]
     }
-    mirrors[i][i] = sqrt(
-      abs(1 - mirrors[i].slice(0, i).reduce((a, b) => a + b * b, 0))
+    mirrorsPlanes[i][i] = sqrt(
+      abs(1 - mirrorsPlanes[i].slice(0, i).reduce((a, b) => a + b * b, 0))
     )
   }
 
-  mirrors[mirrors.length - 1][mirrors.length - 1] = curvature
-    ? mirrors[mirrors.length - 1][mirrors.length - 1] * curvature
+  mirrorsPlanes[mirrorsPlanes.length - 1][mirrorsPlanes.length - 1] = curvature
+    ? mirrorsPlanes[mirrorsPlanes.length - 1][mirrorsPlanes.length - 1] *
+      curvature
     : 1
 
-  return mirrors
+  return mirrorsPlanes
 }
 
 export const getFundamentalVertex = (mirrors, mirrorsPlanes, curvature) => {
@@ -481,7 +482,7 @@ export const getFundamentalVertex = (mirrors, mirrorsPlanes, curvature) => {
     for (let j = 0; j < i; j++) {
       sum += mirrorsPlanes[i][j] * p[j]
     }
-    p[i] = (abs(mirrors[i]) - sum) / mirrorsPlanes[i][i]
+    p[i] = ((isNaN(mirrors[i]) ? 1 : +mirrors[i]) - sum) / mirrorsPlanes[i][i]
   }
 
   p[p.length - 1] *= curvature || 1

@@ -1,24 +1,33 @@
+const dot = 6
+const circle = 14
+
 const symbols = {
   active: (
     <>
-      <circle cx="16" cy="16" r="14" strokeWidth="2" stroke="currentColor" />
-      <circle cx="16" cy="16" r="8" fill="currentColor" />
+      <circle cx="16" cy="16" r={circle} />
+      <circle cx="16" cy="16" r={dot} fill="currentColor" />
     </>
   ),
   inactive: (
     <>
-      <circle cx="16" cy="16" r="8" fill="currentColor" />
+      <circle cx="16" cy="16" r={dot} fill="currentColor" />
     </>
   ),
-  removed: (
+  snub: (
     <>
-      <circle cx="16" cy="16" r="14" strokeWidth="2" stroke="currentColor" />
+      <circle cx="16" cy="16" r={circle} />
+    </>
+  ),
+  holosnub: (
+    <>
+      <circle cx="16" cy="16" r={circle} />
+      <circle cx="16" cy="16" r={dot} />
     </>
   ),
   custom: (
     <>
-      <circle cx="16" cy="16" r="14" strokeWidth="2" stroke="currentColor" />
-      <circle cx="16" cy="16" r="8" strokeWidth="2" stroke="currentColor" />
+      <circle cx="16" cy="16" r={circle} />
+      <path d="M 10 14 L 10 18 L 22 18 L 22 14" />
     </>
   ),
 }
@@ -29,8 +38,10 @@ export default function Node({ index, value, extended, onChange }) {
       ? 'inactive'
       : value === 1
       ? 'active'
-      : value === -1
-      ? 'removed'
+      : value === 's'
+      ? 'snub'
+      : value === 'h'
+      ? 'holosnub'
       : 'custom'
 
   const handleClick = () => {
@@ -44,7 +55,8 @@ export default function Node({ index, value, extended, onChange }) {
     const newValue = {
       active: 1,
       inactive: 0,
-      removed: -1,
+      snub: 's',
+      holosnub: 'h',
       custom: 0.5,
     }[next]
     onChange(index, newValue)
@@ -56,6 +68,8 @@ export default function Node({ index, value, extended, onChange }) {
         className={`coxeter-graphic ${type}`}
         viewBox="0 0 32 32"
         width="1em"
+        strokeWidth="2"
+        stroke="currentColor"
         onClick={handleClick}
       >
         {symbols[type]}

@@ -34,6 +34,16 @@ export const atoi = a => a.charCodeAt(0) - 97
 
 export const getRels = (dimensions, coxeter, stellation, mirrors) => {
   const rules = []
+  // if (mirrors.some(m => isNaN(m))) {
+  //   // SNUB
+  //   // A = ab
+  //   // B = bc
+  //   // C = AB
+  //   rules.push('a'.repeat(coxeter[0][1]))
+  //   rules.push('b'.repeat(coxeter[1][2]))
+  //   rules.push('ab'.repeat(coxeter[0][2]))
+  //   return rules
+  // }
   for (let i = 0; i < dimensions; i++) {
     rules.push(itoa(i).repeat(2))
   }

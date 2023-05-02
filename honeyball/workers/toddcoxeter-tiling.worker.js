@@ -34,7 +34,13 @@ const initCosets = (dimensions, coxeter, stellation, mirrors) => {
   }))
 }
 
-const reflectWord = (state, word) => {
+const reflectWord = (state, word, snub) => {
+  if (snub) {
+    // This is wrong, we need to better think about group
+    word = word.replace(/./g, v => {
+      return v === 'a' ? 'ab' : 'bc'
+    })
+  }
   const { rootVertex, mirrorsPlanes, curvature } = state
   let v = rootVertex
 
@@ -58,6 +64,7 @@ onmessage = ({
     uuid,
   },
 }) => {
+  const snub = mirrors.some(m => m === 's')
   if (order === 0) {
     initCosets(dimensions, coxeter, stellated ? stellation : null, mirrors)
   }
@@ -75,7 +82,8 @@ onmessage = ({
         const word = verticesParams.words[i]
         const vertex = reflectWord(
           { rootVertex, mirrorsPlanes, curvature },
-          word
+          word,
+          snub
         )
         vertices.push({
           vertex,
@@ -94,17 +102,20 @@ onmessage = ({
       const rootStart = rootVertex.slice()
       const rootEnd = reflectWord(
         { rootVertex: rootStart, mirrorsPlanes, curvature },
-        edgeParams.edgeMirror
+        edgeParams.edgeMirror,
+        snub
       )
       for (let j = previousLength; j < edgeParams.words.length; j++) {
         const word = edgeParams.words[j]
         const start = reflectWord(
           { rootVertex: rootStart, mirrorsPlanes, curvature },
-          word
+          word,
+          snub
         )
         const end = reflectWord(
           { rootVertex: rootEnd, mirrorsPlanes, curvature },
-          word
+          word,
+          snub
         )
         edges.push({
           start,

@@ -1,4 +1,4 @@
-import { abs, getBaseRules, round } from '../math'
+import { abs, atoi, getBaseRules, itoa, round } from '../math'
 import { knuthBendix, shorten } from '../math/group'
 import { reflect } from '../math/hypermath'
 
@@ -8,9 +8,11 @@ let vertices = []
 let edges = []
 let words = new Map()
 let nextWords = []
+let mirrors = null
+let snub = false
 let rules = null
 
-const init = (rootVertex, newRules) => {
+const init = (rootVertex, newRules, newMirrors) => {
   vertexHashes.clear()
   edgeHashes.clear()
   words.clear()
@@ -18,7 +20,10 @@ const init = (rootVertex, newRules) => {
   vertices = []
   edges = []
   nextWords = ['']
+  mirrors = newMirrors
   rules = newRules
+  const snubWord = mirrors.map((m, i) => (m === 's' ? itoa(i) : '')).join('')
+  snub = snubWord.length > 0 ? new RegExp(`[^${snubWord}]`, 'g') : null
 }
 
 const same = (v1, v2) => {
@@ -63,21 +68,28 @@ const reflectWord = (state, word) => {
   return v
 }
 
-function plot(rv, word) {
-  const vertexHash = hash(rv)
+function plot(word) {
+  const vertex = words.get(word)
+  const vertexHash = hash(vertex)
   if (!vertexHashes.has(vertexHash)) {
+    // console.log(word)
     vertexHashes.add(vertexHash)
     vertices.push({
-      vertex: rv,
+      vertex,
       word,
     })
     return true
   }
 }
 
-function link(word, v, rv) {
-  const vHash = hash(v)
-  const rvHash = hash(rv)
+function link(word, newWord) {
+  const vertex = words.get(word)
+  const newVertex = words.get(newWord)
+  if (vertex === newVertex) {
+    return
+  }
+  const vHash = hash(vertex)
+  const rvHash = hash(newVertex)
   if (vHash === rvHash) {
     return
   }
@@ -85,50 +97,100 @@ function link(word, v, rv) {
 
   if (!edgeHashes.has(edgeHash)) {
     edgeHashes.add(edgeHash)
-    if (!same(v, rv)) {
-      const start = v.slice()
-      const end = rv.slice()
+    // console.log(word, '<->', newWord)
+    if (!same(vertex, newVertex)) {
+      // TODO: Remove slice
+      const start = vertex.slice()
+      const end = newVertex.slice()
 
       edges.push({
         start,
         end,
         word,
+        newWord,
       })
       return true
     }
   }
 }
 
-const flip = (state, word, k, v) => {
-  const m = String.fromCharCode(97 + k)
-  if (word.slice(-1) === m) {
+const draw = (state, word, newWord) => {
+  if (word === newWord) {
     return
   }
-  let newWord = word + m
-
-  // Optimisation with word rewriting
-  newWord = shorten(rules, newWord)
+  // Word has been drawn, we may need to link it to the last word
   if (words.has(newWord)) {
-    const rv = words.get(newWord)
-    link(word, v, rv)
+    link(word, newWord)
     return
   }
-  const rv = reflectWord(state, newWord)
+  // Compute vertex
+  words.set(newWord, reflectWord(state, newWord))
 
-  words.set(newWord, rv)
-
-  plot(rv, newWord)
-  link(word, v, rv)
+  // Plot vertex
+  plot(newWord)
+  // Link to the last vertex
+  link(word, newWord)
   return newWord
 }
 
+export const tile = state => {
+  const { dimensions } = state
+  let futurewordsToConsider
+  // Start by filing the fundamental chamber to equilibrate the tiling
+  futurewordsToConsider = []
+  for (let j = 0; j < nextWords.length; j++) {
+    const word = nextWords[j]
+    // Try each mirror, if the reflected word is not already processed
+    // add it to the list of words to consider
+    for (let mirror = 0; mirror < dimensions; mirror++) {
+      const m = itoa(mirror)
+
+      const newWord = shorten(rules, word + m)
+      // In case of a snub, activate vertex only on even number of reflections
+      if (snub && newWord.replace(snub, '').length % 2) {
+        // Link to the last vertex
+        for (let mirror = 0; mirror < mirrors.length; mirror++) {
+          const m = itoa(mirror)
+
+          const postSnubWord = shorten(rules, newWord + m)
+          // If the post snub word is also a snub
+          if (postSnubWord.replace(snub, '').length % 2) {
+            // check at 2nd level (some snubs are linked from 2 reflections)
+            for (let mirror = 0; mirror < mirrors.length; mirror++) {
+              const m = itoa(mirror)
+              const postPostSnubWord = shorten(rules, postSnubWord + m)
+              // If the post snub word is also a snub, skip for now
+              if (postPostSnubWord.replace(snub, '').length % 2) {
+                continue
+              }
+              const postPostSnubWordToConsider = draw(
+                state,
+                word,
+                postPostSnubWord
+              )
+              postPostSnubWordToConsider &&
+                futurewordsToConsider.push(postPostSnubWordToConsider)
+            }
+          } else {
+            const postSnubWordToConsider = draw(state, word, postSnubWord)
+            postSnubWordToConsider &&
+              futurewordsToConsider.push(postSnubWordToConsider)
+          }
+        }
+      } else {
+        const newWordToConsider = draw(state, word, newWord)
+        newWordToConsider && futurewordsToConsider.push(newWordToConsider)
+      }
+    }
+  }
+  return futurewordsToConsider
+}
+
 const tileFundamentalChamber = state => {
-  const { rootVertex } = state
+  const { dimensions } = state
   let fundamentalChamberWords = ['']
   let futurewordsToConsider
   const maxChamberSize = 10000
-  const dimensions = rootVertex.length
-  plot(rootVertex, '')
 
   // Start by filing the fundamental chamber to equilibrate the tiling
   let currentWords = nextWords
@@ -136,11 +198,13 @@ const tileFundamentalChamber = state => {
     futurewordsToConsider = []
     for (let j = 0; j < currentWords.length; j++) {
       const word = currentWords[j]
-      const v = words.get(word)
 
-      for (let k = 0; k < dimensions - 1; k++) {
-        const rv = flip(state, word, k, v)
-        rv && futurewordsToConsider.push(rv)
+      for (let mirror = 0; mirror < dimensions - 1; mirror++) {
+        const m = itoa(mirror)
+
+        const newWord = shorten(rules, word + m)
+        const newWordToConsider = draw(state, word, newWord)
+        newWordToConsider && futurewordsToConsider.push(newWordToConsider)
       }
     }
     fundamentalChamberWords = fundamentalChamberWords.concat(
@@ -156,22 +220,6 @@ const tileFundamentalChamber = state => {
     throw new Error('Could not tile fundamental chamber')
   }
   return fundamentalChamberWords
-}
-
-export const tile = state => {
-  let futurewordsToConsider
-  // Start by filing the fundamental chamber to equilibrate the tiling
-  futurewordsToConsider = []
-  for (let j = 0; j < nextWords.length; j++) {
-    const word = nextWords[j]
-    const v = words.get(word)
-
-    for (let k = 0; k < v.length; k++) {
-      const rv = flip(state, word, k, v)
-      rv && futurewordsToConsider.push(rv)
-    }
-  }
-  return futurewordsToConsider
 }
 
 onmessage = ({
@@ -203,18 +251,26 @@ onmessage = ({
         // TODO: Report warning
         rules = new Map(Object.entries(baseRules))
       }
-      init(rootVertex, rules)
-      try {
-        nextWords = tileFundamentalChamber({
-          curvature,
-          mirrorsPlanes,
-          rootVertex,
-          dimensions,
-        })
-      } catch (e) {
+
+      init(rootVertex, rules, mirrors)
+      plot('')
+
+      if (snub) {
         failed = true
-        init(rootVertex, rules)
-        console.warn(e)
+      } else {
+        try {
+          nextWords = tileFundamentalChamber({
+            curvature,
+            mirrorsPlanes,
+            rootVertex,
+            dimensions,
+          })
+        } catch (e) {
+          failed = true
+          init(rootVertex, rules, mirrors)
+          plot('')
+          console.warn(e)
+        }
       }
     }
     if (order > 0 || failed) {
