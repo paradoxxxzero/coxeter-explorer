@@ -191,3 +191,16 @@ const remaining = (length, words) => {
   }
   return false
 }
+
+export const toddCoxeter = (dimensions, coxeter, stellation, mirrors) => {
+  return solve({
+    ...getVerticesCosetsParams(dimensions, coxeter, stellation, mirrors),
+    cosets: {
+      normal: [],
+      reverse: [],
+    },
+    rows: [],
+    words: [],
+    limit: 10000,
+  }).words
+}

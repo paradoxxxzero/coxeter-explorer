@@ -1,11 +1,12 @@
 import { useEffect } from 'react'
 import { PI, cos } from '../math'
 import {
+  coxeterToGram,
   getCurvature,
   getFundamentalSimplexMirrors,
   getFundamentalVertex,
 } from '../math/hypermath'
-import { knuthBendixTiler, toddCoxeterTiler } from '../workers/worker'
+import { killRunningWorkers, workers } from '../workers/worker'
 
 export const useProcess = (runtime, setRuntime) => {
   useEffect(() => {
@@ -22,13 +23,9 @@ export const useProcess = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
-      const gram = runtime.coxeter.map((row, i) =>
-        row.map(
-          (column, j) =>
-            -cos(
-              ((runtime.stellated ? runtime.stellation[i][j] : 1) * PI) / column
-            )
-        )
+      const gram = coxeterToGram(
+        runtime.coxeter,
+        runtime.stellated ? runtime.stellation : null
       )
       const curvature = getCurvature(gram)
       const mirrorsPlanes = getFundamentalSimplexMirrors(gram, curvature)
@@ -45,7 +42,6 @@ export const useProcess = (runtime, setRuntime) => {
             ? 'auto-toddcoxeter'
             : 'auto-knuthbendix'
           : runtime.grouper
-      console.log(grouper)
       return {
         ...runtime,
         currentOrder: 0,
@@ -84,10 +80,7 @@ export const useProcess = (runtime, setRuntime) => {
     }
     ;(async () => {
       // Rules gets computed on non stellated coxeter group
-      const worker =
-        runtime.grouper.replace(/^auto-/, '') === 'knuthbendix'
-          ? knuthBendixTiler
-          : toddCoxeterTiler
+      const worker = workers[runtime.grouper.replace(/^auto-/, '')]
       setRuntime(runtime => ({
         ...runtime,
         processing: true,
@@ -95,8 +88,7 @@ export const useProcess = (runtime, setRuntime) => {
       }))
 
       if (runtime.currentOrder === 0) {
-        toddCoxeterTiler.kill()
-        knuthBendixTiler.kill()
+        killRunningWorkers()
       }
 
       try {

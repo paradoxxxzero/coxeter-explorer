@@ -1,4 +1,4 @@
-import { abs, acos, acosh, cos, sign, sin, sinh, sqrt } from './index.js'
+import { PI, abs, acos, acosh, cos, sign, sin, sinh, sqrt } from './index.js'
 
 export const det = m => {
   if (m.length === 1) {
@@ -25,6 +25,12 @@ export const det = m => {
   }
   return sum
 }
+export const coxeterToGram = (coxter, stellation) =>
+  coxter.map((row, i) =>
+    row.map(
+      (column, j) => -cos(((stellation ? stellation[i][j] : 1) * PI) / column)
+    )
+  )
 
 export const getCurvature = gram => {
   const determinant = det(gram)

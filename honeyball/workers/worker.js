@@ -1,5 +1,6 @@
 import KunthBendixTiling from './knuthbendix-tiling.worker?worker'
 import ToddCoxeterTiling from './toddcoxeter-tiling.worker?worker'
+// import HybridTiling from './hybrid-tiling.worker?worker'
 import { max } from '../math'
 
 class Worker {
@@ -75,5 +76,13 @@ class Worker {
   }
 }
 
-export const knuthBendixTiler = new Worker('knuthbendix', KunthBendixTiling)
-export const toddCoxeterTiler = new Worker('toddcoxeter', ToddCoxeterTiling)
+export const killRunningWorkers = () =>
+  Object.values(workers)
+    .filter(worker => worker.processing > 0)
+    .forEach(worker => worker.kill())
+
+export const workers = {
+  knuthbendix: new Worker('knuthbendix', KunthBendixTiling),
+  toddcoxeter: new Worker('toddcoxeter', ToddCoxeterTiling),
+  // hybrid: new Worker('hybrid', HybridTiling),
+}

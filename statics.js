@@ -15,7 +15,7 @@ import {
   sRGBEncoding,
   TextureLoader,
 } from 'three'
-import { atoi, itoa } from './honeyball/math'
+import { itoa } from './honeyball/math'
 
 export const projections = [
   'stereographic',
