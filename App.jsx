@@ -264,7 +264,7 @@ export default function App({ gl, params, updateParams }) {
                   <option key={p} value={p}>
                     {p === ''
                       ? params.grouper === ''
-                        ? `Auto [${runtime.grouper}]`
+                        ? `Auto [${runtime.grouper.replace(/^auto-/, '')}]`
                         : 'Auto'
                       : p.replace(/_/g, ' ').replace(/./, c => c.toUpperCase())}
                   </option>
@@ -273,7 +273,7 @@ export default function App({ gl, params, updateParams }) {
             </label>
           )}
           {(params.extended ||
-            runtime.grouper === 'knuthbendix' ||
+            runtime.grouper.replace(/^auto-/, '') === 'knuthbendix' ||
             runtime.curvature <= 0) && (
             <label>
               Order

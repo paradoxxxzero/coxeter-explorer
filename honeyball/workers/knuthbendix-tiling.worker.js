@@ -156,8 +156,8 @@ export const tile = state => {
           // If the post snub word is also a snub
           if (postSnubWord.replace(snub, '').length % 2) {
             // check at 2nd level (some snubs are linked from 2 reflections)
-            for (let mirror = 0; mirror < mirrors.length; mirror++) {
-              const m = itoa(mirror)
+            for (let subMirror = 0; subMirror < mirrors.length; subMirror++) {
+              const m = itoa(subMirror)
               const postPostSnubWord = shorten(rules, postSnubWord + m)
               // If the post snub word is also a snub, skip for now
               if (postPostSnubWord.replace(snub, '').length % 2) {

@@ -38,13 +38,14 @@ export const useProcess = (runtime, setRuntime) => {
         curvature
       )
       const grouper =
-        runtime.grouper === ''
+        runtime.grouper === '' || runtime.grouper.startsWith('auto-')
           ? curvature > 0 &&
             !runtime.stellated &&
             runtime.mirrors.every(m => !isNaN(m))
-            ? 'toddcoxeter'
-            : 'knuthbendix'
+            ? 'auto-toddcoxeter'
+            : 'auto-knuthbendix'
           : runtime.grouper
+      console.log(grouper)
       return {
         ...runtime,
         currentOrder: 0,
@@ -84,7 +85,9 @@ export const useProcess = (runtime, setRuntime) => {
     ;(async () => {
       // Rules gets computed on non stellated coxeter group
       const worker =
-        runtime.grouper === 'knuthbendix' ? knuthBendixTiler : toddCoxeterTiler
+        runtime.grouper.replace(/^auto-/, '') === 'knuthbendix'
+          ? knuthBendixTiler
+          : toddCoxeterTiler
       setRuntime(runtime => ({
         ...runtime,
         processing: true,
