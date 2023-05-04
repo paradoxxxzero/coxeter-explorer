@@ -26,15 +26,19 @@ uniform float fov9;
 #if DIMENSIONS == 2
 attribute vec2 instancePosition;
 attribute vec2 instanceTarget;
+attribute vec2 instanceCentroid;
 #elif DIMENSIONS == 3
 attribute vec3 instancePosition;
 attribute vec3 instanceTarget;
+attribute vec3 instanceCentroid;
 #elif DIMENSIONS == 4
 attribute vec4 instancePosition;
 attribute vec4 instanceTarget;
+attribute vec4 instanceCentroid;
 #elif DIMENSIONS >= 5
 attribute mat3 instancePosition;
 attribute mat3 instanceTarget;
+attribute mat3 instanceCentroid;
 
 struct vec5 {
   vec4 v;
@@ -94,28 +98,59 @@ void main() {
   vec5 pos;
   vec5 instancePosition = fromMat(instancePosition);
   vec5 instanceTarget = fromMat(instanceTarget);
+  vec5 instanceCentroid = fromMat(instanceCentroid);
   #elif DIMENSIONS == 6
   vec6 pos;
   vec6 instancePosition = fromMat(instancePosition);
   vec6 instanceTarget = fromMat(instanceTarget);
+  vec6 instanceCentroid = fromMat(instanceCentroid);
   #elif DIMENSIONS == 7
   vec7 pos;
   vec7 instancePosition = fromMat(instancePosition);
   vec7 instanceTarget = fromMat(instanceTarget);
+  vec7 instanceCentroid = fromMat(instanceCentroid);
   #elif DIMENSIONS == 8
   vec8 pos;
   vec8 instancePosition = fromMat(instancePosition);
   vec8 instanceTarget = fromMat(instanceTarget);
+  vec8 instanceCentroid = fromMat(instanceCentroid);
   #elif DIMENSIONS == 9
   vec9 pos;
   vec9 instancePosition = fromMat(instancePosition);
   vec9 instanceTarget = fromMat(instanceTarget);
+  vec9 instanceCentroid = fromMat(instanceCentroid);
   #endif
 
   vec3 norm;
-  float sizeFactor;
+  // <begin_vertex>
+  vec3 transformed;
 
-  if(!nan(instanceTarget)) {
+  if(!nan(instanceCentroid)) {
+    if(gl_VertexID == 0) {
+      pos = instanceCentroid;
+    } else if(gl_VertexID == 1) {
+      pos = instancePosition;
+    } else {
+      pos = instanceTarget;
+    }
+    if(gl_VertexID != 0 || segments > 1.) {
+      pos = xnormalize(pos);
+    }
+    transformed = xproject(pos);
+    // TODO: hyperbolic
+
+    #if DIMENSIONS < 5
+    pos *= 1.1;
+    #elif DIMENSIONS >= 5 && DIMENSIONS < 9
+    pos.v *= 1.1;
+    pos.u *= 1.1;
+    #elif DIMENSIONS == 9
+    pos.v *= 1.1;
+    pos.u *= 1.1;
+    pos.t *= 1.1;
+    #endif
+    norm = normalize(xproject(pos));
+  } else if(!nan(instanceTarget)) {
     #if DIMENSIONS == 2
     vec2 next;
     #elif DIMENSIONS == 3
@@ -158,24 +193,25 @@ void main() {
     pos = xnormalize(pos);
     next = xnormalize(next);
 
-    vec3 p = xproject(pos);
+    transformed = xproject(pos);
     vec3 n = xproject(next) + NOISE; // Avoid collinearity
-    vec3 k = normalize(p - n); // current segment direction
+    vec3 k = normalize(transformed - n); // current segment direction
 
     // Rodrigues' rotation formula
     // To rotate v around axis k by angle r:
-    vec3 v = normalize(cross(n, p));
+    vec3 v = normalize(cross(n, transformed));
     norm = v * cos(r * TAU) + cross(k, v) * sin(r * TAU);// + k * dot(k, v) * (1. - cos(r * TAU));
     norm = normalize(norm);
-    sizeFactor = .001 * edgeThickness;
+    float sizeFactor = .001 * edgeThickness;
+    transformed += sizeFactor * norm / len(pos);
+
   } else {
     pos = instancePosition;
+    transformed = xproject(pos);
     norm = normal;
-    sizeFactor = .001 * vertexThickness;
+    float sizeFactor = .001 * vertexThickness;
+    transformed += sizeFactor * norm / len(pos);
   }
-  // <begin_vertex>
-  vec3 transformed = xproject(pos);
-  transformed += sizeFactor * norm / len(pos);
 
   // <beginnormal_vertex>
   vec3 objectNormal = norm;

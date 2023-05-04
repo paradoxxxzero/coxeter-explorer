@@ -181,15 +181,17 @@ export default function UI({
               />
             ) : null}
           </label>
-          <label>
-            Faces
-            <input
-              type="checkbox"
-              name="showFaces"
-              checked={params.showFaces}
-              onChange={handleChange}
-            />
-          </label>
+          {runtime.grouper.replace(/^auto-/, '') === 'toddcoxeter' && (
+            <label>
+              Faces
+              <input
+                type="checkbox"
+                name="showFaces"
+                checked={params.showFaces}
+                onChange={handleChange}
+              />
+            </label>
+          )}
           <label>
             Ambiance
             <select

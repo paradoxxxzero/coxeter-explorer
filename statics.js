@@ -1,17 +1,22 @@
 import {
+  AddEquation,
+  AdditiveBlending,
   AmbientLight,
   Color,
   CustomBlending,
   DirectionalLight,
+  DoubleSide,
   EquirectangularReflectionMapping,
   HemisphereLight,
   MeshBasicMaterial,
   MeshLambertMaterial,
   MeshPhongMaterial,
   MeshPhysicalMaterial,
+  OneMinusSrcAlphaFactor,
   PointLight,
   RepeatWrapping,
   SpotLight,
+  SrcAlphaFactor,
   sRGBEncoding,
   TextureLoader,
 } from 'three'
@@ -65,11 +70,12 @@ export const ambiances = {
     background: 0xffffff,
     shadow: false,
     material: new MeshPhongMaterial(),
-    lights: [new AmbientLight(0xffffff, 1)],
-    cameraLights: [new PointLight(0xffffff, 0.5)],
+    lights: [new AmbientLight(0xffffff, 0.25)],
+    cameraLights: [new PointLight(0xffffff, 0.75)],
     color: ({ word }, type, dimensions) => {
-      const i = word.match(dimensionsRegExps[dimensions - 1])?.length || 0
-      return _color.setHSL((i * 0.07) % 1, 0.5, 0.5)
+      return _color.setHSL((word.length * 0.03) % 1, 1, 0.8)
+      // const i = word.match(dimensionsRegExps[dimensions - 1])?.length || 0
+      // return _color.setHSL((i * 0.07) % 1, 0.5, 0.5)
     },
   },
   reflection: {
@@ -231,6 +237,26 @@ export const ambiances = {
     },
   },
 }
+Object.values(ambiances).forEach(ambiance => {
+  if (!ambiance.vertexMaterial) {
+    ambiance.vertexMaterial = ambiance.material
+  }
+  if (!ambiance.edgeMaterial) {
+    ambiance.edgeMaterial = ambiance.material
+  }
+  if (!ambiance.faceMaterial) {
+    ambiance.faceMaterial = ambiance.material.clone()
+    ambiance.faceMaterial.side = DoubleSide
+    ambiance.faceMaterial.transparent = true
+    ambiance.faceMaterial.opacity = 0.5
+    ambiance.faceMaterial.blending = CustomBlending
+    ambiance.faceMaterial.blendEquation = AddEquation
+    ambiance.faceMaterial.blendSrc = SrcAlphaFactor
+    ambiance.faceMaterial.blendDst = OneMinusSrcAlphaFactor
+
+    // ambiance.faceMaterial.depthTest = false
+  }
+})
 
 export const defaultParams = {
   dimensions: 4,

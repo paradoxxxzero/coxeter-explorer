@@ -3,6 +3,7 @@ import { size } from '../event'
 import {
   changeAmbiance,
   initEdge,
+  initFace,
   initVertex,
   plot,
   resetComposerTarget,
@@ -27,6 +28,7 @@ export const useRender = runtime => {
   useEffect(() => {
     initVertex(runtime)
     initEdge(runtime)
+    initFace(runtime)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runtime.dimensions, runtime.curve, runtime.segments])
 
@@ -76,8 +78,9 @@ export const useRender = runtime => {
   useEffect(() => {
     show(runtime, 'vertex')
     show(runtime, 'edge')
+    show(runtime, 'face')
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runtime.showVertices, runtime.showEdges])
+  }, [runtime.showVertices, runtime.showEdges, runtime.showFaces])
 
   useEffect(() => {
     // Order plot
@@ -90,6 +93,7 @@ export const useRender = runtime => {
     runtime.ranges,
     runtime.showVertices,
     runtime.showEdges,
+    runtime.showFaces,
   ])
 
   useEffect(() => {
@@ -100,6 +104,7 @@ export const useRender = runtime => {
     runtime.ambiance,
     runtime.showVertices,
     runtime.showEdges,
+    runtime.showFaces,
     runtime.maxVertices,
     runtime.maxEdges,
     runtime.curve,

@@ -1,4 +1,4 @@
-import { abs, getRels, itoa } from '.'
+import { abs, combinations, getRels, itoa } from '.'
 
 export const getVerticesCosetsParams = (
   dimensions,
@@ -32,8 +32,64 @@ export const getEdgesCosetsParams = (
           }
         }
       }
-      params.push({ gens, subgens, rels, edgeMirror: itoa(i) })
+      params.push({
+        gens,
+        subgens,
+        rels,
+        pair: [0, itoa(i)],
+      })
     }
+  }
+
+  return params
+}
+export const getFacesCosetsParams = (
+  dimensions,
+  coxeter,
+  stellation,
+  mirrors
+) => {
+  const rels = getRels(dimensions, coxeter, stellation, mirrors)
+  const gens = [...Array(dimensions).keys()].map(i => itoa(i)).join('')
+  const params = []
+
+  const mirrorsPairs = combinations([...Array(dimensions).keys()])
+  for (let i = 0; i < mirrorsPairs.length; i++) {
+    const pair = mirrorsPairs[i]
+    const multiplier = coxeter[pair[0]][pair[1]]
+    const face = []
+    // If both active
+    if (mirrors[pair[0]] && mirrors[pair[1]]) {
+      for (let j = 0; j < multiplier; j++) {
+        const chain = pair
+          .map(i => itoa(i))
+          .join('')
+          .repeat(j)
+        face.push(chain)
+        face.push(itoa(pair[1]) + chain)
+      }
+    } else if ((mirrors[pair[0]] || mirrors[pair[1]]) && multiplier > 2) {
+      for (let j = 0; j < multiplier; j++) {
+        const chain = pair
+          .map(i => itoa(i))
+          .join('')
+          .repeat(j)
+        face.push(chain)
+      }
+    } else {
+      continue
+    }
+
+    let subgens = itoa(pair[0]) + itoa(pair[1])
+
+    for (let j = 0; j < dimensions; j++) {
+      if (coxeter[pair[0]][j] === 2 && coxeter[pair[1]][j] === 2) {
+        if (!mirrors[j]) {
+          subgens += itoa(j)
+        }
+      }
+    }
+    params.push({ gens, subgens, rels, face })
   }
 
   return params

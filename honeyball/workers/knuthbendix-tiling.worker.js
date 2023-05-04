@@ -6,6 +6,7 @@ let vertexHashes = new Map()
 let edgeHashes = new Set()
 let vertices = []
 let edges = []
+let faces = []
 let verticesIndex = 0
 let words = new Map()
 let nextWords = []
@@ -18,6 +19,7 @@ const init = (rootVertex, newRules, newMirrors) => {
   verticesIndex = 0
   vertices = []
   edges = []
+  faces = []
   vertexHashes.clear()
   edgeHashes.clear()
   words.clear()
@@ -281,10 +283,11 @@ onmessage = ({
       })
     }
 
-    postMessage({ vertices, edges, uuid })
+    postMessage({ vertices, edges, faces, uuid })
     verticesIndex += vertices.length
     vertices = []
     edges = []
+    faces = []
   } catch (e) {
     postMessage({ error: e.message, uuid })
   }

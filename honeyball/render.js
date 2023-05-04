@@ -1,7 +1,10 @@
 import {
   BackSide,
+  BufferGeometry,
   Color,
   CylinderGeometry,
+  DoubleSide,
+  Float32BufferAttribute,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
   Mesh,
@@ -125,15 +128,23 @@ export const initVertex = rt => {
     )
   )
   vertexGeometry.setAttribute(
+    'instanceCentroid',
+    new InstancedBufferAttribute(
+      new Float32Array(rt.maxVertices * arity),
+      arity
+    )
+  )
+  vertexGeometry.setAttribute(
     'instanceColor',
     new InstancedBufferAttribute(new Float32Array(rt.maxVertices * 3), 3)
   )
 
   const instancedVertex = new Mesh(
     vertexGeometry,
-    hyperMathMaterial(ambiance.material, rt)
+    hyperMathMaterial(ambiance.vertexMaterial, rt)
   )
   vertexGeometry.attributes.instanceTarget.array.fill(NaN)
+  vertexGeometry.attributes.instanceCentroid.array.fill(NaN)
   instancedVertex.geometry.instanceCount = 0
   instancedVertex.frustumCulled = false
   instancedVertex.customDepthMaterial = hyperMathMaterial(
@@ -178,14 +189,19 @@ export const initEdge = rt => {
     new InstancedBufferAttribute(new Float32Array(rt.maxEdges * arity), arity)
   )
   edgeGeometry.setAttribute(
+    'instanceCentroid',
+    new InstancedBufferAttribute(new Float32Array(rt.maxEdges * arity), arity)
+  )
+  edgeGeometry.setAttribute(
     'instanceColor',
     new InstancedBufferAttribute(new Float32Array(rt.maxEdges * 3), 3)
   )
 
   const instancedEdge = new Mesh(
     edgeGeometry,
-    hyperMathMaterial(ambiance.material, rt)
+    hyperMathMaterial(ambiance.edgeMaterial, rt)
   )
+  edgeGeometry.attributes.instanceCentroid.array.fill(NaN)
   instancedEdge.geometry.instanceCount = 0
   instancedEdge.frustumCulled = false
   instancedEdge.customDepthMaterial = hyperMathMaterial(
@@ -211,15 +227,51 @@ export const initFace = rt => {
   }
   const ambiance = ambiances[rt.ambiance]
   const { dimensions, curve, segments } = rt
-  const face3dGeometry = new PlaneGeometry(
-    1,
-    1,
-    curve ? segments : 1,
-    curve ? segments : 1,
-    true
+  const face3dGeometry = new BufferGeometry()
+  const indices = []
+  const vertices = []
+  const normals = []
+  const uvs = []
+
+  //       /\ 0        ----> x
+  //      /  \         |
+  //     /    \        |
+  //    /      \       v y
+  //   /        \
+  //  /__________\
+  // 2            1
+
+  // 0
+  vertices.push(0, 0, 0)
+  normals.push(0, 0, 1)
+  uvs.push(0.5, 0)
+
+  // 1
+  vertices.push(0.5, 1, 0)
+  normals.push(0, 0, 1)
+  uvs.push(1, 1)
+
+  // 2
+  vertices.push(-0.5, 1, 0)
+  normals.push(0, 0, 1)
+  uvs.push(0, 1)
+
+  indices.push(0, 1, 2)
+
+  face3dGeometry.setIndex(indices)
+  face3dGeometry.setAttribute(
+    'position',
+    new Float32BufferAttribute(vertices, 3)
   )
+  face3dGeometry.setAttribute('normal', new Float32BufferAttribute(normals, 3))
+  face3dGeometry.setAttribute('uv', new Float32BufferAttribute(uvs, 2))
+
   const faceGeometry = new InstancedBufferGeometry().copy(face3dGeometry)
   const arity = dimensions > 4 ? 9 : dimensions
+  faceGeometry.setAttribute(
+    'instanceCentroid',
+    new InstancedBufferAttribute(new Float32Array(rt.maxFaces * arity), arity)
+  )
   faceGeometry.setAttribute(
     'instancePosition',
     new InstancedBufferAttribute(new Float32Array(rt.maxFaces * arity), arity)
@@ -232,10 +284,9 @@ export const initFace = rt => {
     'instanceColor',
     new InstancedBufferAttribute(new Float32Array(rt.maxFaces * 3), 3)
   )
-
   const instancedFace = new Mesh(
     faceGeometry,
-    hyperMathMaterial(ambiance.material, rt)
+    hyperMathMaterial(ambiance.faceMaterial, rt)
   )
   instancedFace.geometry.instanceCount = 0
   instancedFace.frustumCulled = false
@@ -247,7 +298,7 @@ export const initFace = rt => {
     new MeshDistanceMaterial(),
     rt
   )
-  instancedFace.castShadow = ambiance.shadow
+  // instancedFace.castShadow = ambiance.shadow
   instancedFace.name = 'instanced-face'
   instancedFace.visible = rt.showFaces
   rt.scene.add(instancedFace)
@@ -256,6 +307,7 @@ export const initFace = rt => {
 const plotVertices = (rt, range = null) => {
   const ambiance = ambiances[rt.ambiance]
   const instancedVertex = rt.scene.getObjectByName('instanced-vertex')
+  const ipos = instancedVertex.geometry.attributes.instancePosition.array
   const { dimensions } = rt
   let start = range ? range[0] : 0
   let stop = range ? range[1] : rt.vertices.length
@@ -264,7 +316,6 @@ const plotVertices = (rt, range = null) => {
   instancedVertex.geometry.instanceCount = stop
   for (let i = start; i < stop; i++) {
     const vertex = rt.vertices[i]
-    const ipos = instancedVertex.geometry.attributes.instancePosition.array
     for (let j = 0; j < dimensions; j++) {
       ipos[i * arity + j] = vertex.vertex[j]
     }
@@ -281,6 +332,9 @@ const plotVertices = (rt, range = null) => {
 const plotEdges = (rt, range = null) => {
   const ambiance = ambiances[rt.ambiance]
   const instancedEdge = rt.scene.getObjectByName('instanced-edge')
+  const iposstart = instancedEdge.geometry.attributes.instancePosition.array
+  const iposend = instancedEdge.geometry.attributes.instanceTarget.array
+
   const { dimensions } = rt
   let start = range ? range[0] : 0
   let stop = range ? range[1] : rt.edges.length
@@ -290,14 +344,10 @@ const plotEdges = (rt, range = null) => {
   for (let i = start; i < stop; i++) {
     const edge = rt.edges[i]
     const start = rt.vertices[edge.start].vertex
-    const iposstart = instancedEdge.geometry.attributes.instancePosition.array
+    const end = rt.vertices[edge.end].vertex
+
     for (let j = 0; j < dimensions; j++) {
       iposstart[i * arity + j] = start[j]
-    }
-
-    const end = rt.vertices[edge.end].vertex
-    const iposend = instancedEdge.geometry.attributes.instanceTarget.array
-    for (let j = 0; j < dimensions; j++) {
       iposend[i * arity + j] = end[j]
     }
 
@@ -313,9 +363,70 @@ const plotEdges = (rt, range = null) => {
   instancedEdge.geometry.attributes.instanceColor.needsUpdate = true
 }
 
+const plotFaces = (rt, range = null) => {
+  const ambiance = ambiances[rt.ambiance]
+  const instancedFace = rt.scene.getObjectByName('instanced-face')
+  const icentroid = instancedFace.geometry.attributes.instanceCentroid.array
+  const ipos = instancedFace.geometry.attributes.instancePosition.array
+  const itarget = instancedFace.geometry.attributes.instanceTarget.array
+  const { dimensions } = rt
+  let start = range ? range[0] : 0
+  let stop = range ? range[1] : rt.faces.length
+  let idx = 0
+
+  for (let i = 0; i < start; i++) {
+    idx += rt.faces[i].vertices.length
+  }
+  const arity = dimensions > 4 ? 9 : dimensions
+  for (let i = start; i < stop; i++) {
+    const face = rt.faces[i]
+
+    const centroid = new Array(dimensions).fill(0)
+    for (let j = 0; j < face.vertices.length; j++) {
+      const vertex = rt.vertices[face.vertices[j]].vertex
+      for (let k = 0; k < dimensions; k++) {
+        centroid[k] += vertex[k]
+      }
+    }
+    for (let j = 0; j < dimensions; j++) {
+      centroid[j] /= face.vertices.length
+    }
+
+    for (let j = 0; j < face.vertices.length; j++) {
+      const pos = rt.vertices[face.vertices[j]].vertex
+      const target =
+        rt.vertices[face.vertices[(j + 1) % face.vertices.length]].vertex
+
+      for (let j = 0; j < dimensions; j++) {
+        icentroid[idx * arity + j] = centroid[j]
+        ipos[idx * arity + j] = pos[j]
+        itarget[idx * arity + j] = target[j]
+      }
+      const icolor = instancedFace.geometry.attributes.instanceColor.array
+      const c = ambiance.color(face, 'face', dimensions)
+      icolor[idx * 3 + 0] = c.r
+      icolor[idx * 3 + 1] = c.g
+      icolor[idx * 3 + 2] = c.b
+      idx++
+    }
+  }
+  instancedFace.geometry.instanceCount = idx
+  instancedFace.geometry.attributes.instancePosition.needsUpdate = true
+  instancedFace.geometry.attributes.instanceTarget.needsUpdate = true
+  instancedFace.geometry.attributes.instanceCentroid.needsUpdate = true
+  instancedFace.geometry.attributes.instanceColor.needsUpdate = true
+}
+
 export const show = (rt, name) => {
   const obj = rt.scene.getObjectByName(`instanced-${name}`)
-  obj.visible = rt[name === 'vertex' ? 'showVertices' : 'showEdges']
+  obj.visible =
+    rt[
+      name === 'vertex'
+        ? 'showVertices'
+        : name == 'edge'
+        ? 'showEdges'
+        : 'showFaces'
+    ]
 }
 
 export const plot = (rt, order = null) => {
@@ -340,6 +451,10 @@ export const plot = (rt, order = null) => {
             rt.ranges[0].edges[0],
             rt.ranges[rt.currentOrder - 1].edges[1],
           ],
+          faces: [
+            rt.ranges[0].faces[0],
+            rt.ranges[rt.currentOrder - 1].faces[1],
+          ],
         }
   if (rt.scene.getObjectByName('instanced-vertex').visible) {
     plotVertices(rt, range.vertices)
@@ -347,10 +462,15 @@ export const plot = (rt, order = null) => {
   if (rt.scene.getObjectByName('instanced-edge').visible) {
     plotEdges(rt, range.edges)
   }
+  if (rt.scene.getObjectByName('instanced-face').visible) {
+    plotFaces(rt, range.faces)
+  }
   rt.composer.render()
   document.title = `Honeyball^${rt.dimensions} ${
     rt.currentOrder < rt.order ? `(${rt.currentOrder}/${rt.order})…` : ''
-  }- ${rt.vertices.length} vertices, ${rt.edges.length} edges`
+  }- ${rt.vertices.length} vertices, ${rt.edges.length} edges, ${
+    rt.faces.length
+  } faces`
 }
 
 export const updateCameraFov = (composer, camera, fov) => {
@@ -373,9 +493,11 @@ export const changeAmbiance = rt => {
   const { scene, composer, camera } = rt
   const instancedVertex = rt.scene.getObjectByName('instanced-vertex')
   const instancedEdge = rt.scene.getObjectByName('instanced-edge')
+  const instancedFace = rt.scene.getObjectByName('instanced-face')
 
-  instancedVertex.material = hyperMathMaterial(ambiance.material, rt)
-  instancedEdge.material = hyperMathMaterial(ambiance.material, rt)
+  instancedVertex.material = hyperMathMaterial(ambiance.vertexMaterial, rt)
+  instancedEdge.material = hyperMathMaterial(ambiance.edgeMaterial, rt)
+  instancedFace.material = hyperMathMaterial(ambiance.faceMaterial, rt)
 
   if (ambiance.env) {
     scene.environment = ambiance.env
@@ -440,6 +562,7 @@ export const changeAmbiance = rt => {
   composer.renderer.shadowMap.type = PCFSoftShadowMap
   instancedVertex.castShadow = ambiance.shadow
   instancedEdge.castShadow = ambiance.shadow
+  // instancedFace.castShadow = ambiance.shadow
   // Add new lights
   const castShadow = ambiance.shadow
     ? light => {
@@ -540,6 +663,7 @@ export const updateMaterials = rt => {
   const segments = rt.curve ? rt.segments : 1
   const instancedVertex = scene.getObjectByName('instanced-vertex')
   const instancedEdge = scene.getObjectByName('instanced-edge')
+  const instancedFace = scene.getObjectByName('instanced-face')
   const update = material => {
     if (!material?._rt) {
       return
@@ -562,6 +686,7 @@ export const updateMaterials = rt => {
 
   update(instancedVertex.material)
   update(instancedEdge.material)
+  update(instancedFace.material)
   composer.passes.forEach(pass =>
     Object.values(pass)
       .filter(value => value?.isMaterial)
@@ -571,4 +696,6 @@ export const updateMaterials = rt => {
   update(instancedVertex.customDistanceMaterial)
   update(instancedEdge.customDepthMaterial)
   update(instancedEdge.customDistanceMaterial)
+  update(instancedFace.customDepthMaterial)
+  update(instancedFace.customDistanceMaterial)
 }

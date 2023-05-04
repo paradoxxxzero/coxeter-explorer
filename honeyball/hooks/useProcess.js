@@ -21,7 +21,7 @@ const asyncProcess = async (runtime, setRuntime) => {
   }
 
   try {
-    const { vertices, edges } = await worker.process({
+    const { vertices, edges, faces } = await worker.process({
       order: runtime.currentOrder,
       coxeter: runtime.coxeter,
       curvature: runtime.curvature,
@@ -46,10 +46,12 @@ const asyncProcess = async (runtime, setRuntime) => {
               runtime.vertices.length + vertices.length,
             ],
             edges: [runtime.edges.length, runtime.edges.length + edges.length],
+            faces: [runtime.faces.length, runtime.faces.length + faces.length],
           },
         ],
         vertices: runtime.vertices.concat(vertices),
         edges: runtime.edges.concat(edges),
+        faces: runtime.faces.concat(faces),
         currentOrder: runtime.currentOrder + 1,
         processing: false,
         error: null,
@@ -107,10 +109,12 @@ export const useProcess = (runtime, setRuntime) => {
         grouper,
         vertices: [],
         edges: [],
+        faces: [],
         ranges: [],
         curvature,
         mirrorsPlanes,
         rootVertex,
+        renderError: null,
       }
     })
   }, [
@@ -176,4 +180,17 @@ export const useProcess = (runtime, setRuntime) => {
       return runtime
     })
   }, [runtime.edges, setRuntime])
+
+  useEffect(() => {
+    setRuntime(runtime => {
+      // TODO: Count faces instances
+      if (runtime.faces.length > runtime.maxFaces) {
+        return {
+          ...runtime,
+          maxFaces: runtime.faces.length,
+        }
+      }
+      return runtime
+    })
+  }, [runtime.faces, setRuntime])
 }

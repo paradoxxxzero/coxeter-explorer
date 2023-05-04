@@ -3,7 +3,6 @@ import { filterParams } from '../statics'
 import Runtime from './components/Runtime'
 import UI from './components/UI'
 import { floor, min } from './math'
-import { ErrorBoundary } from './components/ErrorBoundary'
 
 export default function App({ gl, params, updateParams }) {
   const [runtime, setRuntime] = useState(() => {
@@ -19,10 +18,13 @@ export default function App({ gl, params, updateParams }) {
       vertices: [],
       edges: [],
       ranges: [],
+      faces: [],
       maxVertices: 30000,
       maxEdges: 50000,
+      maxFaces: 50000,
       processing: true,
       error: null,
+      renderError: null,
     }
   })
 
@@ -205,18 +207,11 @@ export default function App({ gl, params, updateParams }) {
     [params.mirrors, updateParams]
   )
 
-  const handleError = useCallback(
-    error => {
-      setRuntime(runtime => ({
-        ...runtime,
-        error: error.message,
-      }))
-    },
-    [setRuntime]
-  )
-
   return (
-    <div className={runtime.error ? 'error' : ''} title={runtime.error}>
+    <div
+      className={runtime.error || runtime.renderError ? 'error' : ''}
+      title={runtime.error || runtime.renderError}
+    >
       <UI
         runtime={runtime}
         params={params}
@@ -226,9 +221,7 @@ export default function App({ gl, params, updateParams }) {
         onStellated={handleStellated}
         onMirrorChange={handleMirrorChange}
       />
-      <ErrorBoundary error={runtime.error} onError={handleError}>
-        <Runtime runtime={runtime} setRuntime={setRuntime} />
-      </ErrorBoundary>
+      <Runtime runtime={runtime} setRuntime={setRuntime} />
     </div>
   )
 }

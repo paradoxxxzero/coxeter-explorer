@@ -1,11 +1,29 @@
-import { useInteract } from '../hooks/useInteract'
+import { useCallback } from 'react'
 import { useProcess } from '../hooks/useProcess'
-import { useRender } from '../hooks/useRender'
+import { ErrorBoundary } from './ErrorBoundary'
+import Interact from './Interact'
+import Render from './Render'
 
 export default function Runtime({ runtime, setRuntime }) {
   window.rt = runtime
   useProcess(runtime, setRuntime)
-  useRender(runtime)
-  useInteract(runtime)
-  return null
+
+  const handleError = useCallback(
+    error => {
+      setRuntime(runtime => ({
+        ...runtime,
+        renderError: error.message,
+      }))
+    },
+    [setRuntime]
+  )
+
+  return (
+    <>
+      <ErrorBoundary error={runtime.renderError} onError={handleError}>
+        <Render runtime={runtime} />
+        <Interact runtime={runtime} />
+      </ErrorBoundary>
+    </>
+  )
 }
