@@ -7,6 +7,66 @@ import {
 } from '../math/hypermath'
 import { killRunningWorkers, workers } from '../workers/worker'
 
+const asyncProcess = async (runtime, setRuntime) => {
+  // Rules gets computed on non stellated coxeter group
+  const worker = workers[runtime.grouper.replace(/^auto-/, '')]
+  setRuntime(runtime => ({
+    ...runtime,
+    processing: true,
+    error: null,
+  }))
+
+  if (runtime.currentOrder === 0) {
+    killRunningWorkers()
+  }
+
+  try {
+    const { vertices, edges } = await worker.process({
+      order: runtime.currentOrder,
+      coxeter: runtime.coxeter,
+      curvature: runtime.curvature,
+      stellated: runtime.stellated,
+      stellation: runtime.stellation,
+      mirrors: runtime.mirrors,
+      mirrorsPlanes: runtime.mirrorsPlanes,
+      rootVertex: runtime.rootVertex,
+      dimensions: runtime.dimensions,
+    })
+    setRuntime(runtime => {
+      if (!runtime.processing) {
+        return runtime
+      }
+      return {
+        ...runtime,
+        ranges: [
+          ...runtime.ranges,
+          {
+            vertices: [
+              runtime.vertices.length,
+              runtime.vertices.length + vertices.length,
+            ],
+            edges: [runtime.edges.length, runtime.edges.length + edges.length],
+          },
+        ],
+        vertices: runtime.vertices.concat(vertices),
+        edges: runtime.edges.concat(edges),
+        currentOrder: runtime.currentOrder + 1,
+        processing: false,
+        error: null,
+      }
+    })
+  } catch (e) {
+    // Change current order to allow user to retry
+    console.warn(e)
+    setRuntime(runtime => ({
+      ...runtime,
+      currentOrder: runtime.order,
+      error: e.message,
+      processing: false,
+    }))
+  }
+}
+
 export const useProcess = (runtime, setRuntime) => {
   useEffect(() => {
     setRuntime(runtime => {
@@ -64,86 +124,29 @@ export const useProcess = (runtime, setRuntime) => {
   ])
 
   useEffect(() => {
-    if (runtime.order <= runtime.currentOrder) {
-      return
-    }
-    if (!runtime.rootVertex) {
-      return
-    }
-    if (runtime.ranges?.[runtime.order]) {
-      setRuntime(runtime => ({
-        ...runtime,
-        currentOrder: runtime.order,
-      }))
-      return
-    }
-    ;(async () => {
-      // Rules gets computed on non stellated coxeter group
-      const worker = workers[runtime.grouper.replace(/^auto-/, '')]
-      setRuntime(runtime => ({
-        ...runtime,
-        processing: true,
-        error: null,
-      }))
-
-      if (runtime.currentOrder === 0) {
-        killRunningWorkers()
+    setRuntime(runtime => {
+      if (runtime.order <= runtime.currentOrder) {
+        return runtime
       }
-
-      try {
-        const { vertices, edges } = await worker.process({
-          order: runtime.currentOrder,
-          coxeter: runtime.coxeter,
-          curvature: runtime.curvature,
-          stellated: runtime.stellated,
-          stellation: runtime.stellation,
-          mirrors: runtime.mirrors,
-          mirrorsPlanes: runtime.mirrorsPlanes,
-          rootVertex: runtime.rootVertex,
-          dimensions: runtime.dimensions,
-        })
-        setRuntime(runtime => {
-          if (!runtime.processing) {
-            return runtime
-          }
-          return {
-            ...runtime,
-            ranges: [
-              ...runtime.ranges,
-              {
-                vertices: [
-                  runtime.vertices.length,
-                  runtime.vertices.length + vertices.length,
-                ],
-                edges: [
-                  runtime.edges.length,
-                  runtime.edges.length + edges.length,
-                ],
-              },
-            ],
-            vertices: runtime.vertices.concat(vertices),
-            edges: runtime.edges.concat(edges),
-            currentOrder: runtime.currentOrder + 1,
-            processing: false,
-            error: null,
-          }
-        })
-      } catch (e) {
-        // Change current order to allow user to retry
-        console.warn(e)
-        setRuntime(runtime => ({
+      if (!runtime.rootVertex || !runtime.grouper) {
+        return runtime
+      }
+      if (runtime.ranges?.[runtime.order]) {
+        return {
           ...runtime,
           currentOrder: runtime.order,
-          error: e.message,
-          processing: false,
-        }))
+        }
       }
-    })()
+      asyncProcess(runtime, setRuntime)
+      return runtime
+    })
+
     // Can't have ranges here
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     setRuntime,
     runtime.order,
+    runtime.grouper,
     runtime.currentOrder,
     runtime.curvature,
     runtime.mirrorsPlanes,

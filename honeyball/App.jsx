@@ -87,10 +87,15 @@ export default function App({ gl, params, updateParams }) {
     params.vertexThickness,
   ])
   useEffect(() => {
-    setRuntime(runtime => ({
-      ...runtime,
-      grouper: params.grouper,
-    }))
+    setRuntime(runtime => {
+      if (params.grouper === '' && runtime.grouper.startsWith('auto-')) {
+        return runtime
+      }
+      return {
+        ...runtime,
+        grouper: params.grouper,
+      }
+    })
   }, [params.grouper])
 
   const handleControls = useCallback(() => {
