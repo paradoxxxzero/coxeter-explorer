@@ -251,12 +251,13 @@ export const defaultParams = {
   stellated: false,
 
   order: 10,
-  segments: 32,
   curve: true,
+  segments: 32,
   showVertices: false,
   vertexThickness: 75,
   showEdges: true,
   edgeThickness: 25,
+  showFaces: true,
 
   grouper: '',
   projection: 'stereographic',

@@ -1,5 +1,4 @@
 import { useEffect } from 'react'
-import { PI, cos } from '../math'
 import {
   coxeterToGram,
   getCurvature,

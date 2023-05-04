@@ -107,7 +107,6 @@ function link(word, newWord) {
         start,
         end,
         word,
-        newWord,
       })
       return true
     }

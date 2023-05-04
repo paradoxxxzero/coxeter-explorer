@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './App.jsx'
+import App from './honeyball/App.jsx'
 import './index.css'
 import { initializeGl } from './honeyball/render.js'
 import { defaultParams, filterParams } from './statics.js'

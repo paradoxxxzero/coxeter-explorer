@@ -1,3 +1,4 @@
+import { atoi, itoa } from '../math'
 import {
   getEdgesCosetsParams,
   getVerticesCosetsParams,
@@ -50,6 +51,14 @@ const reflectWord = (state, word, snub) => {
   return v
 }
 
+export const vertexIndex = (word, index = 0) => {
+  for (let i = 0; i < word.length; i++) {
+    const j = atoi(word[i])
+    index = verticesParams.cosets.normal[index][j]
+  }
+  return index
+}
+
 onmessage = ({
   data: {
     order,
@@ -72,6 +81,7 @@ onmessage = ({
   try {
     let vertices = []
     let edges = []
+    let wordIndexes = {}
     if (!verticesParams.done) {
       let previousLength = verticesParams.words.length
       verticesParams.limit = limit
@@ -89,9 +99,11 @@ onmessage = ({
           vertex,
           word,
         })
+        wordIndexes[word] = vertices.length - 1
       }
     }
     for (let i = 0; i < edgesParams.length; i++) {
+      const mirror = itoa(i)
       const edgeParams = edgesParams[i]
       if (edgeParams.done) {
         continue
@@ -99,24 +111,12 @@ onmessage = ({
       const previousLength = edgeParams.words.length
       edgeParams.limit = limit
       solve(edgeParams)
-      const rootStart = rootVertex.slice()
-      const rootEnd = reflectWord(
-        { rootVertex: rootStart, mirrorsPlanes, curvature },
-        edgeParams.edgeMirror,
-        snub
-      )
+      const startIndex = 0
+      const endIndex = vertexIndex(mirror)
       for (let j = previousLength; j < edgeParams.words.length; j++) {
         const word = edgeParams.words[j]
-        const start = reflectWord(
-          { rootVertex: rootStart, mirrorsPlanes, curvature },
-          word,
-          snub
-        )
-        const end = reflectWord(
-          { rootVertex: rootEnd, mirrorsPlanes, curvature },
-          word,
-          snub
-        )
+        const start = vertexIndex(word, startIndex)
+        const end = vertexIndex(word, endIndex)
         edges.push({
           start,
           end,

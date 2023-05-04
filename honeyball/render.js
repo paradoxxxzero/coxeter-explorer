@@ -202,6 +202,57 @@ export const initEdge = rt => {
   rt.scene.add(instancedEdge)
 }
 
+export const initFace = rt => {
+  let existingFace = rt.scene.getObjectByName('instanced-face')
+  if (existingFace) {
+    rt.scene.remove(existingFace)
+    existingFace.geometry.dispose()
+    existingFace.material.dispose()
+  }
+  const ambiance = ambiances[rt.ambiance]
+  const { dimensions, curve, segments } = rt
+  const face3dGeometry = new PlaneGeometry(
+    1,
+    1,
+    curve ? segments : 1,
+    curve ? segments : 1,
+    true
+  )
+  const faceGeometry = new InstancedBufferGeometry().copy(face3dGeometry)
+  const arity = dimensions > 4 ? 9 : dimensions
+  faceGeometry.setAttribute(
+    'instancePosition',
+    new InstancedBufferAttribute(new Float32Array(rt.maxFaces * arity), arity)
+  )
+  faceGeometry.setAttribute(
+    'instanceTarget',
+    new InstancedBufferAttribute(new Float32Array(rt.maxFaces * arity), arity)
+  )
+  faceGeometry.setAttribute(
+    'instanceColor',
+    new InstancedBufferAttribute(new Float32Array(rt.maxFaces * 3), 3)
+  )
+
+  const instancedFace = new Mesh(
+    faceGeometry,
+    hyperMathMaterial(ambiance.material, rt)
+  )
+  instancedFace.geometry.instanceCount = 0
+  instancedFace.frustumCulled = false
+  instancedFace.customDepthMaterial = hyperMathMaterial(
+    new MeshDepthMaterial({ depthPacking: RGBADepthPacking }),
+    rt
+  )
+  instancedFace.customDistanceMaterial = hyperMathMaterial(
+    new MeshDistanceMaterial(),
+    rt
+  )
+  instancedFace.castShadow = ambiance.shadow
+  instancedFace.name = 'instanced-face'
+  instancedFace.visible = rt.showFaces
+  rt.scene.add(instancedFace)
+}
+
 const plotVertices = (rt, range = null) => {
   const ambiance = ambiances[rt.ambiance]
   const instancedVertex = rt.scene.getObjectByName('instanced-vertex')
@@ -238,14 +289,16 @@ const plotEdges = (rt, range = null) => {
   instancedEdge.geometry.instanceCount = stop
   for (let i = start; i < stop; i++) {
     const edge = rt.edges[i]
+    const start = rt.vertices[edge.start].vertex
     const iposstart = instancedEdge.geometry.attributes.instancePosition.array
     for (let j = 0; j < dimensions; j++) {
-      iposstart[i * arity + j] = edge.start[j]
+      iposstart[i * arity + j] = start[j]
     }
 
+    const end = rt.vertices[edge.end].vertex
     const iposend = instancedEdge.geometry.attributes.instanceTarget.array
     for (let j = 0; j < dimensions; j++) {
-      iposend[i * arity + j] = edge.end[j]
+      iposend[i * arity + j] = end[j]
     }
 
     const icolor = instancedEdge.geometry.attributes.instanceColor.array
