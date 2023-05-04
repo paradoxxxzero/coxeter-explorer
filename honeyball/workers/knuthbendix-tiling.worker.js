@@ -1,38 +1,35 @@
-import { abs, atoi, getBaseRules, itoa, round } from '../math'
+import { getBaseRules, itoa, round } from '../math'
 import { knuthBendix, shorten } from '../math/group'
 import { reflect } from '../math/hypermath'
 
-let vertexHashes = new Set()
+let vertexHashes = new Map()
 let edgeHashes = new Set()
 let vertices = []
 let edges = []
+let verticesIndex = 0
 let words = new Map()
 let nextWords = []
 let mirrors = null
 let snub = false
 let rules = null
+// let cleanInactive = null
 
 const init = (rootVertex, newRules, newMirrors) => {
+  verticesIndex = 0
+  vertices = []
+  edges = []
   vertexHashes.clear()
   edgeHashes.clear()
   words.clear()
-  words.set('', rootVertex)
-  vertices = []
-  edges = []
+  words.set('', plot('', rootVertex))
   nextWords = ['']
   mirrors = newMirrors
   rules = newRules
   const snubWord = mirrors.map((m, i) => (m === 's' ? itoa(i) : '')).join('')
   snub = snubWord.length > 0 ? new RegExp(`[^${snubWord}]`, 'g') : null
-}
-
-const same = (v1, v2) => {
-  for (let i = 0; i < v1.length; i++) {
-    if (abs(v1[i] - v2[i]) > 1e-8) {
-      return false
-    }
-  }
-  return true
+  // cleanInactive = new RegExp(
+  //   `[${mirrors.map((m, i) => (m ? '' : itoa(i))).join('')}]*$`
+  // )
 }
 
 const kBuf = new ArrayBuffer(8)
@@ -68,17 +65,19 @@ const reflectWord = (state, word) => {
   return v
 }
 
-function plot(word) {
-  const vertex = words.get(word)
+function plot(word, vertex) {
   const vertexHash = hash(vertex)
   if (!vertexHashes.has(vertexHash)) {
     // console.log(word)
-    vertexHashes.add(vertexHash)
+    const index = verticesIndex + vertices.length
+    vertexHashes.set(vertexHash, index)
     vertices.push({
       vertex,
       word,
     })
-    return true
+    return index
+  } else {
+    return vertexHashes.get(vertexHash)
   }
 }
 
@@ -88,45 +87,43 @@ function link(word, newWord) {
   if (vertex === newVertex) {
     return
   }
-  const vHash = hash(vertex)
-  const rvHash = hash(newVertex)
-  if (vHash === rvHash) {
+  const hash =
+    vertex > newVertex ? `${newVertex}-${vertex}` : `${vertex}-${newVertex}`
+  if (edgeHashes.has(hash)) {
     return
   }
-  const edgeHash = vHash > rvHash ? `${rvHash}/${vHash}` : `${vHash}/${rvHash}` // vHash > rvHash ? `${rvHash}/${vHash}` : `${vHash}/${rvHash}
-
-  if (!edgeHashes.has(edgeHash)) {
-    edgeHashes.add(edgeHash)
-    // console.log(word, '<->', newWord)
-    if (!same(vertex, newVertex)) {
-      // TODO: Remove slice
-      const start = vertex.slice()
-      const end = newVertex.slice()
-
-      edges.push({
-        start,
-        end,
-        word,
-      })
-      return true
-    }
-  }
+  edgeHashes.add(hash)
+  // console.log(vertex, '<->', newVertex)
+  edges.push({
+    start: vertex,
+    end: newVertex,
+    word,
+    newWord,
+  })
+  return true
 }
 
 const draw = (state, word, newWord) => {
   if (word === newWord) {
     return
   }
+  // const cleanedWord = word.replace(cleanInactive, '')
+  // const cleanedNewWord = newWord.replace(cleanInactive, '')
+  // if (cleanedWord === cleanedNewWord) {
+  //   return newWord
+  // }
+  // word = cleanedWord
+  // newWord = cleanedNewWord
   // Word has been drawn, we may need to link it to the last word
   if (words.has(newWord)) {
     link(word, newWord)
     return
   }
   // Compute vertex
-  words.set(newWord, reflectWord(state, newWord))
-
+  const newVertex = reflectWord(state, newWord)
   // Plot vertex
-  plot(newWord)
+  const idx = plot(newWord, newVertex)
+  words.set(newWord, idx)
   // Link to the last vertex
   link(word, newWord)
   return newWord
@@ -145,18 +142,23 @@ export const tile = state => {
       const m = itoa(mirror)
 
       const newWord = shorten(rules, word + m)
+
       // In case of a snub, activate vertex only on even number of reflections
       if (snub && newWord.replace(snub, '').length % 2) {
         // Link to the last vertex
-        for (let mirror = 0; mirror < mirrors.length; mirror++) {
-          const m = itoa(mirror)
+        for (let subMirror = 0; subMirror < mirrors.length; subMirror++) {
+          const m = itoa(subMirror)
 
           const postSnubWord = shorten(rules, newWord + m)
           // If the post snub word is also a snub
           if (postSnubWord.replace(snub, '').length % 2) {
             // check at 2nd level (some snubs are linked from 2 reflections)
-            for (let subMirror = 0; subMirror < mirrors.length; subMirror++) {
-              const m = itoa(subMirror)
+            for (
+              let subSubMirror = 0;
+              subSubMirror < mirrors.length;
+              subSubMirror++
+            ) {
+              const m = itoa(subSubMirror)
               const postPostSnubWord = shorten(rules, postSnubWord + m)
               // If the post snub word is also a snub, skip for now
               if (postPostSnubWord.replace(snub, '').length % 2) {
@@ -252,7 +254,6 @@ onmessage = ({
       }
 
       init(rootVertex, rules, mirrors)
-      plot('')
 
       if (snub) {
         failed = true
@@ -267,7 +268,6 @@ onmessage = ({
         } catch (e) {
           failed = true
           init(rootVertex, rules, mirrors)
-          plot('')
           console.warn(e)
         }
       }
@@ -282,6 +282,7 @@ onmessage = ({
     }
 
     postMessage({ vertices, edges, uuid })
+    verticesIndex += vertices.length
     vertices = []
     edges = []
   } catch (e) {

@@ -63,7 +63,7 @@ export default function UI({
       </button>
       {showUI && (
         <aside className="controls">
-          {params.extended && (
+          {(params.extended || params.grouper !== '') && (
             <label>
               Grouper
               <select
