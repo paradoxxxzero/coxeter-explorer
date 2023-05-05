@@ -90,32 +90,48 @@ void main() {
 
   #if DIMENSIONS == 2
   vec2 pos;
+  vec2 next;
+  vec2 other;
   #elif DIMENSIONS == 3
   vec3 pos;
+  vec3 next;
+  vec3 other;
   #elif DIMENSIONS == 4
   vec4 pos;
+  vec4 next;
+  vec4 other;
   #elif DIMENSIONS == 5
   vec5 pos;
+  vec5 next;
+  vec5 other;
   vec5 instancePosition = fromMat(instancePosition);
   vec5 instanceTarget = fromMat(instanceTarget);
   vec5 instanceCentroid = fromMat(instanceCentroid);
   #elif DIMENSIONS == 6
   vec6 pos;
+  vec6 next;
+  vec6 other;
   vec6 instancePosition = fromMat(instancePosition);
   vec6 instanceTarget = fromMat(instanceTarget);
   vec6 instanceCentroid = fromMat(instanceCentroid);
   #elif DIMENSIONS == 7
   vec7 pos;
+  vec7 next;
+  vec7 other;
   vec7 instancePosition = fromMat(instancePosition);
   vec7 instanceTarget = fromMat(instanceTarget);
   vec7 instanceCentroid = fromMat(instanceCentroid);
   #elif DIMENSIONS == 8
   vec8 pos;
+  vec8 next;
+  vec8 other;
   vec8 instancePosition = fromMat(instancePosition);
   vec8 instanceTarget = fromMat(instanceTarget);
   vec8 instanceCentroid = fromMat(instanceCentroid);
   #elif DIMENSIONS == 9
   vec9 pos;
+  vec9 next;
+  vec9 other;
   vec9 instancePosition = fromMat(instancePosition);
   vec9 instanceTarget = fromMat(instanceTarget);
   vec9 instanceCentroid = fromMat(instanceCentroid);
@@ -124,52 +140,24 @@ void main() {
   vec3 norm;
   // <begin_vertex>
   vec3 transformed;
+  float vid = float(gl_VertexID);
 
   if(!nan(instanceCentroid)) {
-    if(gl_VertexID == 0) {
-      pos = instanceCentroid;
-    } else if(gl_VertexID == 1) {
-      pos = instancePosition;
-    } else {
-      pos = instanceTarget;
-    }
-    if(gl_VertexID != 0 || segments > 1.) {
+    pos = trix(instanceCentroid, instancePosition, instanceTarget, uv);
+    next = trix(instanceCentroid, instancePosition, instanceTarget, uv + vec2(EPS, 0.));
+    other = trix(instanceCentroid, instancePosition, instanceTarget, uv + vec2(0., EPS));
+
+    if(length(uv) != 0. || segments > 1.) {
       pos = xnormalize(pos);
+      next = xnormalize(next);
+      other = xnormalize(other);
     }
     transformed = xproject(pos);
-    // TODO: hyperbolic
-
-    #if DIMENSIONS < 5
-    pos *= 1.1;
-    #elif DIMENSIONS >= 5 && DIMENSIONS < 9
-    pos.v *= 1.1;
-    pos.u *= 1.1;
-    #elif DIMENSIONS == 9
-    pos.v *= 1.1;
-    pos.u *= 1.1;
-    pos.t *= 1.1;
-    #endif
-    norm = normalize(xproject(pos));
+    vec3 n = xproject(next);
+    vec3 o = xproject(other);
+    norm = cross(n - transformed, o - transformed);
   } else if(!nan(instanceTarget)) {
-    #if DIMENSIONS == 2
-    vec2 next;
-    #elif DIMENSIONS == 3
-    vec3 next;
-    #elif DIMENSIONS == 4
-    vec4 next;
-    #elif DIMENSIONS == 5
-    vec5 next;
-    #elif DIMENSIONS == 6
-    vec6 next;
-    #elif DIMENSIONS == 7
-    vec7 next;
-    #elif DIMENSIONS == 8
-    vec8 next;
-    #elif DIMENSIONS == 9
-    vec9 next;
-    #endif
 
-    float vid = float(gl_VertexID);
     float h = floor(vid / (radial + 1.)) / (segments);
     float r = mod(vid, radial + 1.) / (radial);
 

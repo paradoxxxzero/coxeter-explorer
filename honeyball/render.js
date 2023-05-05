@@ -169,15 +169,9 @@ export const initEdge = rt => {
     existingEdge.material.dispose()
   }
   const ambiance = ambiances[rt.ambiance]
-  const { dimensions, curve, segments } = rt
-  const edge3dGeometry = new CylinderGeometry(
-    1,
-    1,
-    1,
-    8,
-    curve ? segments : 1,
-    true
-  )
+  const { dimensions, curve, segments: rawSegments } = rt
+  const segments = curve ? rawSegments : 1
+  const edge3dGeometry = new CylinderGeometry(1, 1, 1, 8, segments, true)
   const edgeGeometry = new InstancedBufferGeometry().copy(edge3dGeometry)
   const arity = dimensions > 4 ? 9 : dimensions
   edgeGeometry.setAttribute(
@@ -226,37 +220,45 @@ export const initFace = rt => {
     existingFace.material.dispose()
   }
   const ambiance = ambiances[rt.ambiance]
-  const { dimensions, curve, segments } = rt
+  const { dimensions, curve, segments: rawSegments } = rt
   const face3dGeometry = new BufferGeometry()
   const indices = []
   const vertices = []
   const normals = []
   const uvs = []
 
-  //       /\ 0        ----> x
-  //      /  \         |
-  //     /    \        |
-  //    /      \       v y
-  //   /        \
-  //  /__________\
-  // 2            1
+  //       0
+  //       /\          ----> x
+  //    1 /__\ 2       |
+  //     /\  /\        |
+  //  3 /__\/__\ 5      v y
+  //   /\  /4  /\
+  //  /__\/__\/__\
+  // ...   segments
 
-  // 0
-  vertices.push(0, 0, 0)
-  normals.push(0, 0, 1)
-  uvs.push(0.5, 0)
+  const segments = curve ? rawSegments : 1
+  const part = 1 / segments
+  for (let i = 0; i < segments + 1; i++) {
+    for (let j = 0; j < i + 1; j++) {
+      vertices.push(((2 * j - i) * part) / 2, i * part, 0)
+      normals.push(0, 0, 1)
+      uvs.push(part * j, 1 - part * i)
+    }
+  }
+  for (let i = 1; i < segments + 1; i++) {
+    for (let j = 0; j < i; j++) {
+      const k = (i * (i + 1)) / 2 + j
 
-  // 1
-  vertices.push(0.5, 1, 0)
-  normals.push(0, 0, 1)
-  uvs.push(1, 1)
-
-  // 2
-  vertices.push(-0.5, 1, 0)
-  normals.push(0, 0, 1)
-  uvs.push(0, 1)
-
-  indices.push(0, 1, 2)
+      // Up triangle
+      const p = (i * (i - 1)) / 2 + j
+      indices.push(p, k, k + 1)
+      // Down triangle
+      if (i < segments) {
+        const n = ((i + 1) * (i + 2)) / 2 + j
+        indices.push(n + 1, k + 1, k)
+      }
+    }
+  }
 
   face3dGeometry.setIndex(indices)
   face3dGeometry.setAttribute(
@@ -301,6 +303,7 @@ export const initFace = rt => {
   // instancedFace.castShadow = ambiance.shadow
   instancedFace.name = 'instanced-face'
   instancedFace.visible = rt.showFaces
+  instancedFace.renderOrder = 1
   rt.scene.add(instancedFace)
 }
 
@@ -380,23 +383,38 @@ const plotFaces = (rt, range = null) => {
   const arity = dimensions > 4 ? 9 : dimensions
   for (let i = start; i < stop; i++) {
     const face = rt.faces[i]
+    if (face.vertices.length < 3) {
+      continue
+    }
+    let vertices = []
+    if (face.vertices.length === 3) {
+      vertices.push(face.vertices.map(v => rt.vertices[v].vertex))
+    } else {
+      const centroid = new Array(dimensions).fill(0)
+      for (let j = 0; j < face.vertices.length; j++) {
+        const vertex = rt.vertices[face.vertices[j]].vertex
+        for (let k = 0; k < dimensions; k++) {
+          centroid[k] += vertex[k]
+        }
+      }
+      for (let j = 0; j < dimensions; j++) {
+        centroid[j] /= face.vertices.length
+      }
 
-    const centroid = new Array(dimensions).fill(0)
-    for (let j = 0; j < face.vertices.length; j++) {
-      const vertex = rt.vertices[face.vertices[j]].vertex
-      for (let k = 0; k < dimensions; k++) {
-        centroid[k] += vertex[k]
+      for (let j = 0; j < face.vertices.length; j++) {
+        vertices.push([
+          centroid,
+          rt.vertices[face.vertices[j]].vertex,
+          rt.vertices[face.vertices[(j + 1) % face.vertices.length]].vertex,
+        ])
       }
     }
-    for (let j = 0; j < dimensions; j++) {
-      centroid[j] /= face.vertices.length
-    }
 
-    for (let j = 0; j < face.vertices.length; j++) {
-      const pos = rt.vertices[face.vertices[j]].vertex
-      const target =
-        rt.vertices[face.vertices[(j + 1) % face.vertices.length]].vertex
-
+    for (let j = 0; j < vertices.length; j++) {
+      let [centroid, pos, target] = vertices[j]
+      if (face.word.length % 2 === (rt.curvature > 0 ? 0 : 1)) {
+        ;[pos, target] = [target, pos]
+      }
       for (let j = 0; j < dimensions; j++) {
         icentroid[idx * arity + j] = centroid[j]
         ipos[idx * arity + j] = pos[j]
@@ -423,7 +441,7 @@ export const show = (rt, name) => {
     rt[
       name === 'vertex'
         ? 'showVertices'
-        : name == 'edge'
+        : name === 'edge'
         ? 'showEdges'
         : 'showFaces'
     ]

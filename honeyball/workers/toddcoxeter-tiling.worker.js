@@ -92,7 +92,7 @@ onmessage = ({
   if (order === 0) {
     initCosets(dimensions, coxeter, stellated ? stellation : null, mirrors)
   }
-  const limit = (order + 1) * (curvature > 0 ? 2500 : 250)
+  const limit = (order + 1) * (curvature > 0 ? 5000 : 250)
   try {
     let vertices = []
     let edges = []
@@ -167,6 +167,7 @@ onmessage = ({
           vertices.push(vIndex)
         }
         if (fail) {
+          // TODO
         } else {
           faces.push({
             vertices,

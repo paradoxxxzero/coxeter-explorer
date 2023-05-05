@@ -17,7 +17,7 @@ import {
   RepeatWrapping,
   SpotLight,
   SrcAlphaFactor,
-  sRGBEncoding,
+  SRGBColorSpace,
   TextureLoader,
 } from 'three'
 import { itoa } from './honeyball/math'
@@ -37,7 +37,7 @@ const _color = new Color()
 const loader = new TextureLoader()
 
 const diffuse = loader.load('Carbon.png')
-diffuse.colorSpace = sRGBEncoding
+diffuse.colorSpace = SRGBColorSpace
 diffuse.wrapS = RepeatWrapping
 diffuse.wrapT = RepeatWrapping
 diffuse.repeat.x = 10
@@ -48,7 +48,7 @@ normalMap.wrapS = RepeatWrapping
 normalMap.wrapT = RepeatWrapping
 
 const ocean = loader.load('ocean.jpg')
-ocean.colorSpace = sRGBEncoding
+ocean.colorSpace = SRGBColorSpace
 ocean.mapping = EquirectangularReflectionMapping
 
 const dimensionsRegExps = [...new Array(10).keys()].map(
@@ -254,6 +254,7 @@ Object.values(ambiances).forEach(ambiance => {
     ambiance.faceMaterial.blendSrc = SrcAlphaFactor
     ambiance.faceMaterial.blendDst = OneMinusSrcAlphaFactor
 
+    // ambiance.faceMaterial.depthWrite = false
     // ambiance.faceMaterial.depthTest = false
   }
 })
