@@ -84,6 +84,9 @@ export const useRender = runtime => {
 
   useEffect(() => {
     // Order plot
+    if (runtime.currentOrder < 0) {
+      return
+    }
     plot(runtime, runtime.currentOrder - 1)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [

@@ -10,8 +10,8 @@ export default function App({ gl, params, updateParams }) {
       ...params,
       ...gl,
 
-      currentOrder: 0,
-
+      currentOrder: -1,
+      askedOrder: null,
       curvature: 0,
       mirrorsPlanes: null,
       rootVertex: null,

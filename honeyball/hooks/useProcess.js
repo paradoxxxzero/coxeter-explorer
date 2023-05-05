@@ -16,13 +16,13 @@ const asyncProcess = async (runtime, setRuntime) => {
     error: null,
   }))
 
-  if (runtime.currentOrder === 0) {
+  if (runtime.askedOrder === 0) {
     killRunningWorkers()
   }
 
   try {
-    const { vertices, edges, faces } = await worker.process({
-      order: runtime.currentOrder,
+    const { vertices, edges, faces, order } = await worker.process({
+      order: runtime.askedOrder,
       coxeter: runtime.coxeter,
       curvature: runtime.curvature,
       stellated: runtime.stellated,
@@ -36,7 +36,7 @@ const asyncProcess = async (runtime, setRuntime) => {
       if (!runtime.processing) {
         return runtime
       }
-      return {
+      const nt = {
         ...runtime,
         ranges: [
           ...runtime.ranges,
@@ -52,10 +52,11 @@ const asyncProcess = async (runtime, setRuntime) => {
         vertices: runtime.vertices.concat(vertices),
         edges: runtime.edges.concat(edges),
         faces: runtime.faces.concat(faces),
-        currentOrder: runtime.currentOrder + 1,
+        currentOrder: runtime.askedOrder + 1,
         processing: false,
         error: null,
       }
+      return nt
     })
   } catch (e) {
     // Change current order to allow user to retry
@@ -130,32 +131,37 @@ export const useProcess = (runtime, setRuntime) => {
   useEffect(() => {
     setRuntime(runtime => {
       if (runtime.order <= runtime.currentOrder) {
-        return runtime
+        return {
+          ...runtime,
+          askedOrder: null,
+        }
       }
-      if (!runtime.rootVertex || !runtime.grouper) {
+      if (runtime.currentOrder < 0) {
         return runtime
       }
       if (runtime.ranges?.[runtime.order]) {
         return {
           ...runtime,
           currentOrder: runtime.order,
+          askedOrder: null,
         }
       }
-      asyncProcess(runtime, setRuntime)
-      return runtime
+      return {
+        ...runtime,
+        askedOrder: runtime.currentOrder,
+      }
     })
 
     // Can't have ranges here
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    setRuntime,
-    runtime.order,
-    runtime.grouper,
-    runtime.currentOrder,
-    runtime.curvature,
-    runtime.mirrorsPlanes,
-    runtime.rootVertex,
-  ])
+  }, [setRuntime, runtime.order, runtime.currentOrder])
+
+  useEffect(() => {
+    if (runtime.askedOrder !== null) {
+      asyncProcess(runtime, setRuntime)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runtime.askedOrder, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => {
@@ -183,11 +189,16 @@ export const useProcess = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
+      let faces = 0
+      for (let i = 0; i < runtime.faces.length; i++) {
+        const vertices = runtime.faces[i].vertices.length
+        faces += vertices === 3 ? 1 : vertices
+      }
       // TODO: Count faces instances
-      if (runtime.faces.length > runtime.maxFaces) {
+      if (faces > runtime.maxFaces) {
         return {
           ...runtime,
-          maxFaces: runtime.faces.length,
+          maxFaces: faces,
         }
       }
       return runtime

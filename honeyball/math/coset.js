@@ -227,7 +227,7 @@ export const solve = params => {
       for (let gen = 0; gen < coset.length; gen++) {
         const target = coset[gen]
 
-        if (words[target] !== undefined) {
+        if (target === undefined || words[target] !== undefined) {
           continue
         }
 

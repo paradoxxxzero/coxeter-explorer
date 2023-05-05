@@ -20,6 +20,7 @@ const initCosets = (dimensions, coxeter, stellation, mirrors) => {
     rows: [],
     words: [],
     done: false,
+    lastDrawn: 0,
   })
 
   verticesParams = {
@@ -92,19 +93,20 @@ onmessage = ({
   if (order === 0) {
     initCosets(dimensions, coxeter, stellated ? stellation : null, mirrors)
   }
-  const limit = (order + 1) * (curvature > 0 ? 5000 : 250)
+  const limit = (order + 1) * (curvature > 0 ? 1000 : 250)
   try {
     let vertices = []
     let edges = []
     let faces = []
-    let wordIndexes = {}
     if (!verticesParams.done) {
-      let previousLength = verticesParams.words.length
       verticesParams.limit = limit
 
       solve(verticesParams)
-      // init(rootVertex, cosets)
-      for (let i = previousLength; i < verticesParams.words.length; i++) {
+      for (
+        let i = verticesParams.lastDrawn;
+        i < verticesParams.words.length;
+        i++
+      ) {
         const word = verticesParams.words[i]
         const vertex = reflectWord(
           { rootVertex, mirrorsPlanes, curvature },
@@ -115,28 +117,33 @@ onmessage = ({
           vertex,
           word,
         })
-        wordIndexes[word] = vertices.length - 1
+        verticesParams.lastDrawn = i + 1
       }
     }
+
     for (let i = 0; i < edgesParams.length; i++) {
       const edgeParams = edgesParams[i]
       if (edgeParams.done) {
         continue
       }
-      const previousLength = edgeParams.words.length
       edgeParams.limit = limit
       solve(edgeParams)
       const startIndex = edgeParams.pair[0]
       const endIndex = vertexIndex(edgeParams.pair[1])
-      for (let j = previousLength; j < edgeParams.words.length; j++) {
+      for (let j = edgeParams.lastDrawn; j < edgeParams.words.length; j++) {
         const word = edgeParams.words[j]
         const start = vertexIndex(word, startIndex)
         const end = vertexIndex(word, endIndex)
+        if (start === undefined || end === undefined) {
+          edgeParams.lastDrawn = j
+          break
+        }
         edges.push({
           start,
           end,
           word,
         })
+        edgeParams.lastDrawn = j + 1
       }
     }
 
@@ -145,18 +152,29 @@ onmessage = ({
       if (faceParams.done) {
         continue
       }
-      const previousLength = faceParams.words.length
       faceParams.limit = limit
       solve(faceParams)
 
+      let fail = false
       const indexes = []
       for (let j = 0; j < faceParams.face.length; j++) {
         const face = faceParams.face[j]
-        indexes.push(vertexIndex(face))
+        const vIndex = vertexIndex(face)
+        if (vIndex === undefined) {
+          fail = true
+          break
+        }
+        indexes.push(vIndex)
       }
-      let fail = false
-      for (let j = previousLength; j < faceParams.words.length; j++) {
+      if (fail) {
+        break
+      }
+      for (let j = faceParams.lastDrawn; j < faceParams.words.length; j++) {
         const word = faceParams.words[j]
+        if (word === undefined) {
+          faceParams.lastDrawn = j
+          break
+        }
         const vertices = []
         for (let k = 0; k < indexes.length; k++) {
           const vIndex = vertexIndex(word, indexes[k])
@@ -167,28 +185,18 @@ onmessage = ({
           vertices.push(vIndex)
         }
         if (fail) {
-          // TODO
-        } else {
-          faces.push({
-            vertices,
-            word,
-          })
+          faceParams.lastDrawn = j
+          break
         }
+        faces.push({
+          vertices,
+          word,
+        })
+        faceParams.lastDrawn = j + 1
       }
     }
-    // const pairs = combinations(verticesParams.gens.map(i => itoa(i)))
-    // for (let i = 0; i < pairs.length; i++) {
-    //   const [mirror1, mirror2] = pairs[i]
-    //   const multiplier = coxeter[mirrors1][mirrors2]
-    //   const indexes = []
 
-    //   if (mirrors[mirror1] && mirrors[mirror2]) {
-    //     for (let j = 0; j < multiplier; j++) {
-    //       indexes.push([0], vertexIndex())
-
-    //   }
-
-    postMessage({ vertices, edges, faces, uuid })
+    postMessage({ vertices, edges, faces, order, uuid })
   } catch (e) {
     postMessage({ error: e.message, uuid })
   }

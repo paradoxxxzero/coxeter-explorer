@@ -378,7 +378,8 @@ const plotFaces = (rt, range = null) => {
   let idx = 0
 
   for (let i = 0; i < start; i++) {
-    idx += rt.faces[i].vertices.length
+    const vertices = rt.faces[i].vertices.length
+    idx += vertices === 3 ? 1 : vertices
   }
   const arity = dimensions > 4 ? 9 : dimensions
   for (let i = start; i < stop; i++) {

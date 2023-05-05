@@ -12,6 +12,7 @@ import {
   MeshLambertMaterial,
   MeshPhongMaterial,
   MeshPhysicalMaterial,
+  MeshToonMaterial,
   OneMinusSrcAlphaFactor,
   PointLight,
   RepeatWrapping,
@@ -20,7 +21,7 @@ import {
   SRGBColorSpace,
   TextureLoader,
 } from 'three'
-import { itoa } from './honeyball/math'
+import { atoi, itoa } from './honeyball/math'
 
 export const projections = [
   'stereographic',
@@ -81,7 +82,7 @@ export const ambiances = {
   reflection: {
     background: 0xffffff,
     shadow: false,
-    material: new MeshPhongMaterial(),
+    material: new MeshToonMaterial(),
     lights: [new AmbientLight(0xffffff, 0.25)],
     cameraLights: [new PointLight(0xffffff, 0.75)],
     color: ({ word }, type, dimensions) => {
@@ -94,9 +95,10 @@ export const ambiances = {
       // }
 
       // Get the character with the highest count
-      const counts = dimensionsRegExps.map(r => (word.match(r) || []).length)
-      const max = Math.max(...counts)
-      const h = counts.indexOf(max) / dimensions
+      // const counts = dimensionsRegExps.map(r => (word.match(r) || []).length)
+      // const max = Math.max(...counts)
+      // const h = counts.indexOf(max) / dimensions
+      const h = word.length ? atoi(word[word.length - 1]) / dimensions : 0
 
       return _color.setHSL(h % 1, 1, 0.8)
     },
@@ -156,7 +158,7 @@ export const ambiances = {
     }),
     lights: [new DirectionalLight(), new HemisphereLight()],
     color: () => {
-      return _color.set(0xaaaaaa)
+      return _color.set(0xeeeeee)
     },
   },
   museum: {
@@ -254,7 +256,7 @@ Object.values(ambiances).forEach(ambiance => {
     ambiance.faceMaterial.blendSrc = SrcAlphaFactor
     ambiance.faceMaterial.blendDst = OneMinusSrcAlphaFactor
 
-    // ambiance.faceMaterial.depthWrite = false
+    ambiance.faceMaterial.depthWrite = false
     // ambiance.faceMaterial.depthTest = false
   }
 })
@@ -323,7 +325,6 @@ export const filterParams = maybeBadParams => {
               (isNaN(c) && !(key === 'mirrors' && 'sh'.includes(c)))
           )
         ) {
-          console.log('rem', key, value)
           delete params[key]
         }
       }
