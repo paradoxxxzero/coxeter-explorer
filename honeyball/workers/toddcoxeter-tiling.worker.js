@@ -11,7 +11,7 @@ let verticesParams = null
 let edgesParams = null
 let facesParams = null
 
-const initCosets = (dimensions, coxeter, stellation, mirrors) => {
+const initCosets = (dimensions, coxeter, stellation, mirrors, curvature) => {
   const defaultParams = () => ({
     cosets: {
       normal: [],
@@ -24,14 +24,21 @@ const initCosets = (dimensions, coxeter, stellation, mirrors) => {
   })
 
   verticesParams = {
-    ...getVerticesCosetsParams(dimensions, coxeter, stellation, mirrors),
+    ...getVerticesCosetsParams(
+      dimensions,
+      coxeter,
+      stellation,
+      mirrors,
+      curvature
+    ),
     ...defaultParams(),
   }
   edgesParams = getEdgesCosetsParams(
     dimensions,
     coxeter,
     stellation,
-    mirrors
+    mirrors,
+    curvature
   ).map(edgeParams => ({
     ...edgeParams,
     ...defaultParams(),
@@ -40,20 +47,15 @@ const initCosets = (dimensions, coxeter, stellation, mirrors) => {
     dimensions,
     coxeter,
     stellation,
-    mirrors
+    mirrors,
+    curvature
   ).map(edgeParams => ({
     ...edgeParams,
     ...defaultParams(),
   }))
 }
 
-const reflectWord = (state, word, snub) => {
-  if (snub) {
-    // This is wrong, we need to better think about group
-    word = word.replace(/./g, v => {
-      return v === 'a' ? 'ab' : 'bc'
-    })
-  }
+const reflectWord = (state, word) => {
   const { rootVertex, mirrorsPlanes, curvature } = state
   let v = rootVertex
 
@@ -89,9 +91,14 @@ onmessage = ({
     uuid,
   },
 }) => {
-  const snub = mirrors.some(m => m === 's')
   if (order === 0) {
-    initCosets(dimensions, coxeter, stellated ? stellation : null, mirrors)
+    initCosets(
+      dimensions,
+      coxeter,
+      stellated ? stellation : null,
+      mirrors,
+      curvature
+    )
   }
   const limit = (order + 1) * (curvature > 0 ? 1000 : 250)
   try {
@@ -102,16 +109,20 @@ onmessage = ({
       verticesParams.limit = limit
 
       solve(verticesParams)
+      console.log(verticesParams.words)
       for (
         let i = verticesParams.lastDrawn;
         i < verticesParams.words.length;
         i++
       ) {
         const word = verticesParams.words[i]
+        if (word === undefined) {
+          vertices.push({ vertex: new Array(dimensions).fill(NaN), word: '' })
+          continue
+        }
         const vertex = reflectWord(
           { rootVertex, mirrorsPlanes, curvature },
-          word,
-          snub
+          word
         )
         vertices.push({
           vertex,
@@ -132,6 +143,9 @@ onmessage = ({
       const endIndex = vertexIndex(edgeParams.pair[1])
       for (let j = edgeParams.lastDrawn; j < edgeParams.words.length; j++) {
         const word = edgeParams.words[j]
+        if (word === undefined) {
+          continue
+        }
         const start = vertexIndex(word, startIndex)
         const end = vertexIndex(word, endIndex)
         if (start === undefined || end === undefined) {
@@ -172,8 +186,8 @@ onmessage = ({
       for (let j = faceParams.lastDrawn; j < faceParams.words.length; j++) {
         const word = faceParams.words[j]
         if (word === undefined) {
-          faceParams.lastDrawn = j
-          break
+          // faceParams.lastDrawn = j ??
+          continue
         }
         const vertices = []
         for (let k = 0; k < indexes.length; k++) {

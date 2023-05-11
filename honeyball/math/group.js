@@ -206,3 +206,18 @@ export const knuthBendix = (rules, dimensions) => {
 }
 
 export const shorten = (rules, word) => rewrite(rules, word)
+
+export const enumerate = (gens, rules, base = '', words) => {
+  if (!words) {
+    words = new Set([base])
+  }
+  for (let i = 0; i < gens.length; i++) {
+    const gen = gens[i]
+    const newWord = shorten(rules, base + gen)
+    if (!words.has(newWord)) {
+      words.add(newWord)
+      enumerate(gens, rules, newWord, words)
+    }
+  }
+  return words
+}

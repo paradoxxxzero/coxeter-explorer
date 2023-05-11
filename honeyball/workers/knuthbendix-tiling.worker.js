@@ -246,7 +246,8 @@ onmessage = ({
         dimensions,
         coxeter,
         stellated ? stellation : null,
-        mirrors
+        mirrors,
+        curvature
       )
       try {
         rules = knuthBendix(baseRules, dimensions)

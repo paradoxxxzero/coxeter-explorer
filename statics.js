@@ -256,8 +256,8 @@ Object.values(ambiances).forEach(ambiance => {
     ambiance.faceMaterial.blendSrc = SrcAlphaFactor
     ambiance.faceMaterial.blendDst = OneMinusSrcAlphaFactor
 
-    ambiance.faceMaterial.depthWrite = false
-    // ambiance.faceMaterial.depthTest = false
+    // ambiance.faceMaterial.depthWrite = false
+    ambiance.faceMaterial.depthTest = false
   }
 })
 
@@ -286,7 +286,7 @@ export const defaultParams = {
   vertexThickness: 75,
   showEdges: true,
   edgeThickness: 25,
-  showFaces: true,
+  showFaces: false,
 
   grouper: '',
   projection: 'stereographic',

@@ -80,7 +80,11 @@ export const initializeGl = () => {
     orbitControls.position0.set(
       0,
       0,
-      orbitControls.position0.z === -1 ? -0.25 : -1,
+      orbitControls.position0.z === -1
+        ? -0.25
+        : orbitControls.position0.z === -0.25
+        ? -10
+        : -1,
       0,
       0
     )
@@ -659,6 +663,8 @@ export const changeAmbiance = rt => {
         0
       )
       composer.addPass(bloomPass)
+      // Tweaks if face are shown
+      instancedFace.material.opacity = 0.025
     } else if (fx === 'godray') {
       const godrayPass = new GodRayPass(scene, camera)
       godrayPass.materialDepth = hyperMathMaterial(godrayPass.materialDepth, rt)

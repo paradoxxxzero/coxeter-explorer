@@ -1,4 +1,15 @@
-import { PI, abs, acos, acosh, cos, sign, sin, sinh, sqrt } from './index.js'
+import {
+  PI,
+  abs,
+  acos,
+  acosh,
+  cos,
+  round,
+  sign,
+  sin,
+  sinh,
+  sqrt,
+} from './index.js'
 
 export const det = m => {
   if (m.length === 1) {
@@ -493,4 +504,20 @@ export const getFundamentalVertex = (mirrors, mirrorsPlanes, curvature) => {
 
   p[p.length - 1] *= curvature || 1
   return normalize(p, curvature)
+}
+
+export const getStellationSphericalOppositeAngle = (a, b, c, stellation) => {
+  const A = PI / a
+  const B = PI / b
+  const C = PI / c
+  return round(
+    PI /
+      acos(
+        -cos(A) * cos(C) +
+          sin(A) *
+            sin(C) *
+            ((cos(B) - cos(stellation * A) * cos(C)) /
+              (sin(stellation * A) * sin(C)))
+      )
+  )
 }

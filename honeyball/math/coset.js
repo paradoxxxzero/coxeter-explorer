@@ -1,14 +1,17 @@
-import { abs, combinations, getRels, itoa } from '.'
+import { abs, ceil, combinations, getRels, itoa } from '.'
 
 export const getVerticesCosetsParams = (
   dimensions,
   coxeter,
   stellation,
-  mirrors
+  mirrors,
+  curvature
 ) => {
-  const rels = getRels(dimensions, coxeter, stellation, mirrors)
+  const rels = getRels(dimensions, coxeter, stellation, mirrors, curvature)
+
   const gens = [...Array(dimensions).keys()].map(i => itoa(i)).join('')
   const subgens = mirrors.map((m, i) => (m ? '' : itoa(abs(i)))).join('')
+
   return { gens, subgens, rels }
 }
 
@@ -16,9 +19,10 @@ export const getEdgesCosetsParams = (
   dimensions,
   coxeter,
   stellation,
-  mirrors
+  mirrors,
+  curvature
 ) => {
-  const rels = getRels(dimensions, coxeter, stellation, mirrors)
+  const rels = getRels(dimensions, coxeter, stellation, mirrors, curvature)
   const gens = [...Array(dimensions).keys()].map(i => itoa(i)).join('')
   const params = []
 
@@ -47,9 +51,10 @@ export const getFacesCosetsParams = (
   dimensions,
   coxeter,
   stellation,
-  mirrors
+  mirrors,
+  curvature
 ) => {
-  const rels = getRels(dimensions, coxeter, stellation, mirrors)
+  const rels = getRels(dimensions, coxeter, stellation, mirrors, curvature)
   const gens = [...Array(dimensions).keys()].map(i => itoa(i)).join('')
   const params = []
 
@@ -216,8 +221,10 @@ export const solve = params => {
   if (words.length === 0) {
     words[0] = ''
   }
-
-  while (remaining(cosets.normal.length, words)) {
+  let change = true,
+    max = cosets.normal.length
+  while (remaining(cosets.normal.length, words) && change && --max) {
+    change = false
     for (let i = 0; i < words.length; i++) {
       if (words[i] === undefined) {
         continue
@@ -232,10 +239,18 @@ export const solve = params => {
         }
 
         words[target] = words[i] + itoa(gen)
+
+        change = true
       }
     }
   }
-
+  if (!change) {
+    console.warn('Hole in the cosets')
+  }
+  if (max === 0) {
+    console.warn('Max iterations reached')
+  }
+  // TODO:Clean snub
   return { cosets, rows, words }
 }
 
