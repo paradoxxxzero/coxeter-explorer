@@ -1,9 +1,9 @@
 import { Fragment, useCallback, useState } from 'react'
+import { ambiances, groupers, projections } from '../../statics'
 import Link from './Link'
 import Node from './Node'
 import Value from './Value'
-import { max, min, round } from '../math'
-import { ambiances, groupers, projections } from '../../statics'
+import Number from './Number'
 
 export default function UI({
   params,
@@ -11,7 +11,6 @@ export default function UI({
   onChange,
   onExtend,
   onControls,
-  onStellated,
   onMirrorChange,
 }) {
   const [showUI, setShowUI] = useState(true)
@@ -21,20 +20,8 @@ export default function UI({
   const handleChange = useCallback(
     e => {
       let { name, checked, type, value } = e.target
-
       if (type === 'checkbox') {
         value = checked
-      } else if (type === 'number' && value && !isNaN(value)) {
-        value = +value
-        if (e.target.min) {
-          value = max(value, +e.target.min)
-        }
-        if (e.target.max) {
-          value = min(value, +e.target.max)
-        }
-        if (e.target.step) {
-          value = round(value / +e.target.step) * +e.target.step
-        }
       }
       onChange(name, value)
     },
@@ -53,8 +40,17 @@ export default function UI({
         className={`space-indicator${runtime.processing ? ' processing' : ''}`}
         onClick={handleUI}
       >
-        {runtime.curvature === 0 ? '𝔼' : runtime.curvature > 0 ? '𝕊' : 'ℍ'}
-        <sup>{runtime.dimensions - 1}</sup>
+        {runtime.spaceType === null || runtime.spaceType === 'indefinite'
+          ? '𝕏'
+          : runtime.spaceType === 'affine'
+          ? '𝔼'
+          : runtime.spaceType === 'finite'
+          ? '𝕊'
+          : 'ℍ'}
+        <sup>
+          {runtime.spaceType === 'hyperbolic-paracompact' ? '*' : ''}
+          {runtime.dimensions - 1}
+        </sup>
         {runtime.currentOrder < runtime.order ? (
           <sub>
             {runtime.currentOrder}/{runtime.order}
@@ -86,49 +82,34 @@ export default function UI({
           {(params.extended ||
             runtime.grouper.replace(/^auto-/, '') === 'knuthbendix' ||
             runtime.curvature <= 0) && (
-            <label>
-              Order
-              <input
-                type="number"
-                name="order"
-                min="1"
-                step="1"
-                value={params.order}
-                onChange={handleChange}
-              />
-            </label>
+            <Number
+              name="order"
+              label="Precision"
+              min={1}
+              step={1}
+              value={params.order}
+              onChange={handleChange}
+            />
           )}
-          <label>
-            Segments
-            <input
-              type="checkbox"
-              name="curve"
-              checked={params.curve}
-              onChange={handleChange}
-            />
-            {params.curve ? (
-              <input
-                type="number"
-                name="segments"
-                min="1"
-                step="1"
-                value={params.segments}
-                onChange={handleChange}
-              />
-            ) : null}
-          </label>
-          <label>
-            Dimensions
-            <input
-              type="number"
-              name="dimensions"
-              min="2"
-              max="9"
-              step="1"
-              value={params.dimensions}
-              onChange={handleChange}
-            />
-          </label>
+          <Number
+            name="segments"
+            label="Segments"
+            min={1}
+            step={1}
+            value={params.segments}
+            toggler={params.curve}
+            togglerName="curve"
+            onChange={handleChange}
+          />
+          <Number
+            name="dimensions"
+            label="Dimensions"
+            min={2}
+            max={9}
+            step={1}
+            value={params.dimensions}
+            onChange={handleChange}
+          />
           <label>
             Projection
             <select
@@ -143,44 +124,26 @@ export default function UI({
               ))}
             </select>
           </label>
-          <label>
-            Vertices
-            <input
-              type="checkbox"
-              name="showVertices"
-              checked={params.showVertices}
-              onChange={handleChange}
-            />
-            {params.showVertices ? (
-              <input
-                type="number"
-                name="vertexThickness"
-                min="0"
-                step="1"
-                value={params.vertexThickness}
-                onChange={handleChange}
-              />
-            ) : null}
-          </label>
-          <label>
-            Edges
-            <input
-              type="checkbox"
-              name="showEdges"
-              checked={params.showEdges}
-              onChange={handleChange}
-            />
-            {params.showEdges ? (
-              <input
-                type="number"
-                name="edgeThickness"
-                min="0"
-                step="1"
-                value={params.edgeThickness}
-                onChange={handleChange}
-              />
-            ) : null}
-          </label>
+          <Number
+            name="vertexThickness"
+            label="Vertices"
+            min={0}
+            step={1}
+            value={params.vertexThickness}
+            toggler={params.showVertices}
+            togglerName="showVertices"
+            onChange={handleChange}
+          />
+          <Number
+            name="edgeThickness"
+            label="Edges"
+            min={0}
+            step={1}
+            value={params.edgeThickness}
+            toggler={params.showEdges}
+            togglerName="showEdges"
+            onChange={handleChange}
+          />
           {runtime.grouper.replace(/^auto-/, '') === 'toddcoxeter' && (
             <label>
               Faces
@@ -215,48 +178,34 @@ export default function UI({
       )}
       {showUI && (
         <aside className="view">
-          <label>
-            MSAA
-            <input
-              type="checkbox"
-              name="msaa"
-              checked={params.msaa}
-              onChange={handleChange}
-            />
-            {params.msaa ? (
-              <input
-                type="number"
-                name="msaaSamples"
-                min="0"
-                step="1"
-                value={params.msaaSamples}
-                onChange={handleChange}
-              />
-            ) : null}
-          </label>
-          <label>
-            FOV3
-            <input
-              type="number"
-              name="fov3"
-              min="0"
-              step="1"
-              value={params.fov3}
-              onChange={handleChange}
-            />
-          </label>
+          <Number
+            name="msaaSamples"
+            label="MSAA"
+            min={0}
+            step={1}
+            value={params.msaaSamples}
+            toggler={params.msaa}
+            togglerName="msaa"
+            onChange={handleChange}
+          />
+          <Number
+            name="fov3"
+            label="FOV3"
+            min={0}
+            step={1}
+            value={params.fov3}
+            onChange={handleChange}
+          />
           {params.dimensions > 3
             ? [...Array(params.dimensions - 3).keys()].map(i => (
-                <label key={i}>
-                  FOV{i + 4}
-                  <input
-                    type="number"
-                    name={`fov${i + 4}`}
-                    step="1"
-                    value={params[`fov${i + 4}`]}
-                    onChange={handleChange}
-                  />
-                </label>
+                <Number
+                  key={i}
+                  label={`FOV${i + 4}`}
+                  name={`fov${i + 4}`}
+                  step={1}
+                  value={params[`fov${i + 4}`]}
+                  onChange={handleChange}
+                />
               ))
             : null}
         </aside>
@@ -275,11 +224,7 @@ export default function UI({
                             i={i}
                             j={j}
                             value={params.coxeter[i][j]}
-                            stellation={
-                              params.stellated
-                                ? params.stellation[i][j]
-                                : undefined
-                            }
+                            stellation={params.stellation[i][j]}
                             key={`${i}x${j}`}
                             onChange={handleChange}
                           />
@@ -299,9 +244,6 @@ export default function UI({
             ))}
           </div>
           <div className="coxeter-toggles">
-            <button className="button" onClick={onStellated} title="stellated">
-              {params.stellated ? '⋇' : '÷'}
-            </button>
             <button className="button" onClick={onExtend} title="extended mode">
               {params.extended ? '▲' : '▼'}
             </button>

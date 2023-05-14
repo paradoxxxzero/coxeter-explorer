@@ -12,6 +12,7 @@ export default function App({ gl, params, updateParams }) {
 
       currentOrder: -1,
       askedOrder: null,
+      spaceType: null,
       curvature: 0,
       mirrorsPlanes: null,
       rootVertex: null,
@@ -56,7 +57,6 @@ export default function App({ gl, params, updateParams }) {
         dimensions: params.dimensions,
         coxeter: params.coxeter,
         mirrors: params.mirrors,
-        stellated: params.stellated,
         stellation: params.stellation,
       }),
     }))
@@ -84,7 +84,6 @@ export default function App({ gl, params, updateParams }) {
     params.showEdges,
     params.showFaces,
     params.showVertices,
-    params.stellated,
     params.stellation,
     params.vertexThickness,
   ])
@@ -134,10 +133,6 @@ export default function App({ gl, params, updateParams }) {
     updateParams(newParams)
   }, [params.extended, params.dimensions, params.coxeter, updateParams])
 
-  const handleStellated = useCallback(() => {
-    updateParams({ stellated: !params.stellated })
-  }, [params.stellated, updateParams])
-
   const handleChange = useCallback(
     (name, value) => {
       const newParams = {}
@@ -158,7 +153,7 @@ export default function App({ gl, params, updateParams }) {
           newParams.mirrors[i] = params.mirrors[i]
         }
         for (let i = 0; i < value; i++) {
-          newParams.coxeter[i][i] = -1
+          newParams.coxeter[i][i] = 1
         }
         for (let i = 4; i <= value; i++) {
           if (!params[`fov${i}`]) {
@@ -218,7 +213,6 @@ export default function App({ gl, params, updateParams }) {
         onChange={handleChange}
         onExtend={handleExtend}
         onControls={handleControls}
-        onStellated={handleStellated}
         onMirrorChange={handleMirrorChange}
       />
       <Runtime runtime={runtime} setRuntime={setRuntime} />

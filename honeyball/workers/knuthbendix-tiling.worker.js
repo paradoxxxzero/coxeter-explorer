@@ -230,7 +230,6 @@ onmessage = ({
     order,
     curvature,
     coxeter,
-    stellated,
     stellation,
     mirrors,
     mirrorsPlanes,
@@ -245,7 +244,7 @@ onmessage = ({
       const baseRules = getBaseRules(
         dimensions,
         coxeter,
-        stellated ? stellation : null,
+        stellation,
         mirrors,
         curvature
       )

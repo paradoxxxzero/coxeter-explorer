@@ -10,6 +10,7 @@ import { reflect } from '../math/hypermath'
 let verticesParams = null
 let edgesParams = null
 let facesParams = null
+let snub = null
 
 const initCosets = (dimensions, coxeter, stellation, mirrors, curvature) => {
   const defaultParams = () => ({
@@ -53,6 +54,7 @@ const initCosets = (dimensions, coxeter, stellation, mirrors, curvature) => {
     ...edgeParams,
     ...defaultParams(),
   }))
+  snub = new Map()
 }
 
 const reflectWord = (state, word) => {
@@ -83,7 +85,6 @@ onmessage = ({
     curvature,
     mirrorsPlanes,
     coxeter,
-    stellated,
     stellation,
     mirrors,
     rootVertex,
@@ -92,13 +93,7 @@ onmessage = ({
   },
 }) => {
   if (order === 0) {
-    initCosets(
-      dimensions,
-      coxeter,
-      stellated ? stellation : null,
-      mirrors,
-      curvature
-    )
+    initCosets(dimensions, coxeter, stellation, mirrors, curvature)
   }
   const limit = (order + 1) * (curvature > 0 ? 1000 : 250)
   try {
@@ -109,7 +104,6 @@ onmessage = ({
       verticesParams.limit = limit
 
       solve(verticesParams)
-      console.log(verticesParams.words)
       for (
         let i = verticesParams.lastDrawn;
         i < verticesParams.words.length;
@@ -127,6 +121,7 @@ onmessage = ({
         vertices.push({
           vertex,
           word,
+          i,
         })
         verticesParams.lastDrawn = i + 1
       }
@@ -208,6 +203,96 @@ onmessage = ({
         })
         faceParams.lastDrawn = j + 1
       }
+    }
+
+    // Post Process
+    if (mirrors.some(mirror => mirror === 's')) {
+      const snubWord = mirrors
+        .map((m, i) => (m === 's' ? itoa(i) : ''))
+        .join('')
+      const snubRe =
+        snubWord.length > 0 ? new RegExp(`[^${snubWord}]`, 'g') : null
+
+      for (let i = 0; i < vertices.length; i++) {
+        const vertex = vertices[i]
+        if (vertex.word.replace(snubRe, '').length % 2 === 1) {
+          // vertex.vertex = NaN
+          snub.set(vertex.i, [])
+        }
+      }
+      const finalEdges = []
+      const newSnub = new Map()
+
+      for (let i = 0; i < edges.length; i++) {
+        if (snub.has(edges[i].start)) {
+          if (!newSnub.has(edges[i].start)) {
+            newSnub.set(edges[i].start, [])
+          }
+          const kern = snub.get(edges[i].start)
+          kern.push(edges[i].end)
+          if (!kern.word) {
+            kern.word = edges[i].word
+          }
+          newSnub.get(edges[i].start).push(edges[i].end)
+        } else if (snub.has(edges[i].end)) {
+          if (!newSnub.has(edges[i].end)) {
+            newSnub.set(edges[i].end, [])
+          }
+          const kern = snub.get(edges[i].end)
+          kern.push(edges[i].start)
+          if (!kern.word) {
+            kern.word = edges[i].word
+          }
+          newSnub.get(edges[i].end).push(edges[i].start)
+        } else {
+          finalEdges.push(edges[i])
+        }
+      }
+
+      const keys = Array.from(newSnub.keys())
+      for (let i = 0; i < newSnub.size; i++) {
+        const key = keys[i]
+        const newValues = newSnub.get(key)
+        const values = snub.get(key)
+        for (let j = 0; j < newValues.length; j++) {
+          for (let k = 0; k < values.length; k++) {
+            if (newValues[j] <= values[k]) {
+              continue
+            }
+            finalEdges.push({
+              start: newValues[j],
+              end: values[k],
+              word: values.word,
+            })
+          }
+        }
+      }
+      edges = finalEdges
+
+      const finalFaces = []
+      for (let i = 0; i < faces.length; i++) {
+        const face = faces[i]
+        const newVertices = []
+        for (let j = 0; j < face.vertices.length; j++) {
+          if (!snub.has(face.vertices[j])) {
+            newVertices.push(face.vertices[j])
+          }
+        }
+        finalFaces.push({
+          ...face,
+          vertices: newVertices,
+        })
+      }
+      for (let i = 0; i < newSnub.size; i++) {
+        const key = keys[i]
+        const values = snub.get(key)
+        finalFaces.push({
+          vertices: values,
+          word: values.word,
+        })
+      }
+
+      faces = finalFaces
     }
 
     postMessage({ vertices, edges, faces, order, uuid })

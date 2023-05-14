@@ -108,12 +108,9 @@ label {
 .controls label {
   margin: 0.2em 0.75em;
   color: rgba(255, 255, 255, 0.65);
+  display: flex;
+  align-items: center;
 }
-.controls input,
-.controls select {
-  margin-left: 0.25em;
-}
-
 .view {
   position: absolute;
   left: 0;
@@ -162,20 +159,6 @@ label {
   align-items: center;
   margin: 0.25em 0.25em;
 }
-.coxeter-value.stellated {
-  font-size: 0.9em;
-}
-.coxeter-value .stellation-divisor {
-  color: white;
-  font-size: 2em;
-  font-weight: bold;
-  margin: 0 0.125em;
-}
-
-.coxeter-value .stellation {
-  font-size: 1.25em;
-  margin-bottom: 0.25em;
-}
 
 .coxeter-link {
   color: white;
@@ -185,16 +168,20 @@ label {
 }
 .coxeter-node {
   position: relative;
+  cursor: pointer;
 }
-.coxeter-node input[type='number'] {
+.coxeter-node input {
   font-size: 1.25em;
   position: absolute;
   top: 2.5em;
   left: -0.4em;
 }
 .coxeter-graphic {
-  color: white;
+  color: rgba(255, 255, 255, 1);
   font-size: 3em;
+}
+.coxeter-node:hover .coxeter-graphic {
+  color: rgba(200, 200, 200, 1);
 }
 
 .coxeter-column {
@@ -204,7 +191,7 @@ label {
   margin: 0 1.25em;
 }
 
-input[type='number'] {
+input {
   color: white;
   border: none;
   background-color: rgba(150, 150, 150, 0.15);
@@ -228,4 +215,48 @@ select option {
 }
 .warning * {
   color: orange !important;
+}
+
+.number-control {
+  position: relative;
+}
+
+.number input {
+  padding: 0.25em 1.75em;
+}
+.number-label {
+  margin-right: 0.25em;
+}
+.number .plusminus {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.65);
+  background-color: rgba(255, 255, 255, 0.01);
+  border-radius: 50%;
+  font-size: 2.5em;
+  cursor: pointer;
+  padding: 0.25em;
+  line-height: 0;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%) scale(0.75);
+  padding: 0.5em 0.25em;
+}
+.number .plusminus:hover,
+.number .plusminus:focus,
+.number .plusminus:active {
+  color: rgba(255, 255, 255);
+  background-color: rgba(255, 255, 255, 0.05);
+  transform: translateY(-50%) scale(1);
+  transition: all 0.25s;
+}
+
+.number .minus {
+  left: -0.1em;
+}
+.number .plus {
+  right: -0.1em;
+}
+.number.invalid input {
+  outline: 2px solid red;
 }

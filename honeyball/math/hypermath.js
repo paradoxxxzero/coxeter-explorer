@@ -10,6 +10,7 @@ import {
   sinh,
   sqrt,
 } from './index.js'
+import { eigen } from './jacobi.js'
 
 export const det = m => {
   if (m.length === 1) {
@@ -38,15 +39,35 @@ export const det = m => {
 }
 export const coxeterToGram = (coxter, stellation) =>
   coxter.map((row, i) =>
-    row.map(
-      (column, j) => -cos(((stellation ? stellation[i][j] : 1) * PI) / column)
-    )
+    row.map((column, j) => -cos((stellation[i][j] * PI) / column))
   )
 
-export const getCurvature = gram => {
-  const determinant = det(gram)
-  return abs(determinant) < 1e-8 ? 0 : sign(determinant)
+export const getSpaceType = gram => {
+  const eigenValues = eigen(gram).values
+  if (eigenValues.every(v => v > 0)) {
+    return 'finite'
+  }
+  if (eigenValues.every(v => v >= 0)) {
+    return 'affine'
+  }
+  // Indefinite, check subgroups
+  const subSpaceType = []
+  for (let i = 0; i < eigenValues.length; i++) {
+    subSpaceType.push(
+      getSpaceType(
+        gram.filter((_, j) => j !== i).map(row => row.filter((_, j) => j !== i))
+      )
+    )
+  }
+  if (subSpaceType.every(t => t === 'finite')) {
+    return 'hyperbolic-compact'
+  }
+  if (subSpaceType.every(t => t === 'finite' || t === 'affine')) {
+    return 'hyperbolic-paracompact'
+  }
+  return 'indefinite'
 }
+
 export const xdot = (v1, v2, curvature) => {
   let sum = 0
   for (let i = 0; i < v1.length; i++) {
@@ -481,7 +502,6 @@ export const getFundamentalSimplexMirrors = (gram, curvature) => {
       abs(1 - mirrorsPlanes[i].slice(0, i).reduce((a, b) => a + b * b, 0))
     )
   }
-
   mirrorsPlanes[mirrorsPlanes.length - 1][mirrorsPlanes.length - 1] = curvature
     ? mirrorsPlanes[mirrorsPlanes.length - 1][mirrorsPlanes.length - 1] *
       curvature

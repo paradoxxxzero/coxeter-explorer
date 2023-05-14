@@ -256,18 +256,18 @@ Object.values(ambiances).forEach(ambiance => {
     ambiance.faceMaterial.blendSrc = SrcAlphaFactor
     ambiance.faceMaterial.blendDst = OneMinusSrcAlphaFactor
 
-    // ambiance.faceMaterial.depthWrite = false
-    ambiance.faceMaterial.depthTest = false
+    ambiance.faceMaterial.depthWrite = false
+    // ambiance.faceMaterial.depthTest = false
   }
 })
 
 export const defaultParams = {
   dimensions: 4,
   coxeter: [
-    [-1, 5, 2, 2],
-    [5, -1, 3, 2],
-    [2, 3, -1, 4],
-    [2, 2, 4, -1],
+    [1, 5, 2, 2],
+    [5, 1, 3, 2],
+    [2, 3, 1, 4],
+    [2, 2, 4, 1],
   ],
   stellation: [
     [1, 1, 1, 1],
@@ -277,7 +277,6 @@ export const defaultParams = {
   ],
   mirrors: [1, 0, 0, 0],
   extended: false,
-  stellated: false,
 
   order: 10,
   curve: true,

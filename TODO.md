@@ -1,2 +1,4 @@
-- Custom word tree (should be faster than Set)
-- Drop vertex hash by order (should not come back to previous order)
+- Rotation in matrix given to the shader
+- Handle all infinity
+- Holosnub
+- Duals

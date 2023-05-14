@@ -8,11 +8,27 @@ import { defaultParams, filterParams } from './statics.js'
 const gl = initializeGl()
 Object.assign(window, gl)
 
+const parse = s => {
+  const replacer = (k, v) => {
+    if (v === 'Infinity') return Infinity
+    return v
+  }
+  return JSON.parse(s, replacer)
+}
+
+const stringify = o => {
+  const replacer = (k, v) => {
+    if (v === Infinity) return 'Infinity'
+    return v
+  }
+  return JSON.stringify(o, replacer)
+}
+
 const parseParams = (def = null) => {
   const { location } = window
   if (location.hash) {
     try {
-      const hash = JSON.parse(atob(location.hash.slice(1)))
+      const hash = parse(atob(location.hash.slice(1)))
       return hash
     } catch (e) {
       console.warn(e)
@@ -22,7 +38,7 @@ const parseParams = (def = null) => {
   return def
 }
 const syncParams = params => {
-  window.history.pushState(null, null, '#' + btoa(JSON.stringify(params)))
+  window.history.pushState(null, null, '#' + btoa(stringify(params)))
 }
 
 const AppWithHistory = () => {
@@ -34,20 +50,18 @@ const AppWithHistory = () => {
     }
   }, [])
 
-  const updateParams = useCallback(
-    newParams => {
+  const updateParams = useCallback(newParams => {
+    setParams(params => {
       const finalParams = { ...params, ...newParams }
-      setParams(finalParams)
       if (
-        Object.keys(filterParams(finalParams)).length <
+        Object.keys(filterParams(finalParams)).length ===
         Object.keys(defaultParams).length
       ) {
-        return
+        syncParams(finalParams)
       }
-      syncParams(finalParams)
-    },
-    [params]
-  )
+      return finalParams
+    })
+  }, [])
 
   useEffect(() => {
     window.addEventListener('popstate', popstate)

@@ -4,11 +4,12 @@ export const {
   abs,
   cos,
   sin,
+  tan,
   cosh,
   sinh,
   acos,
   acosh,
-  tan,
+  atan,
   min,
   max,
   round,
@@ -49,11 +50,13 @@ export const getRels = (
   }
   for (let i = 1; i < dimensions; i++) {
     for (let j = 0; j < i; j++) {
-      rules.push((itoa(j) + itoa(i)).repeat(coxeter[i][j]))
+      const m = coxeter[i][j]
+      if (m < Infinity) {
+        rules.push((itoa(j) + itoa(i)).repeat(coxeter[i][j]))
+      }
     }
   }
-
-  if (stellation) {
+  if (stellation && !stellation.every(row => row.every(x => x === 1))) {
     // TODO: Improve generalization
 
     if (curvature > 0) {

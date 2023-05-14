@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
 import {
   coxeterToGram,
-  getCurvature,
   getFundamentalSimplexMirrors,
   getFundamentalVertex,
+  getSpaceType,
 } from '../math/hypermath'
 import { killRunningWorkers, workers } from '../workers/worker'
 
@@ -21,11 +21,10 @@ const asyncProcess = async (runtime, setRuntime) => {
   }
 
   try {
-    const { vertices, edges, faces, order } = await worker.process({
+    const { vertices, edges, faces } = await worker.process({
       order: runtime.askedOrder,
       coxeter: runtime.coxeter,
       curvature: runtime.curvature,
-      stellated: runtime.stellated,
       stellation: runtime.stellation,
       mirrors: runtime.mirrors,
       mirrorsPlanes: runtime.mirrorsPlanes,
@@ -85,11 +84,16 @@ export const useProcess = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
-      const gram = coxeterToGram(
-        runtime.coxeter,
-        runtime.stellated ? runtime.stellation : null
-      )
-      const curvature = getCurvature(gram)
+      const gram = coxeterToGram(runtime.coxeter, runtime.stellation)
+      const spaceType = getSpaceType(gram)
+      if (!spaceType) {
+        return {
+          ...runtime,
+          spaceType,
+        }
+      }
+      const curvature =
+        spaceType === 'finite' ? 1 : spaceType === 'affine' ? 0 : -1
       const mirrorsPlanes = getFundamentalSimplexMirrors(gram, curvature)
       const rootVertex = getFundamentalVertex(
         runtime.mirrors,
@@ -99,8 +103,7 @@ export const useProcess = (runtime, setRuntime) => {
       const grouper =
         runtime.grouper === '' || runtime.grouper.startsWith('auto-')
           ? curvature > 0 &&
-            !runtime.stellated &&
-            runtime.mirrors.every(m => !isNaN(m))
+            !runtime.stellation.some(row => row.some(x => x > 1))
             ? 'auto-toddcoxeter'
             : 'auto-knuthbendix'
           : runtime.grouper
@@ -112,6 +115,7 @@ export const useProcess = (runtime, setRuntime) => {
         edges: [],
         faces: [],
         ranges: [],
+        spaceType,
         curvature,
         mirrorsPlanes,
         rootVertex,
@@ -122,7 +126,6 @@ export const useProcess = (runtime, setRuntime) => {
     runtime.dimensions,
     runtime.coxeter,
     runtime.mirrors,
-    runtime.stellated,
     runtime.stellation,
     runtime.grouper,
     setRuntime,
