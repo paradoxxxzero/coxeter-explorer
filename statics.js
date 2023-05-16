@@ -275,6 +275,12 @@ export const defaultParams = {
     [1, 1, 1, 1],
     [1, 1, 1, 1],
   ],
+  matrix: [
+    [1, 0, 0, 0],
+    [0, 1, 0, 0],
+    [0, 0, 1, 0],
+    [0, 0, 0, 1],
+  ],
   mirrors: [1, 0, 0, 0],
   extended: false,
 

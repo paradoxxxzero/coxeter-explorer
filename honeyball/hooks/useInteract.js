@@ -1,166 +1,173 @@
-import interact from 'interactjs'
-import { useEffect, useLayoutEffect } from 'react'
-import { PI } from '../math'
-import { xrotate, xscale, xtranslate } from '../math/hypermath'
+import { useEffect } from 'react'
+import { xtranslate } from '../math/hypermath'
+import { multiply } from '../math/matrix'
 import { plot } from '../render'
 
-const translate = (offset, vertices, curvature) => {
-  for (let i = 0; i < vertices.length; i++) {
-    const { vertex } = vertices[i]
-    xtranslate(vertex, offset, curvature)
+const translate = (offset, shift, matrix, dimensions, curvature) => {
+  multiply(matrix, xtranslate(offset[0], shift * 2, dimensions, curvature))
+  if (shift * 2 + 1 < dimensions) {
+    multiply(
+      matrix,
+      xtranslate(offset[1], shift * 2 + 1, dimensions, curvature)
+    )
   }
 }
 
-const rotate = (theta, vertices, curvature) => {
-  for (let i = 0; i < vertices.length; i++) {
-    const { vertex } = vertices[i]
-    xrotate(vertex, theta, curvature)
-  }
-}
-
-const scale = (factor, vertices, curvature) => {
-  for (let i = 0; i < vertices.length; i++) {
-    const { vertex } = vertices[i]
-    xscale(vertex, factor, curvature)
-  }
-}
-
-export const dragMove = (e, dimensions, vertices, curvature, shift) => {
+export const dragMove = (e, matrix, dimensions, curvature, shift) => {
   const w2 = window.innerWidth / 2
   const h2 = window.innerHeight / 2
-  const radius = Math.min(w2, h2) * 0.9
-  if (e.ctrlKey) {
-    rotate(-e.dx / (2 * radius), vertices, curvature)
-    scale(-e.dy / (2 * radius), vertices, curvature)
-  } else {
-    const xt = -e.dx / w2
-    const yt = -e.dy / h2
-    const offset = new Array(dimensions).fill(0)
-    if (!shift && e.shiftKey) {
-      shift = 1
-    } else if (!shift && e.altKey) {
-      shift = 2
-    } else if (!shift && e.ctrKey) {
-      shift = 3
-    } else if (!shift && e.metaKey) {
-      shift = 4
-    }
 
-    offset[shift * 2] = xt
-    offset[shift * 2 + 1] = yt
+  const xt = -e.movementX / w2
+  const yt = -e.movementY / h2
 
-    translate(offset, vertices, curvature)
+  if (!shift && e.shiftKey) {
+    shift = 1
+  } else if (!shift && e.altKey) {
+    shift = 2
+  } else if (!shift && e.ctrKey) {
+    shift = 3
+  } else if (!shift && e.metaKey) {
+    shift = 4
   }
+
+  translate([xt, yt], shift, matrix, dimensions, curvature)
 }
 
-export const gestureMove = (e, vertices, curvature, shift) => {
-  rotate((PI * e.da) / 180, vertices, curvature)
-  scale(e.ds, vertices, curvature)
-}
-
-export const keydown = (e, vertices, curvature) => {
+export const keydown = (e, matrix, dimensions, curvature) => {
   const { code } = e
   if (e.target !== document.body) {
     return
   }
   const step = 0.01
   if (code === 'ArrowLeft' || code === 'KeyA') {
-    translate([-step, 0, 0, 0], vertices, curvature)
+    translate([-step, 0], 0, matrix, dimensions, curvature)
   } else if (code === 'ArrowRight' || code === 'KeyD') {
-    translate([step, 0, 0, 0], vertices, curvature)
+    translate([step, 0], 0, matrix, dimensions, curvature)
   } else if (code === 'ArrowUp' || code === 'KeyW') {
-    translate([0, 0, -step, 0], vertices, curvature)
+    translate([0, -step], 1, matrix, dimensions, curvature)
   } else if (code === 'ArrowDown' || code === 'KeyS') {
-    translate([0, 0, step, 0], vertices, curvature)
+    translate([0, step], 1, matrix, dimensions, curvature)
   } else if (code === 'PageUp' || code === 'KeyQ') {
-    translate([0, -step, 0, 0], vertices, curvature)
+    translate([-step, 0], 2, matrix, dimensions, curvature)
   } else if (code === 'PageDown' || code === 'KeyE') {
-    translate([0, step, 0, 0], vertices, curvature)
+    translate([step, 0], 2, matrix, dimensions, curvature)
   } else if (code === 'Digit1') {
-    rotate(-(PI * 5) / 180, vertices, curvature)
+    translate([0, -step], 2, matrix, dimensions, curvature)
   } else if (code === 'Digit3') {
-    rotate((PI * 5) / 180, vertices, curvature)
+    translate([0, step], 2, matrix, dimensions, curvature)
   } else if (code === 'KeyZ') {
-    scale(-step, vertices, curvature)
+    translate([-step, 0], 3, matrix, dimensions, curvature)
   } else if (code === 'KeyC') {
-    scale(step, vertices, curvature)
+    translate([step, 0], 3, matrix, dimensions, curvature)
   } else {
     return
   }
   return true
 }
 
-export const wheel = (e, vertices, curvature, shift) => {
-  const w2 = window.innerWidth / 2
-  const h2 = window.innerHeight / 2
-  const radius = Math.min(w2, h2) * 0.9
-  const delta = (10 * (e.deltaMode === 1 ? e.deltaY * 10 : e.deltaY)) / radius
-  if (e.shiftKey === !!shift) {
-    rotate((PI * delta) / 180, vertices, curvature)
-  } else {
-    scale(-delta / 100, vertices, curvature)
+// export const wheel = (e, matrix, dimensions, curvature, shift) => {
+//   const w2 = window.innerWidth / 2
+//   const h2 = window.innerHeight / 2
+//   const radius = Math.min(w2, h2) * 0.9
+//   const deltaY = (10 * (e.deltaMode === 1 ? e.deltaY * 10 : e.deltaY)) / radius
+//   const deltaX = (10 * (e.deltaMode === 1 ? e.deltaY * 10 : e.deltaY)) / radius
+//   translate(
+//     [deltaY / 25, deltaX / 25],
+//     shift + 1,
+//     matrix,
+//     dimensions,
+//     curvature
+//   )
+// }
+
+const debounce = (fn, delay) => {
+  let timeout
+  return (...args) => {
+    clearTimeout(timeout)
+    timeout = setTimeout(() => fn(...args), delay)
+
+    return () => clearTimeout(timeout)
   }
 }
 
-export const useInteract = runtime => {
-  useLayoutEffect(() => {
-    const handle = interact(runtime.composer.renderer.domElement)
-      .draggable({
-        listeners: {
-          move: e => {
-            if (runtime.controls !== 'free') {
-              return
-            }
-            dragMove(
-              e,
-              runtime.dimensions,
-              runtime.vertices,
-              runtime.curvature,
-              runtime.controlsShift
-            )
-            plot(runtime)
-          },
-        },
-      })
-      .gesturable({
-        onmove: e => {
-          if (runtime.controls !== 'free') {
-            return
-          }
-          gestureMove(
-            e,
-            runtime.vertices,
-            runtime.curvature,
-            runtime.controlsShift
-          )
-          plot(runtime)
-        },
-      })
-
-    return () => {
-      handle.unset()
-    }
-  }, [runtime])
+export const useInteract = (runtime, updateMatrix_) => {
+  const updateMatrix = debounce(updateMatrix_, 100)
 
   useEffect(() => {
-    const onWheel = e => {
-      if (runtime.controls === 'orbit') {
+    const onMove = e => {
+      if (runtime.controls !== 'free') {
         return
       }
-      wheel(e, runtime.vertices, runtime.curvature, runtime.controlsShift)
+      dragMove(
+        e,
+        runtime.matrix,
+        runtime.dimensions,
+        runtime.curvature,
+        runtime.controlsShift
+      )
       plot(runtime)
+      updateMatrix(runtime.matrix)
+      e.stopImmediatePropagation()
+      return false
     }
 
-    document.addEventListener('wheel', onWheel, { passive: false })
-    return () => document.removeEventListener('wheel', onWheel)
-  }, [runtime])
+    const onDown = e => {
+      if (runtime.controls !== 'free' || e.button !== 0) {
+        return
+      }
+      const onUp = e => {
+        if (runtime.controls !== 'free') {
+          return
+        }
+        document.removeEventListener('pointermove', onMove)
+      }
+      document.addEventListener('pointermove', onMove)
+      document.addEventListener('pointerup', onUp, { once: true })
+    }
+    document.addEventListener('pointerdown', onDown)
+    return () => document.removeEventListener('pointerdown', onDown)
+  }, [runtime, updateMatrix])
+
+  // useEffect(() => {
+  //   const onWheel = e => {
+  //     if (
+  //       runtime.controls === 'orbit' ||
+  //       e.target !== runtime.composer.renderer.domElement
+  //     ) {
+  //       return false
+  //     }
+  //     wheel(
+  //       e,
+  //       runtime.matrix,
+  //       runtime.dimensions,
+  //       runtime.curvature,
+  //       runtime.controlsShift
+  //     )
+  //     plot(runtime)
+  //     updateMatrix(runtime.matrix)
+  //     return false
+  //   }
+
+  //   document.addEventListener('wheel', onWheel, { passive: false })
+  //   return () => document.removeEventListener('wheel', onWheel)
+  // }, [runtime, updateMatrix])
 
   useEffect(() => {
     const onKeyDown = e => {
-      keydown(e, runtime.vertices, runtime.curvature, runtime.controlsShift) &&
+      if (
+        keydown(
+          e,
+          runtime.matrix,
+          runtime.dimensions,
+          runtime.curvature,
+          runtime.controlsShift
+        )
+      ) {
         plot(runtime)
+        updateMatrix(runtime.matrix)
+      }
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [runtime])
+  }, [runtime, updateMatrix])
 }

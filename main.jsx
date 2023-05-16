@@ -41,14 +41,29 @@ const syncParams = params => {
   window.history.pushState(null, null, '#' + btoa(stringify(params)))
 }
 
+const arrayEquals = (a, b) => {
+  if (a.length !== b.length) return false
+  return a.every((v, i) =>
+    Array.isArray(v) ? arrayEquals(v, b[i]) : v === b[i]
+  )
+}
+
 const AppWithHistory = () => {
   const [params, setParams] = useState(parseParams(defaultParams))
   const popstate = useCallback(() => {
     const newParams = parseParams()
     if (newParams) {
+      Object.entries(newParams).forEach(([k, v]) => {
+        if (Array.isArray(v)) {
+          if (arrayEquals(v, params[k])) {
+            newParams[k] = params[k]
+          }
+        }
+      })
+
       setParams(newParams)
     }
-  }, [])
+  }, [params])
 
   const updateParams = useCallback(newParams => {
     setParams(params => {

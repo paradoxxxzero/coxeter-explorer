@@ -2,41 +2,17 @@ import {
   PI,
   abs,
   acos,
-  acosh,
+  binomial,
+  combinations,
   cos,
   round,
   sign,
   sin,
-  sinh,
   sqrt,
 } from './index.js'
 import { eigen } from './jacobi.js'
+import { ident } from './matrix.js'
 
-export const det = m => {
-  if (m.length === 1) {
-    return m[0][0]
-  }
-  let sum = 0
-  for (let i = 0; i < m.length; i++) {
-    const cofactor = new Array(m.length - 1)
-      .fill()
-      .map(() => new Array(m.length - 1).fill(0))
-    // Compute the cofactor of m[0][i]:
-    for (let j = 1; j < m.length; j++) {
-      for (let k = 0; k < m.length; k++) {
-        if (k < i) {
-          cofactor[j - 1][k] = m[j][k]
-        } else if (k > i) {
-          cofactor[j - 1][k - 1] = m[j][k]
-        }
-      }
-    }
-
-    const sign = i % 2 === 0 ? 1 : -1
-    sum += m[0][i] * sign * det(cofactor)
-  }
-  return sum
-}
 export const coxeterToGram = (coxter, stellation) =>
   coxter.map((row, i) =>
     row.map((column, j) => -cos((stellation[i][j] * PI) / column))
@@ -78,63 +54,6 @@ export const xdot = (v1, v2, curvature) => {
 
 export const xdot2 = (x, curvature) => xdot(x, x, curvature)
 
-// Unused
-export const xcross = (v1, v2, v3, curvature) => {
-  if (typeof v3 === 'number') {
-    curvature = v3
-    v3 = null
-  }
-  if (!v3) {
-    const [x1, y1, z1] = v1
-    const [x2, y2, z2] = v2
-    return [
-      y1 * z2 - y2 * z1,
-      z1 * x2 - z2 * x1,
-      (curvature || 1) * (x1 * y2 - x2 * y1),
-    ]
-  }
-  const [x1, y1, z1, w1] = v1
-  const [x2, y2, z2, w2] = v2
-  const [x3, y3, z3, w3] = v3
-  return [
-    +y2 * z3 * w1 -
-      y3 * z2 * w1 -
-      y1 * z3 * w2 +
-      y3 * z1 * w2 +
-      w3 * y1 * z2 -
-      w3 * y2 * z1,
-    -x2 * z3 * w1 +
-      x3 * z2 * w1 +
-      x1 * z3 * w2 -
-      x3 * z1 * w2 -
-      w3 * x1 * z2 +
-      w3 * x2 * z1,
-    +x2 * y3 * w1 -
-      x3 * y2 * w1 -
-      x1 * y3 * w2 +
-      x3 * y1 * w2 +
-      w3 * x1 * y2 -
-      w3 * x2 * y1,
-    (curvature || 1) *
-      (-x1 * y2 * z3 +
-        x1 * y3 * z2 +
-        x2 * y1 * z3 -
-        x2 * y3 * z1 -
-        x3 * y1 * z2 +
-        x3 * y2 * z1),
-  ]
-}
-
-export const xdistance = (v1, v2, curvature) => {
-  if (curvature > 0) {
-    return acos(xdot(v1, v2, curvature))
-  }
-  if (curvature < 0) {
-    return acosh(-xdot(v1, v2, curvature))
-  }
-  return sqrt(xdot(v1, v2, curvature))
-}
-
 export const reflect = (v, n, curvature) => {
   v = v.slice()
   const vn2 = 2 * xdot(v, n, curvature)
@@ -146,11 +65,6 @@ export const reflect = (v, n, curvature) => {
 
 export const normalize = (v, curvature) => {
   v = v.slice()
-  // if (v[v.length - 1] < 0) {
-  //   for (let i = 0; i < v.length; i++) {
-  //     v[i] *= -v[i]
-  //   }
-  // }
   if (curvature === 0) {
     for (let i = 0; i < v.length; i++) {
       v[i] /= v[v.length - 1]
@@ -165,123 +79,6 @@ export const normalize = (v, curvature) => {
     v[i] *= nr
   }
   return v
-}
-
-export const xproject = (v, projection, curvature) => {
-  if (v.length === 3 && projection === 'stereographic') {
-    return v
-  }
-  v = v.slice()
-  if (projection === 'orthographic') {
-    v[v.length - 1] = 0
-    return v
-  }
-
-  const k =
-    -curvature *
-      {
-        stereographic: 1,
-        klein: 0,
-        inverted: -1,
-      }[projection] || 0
-
-  const nr = 1 / (k + v[v.length - 1])
-  for (let i = 0; i < v.length - 1; i++) {
-    v[i] *= nr
-  }
-  v[v.length - 1] = ['jemisphere', 'upperhalf'].includes(projection)
-    ? 1 / (1 + v[v.length - 1])
-    : 0
-
-  if (projection === 'upperhalf') {
-    const nr2 = 2 / (1 + v[0])
-    for (let i = 1; i < v.length; i++) {
-      v[i - 1] = v[i] * nr2
-    }
-    if (v.length === 4) {
-      v[2] *= -1
-    }
-    v[v.length - 1] = 0
-  }
-
-  return v
-}
-
-export const slerp = (u, v, step) => {
-  const o = acos(xdot(u, v, 1))
-  const n = sin(o)
-  if (n === 0) {
-    return []
-  }
-
-  const vertices = []
-  for (let i = step; i < 1; i += step) {
-    const a = sin((1 - i) * o) / n
-    const b = sin(i * o) / n
-    const s = new Array(u.length)
-    for (let j = 0; j < u.length; j++) {
-      s[j] = u[j] * a + v[j] * b
-    }
-    vertices.push(s)
-  }
-  return vertices
-}
-
-export const hlerp = (u, v, step) => {
-  const o = acosh(-xdot(u, v, -1))
-  const n = sinh(o)
-  if (n === 0) {
-    return []
-  }
-  const vertices = []
-  for (let i = step; i < 1; i += step) {
-    const a = sinh((1 - i) * o) / n
-    const b = sinh(i * o) / n
-    const s = new Array(u.length)
-    for (let j = 0; j < u.length; j++) {
-      s[j] = u[j] * a + v[j] * b
-    }
-    vertices.push(s)
-  }
-  return vertices
-}
-export const xlerp = (u, v, segments, curvature) => {
-  const curveStep = 1 / segments
-  if (curvature > 0) {
-    return slerp(u, v, curveStep)
-  } else if (curvature < 0) {
-    return hlerp(u, v, curveStep)
-  } else {
-    return []
-  }
-}
-
-export const xrotate = (vertex, theta) => {
-  const [x, y] = vertex
-  // Rz / Rzw / Rzwv Rotation:
-  const cosx = cos(theta)
-  const sinx = sin(theta)
-  vertex[0] = x * cosx - y * sinx
-  vertex[1] = x * sinx + y * cosx
-  // vertex[2] = z
-  // vertex[3] = w
-  // vertex[4] = v
-}
-
-export const xscale = (vertex, scale, curvature) => {
-  if (curvature !== 0) {
-    const nr = scale / sqrt(xdot2(vertex, 1))
-
-    const offset = new Array(vertex.length - 1)
-    for (let i = 0; i < vertex.length - 1; i++) {
-      offset[i] = vertex[i] * nr
-    }
-    xtranslate(vertex, offset, curvature)
-  } else {
-    for (let i = 0; i < vertex.length; i++) {
-      vertex[i] *= 1 - scale
-    }
-  }
 }
 
 // cos† means cos in spherical coordinates and cosh in hyperbolic coordinates
@@ -444,44 +241,29 @@ export const xscale = (vertex, scale, curvature) => {
 //      | 0          0         0  1  0 |
 //      | 0          0         0  0  1 |
 
-const nxrotate = (vertex, offset, curvature) => {
-  // For now consider only rotations that change the time-wise dimension
-  // So offset is the list of rotation like these:
-  // 3D
-  // [xt, yt] -> [Ry, Rx] (Rz keeps the z axis fixed)
-  // 4D
-  // [xt, yt, zt] -> [Ryz, Rxz, Rxy] (Rxw, Ryw, Rzw keep the w axis fixed)
-  // 5D
-  // [xt, yt, zt, wt] -> [Ryzw, Rxzw, Rxyw, Rxyz] (Rxyv, Rxzv, Ryzv, Rxwv, Rywv, Rzwv keep the v axis fixed)
-  const d = vertex.length
-  const c = curvature
-  for (let i = 0; i < d - 1; i++) {
-    const t = offset[i]
-    if (t !== 0) {
-      // i === 0 => x should rotate so Ry, Ryz, Ryzw, Ryzwv, Ryzwvu...
+// ...
 
-      // cost is cosh(asinh(t)) if c === -1
-      // cost is cos(asin(t)) if c === 1
-      const cost = sqrt(1 - c * t * t)
-      const sint = t
+export const xtranslate = (offset, level, dimensions, curvature) => {
+  level = level % binomial(dimensions, 2)
+  const matrix = ident(dimensions)
+  const [i, j] = combinations(
+    new Array(dimensions)
+      .fill()
+      .map((_, i) => i)
+      .reverse()
+  )[level]
+  const c = i === dimensions - 1 ? curvature : 1
 
-      let vi = vertex[i]
-      let vh = vertex[d - 1]
-      vertex[i] = cost * vi + -c * sint * vh
-      vertex[d - 1] = sint * vi + cost * vh
-    }
-  }
-}
+  const cost = sqrt(1 - c * offset * offset)
+  const sint = offset
 
-// prettier-ignore
-export const xtranslate = (vertex, offset, curvature) => {
-  if (curvature === 0) {
-    for (let i = 0; i < offset.length; i++) {
-      vertex[i] += offset[i]
-    }
-  } else {
-    nxrotate(vertex, offset, curvature)
-  }
+  matrix[i][i] = cost
+  matrix[j][j] = cost
+
+  matrix[i][j] = -c * sint
+  matrix[j][i] = sint
+
+  return matrix
 }
 
 export const getFundamentalSimplexMirrors = (gram, curvature) => {
@@ -489,18 +271,22 @@ export const getFundamentalSimplexMirrors = (gram, curvature) => {
   const mirrorsPlanes = new Array(dimensions)
     .fill()
     .map(() => new Array(dimensions).fill(0))
-
   mirrorsPlanes[0][0] = 1
   for (let i = 1; i < dimensions; i++) {
     for (let j = 0; j < i; j++) {
       mirrorsPlanes[i][j] =
-        (gram[i][j] - xdot2(mirrorsPlanes[i].slice(0, j))) / mirrorsPlanes[j][j]
+        (gram[i][j] -
+          xdot(mirrorsPlanes[i].slice(0, j), mirrorsPlanes[j].slice(0, j))) /
+        mirrorsPlanes[j][j]
     }
-
-    mirrorsPlanes[i][i] =
-      curvature === 0 && i === dimensions - 1
-        ? 0.5
-        : sqrt(abs(1 - xdot2(mirrorsPlanes[i].slice(0, i))))
+    mirrorsPlanes[i][i] = sqrt(abs(1 - xdot2(mirrorsPlanes[i].slice(0, i))))
+    if (i === dimensions - 1) {
+      if (curvature === 0) {
+        mirrorsPlanes[i][i] = 0.5
+      } else {
+        mirrorsPlanes[i][i] *= curvature
+      }
+    }
   }
 
   return mirrorsPlanes

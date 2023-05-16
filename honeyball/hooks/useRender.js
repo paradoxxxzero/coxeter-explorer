@@ -112,6 +112,7 @@ export const useRender = runtime => {
     runtime.maxEdges,
     runtime.curve,
     runtime.segments,
+    runtime.matrix,
   ])
 
   useEffect(() => {

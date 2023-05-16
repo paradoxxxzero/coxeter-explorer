@@ -4,6 +4,7 @@ import Link from './Link'
 import Node from './Node'
 import Value from './Value'
 import Number from './Number'
+import { diagonal } from '../math/matrix'
 
 export default function UI({
   params,
@@ -12,6 +13,7 @@ export default function UI({
   onExtend,
   onControls,
   onMirrorChange,
+  onMatrixReset,
 }) {
   const [showUI, setShowUI] = useState(true)
 
@@ -36,6 +38,11 @@ export default function UI({
           <sup>{runtime.controlsShift + 1}</sup>
         ) : null}
       </button>
+      {!diagonal(runtime.matrix) && (
+        <button className="button reset-view" onClick={onMatrixReset}>
+          ↻
+        </button>
+      )}
       <button
         className={`space-indicator${runtime.processing ? ' processing' : ''}`}
         onClick={handleUI}

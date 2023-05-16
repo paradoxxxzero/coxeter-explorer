@@ -3,7 +3,6 @@ import {
   BufferGeometry,
   Color,
   CylinderGeometry,
-  DoubleSide,
   Float32BufferAttribute,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
@@ -39,6 +38,7 @@ import { ambiances } from '../statics'
 import { tan } from './math'
 import { GodRayPass } from './shader/GodRayPass'
 import { hyperMathMaterial } from './shader/hyperMathMaterial'
+import { multiplyVector } from './math/matrix'
 
 export const initializeGl = () => {
   // stats = new Stats()
@@ -74,7 +74,7 @@ export const initializeGl = () => {
   orbitControls.maxDistance = 100
   orbitControls.addEventListener('change', () => composer.render())
   orbitControls.update()
-  orbitControls.enabled = false
+  // orbitControls.enabled = false
 
   renderer.domElement.addEventListener('dblclick', () => {
     orbitControls.position0.set(
@@ -322,12 +322,12 @@ const plotVertices = (rt, range = null) => {
   const arity = dimensions > 4 ? 9 : dimensions
   instancedVertex.geometry.instanceCount = stop
   for (let i = start; i < stop; i++) {
-    const vertex = rt.vertices[i]
+    const vertex = multiplyVector(rt.vertices[i].vertex, rt.matrix)
     for (let j = 0; j < dimensions; j++) {
-      ipos[i * arity + j] = vertex.vertex[j]
+      ipos[i * arity + j] = vertex[j]
     }
     const icolor = instancedVertex.geometry.attributes.instanceColor.array
-    const c = ambiance.color(vertex, 'vertex', dimensions)
+    const c = ambiance.color(rt.vertices[i], 'vertex', dimensions)
     icolor[i * 3 + 0] = c.r
     icolor[i * 3 + 1] = c.g
     icolor[i * 3 + 2] = c.b
@@ -350,8 +350,8 @@ const plotEdges = (rt, range = null) => {
   instancedEdge.geometry.instanceCount = stop
   for (let i = start; i < stop; i++) {
     const edge = rt.edges[i]
-    const start = rt.vertices[edge.start].vertex
-    const end = rt.vertices[edge.end].vertex
+    const start = multiplyVector(rt.vertices[edge.start].vertex, rt.matrix)
+    const end = multiplyVector(rt.vertices[edge.end].vertex, rt.matrix)
 
     for (let j = 0; j < dimensions; j++) {
       iposstart[i * arity + j] = start[j]
@@ -392,24 +392,29 @@ const plotFaces = (rt, range = null) => {
     }
     let vertices = []
     if (face.vertices.length === 3) {
-      vertices.push(face.vertices.map(v => rt.vertices[v].vertex))
+      vertices.push(
+        face.vertices.map(v => multiplyVector(rt.vertices[v].vertex, rt.matrix))
+      )
     } else {
+      const faceVertices = face.vertices.map(v =>
+        multiplyVector(rt.vertices[v].vertex, rt.matrix)
+      )
       const centroid = new Array(dimensions).fill(0)
-      for (let j = 0; j < face.vertices.length; j++) {
-        const vertex = rt.vertices[face.vertices[j]].vertex
+      for (let j = 0; j < faceVertices.length; j++) {
+        const vertex = faceVertices[j]
         for (let k = 0; k < dimensions; k++) {
           centroid[k] += vertex[k]
         }
       }
       for (let j = 0; j < dimensions; j++) {
-        centroid[j] /= face.vertices.length
+        centroid[j] /= faceVertices.length
       }
 
-      for (let j = 0; j < face.vertices.length; j++) {
+      for (let j = 0; j < faceVertices.length; j++) {
         vertices.push([
           centroid,
-          rt.vertices[face.vertices[j]].vertex,
-          rt.vertices[face.vertices[(j + 1) % face.vertices.length]].vertex,
+          faceVertices[j],
+          faceVertices[(j + 1) % faceVertices.length],
         ])
       }
     }
@@ -433,7 +438,6 @@ const plotFaces = (rt, range = null) => {
     }
   }
   instancedFace.geometry.instanceCount = idx
-  console.log(idx)
   instancedFace.geometry.attributes.instancePosition.needsUpdate = true
   instancedFace.geometry.attributes.instanceTarget.needsUpdate = true
   instancedFace.geometry.attributes.instanceCentroid.needsUpdate = true
@@ -486,7 +490,6 @@ export const plot = (rt, order = null) => {
     plotEdges(rt, range.edges)
   }
   if (rt.scene.getObjectByName('instanced-face').visible) {
-    console.log('plot faces', range.faces)
     plotFaces(rt, range.faces)
   }
   rt.composer.render()

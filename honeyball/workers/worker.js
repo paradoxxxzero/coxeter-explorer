@@ -44,9 +44,9 @@ class Worker {
         if (e.data.uuid !== data.uuid) {
           return
         }
-        // const time = performance.now() - this.times[data.uuid]
-        // delete this.times[data.uuid]
-        // console.debug(`Worker ${this.name} took ${time}ms`)
+        const time = performance.now() - this.times[data.uuid]
+        delete this.times[data.uuid]
+        console.debug(`Worker ${this.name} took ${time}ms`)
         // console.debug('RECEIVE', e.data)
         this.processing--
         this.worker.removeEventListener('message', receive)

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 export const parse = (raw, min, max, step, allowInfinity) => {
   let valid = true
@@ -56,13 +56,22 @@ export default function Number({
   onChange,
   ...props
 }) {
-  const [raw, setRaw] = useState(
-    value === Infinity && allowInfinity
-      ? '∞'
-      : fractionName && fraction > 1
-      ? `${value}/${fraction}`
-      : `${value}`
+  const defaultValue = useCallback(
+    () =>
+      value === Infinity && allowInfinity
+        ? '∞'
+        : fractionName && fraction > 1
+        ? `${value}/${fraction}`
+        : `${value}`,
+    [allowInfinity, fraction, fractionName, value]
   )
+
+  const [raw, setRaw] = useState(defaultValue)
+
+  useEffect(() => {
+    setRaw(defaultValue())
+  }, [allowInfinity, defaultValue, fraction, fractionName, value])
+
   const [valid, setValid] = useState(true)
 
   const update = useCallback(

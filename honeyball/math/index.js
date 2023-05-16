@@ -143,3 +143,7 @@ export const getBaseRules = (
       curvature
     ).map(r => [r, ''])
   )
+
+export const factorial = n => (n ? n * factorial(n - 1) : 1)
+export const binomial = (n, k) =>
+  factorial(n) / (factorial(k) * factorial(n - k))

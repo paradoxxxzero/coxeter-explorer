@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { filterParams } from '../statics'
 import Runtime from './components/Runtime'
 import UI from './components/UI'
-import { floor, min } from './math'
+import { binomial, floor, min, round } from './math'
+import { ident } from './math/matrix'
 
 export default function App({ gl, params, updateParams }) {
   const [runtime, setRuntime] = useState(() => {
@@ -99,9 +100,18 @@ export default function App({ gl, params, updateParams }) {
     })
   }, [params.grouper])
 
+  useEffect(() => {
+    setRuntime(runtime => {
+      return {
+        ...runtime,
+        matrix: params.matrix,
+      }
+    })
+  }, [params.matrix])
+
   const handleControls = useCallback(() => {
     let controls, controlsShift
-    const maxControlsShift = floor(params.dimensions / 2) - 1
+    const maxControlsShift = binomial(params.dimensions, 2) / 2 - 1
     if (params.controls === 'orbit') {
       controls = 'free'
       controlsShift = 0
@@ -116,6 +126,21 @@ export default function App({ gl, params, updateParams }) {
     }
     updateParams({ controls, controlsShift })
   }, [params.controls, params.controlsShift, params.dimensions, updateParams])
+
+  const handleMatrixReset = useCallback(() => {
+    updateParams({
+      matrix: ident(runtime.dimensions),
+    })
+  }, [updateParams, runtime.dimensions])
+
+  const handleMatrixUpdate = useCallback(
+    matrix => {
+      updateParams({
+        matrix,
+      })
+    },
+    [updateParams]
+  )
 
   const handleExtend = useCallback(() => {
     const newParams = {
@@ -157,11 +182,17 @@ export default function App({ gl, params, updateParams }) {
         for (let i = 0; i < value; i++) {
           newParams.coxeter[i][i] = 1
         }
+        newParams.matrix = ident(value)
         for (let i = 4; i <= value; i++) {
           if (!params[`fov${i}`]) {
             newParams[`fov${i}`] = i === 4 ? 90 : 45
           }
         }
+        newParams.controlsShift = min(
+          params.controlsShift,
+          round(binomial(value, 2) / 2 - 1)
+        )
+        console.log(newParams.controlsShift)
       }
 
       if (name.startsWith('coxeter')) {
@@ -216,8 +247,13 @@ export default function App({ gl, params, updateParams }) {
         onExtend={handleExtend}
         onControls={handleControls}
         onMirrorChange={handleMirrorChange}
+        onMatrixReset={handleMatrixReset}
       />
-      <Runtime runtime={runtime} setRuntime={setRuntime} />
+      <Runtime
+        runtime={runtime}
+        setRuntime={setRuntime}
+        onUpdateMatrix={handleMatrixUpdate}
+      />
     </div>
   )
 }

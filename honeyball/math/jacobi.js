@@ -1,20 +1,5 @@
 import { PI, abs, atan, cos, sign, sin } from '.'
-
-const ident = dimensions =>
-  new Array(dimensions)
-    .fill()
-    .map((_, i) =>
-      new Array(dimensions).fill().map((_, j) => (i === j ? 1 : 0))
-    )
-
-const transpose = m => m.map((row, i) => row.map((_, j) => m[j][i]))
-
-const multiply = (m1, m2) =>
-  m1.map((row, i) =>
-    row.map((_, j) => row.reduce((acc, _, k) => acc + m1[i][k] * m2[k][j], 0))
-  )
-const diagonal = m =>
-  m.every((row, i) => row.every((_, j) => i === j || m[i][j] === 0))
+import { diagonal, ident, multiply, transpose } from './matrix'
 
 export const eigen = matrix => {
   // Jacobi algorithm
@@ -45,8 +30,9 @@ export const eigen = matrix => {
     newRotation[dj][di] = newRotation[di][dj] = -sin(theta)
     newRotation[dj][di] *= -1
 
-    rotation = multiply(rotation, newRotation)
-    diag = multiply(multiply(transpose(newRotation), diag), newRotation)
+    multiply(rotation, newRotation)
+    diag = multiply(transpose(newRotation), diag)
+    diag = multiply(diag, newRotation)
   }
 
   return {
