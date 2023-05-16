@@ -14,10 +14,6 @@ import {
 
 export const useRender = runtime => {
   useEffect(() => {
-    runtime.orbitControls.enabled = runtime.controls === 'orbit'
-  }, [runtime.controls, runtime.orbitControls])
-
-  useEffect(() => {
     resetComposerTarget(runtime.composer, runtime.msaa, runtime.msaaSamples)
   }, [runtime.msaa, runtime.msaaSamples, runtime.composer])
 

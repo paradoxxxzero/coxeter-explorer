@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { xtranslate } from '../math/hypermath'
 import { multiply } from '../math/matrix'
 import { plot } from '../render'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 
 const translate = (offset, shift, matrix, dimensions, curvature) => {
   multiply(matrix, xtranslate(offset[0], shift * 2, dimensions, curvature))
@@ -65,21 +66,6 @@ export const keydown = (e, matrix, dimensions, curvature) => {
   return true
 }
 
-// export const wheel = (e, matrix, dimensions, curvature, shift) => {
-//   const w2 = window.innerWidth / 2
-//   const h2 = window.innerHeight / 2
-//   const radius = Math.min(w2, h2) * 0.9
-//   const deltaY = (10 * (e.deltaMode === 1 ? e.deltaY * 10 : e.deltaY)) / radius
-//   const deltaX = (10 * (e.deltaMode === 1 ? e.deltaY * 10 : e.deltaY)) / radius
-//   translate(
-//     [deltaY / 25, deltaX / 25],
-//     shift + 1,
-//     matrix,
-//     dimensions,
-//     curvature
-//   )
-// }
-
 const debounce = (fn, delay) => {
   let timeout
   return (...args) => {
@@ -108,7 +94,6 @@ export const useInteract = (runtime, updateMatrix_) => {
       plot(runtime)
       updateMatrix(runtime.matrix)
       e.stopImmediatePropagation()
-      return false
     }
 
     const onDown = e => {
@@ -119,38 +104,14 @@ export const useInteract = (runtime, updateMatrix_) => {
         if (runtime.controls !== 'free') {
           return
         }
-        document.removeEventListener('pointermove', onMove)
+        document.removeEventListener('pointermove', onMove, true)
       }
-      document.addEventListener('pointermove', onMove)
+      document.addEventListener('pointermove', onMove, true)
       document.addEventListener('pointerup', onUp, { once: true })
     }
     document.addEventListener('pointerdown', onDown)
     return () => document.removeEventListener('pointerdown', onDown)
   }, [runtime, updateMatrix])
-
-  // useEffect(() => {
-  //   const onWheel = e => {
-  //     if (
-  //       runtime.controls === 'orbit' ||
-  //       e.target !== runtime.composer.renderer.domElement
-  //     ) {
-  //       return false
-  //     }
-  //     wheel(
-  //       e,
-  //       runtime.matrix,
-  //       runtime.dimensions,
-  //       runtime.curvature,
-  //       runtime.controlsShift
-  //     )
-  //     plot(runtime)
-  //     updateMatrix(runtime.matrix)
-  //     return false
-  //   }
-
-  //   document.addEventListener('wheel', onWheel, { passive: false })
-  //   return () => document.removeEventListener('wheel', onWheel)
-  // }, [runtime, updateMatrix])
 
   useEffect(() => {
     const onKeyDown = e => {
@@ -170,4 +131,34 @@ export const useInteract = (runtime, updateMatrix_) => {
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [runtime, updateMatrix])
+
+  useEffect(() => {
+    const orbitControls = new OrbitControls(
+      runtime.camera,
+      runtime.composer.renderer.domElement
+    )
+    orbitControls.target.set(0, 0, 0)
+    orbitControls.minDistance = 0
+    orbitControls.maxDistance = 100
+    orbitControls.addEventListener('change', () => runtime.composer.render())
+    orbitControls.update()
+
+    runtime.composer.renderer.domElement.addEventListener('dblclick', () => {
+      orbitControls.position0.set(
+        0,
+        0,
+        orbitControls.position0.z === -1
+          ? -0.25
+          : orbitControls.position0.z === -0.25
+          ? -10
+          : -1,
+        0,
+        0
+      )
+      orbitControls.reset()
+    })
+    return () => {
+      orbitControls.dispose()
+    }
+  }, [runtime.camera, runtime.composer])
 }

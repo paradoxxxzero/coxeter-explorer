@@ -68,29 +68,6 @@ export const initializeGl = () => {
   camera.updateProjectionMatrix()
   scene.add(camera)
 
-  const orbitControls = new OrbitControls(camera, renderer.domElement)
-  orbitControls.target.set(0, 0, 0)
-  orbitControls.minDistance = 0
-  orbitControls.maxDistance = 100
-  orbitControls.addEventListener('change', () => composer.render())
-  orbitControls.update()
-  // orbitControls.enabled = false
-
-  renderer.domElement.addEventListener('dblclick', () => {
-    orbitControls.position0.set(
-      0,
-      0,
-      orbitControls.position0.z === -1
-        ? -0.25
-        : orbitControls.position0.z === -0.25
-        ? -10
-        : -1,
-      0,
-      0
-    )
-    orbitControls.reset()
-  })
-
   const composer = new EffectComposer(renderer)
   composer.setPixelRatio(window.devicePixelRatio)
   const renderPass = new RenderPass(scene, camera)
@@ -100,7 +77,6 @@ export const initializeGl = () => {
     composer,
     camera,
     scene,
-    orbitControls,
   }
 }
 
