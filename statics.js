@@ -321,7 +321,7 @@ export const filterParams = maybeBadParams => {
           value.find(
             c =>
               value === '' ||
-              (isNaN(c) && !(key === 'mirrors' && 'sh'.includes(c)))
+              (isNaN(c) && !(key === 'mirrors' && 'sß'.includes(c)))
           )
         ) {
           delete params[key]

@@ -1,3 +1,5 @@
+import { sign } from '../math'
+
 const dot = 6
 const circle = 14
 
@@ -32,6 +34,14 @@ const symbols = {
   ),
 }
 
+export const mirrorTypes = {
+  active: 1,
+  inactive: 0,
+  snub: 's',
+  holosnub: 'ß',
+  custom: 0.5,
+}
+
 export default function Node({ index, value, extended, onChange }) {
   const type =
     value === 0
@@ -40,7 +50,7 @@ export default function Node({ index, value, extended, onChange }) {
       ? 'active'
       : value === 's'
       ? 'snub'
-      : value === 'h'
+      : value === 'ß'
       ? 'holosnub'
       : 'custom'
 
@@ -52,13 +62,15 @@ export default function Node({ index, value, extended, onChange }) {
       : type === 'active'
       ? 'inactive'
       : 'active'
-    const newValue = {
-      active: 1,
-      inactive: 0,
-      snub: 's',
-      holosnub: 'h',
-      custom: 0.5,
-    }[next]
+    const newValue = mirrorTypes[next]
+    onChange(index, newValue)
+  }
+
+  const handleWheel = e => {
+    const types = Object.keys(symbols)
+    const current = types.indexOf(type)
+    const next = types[(current + sign(e.deltaY)) % types.length]
+    const newValue = mirrorTypes[next]
     onChange(index, newValue)
   }
 
@@ -71,6 +83,7 @@ export default function Node({ index, value, extended, onChange }) {
         strokeWidth="2"
         stroke="currentColor"
         onClick={handleClick}
+        onWheel={handleWheel}
       >
         {symbols[type]}
       </svg>

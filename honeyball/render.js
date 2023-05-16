@@ -380,10 +380,9 @@ const plotFaces = (rt, range = null) => {
   let start = range ? range[0] : 0
   let stop = range ? range[1] : rt.faces.length
   let idx = 0
-
   for (let i = 0; i < start; i++) {
     const vertices = rt.faces[i].vertices.length
-    idx += vertices === 3 ? 1 : vertices
+    idx += vertices < 3 ? 0 : vertices === 3 ? 1 : vertices
   }
   const arity = dimensions > 4 ? 9 : dimensions
   for (let i = start; i < stop; i++) {
@@ -434,6 +433,7 @@ const plotFaces = (rt, range = null) => {
     }
   }
   instancedFace.geometry.instanceCount = idx
+  console.log(idx)
   instancedFace.geometry.attributes.instancePosition.needsUpdate = true
   instancedFace.geometry.attributes.instanceTarget.needsUpdate = true
   instancedFace.geometry.attributes.instanceCentroid.needsUpdate = true
@@ -486,6 +486,7 @@ export const plot = (rt, order = null) => {
     plotEdges(rt, range.edges)
   }
   if (rt.scene.getObjectByName('instanced-face').visible) {
+    console.log('plot faces', range.faces)
     plotFaces(rt, range.faces)
   }
   rt.composer.render()

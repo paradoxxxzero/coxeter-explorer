@@ -149,6 +149,8 @@ export default function App({ gl, params, updateParams }) {
           for (let j = 0; j < i; j++) {
             newParams.coxeter[i][j] = params.coxeter[i][j]
             newParams.coxeter[j][i] = params.coxeter[j][i]
+            newParams.stellation[i][j] = params.stellation[i][j]
+            newParams.stellation[j][i] = params.stellation[j][i]
           }
           newParams.mirrors[i] = params.mirrors[i]
         }

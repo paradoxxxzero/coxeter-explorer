@@ -76,6 +76,8 @@ export const xdot = (v1, v2, curvature) => {
   return sum
 }
 
+export const xdot2 = (x, curvature) => xdot(x, x, curvature)
+
 // Unused
 export const xcross = (v1, v2, v3, curvature) => {
   if (typeof v3 === 'number') {
@@ -158,7 +160,7 @@ export const normalize = (v, curvature) => {
 
   const nr =
     (curvature === -1 ? sign(v[v.length - 1]) || 1 : 1) /
-    sqrt(abs(xdot(v, v, curvature)))
+    sqrt(abs(xdot2(v, curvature)))
   for (let i = 0; i < v.length; i++) {
     v[i] *= nr
   }
@@ -268,7 +270,7 @@ export const xrotate = (vertex, theta) => {
 
 export const xscale = (vertex, scale, curvature) => {
   if (curvature !== 0) {
-    const nr = scale / sqrt(xdot(vertex, vertex, 1))
+    const nr = scale / sqrt(xdot2(vertex, 1))
 
     const offset = new Array(vertex.length - 1)
     for (let i = 0; i < vertex.length - 1; i++) {
@@ -491,21 +493,15 @@ export const getFundamentalSimplexMirrors = (gram, curvature) => {
   mirrorsPlanes[0][0] = 1
   for (let i = 1; i < dimensions; i++) {
     for (let j = 0; j < i; j++) {
-      let sum = 0
-      for (let k = 0; k < j; k++) {
-        sum += mirrorsPlanes[i][k] * mirrorsPlanes[j][k]
-      }
-
-      mirrorsPlanes[i][j] = (gram[i][j] - sum) / mirrorsPlanes[j][j]
+      mirrorsPlanes[i][j] =
+        (gram[i][j] - xdot2(mirrorsPlanes[i].slice(0, j))) / mirrorsPlanes[j][j]
     }
-    mirrorsPlanes[i][i] = sqrt(
-      abs(1 - mirrorsPlanes[i].slice(0, i).reduce((a, b) => a + b * b, 0))
-    )
+
+    mirrorsPlanes[i][i] =
+      curvature === 0 && i === dimensions - 1
+        ? 0.5
+        : sqrt(abs(1 - xdot2(mirrorsPlanes[i].slice(0, i))))
   }
-  mirrorsPlanes[mirrorsPlanes.length - 1][mirrorsPlanes.length - 1] = curvature
-    ? mirrorsPlanes[mirrorsPlanes.length - 1][mirrorsPlanes.length - 1] *
-      curvature
-    : 1
 
   return mirrorsPlanes
 }
@@ -515,11 +511,10 @@ export const getFundamentalVertex = (mirrors, mirrorsPlanes, curvature) => {
   const dimensions = mirrors.length
   const p = new Array(dimensions)
   for (let i = 0; i < dimensions; i++) {
-    let sum = 0
-    for (let j = 0; j < i; j++) {
-      sum += mirrorsPlanes[i][j] * p[j]
-    }
-    p[i] = ((isNaN(mirrors[i]) ? 1 : +mirrors[i]) - sum) / mirrorsPlanes[i][i]
+    p[i] =
+      ((isNaN(mirrors[i]) ? 1 : +mirrors[i]) -
+        xdot(mirrorsPlanes[i].slice(0, i), p.slice(0, i))) /
+      mirrorsPlanes[i][i]
   }
 
   p[p.length - 1] *= curvature || 1

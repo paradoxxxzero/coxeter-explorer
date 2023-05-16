@@ -11,6 +11,7 @@ let verticesParams = null
 let edgesParams = null
 let facesParams = null
 let snub = null
+let holosnub = null
 
 const initCosets = (dimensions, coxeter, stellation, mirrors, curvature) => {
   const defaultParams = () => ({
@@ -55,6 +56,7 @@ const initCosets = (dimensions, coxeter, stellation, mirrors, curvature) => {
     ...defaultParams(),
   }))
   snub = new Map()
+  holosnub = [new Map(), new Map()]
 }
 
 const reflectWord = (state, word) => {
@@ -216,7 +218,7 @@ onmessage = ({
       for (let i = 0; i < vertices.length; i++) {
         const vertex = vertices[i]
         if (vertex.word.replace(snubRe, '').length % 2 === 1) {
-          // vertex.vertex = NaN
+          vertex.vertex = NaN
           snub.set(vertex.i, [])
         }
       }
@@ -294,7 +296,99 @@ onmessage = ({
 
       faces = finalFaces
     }
+    if (mirrors.some(mirror => mirror === 'ß')) {
+      const holosnubWord = mirrors
+        .map((m, i) => (m === 'ß' ? itoa(i) : ''))
+        .join('')
+      const holosnubRe =
+        holosnubWord.length > 0 ? new RegExp(`[^${holosnubWord}]`, 'g') : null
 
+      for (let i = 0; i < vertices.length; i++) {
+        const vertex = vertices[i]
+        holosnub[vertex.word.replace(holosnubRe, '').length % 2].set(
+          vertex.i,
+          []
+        )
+      }
+      const finalEdges = []
+      const newSnub = [new Map(), new Map()]
+
+      for (let p = 0; p < 2; p++) {
+        for (let i = 0; i < edges.length; i++) {
+          if (holosnub[p].has(edges[i].start)) {
+            if (!newSnub[p].has(edges[i].start)) {
+              newSnub[p].set(edges[i].start, [])
+            }
+            const kern = holosnub[p].get(edges[i].start)
+            kern.push(edges[i].end)
+            if (!kern.word) {
+              kern.word = edges[i].word
+            }
+            newSnub[p].get(edges[i].start).push(edges[i].end)
+          } else if (holosnub[p].has(edges[i].end)) {
+            if (!newSnub[p].has(edges[i].end)) {
+              newSnub[p].set(edges[i].end, [])
+            }
+            const kern = holosnub[p].get(edges[i].end)
+            kern.push(edges[i].start)
+            if (!kern.word) {
+              kern.word = edges[i].word
+            }
+            newSnub[p].get(edges[i].end).push(edges[i].start)
+          } else {
+            finalEdges.push(edges[i])
+          }
+        }
+
+        const keys = Array.from(newSnub[p].keys())
+        for (let i = 0; i < newSnub[p].size; i++) {
+          const key = keys[i]
+          const newValues = newSnub[p].get(key)
+          const values = holosnub[p].get(key)
+          for (let j = 0; j < newValues.length; j++) {
+            for (let k = 0; k < values.length; k++) {
+              if (newValues[j] <= values[k]) {
+                continue
+              }
+              finalEdges.push({
+                start: newValues[j],
+                end: values[k],
+                word: values.word,
+              })
+            }
+          }
+        }
+      }
+      edges = finalEdges
+
+      const finalFaces = []
+      for (let p = 0; p < 2; p++) {
+        const keys = Array.from(newSnub[p].keys())
+        for (let i = 0; i < faces.length; i++) {
+          const face = faces[i]
+          const newVertices = []
+          for (let j = 0; j < face.vertices.length; j++) {
+            if (!holosnub[p].has(face.vertices[j])) {
+              newVertices.push(face.vertices[j])
+            }
+          }
+          finalFaces.push({
+            ...face,
+            vertices: newVertices,
+          })
+        }
+
+        for (let i = 0; i < newSnub[p].size; i++) {
+          const key = keys[i]
+          const values = holosnub[p].get(key)
+          finalFaces.push({
+            vertices: values,
+            word: values.word,
+          })
+        }
+      }
+      faces = finalFaces
+    }
     postMessage({ vertices, edges, faces, order, uuid })
   } catch (e) {
     postMessage({ error: e.message, uuid })
