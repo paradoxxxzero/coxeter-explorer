@@ -191,6 +191,17 @@ void main() {
     norm = v * cos(r * TAU) + cross(k, v) * sin(r * TAU);// + k * dot(k, v) * (1. - cos(r * TAU));
     norm = normalize(norm);
     float sizeFactor = .001 * edgeThickness;
+
+    // Removing 3d length in perspective computation
+    #if DIMENSIONS < 5
+    pos.xy = vec2(1.);
+    #if DIMENSIONS >= 3
+    pos.z = 1.;
+    #endif
+    #else
+    pos.v.xyz = vec3(1.);
+    #endif
+
     transformed += sizeFactor * norm / len(pos);
 
   } else {
@@ -198,6 +209,17 @@ void main() {
     transformed = xproject(pos);
     norm = normal;
     float sizeFactor = .001 * vertexThickness;
+
+    // Removing 3d length in perspective computation
+    #if DIMENSIONS < 5
+    pos.xy = vec2(1.);
+    #if DIMENSIONS >= 3
+    pos.z = 1.;
+    #endif
+    #else
+    pos.v.xyz = vec3(1.);
+    #endif
+
     transformed += sizeFactor * norm / len(pos);
   }
 
