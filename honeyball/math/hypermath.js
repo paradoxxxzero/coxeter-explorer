@@ -11,7 +11,7 @@ import {
   sqrt,
 } from './index.js'
 import { eigen } from './jacobi.js'
-import { ident } from './matrix.js'
+import { ident, inverse, multiplyVector } from './matrix.js'
 
 export const coxeterToGram = (coxter, stellation) =>
   coxter.map((row, i) =>
@@ -271,6 +271,25 @@ export const getFundamentalSimplexMirrors = (gram, curvature) => {
   const mirrorsPlanes = new Array(dimensions)
     .fill()
     .map(() => new Array(dimensions).fill(0))
+
+  // Hyperideal case
+  // o - ∞ - o
+  //  \     /
+  //   ∞   ∞
+  //    \ /
+  //     o
+  if (
+    dimensions === 3 &&
+    gram.every((row, i) => row.every((v, j) => j >= i || v === -1))
+  ) {
+    const ir3 = 1 / sqrt(3)
+    return [
+      [-2 * ir3, 0, ir3],
+      [ir3, 1, ir3],
+      [ir3, -1, ir3],
+    ]
+  }
+
   mirrorsPlanes[0][0] = 1
   for (let i = 1; i < dimensions; i++) {
     for (let j = 0; j < i; j++) {
@@ -280,28 +299,20 @@ export const getFundamentalSimplexMirrors = (gram, curvature) => {
         mirrorsPlanes[j][j]
     }
     mirrorsPlanes[i][i] = sqrt(abs(1 - xdot2(mirrorsPlanes[i].slice(0, i))))
-    if (i === dimensions - 1) {
-      if (curvature === 0) {
-        mirrorsPlanes[i][i] = 0.5
-      } else {
-        mirrorsPlanes[i][i] *= curvature
-      }
-    }
   }
 
+  if (curvature === 0) {
+    mirrorsPlanes[dimensions - 1][dimensions - 1] = 0.5
+  } else {
+    mirrorsPlanes[dimensions - 1][dimensions - 1] *= curvature
+  }
   return mirrorsPlanes
 }
 
 export const getFundamentalVertex = (mirrors, mirrorsPlanes, curvature) => {
   // solve linear system for mirrors
-  const dimensions = mirrors.length
-  const p = new Array(dimensions)
-  for (let i = 0; i < dimensions; i++) {
-    p[i] =
-      ((isNaN(mirrors[i]) ? 1 : +mirrors[i]) -
-        xdot(mirrorsPlanes[i].slice(0, i), p.slice(0, i))) /
-      mirrorsPlanes[i][i]
-  }
+  const active = mirrors.map(v => (isNaN(v) ? 1 : +v))
+  const p = multiplyVector(active, inverse(mirrorsPlanes))
 
   p[p.length - 1] *= curvature || 1
   return normalize(p, curvature)

@@ -69,7 +69,7 @@ export default function Node({ index, value, extended, onChange }) {
   const handleWheel = e => {
     const types = Object.keys(symbols)
     const current = types.indexOf(type)
-    const next = types[(current + sign(e.deltaY)) % types.length]
+    const next = types[(types.length + current + sign(e.deltaY)) % types.length]
     const newValue = mirrorTypes[next]
     onChange(index, newValue)
   }
@@ -91,9 +91,8 @@ export default function Node({ index, value, extended, onChange }) {
         <input
           type="number"
           value={value}
-          min="0"
-          step=".1"
-          onChange={e => onChange(index, +e.target.value)}
+          step=".01"
+          onChange={e => onChange(index, e.target.value)}
         />
       )}
     </div>

@@ -13,6 +13,7 @@ const asyncProcess = async (runtime, setRuntime) => {
   const worker = workers[runtime.grouper.replace(/^auto-/, '')]
   setRuntime(runtime => ({
     ...runtime,
+    currentOrder: -1,
     processing: true,
     error: null,
   }))

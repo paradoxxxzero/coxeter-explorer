@@ -43,3 +43,40 @@ export const transpose = m => m.map((row, i) => row.map((_, j) => m[j][i]))
 
 export const diagonal = m =>
   m.every((row, i) => row.every((_, j) => i === j || m[i][j] === 0))
+
+export const inverse = m => {
+  // Invert a matrix m using Gauss-Jordan elimination
+  // https://en.wikipedia.org/wiki/Gaussian_elimination
+  const n = m.length
+  const aug = []
+  for (let i = 0; i < n; i++) {
+    aug.push([...m[i], ...ident(n)[i]])
+  }
+
+  // Forward elimination
+  for (let i = 0; i < n; i++) {
+    const pivot = aug[i][i]
+    for (let j = i + 1; j < n; j++) {
+      const factor = aug[j][i] / pivot
+      for (let k = i; k < 2 * n; k++) {
+        aug[j][k] -= factor * aug[i][k]
+      }
+    }
+  }
+
+  // Backward elimination
+  for (let i = n - 1; i >= 0; i--) {
+    const pivot = aug[i][i]
+    for (let j = i - 1; j >= 0; j--) {
+      const factor = aug[j][i] / pivot
+      for (let k = 0; k < 2 * n; k++) {
+        aug[j][k] -= factor * aug[i][k]
+      }
+    }
+    for (let k = n; k < 2 * n; k++) {
+      aug[i][k] /= pivot
+    }
+  }
+
+  return aug.map(row => row.slice(n))
+}

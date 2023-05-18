@@ -64,7 +64,7 @@ export const getFacesCosetsParams = (
     const multiplier = coxeter[pair[0]][pair[1]]
     const face = []
     // If both active
-    if (mirrors[pair[0]] && mirrors[pair[1]]) {
+    if (mirrors[pair[0]] && mirrors[pair[1]] && isFinite(multiplier)) {
       for (let j = 0; j < multiplier; j++) {
         const chain = pair
           .map(i => itoa(i))
@@ -73,7 +73,11 @@ export const getFacesCosetsParams = (
         face.push(chain)
         face.push(itoa(pair[1]) + chain)
       }
-    } else if ((mirrors[pair[0]] || mirrors[pair[1]]) && multiplier > 2) {
+    } else if (
+      (mirrors[pair[0]] || mirrors[pair[1]]) &&
+      isFinite(multiplier) &&
+      multiplier > 2
+    ) {
       for (let j = 0; j < multiplier; j++) {
         const chain = pair
           .map(i => itoa(i))
