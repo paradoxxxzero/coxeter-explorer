@@ -192,7 +192,6 @@ export default function App({ gl, params, updateParams }) {
           params.controlsShift,
           round(binomial(value, 2) / 2 - 1)
         )
-        console.log(newParams.controlsShift)
       }
 
       if (name.startsWith('coxeter')) {

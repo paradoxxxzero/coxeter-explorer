@@ -1,15 +1,21 @@
 import { useEffect } from 'react'
 import { xtranslate } from '../math/hypermath'
-import { multiply } from '../math/matrix'
+import { multiply, set } from '../math/matrix'
 import { plot } from '../render'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 
 const translate = (offset, shift, matrix, dimensions, curvature) => {
-  multiply(matrix, xtranslate(offset[0], shift * 2, dimensions, curvature))
+  set(
+    matrix,
+    multiply(matrix, xtranslate(offset[0], shift * 2, dimensions, curvature))
+  )
   if (shift * 2 + 1 < dimensions) {
-    multiply(
+    set(
       matrix,
-      xtranslate(offset[1], shift * 2 + 1, dimensions, curvature)
+      multiply(
+        matrix,
+        xtranslate(offset[1], shift * 2 + 1, dimensions, curvature)
+      )
     )
   }
 }

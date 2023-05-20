@@ -70,7 +70,6 @@ const reflectWord = (state, word) => {
 function plot(word, vertex) {
   const vertexHash = hash(vertex)
   if (!vertexHashes.has(vertexHash)) {
-    // console.log(word)
     const index = verticesIndex + vertices.length
     vertexHashes.set(vertexHash, index)
     vertices.push({
@@ -95,7 +94,6 @@ function link(word, newWord) {
     return
   }
   edgeHashes.add(hash)
-  // console.log(vertex, '<->', newVertex)
   edges.push({
     start: vertex,
     end: newVertex,

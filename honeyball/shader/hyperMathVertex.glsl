@@ -164,20 +164,7 @@ void main() {
     pos = mix(instancePosition, instanceTarget, h);
     next = mix(instancePosition, instanceTarget, h + EPS);
 
-  // vec4 u = vec4(1., 0., 0., 0.); // normalize(pos) but this do not work for first vertices;
-  // vec4 v = normalize(segment);
-
-  // // Get the rotation matrix from u to v
-  // mat4 rotationMatrix = findRotationMatrix(u, v);
-
-  // // Rotate everything according it
-  // // pos = rotationMatrix * pos;
-  // norm = rotationMatrix * norm;
-  // #ifdef USE_TANGENT
-  // tangent = rotationMatrix * tangent;
-  // #endif
-
-  // Position segments on hypersurface
+    // Position segments on hypersurface
     pos = xnormalize(pos);
     next = xnormalize(next);
 

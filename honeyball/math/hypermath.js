@@ -10,8 +10,7 @@ import {
   sin,
   sqrt,
 } from './index.js'
-import { eigen } from './jacobi.js'
-import { ident, inverse, multiplyVector } from './matrix.js'
+import { eigen, ident, inverse, multiplyVector } from './matrix.js'
 
 export const coxeterToGram = (coxter, stellation) =>
   coxter.map((row, i) =>
@@ -266,46 +265,64 @@ export const xtranslate = (offset, level, dimensions, curvature) => {
   return matrix
 }
 
-export const getFundamentalSimplexMirrors = (gram, curvature) => {
+export const getFundamentalSimplexMirrorsShifted = (shift, gram, curvature) => {
   const dimensions = gram[0].length
   const mirrorsPlanes = new Array(dimensions)
     .fill()
     .map(() => new Array(dimensions).fill(0))
 
-  // Hyperideal case
-  // o - ∞ - o
-  //  \     /
-  //   ∞   ∞
-  //    \ /
-  //     o
-  if (
-    dimensions === 3 &&
-    gram.every((row, i) => row.every((v, j) => j >= i || v === -1))
-  ) {
-    const ir3 = 1 / sqrt(3)
-    return [
-      [-2 * ir3, 0, ir3],
-      [ir3, 1, ir3],
-      [ir3, -1, ir3],
+  mirrorsPlanes[shift][0] = 1
+  for (let i_ = 1; i_ < dimensions; i_++) {
+    const i = (i_ + shift) % dimensions
+    for (let j_ = 0; j_ < i_; j_++) {
+      const j = (j_ + shift) % dimensions
+      mirrorsPlanes[i][j_] =
+        (gram[i][j] -
+          xdot(mirrorsPlanes[i].slice(0, j_), mirrorsPlanes[j].slice(0, j_))) /
+        mirrorsPlanes[j][j_]
+    }
+    mirrorsPlanes[i][i_] = sqrt(abs(1 - xdot2(mirrorsPlanes[i].slice(0, i_))))
+    if (mirrorsPlanes[i][i_] < 1e-6 && i_ < dimensions - 1) {
+      // console.warn(`Parallel mirrors ${i - 1} and ${i} for shifted ${shift}`)
+      return null
+    }
+  }
+  const last = (dimensions - 1 + shift) % dimensions
+  if (curvature === 0) {
+    mirrorsPlanes[last][dimensions - 1] = 0.5
+  } else {
+    mirrorsPlanes[last][dimensions - 1] *= curvature
+  }
+  return mirrorsPlanes
+}
+
+export const getFundamentalSimplexMirrors = (gram, curvature) => {
+  const dimensions = gram[0].length
+  let mirrorsPlanes = null
+  for (let i = 0; i < dimensions; i++) {
+    mirrorsPlanes = getFundamentalSimplexMirrorsShifted(i, gram, curvature)
+    if (mirrorsPlanes) {
+      break
+    }
+    console.log(mirrorsPlanes)
+  }
+  if (!mirrorsPlanes) {
+    // Hyperideal case like
+    // o - ∞ - o
+    //  \     /
+    //   ∞   ∞
+    //    \ /
+    //     o
+    // TODO: generalize to higher dimensions
+    // console.warn('Hyperideal case')
+    const ir = 1 / sqrt(dimensions)
+    mirrorsPlanes = [
+      [1, ir, ir],
+      [0, -2 * ir, ir],
+      [-1, ir, ir],
     ]
   }
 
-  mirrorsPlanes[0][0] = 1
-  for (let i = 1; i < dimensions; i++) {
-    for (let j = 0; j < i; j++) {
-      mirrorsPlanes[i][j] =
-        (gram[i][j] -
-          xdot(mirrorsPlanes[i].slice(0, j), mirrorsPlanes[j].slice(0, j))) /
-        mirrorsPlanes[j][j]
-    }
-    mirrorsPlanes[i][i] = sqrt(abs(1 - xdot2(mirrorsPlanes[i].slice(0, i))))
-  }
-
-  if (curvature === 0) {
-    mirrorsPlanes[dimensions - 1][dimensions - 1] = 0.5
-  } else {
-    mirrorsPlanes[dimensions - 1][dimensions - 1] *= curvature
-  }
   return mirrorsPlanes
 }
 

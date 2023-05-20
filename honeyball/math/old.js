@@ -169,3 +169,213 @@ export const xlerp = (u, v, segments, curvature) => {
     return []
   }
 }
+
+// export const gramSchmidt = (basis, gram, curvature) => {
+//   // Compute the Gram-Schmidt process for a basis of vectors and a given Gram matrix
+//   // See https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process
+//   const dimensions = basis.length
+//   const gs = ident(dimensions)
+//   for (let i = 0; i < dimensions; i++) {
+//     for (let j = 0; j < i; j++) {
+//       const dot = xdot(basis[i], basis[j], curvature)
+//       for (let k = 0; k < dimensions; k++) {
+//         gs[i][k] -= dot * gs[j][k]
+//       }
+//     }
+//     const norm = sqrt(xdot(basis[i], basis[i], curvature))
+//     for (let k = 0; k < dimensions; k++) {
+//       gs[i][k] /= norm
+//     }
+//   }
+//   return gs
+// }
+
+// export const gramSchmidt = (result, innerProductValues, curvature) => {
+//   const dimensions = result.length
+//   for (let i = 0; i < dimensions; i++) {
+//     for (let j = 0; j < i; j++) {
+//       let iVec = result[i]
+//       const jVec = result[j]
+//       const inner = xdot(innerProductValues[i], jVec, curvature)
+//       for (let k = 0; k < dimensions; k++) {
+//         iVec[k] -= inner * jVec[k]
+//       }
+//       result[i] = iVec
+//     }
+
+//     // Normalize.  We don't use Vector3D normalize because we might have timelike vectors.
+//     const mag2 = xdot(innerProductValues[i], result[i], curvature)
+//     const abs = mag2 < 0 ? -sqrt(-mag2) : sqrt(mag2)
+//     for (let j = 0; j < dimensions; j++) {
+//       result[i][j] /= abs
+//     }
+//   }
+
+//   return result
+// }
+
+export const renormalize = (v, u, s, curvature) => {
+  // u.v = s
+  // u² = 1
+  // v² = k²
+  // looking for w such that w² = 1 and u.w = s
+  // let's pose w = a u + b v
+  // u.w = a u² + b u.v = a + b s = s
+  // a = s (1 - b)
+  // 1 = w² = a² + b² k² + 2 a b u.v = a² + b² k² + 2 a b s
+  // 1 = s² (1 - b)² + b² k² + 2 s² (1 - b) b
+  // 1 = s² (1 - 2 b + b²) + b² k² + 2 s² (1 - b) b
+  // 1 = s² - 2 s² b + s² b² + b² k² + 2 s² b - 2 s² b²
+  // 1 = s² - s² b² + b² k²
+  // b² (k² - s²) = 1 - s²
+  // b = sqrt((1 - s²) / (k² - s²))
+  // a = s (1 - b)
+  // a = s (1 - sqrt((1 - s²) / (k² - s²)))
+  // w = s (1 - sqrt((1 - s²) / (k² - s²))) u + sqrt((1 - s²) / (k² - s²)) v
+
+  const w = new Array(v.length).fill(0)
+  const k = sqrt(xdot2(v, curvature))
+  const b = -sqrt((1 - s * s) / (k * k - s * s))
+  const a = s * (1 - b)
+  for (let i = 0; i < v.length; i++) {
+    w[i] = a * u[i] + b * v[i]
+  }
+  console.log('renormalize', v, u, s, w)
+  return w
+}
+
+export const reverseGramSchmidt = (basis, gram, curvature) => {
+  // e1 = v1
+  // e2 = v2 - <v2, e1> e1
+  // e3 = v3 - <v3, e1> e1 - <v3, e2> e2
+  // e4 = v4 - <v4, e1> e1 - <v4, e2> e2 - <v4, e3> e3
+  // ...
+  // So
+  // v1 = e1
+  // v2 = <v2, e1> e1 + e2
+  // v3 = <v3, e1> e1 + <v3, e2> e2 + e3
+  // v4 = <v4, e1> e1 + <v4, e2> e2 + <v4, e3> e3 + e4
+
+  // v1 = e1
+  // v2 = e2 + <v2, v1> v1
+  // v3 = e3 + <v3, v1> v1 + <v3, (v2 - <v2, v1> v1)> (v2 - <v2, v1> v1)
+  //    = e3 + <v3, v1> v1 + (<v3, v2> - <v3, v1> <v2, v1>) * (v2 - <v2, v1> v1)
+  // v4 = e4 + <v4, e1> e1 + <v4, e2> e2 + <v4, e3> e3
+  //    = e4 + <v4, v1> v1 + (<v4, v2> - <v4, v1> <v2, v1>) * (v2 - <v2, v1> v1) + (<v4, v3> - <v4, v1> <v3, v1>) * (v3 - <v3, v1> v1)
+  // ...
+
+  // basis represents the vectors ei
+  // result represents the vectors vi
+  // gram represents the inner products <vi, vj>
+
+  const dimensions = basis.length
+  const result = []
+
+  for (let i = 0; i < dimensions; i++) {
+    // vn = en
+    result.push(basis[i])
+    // + <vi, v1> v1
+    if (i > 0) {
+      for (let k = 0; k < dimensions; k++) {
+        result[i][k] += gram[i][0] * result[0][k]
+      }
+    }
+    if (i > 1) {
+      // + (<vi, v2> - <vi, v1> <v2, v1>) * (v2 - <v2, v1> v1)
+      for (let k = 0; k < dimensions; k++) {
+        result[i][k] +=
+          (gram[i][1] - gram[i][0] * gram[1][0]) *
+          (result[1][k] - gram[1][0] * result[0][k])
+      }
+    }
+
+    // if (i > 0) {
+    //   debugger
+    //   result[i] = renormalize(
+    //     result[i],
+    //     result[i - 1],
+    //     gram[i][i - 1],
+    //     curvature
+    //   )
+    // }
+
+    // for (let j = 0; j < i; j++) {
+
+    // }
+  }
+  // for (let i = 1; i < dimensions; i++) {
+  //   result[i] = renormalize(result[i], result[i - 1], gram[i][i - 1], curvature)
+  // }
+  const verif = []
+  for (let i = 0; i < dimensions; i++) {
+    const row = []
+    for (let j = 0; j < dimensions; j++) {
+      row.push(xdot(result[i], result[j], curvature))
+    }
+    verif.push(row)
+  }
+  console.log('>', gram, verif)
+  return result
+}
+
+// export const getFundamentalSimplexMirrors = (gram, curvature) => {
+//   const dimensions = gram[0].length
+// const mirrorsPlanes = squareRoot(gram)
+
+// We want the incenter of the triangle to be at the pseudo-sphere origin
+// Which means that all the bisectors of the simplex should contain the pseudo-sphere origin
+// The bisector of two hyperplanes is the hyperplane defined by the sum of the two hyperplanes normals
+// It means the sum of all normals pairs form a hyperplane define the normal of a plane containing the pseudo-sphere origin and the origin
+// So we have ni[n-1] + nj[n-1] = curvature
+// So all ni[n-1] = curvature/2
+// We have ni . nj = gram[i][j]
+// and |ni| = 1
+// so Sum(ni[]²) = 1
+// in dimension 3, we have
+// ni[2] = curvature/2
+// ni[0]² + ni[1]² + ni[2]² = 1
+// ni[0]² + ni[1]² + (curvature/2)² = 1
+// ni[0]² + ni[1]² = 1 - (curvature/2)²
+// and ni[0] * nj[0] + ni[1] * nj[1] = gram[i][j] - (curvature/2)²
+
+// x1 * x2 + y1 * y2 = p - 1/3
+// x2 * x3 + y2 * y3 = q - 1/3
+// x3 * x1 + y3 * y1 = r - 1/3
+// x1² + y1² = 1 - 1/3
+// x2² + y2² = 1 - 1/3
+// x3² + y3² = 1 - 1/3
+
+// y1² = 2/3 - x1²
+// y2² = 2/3 - x2²
+// y3² = 2/3 - x3²
+
+// Let's take
+// y1 = sqrt(2/3 - x1²)
+// y2 = sqrt(2/3 - x2²)
+// y3 = sqrt(2/3 - x3²)
+
+// x1 * x2 + sqrt(2/3 - x1²) * sqrt(2/3 - x2²) = p - 1/3
+// x2 * x3 + sqrt(2/3 - x2²) * sqrt(2/3 - x3²) = q - 1/3
+// x3 * x1 + sqrt(2/3 - x3²) * sqrt(2/3 - x1²) = r - 1/3
+
+// const mirrorsPlanes = new Array(dimensions)
+//   .fill()
+//   .map(() => new Array(dimensions).fill(0))
+
+// Try a gram schmidt solution like Hyperboli polyhedra: volume and scissors congruence p24
+// const W = gramSchmidt(
+//   ident(dimensions),
+//   // [
+//   //   [0, 1, 0],
+//   //   [1, 0, 0],
+//   //   [0, 0, 1],
+//   //   // [0, 0, 0, 1],
+//   // ],
+//   gram,
+//   1
+// )
+// const N = inverse(W)
+// console.log(W, N)
+// // N[dimensions - 1][dimensions - 1] *= curvature
+// return N
+// }
