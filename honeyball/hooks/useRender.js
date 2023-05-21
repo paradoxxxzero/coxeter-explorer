@@ -50,28 +50,6 @@ export const useRender = runtime => {
   }, [runtime.ambiance])
 
   useEffect(() => {
-    updateMaterials(runtime)
-    runtime.composer.render()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    runtime.fov4,
-    runtime.fov5,
-    runtime.fov6,
-    runtime.fov7,
-    runtime.fov8,
-    runtime.fov9,
-    runtime.vertexThickness,
-    runtime.edgeThickness,
-    runtime.projection,
-    runtime.curvature,
-    runtime.dimensions,
-    runtime.curve,
-    runtime.segments,
-    runtime.maxVertices,
-    runtime.maxEdges,
-  ])
-
-  useEffect(() => {
     show(runtime, 'vertex')
     show(runtime, 'edge')
     show(runtime, 'face')
@@ -109,6 +87,28 @@ export const useRender = runtime => {
     runtime.curve,
     runtime.segments,
     runtime.matrix,
+  ])
+
+  useEffect(() => {
+    updateMaterials(runtime)
+    runtime.composer.render()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    runtime.fov4,
+    runtime.fov5,
+    runtime.fov6,
+    runtime.fov7,
+    runtime.fov8,
+    runtime.fov9,
+    runtime.vertexThickness,
+    runtime.edgeThickness,
+    runtime.projection,
+    runtime.curvature,
+    runtime.dimensions,
+    runtime.curve,
+    runtime.segments,
+    runtime.maxVertices,
+    runtime.maxEdges,
   ])
 
   useEffect(() => {

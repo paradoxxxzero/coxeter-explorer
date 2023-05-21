@@ -11,20 +11,14 @@ import { ident } from '../math/matrix'
 const asyncProcess = async (runtime, setRuntime) => {
   // Rules gets computed on non stellated coxeter group
   const worker = workers[runtime.grouper.replace(/^auto-/, '')]
-  setRuntime(runtime => ({
-    ...runtime,
-    currentOrder: -1,
-    processing: true,
-    error: null,
-  }))
-
-  if (runtime.askedOrder === 0) {
+  console.log('Launching worker', runtime.currentOrder)
+  if (runtime.currentOrder === 0) {
     killRunningWorkers()
   }
 
   try {
-    const { vertices, edges, faces } = await worker.process({
-      order: runtime.askedOrder,
+    const { vertices, edges, faces, order } = await worker.process({
+      order: runtime.currentOrder,
       coxeter: runtime.coxeter,
       curvature: runtime.curvature,
       stellation: runtime.stellation,
@@ -33,11 +27,23 @@ const asyncProcess = async (runtime, setRuntime) => {
       rootVertex: runtime.rootVertex,
       dimensions: runtime.dimensions,
     })
+    console.log('Got worker process', runtime.currentOrder, order)
     setRuntime(runtime => {
-      if (!runtime.processing) {
-        return runtime
+      if (runtime.currentOrder !== order) {
+        console.log('Mismatched order, ignoring', runtime.currentOrder, order)
+        return {
+          ...runtime,
+          currentOrder: 0,
+          vertices: [],
+          edges: [],
+          faces: [],
+          ranges: [],
+          renderError: null,
+          processing: true,
+          error: 'Mismatch Order',
+        }
       }
-      const nt = {
+      return {
         ...runtime,
         ranges: [
           ...runtime.ranges,
@@ -53,25 +59,27 @@ const asyncProcess = async (runtime, setRuntime) => {
         vertices: runtime.vertices.concat(vertices),
         edges: runtime.edges.concat(edges),
         faces: runtime.faces.concat(faces),
-        currentOrder: runtime.askedOrder + 1,
+        currentOrder: order + 1,
         processing: false,
         error: null,
       }
-      return nt
     })
   } catch (e) {
     // Change current order to allow user to retry
-    console.warn(e)
-    setRuntime(runtime => ({
+    console.error(e)
+    const newRuntime = {
       ...runtime,
+
       currentOrder: runtime.order,
       error: e.message,
       processing: false,
-    }))
+    }
+    setRuntime(newRuntime)
   }
 }
 
 export const useProcess = (runtime, setRuntime) => {
+  console.log(runtime.currentOrder)
   useEffect(() => {
     setRuntime(runtime => {
       if (runtime.order < runtime.currentOrder) {
@@ -109,7 +117,7 @@ export const useProcess = (runtime, setRuntime) => {
             ? 'auto-toddcoxeter'
             : 'auto-knuthbendix'
           : runtime.grouper
-      return {
+      const newRuntime = {
         ...runtime,
         currentOrder: 0,
         grouper,
@@ -122,7 +130,11 @@ export const useProcess = (runtime, setRuntime) => {
         mirrorsPlanes,
         rootVertex,
         renderError: null,
+        processing: true,
+        error: null,
       }
+      asyncProcess(newRuntime, setRuntime)
+      return newRuntime
     })
   }, [
     runtime.dimensions,
@@ -143,12 +155,6 @@ export const useProcess = (runtime, setRuntime) => {
   useEffect(() => {
     setRuntime(runtime => {
       if (runtime.order <= runtime.currentOrder) {
-        return {
-          ...runtime,
-          askedOrder: null,
-        }
-      }
-      if (runtime.currentOrder < 0) {
         return runtime
       }
       if (runtime.ranges?.[runtime.order]) {
@@ -158,22 +164,18 @@ export const useProcess = (runtime, setRuntime) => {
           askedOrder: null,
         }
       }
+      console.log('Asking for order', runtime.currentOrder, runtime.order)
+      asyncProcess(runtime, setRuntime)
       return {
         ...runtime,
-        askedOrder: runtime.currentOrder,
+        error: null,
+        processing: true,
       }
     })
 
     // Can't have ranges here
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setRuntime, runtime.order, runtime.currentOrder])
-
-  useEffect(() => {
-    if (runtime.askedOrder !== null) {
-      asyncProcess(runtime, setRuntime)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runtime.askedOrder, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => {

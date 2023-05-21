@@ -1,4 +1,4 @@
-import { xdot } from './hypermath.js'
+import { xdot, xdot2 } from './hypermath.js'
 import { acos, acosh, sin, sinh, sqrt } from './index.js'
 
 export const det = m => {

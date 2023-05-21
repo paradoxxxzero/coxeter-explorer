@@ -304,7 +304,6 @@ export const getFundamentalSimplexMirrors = (gram, curvature) => {
     if (mirrorsPlanes) {
       break
     }
-    console.log(mirrorsPlanes)
   }
   if (!mirrorsPlanes) {
     // Hyperideal case like

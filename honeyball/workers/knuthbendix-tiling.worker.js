@@ -281,7 +281,7 @@ onmessage = ({
       })
     }
 
-    postMessage({ vertices, edges, faces, uuid })
+    postMessage({ vertices, edges, faces, order, uuid })
     verticesIndex += vertices.length
     vertices = []
     edges = []

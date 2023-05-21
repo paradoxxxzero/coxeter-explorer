@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { filterParams } from '../statics'
 import Runtime from './components/Runtime'
 import UI from './components/UI'
-import { binomial, floor, min, round } from './math'
+import { binomial, min, round } from './math'
 import { ident } from './math/matrix'
 
 export default function App({ gl, params, updateParams }) {
@@ -11,7 +11,7 @@ export default function App({ gl, params, updateParams }) {
       ...params,
       ...gl,
 
-      currentOrder: -1,
+      currentOrder: 0,
       askedOrder: null,
       spaceType: null,
       curvature: 0,
@@ -147,11 +147,12 @@ export default function App({ gl, params, updateParams }) {
       extended: !params.extended,
     }
 
-    if (!params.extended) {
+    if (params.extended) {
+      newParams.coxeter = params.coxeter.map(row => row.slice())
       for (let i = 0; i < params.dimensions; i++) {
         for (let j = 0; j < i - 1; j++) {
-          params.coxeter[i][j] = 2
-          params.coxeter[j][i] = 2
+          newParams.coxeter[i][j] = 2
+          newParams.coxeter[j][i] = 2
         }
       }
     }
