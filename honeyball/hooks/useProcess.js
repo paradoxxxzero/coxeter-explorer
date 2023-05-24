@@ -11,7 +11,6 @@ import { ident } from '../math/matrix'
 const asyncProcess = async (runtime, setRuntime) => {
   // Rules gets computed on non stellated coxeter group
   const worker = workers[runtime.grouper.replace(/^auto-/, '')]
-  console.log('Launching worker', runtime.currentOrder)
   if (runtime.currentOrder === 0) {
     killRunningWorkers()
   }
@@ -27,10 +26,9 @@ const asyncProcess = async (runtime, setRuntime) => {
       rootVertex: runtime.rootVertex,
       dimensions: runtime.dimensions,
     })
-    console.log('Got worker process', runtime.currentOrder, order)
     setRuntime(runtime => {
       if (runtime.currentOrder !== order) {
-        console.log('Mismatched order, ignoring', runtime.currentOrder, order)
+        console.warn('Mismatched order, ignoring', runtime.currentOrder, order)
         return {
           ...runtime,
           currentOrder: 0,
@@ -79,7 +77,6 @@ const asyncProcess = async (runtime, setRuntime) => {
 }
 
 export const useProcess = (runtime, setRuntime) => {
-  console.log(runtime.currentOrder)
   useEffect(() => {
     setRuntime(runtime => {
       if (runtime.order < runtime.currentOrder) {
@@ -164,7 +161,6 @@ export const useProcess = (runtime, setRuntime) => {
           askedOrder: null,
         }
       }
-      console.log('Asking for order', runtime.currentOrder, runtime.order)
       asyncProcess(runtime, setRuntime)
       return {
         ...runtime,

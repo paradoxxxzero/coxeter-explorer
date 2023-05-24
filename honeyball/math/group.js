@@ -1,4 +1,4 @@
-import { exp } from '.'
+import { atoi, exp } from '.'
 
 export const shortLex = (a, b) => {
   const l = a.length - b.length
@@ -15,6 +15,24 @@ export const inverseShortLex = (a, b) => {
   }
   return a <= b ? 1 : -1
 }
+export const weight = (word, weights) => {
+  let w = 0
+  for (let i = 0; i < word.length; i++) {
+    w += weights[atoi(word[i])]
+  }
+  return w
+}
+
+export const weightedShortLex =
+  (weights, fallback = shortLex) =>
+  (a, b) => {
+    const wa = weight(a, weights)
+    const wb = weight(b, weights)
+    if (wa === wb) {
+      return fallback(a, b)
+    }
+    return wa <= wb ? -1 : 1
+  }
 
 const normalize = (rules, sorter) => {
   const ruleMap = new Map()
@@ -203,6 +221,12 @@ export const knuthBendix = (rules, dimensions) => {
     }
   }
   throw new Error('Timeout')
+}
+
+export const kbTest = (rules, sorter, to = 1000) => {
+  timeout = to
+  t = performance.now()
+  return knuthBendixWithSort(rules, sorter)
 }
 
 export const shorten = (rules, word) => rewrite(rules, word)
