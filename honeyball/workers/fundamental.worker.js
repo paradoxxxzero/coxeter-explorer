@@ -85,7 +85,7 @@ onmessage = ({
       curvature
     )
   }
-  const limit = order === 0 ? 1 : (order + 1) * 50
+  const limit = order === 0 ? 1 : (order + 1) * 10
   const edgeProduct = combinations(
     new Array(fundamentalVertices.length).fill().map((_, i) => i)
   )

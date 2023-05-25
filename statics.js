@@ -226,6 +226,15 @@ export const ambiances = {
       return _color.set(0x000000)
     },
   },
+  plain: {
+    extended: true,
+    background: 0xffffff,
+    shadow: false,
+    material: new MeshBasicMaterial(),
+    color: ({ word }) => {
+      return _color.setHSL((word.length * 0.06) % 1, 0.7, 0.5)
+    },
+  },
   wireframe: {
     extended: true,
     background: 0x000000,
@@ -301,6 +310,7 @@ export const defaultParams = {
 
   fov3: 90,
   fov4: 90,
+
   msaa: window.devicePixelRatio <= 1,
   msaaSamples: 8,
 }
@@ -309,17 +319,20 @@ export const filterParams = maybeBadParams => {
   const params = {
     ...maybeBadParams,
   }
+  const badParams = []
   // Remove bad params
   Object.entries(params).forEach(([key, value]) => {
     if (typeof defaultParams[key] === 'number') {
       if (value === '' || isNaN(value)) {
         delete params[key]
+        badParams.push(key)
       }
     } else if (Array.isArray(defaultParams[key])) {
       // arrays of arrays of numbers
       if (Array.isArray(value[0])) {
         if (value.find(c => c.find(d => value === '' || isNaN(d)))) {
           delete params[key]
+          badParams.push(key)
         }
       } else {
         // arrays of numbers
@@ -331,9 +344,11 @@ export const filterParams = maybeBadParams => {
           )
         ) {
           delete params[key]
+          badParams.push(key)
         }
       }
     }
   })
-  return params
+
+  return { params, badParams }
 }

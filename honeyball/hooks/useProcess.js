@@ -104,7 +104,7 @@ export const useProcess = (runtime, setRuntime) => {
       const mirrorsPlanes = getFundamentalSimplexMirrors(
         gram,
         curvature,
-        runtime.grouper !== 'knuthbendix'
+        runtime.grouper.replace(/^auto-/, '') !== 'knuthbendix'
       )
       const rootVertex = getFundamentalVertex(
         runtime.mirrors,

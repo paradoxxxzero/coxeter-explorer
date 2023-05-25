@@ -68,10 +68,7 @@ const AppWithHistory = () => {
   const updateParams = useCallback(newParams => {
     setParams(params => {
       const finalParams = { ...params, ...newParams }
-      if (
-        Object.keys(filterParams(finalParams)).length ===
-        Object.keys(defaultParams).length
-      ) {
+      if (!filterParams(finalParams).badParams.length) {
         syncParams(finalParams)
       }
       return finalParams

@@ -232,7 +232,7 @@ onmessage = ({
 
       init(rootVertex, rules, mirrors)
 
-      if (snub) {
+      if (snub || rules.size <= dimensions) {
         failed = true
       } else {
         try {

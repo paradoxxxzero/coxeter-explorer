@@ -54,7 +54,7 @@ export const initializeGl = () => {
     90,
     window.innerWidth / window.innerHeight,
     0.01,
-    100
+    1000000
   )
   camera.position.set(0, 0, -1)
   camera.up.set(0, 1, 0)
@@ -121,7 +121,7 @@ export const initVertex = rt => {
 
   const instancedVertex = new Mesh(
     vertexGeometry,
-    hyperMathMaterial(ambiance.vertexMaterial, rt)
+    hyperMathMaterial(ambiance.vertexMaterial, rt, 'vertex')
   )
   vertexGeometry.attributes.instanceTarget.array.fill(NaN)
   vertexGeometry.attributes.instanceCentroid.array.fill(NaN)
@@ -129,11 +129,13 @@ export const initVertex = rt => {
   instancedVertex.frustumCulled = false
   instancedVertex.customDepthMaterial = hyperMathMaterial(
     new MeshDepthMaterial({ depthPacking: RGBADepthPacking }),
-    rt
+    rt,
+    'vertex'
   )
   instancedVertex.customDistanceMaterial = hyperMathMaterial(
     new MeshDistanceMaterial(),
-    rt
+    rt,
+    'vertex'
   )
   instancedVertex.castShadow = ambiance.shadow
   instancedVertex.name = 'instanced-vertex'
@@ -173,18 +175,20 @@ export const initEdge = rt => {
 
   const instancedEdge = new Mesh(
     edgeGeometry,
-    hyperMathMaterial(ambiance.edgeMaterial, rt)
+    hyperMathMaterial(ambiance.edgeMaterial, rt, 'edge')
   )
   edgeGeometry.attributes.instanceCentroid.array.fill(NaN)
   instancedEdge.geometry.instanceCount = 0
   instancedEdge.frustumCulled = false
   instancedEdge.customDepthMaterial = hyperMathMaterial(
     new MeshDepthMaterial({ depthPacking: RGBADepthPacking }),
-    rt
+    rt,
+    'edge'
   )
   instancedEdge.customDistanceMaterial = hyperMathMaterial(
     new MeshDistanceMaterial(),
-    rt
+    rt,
+    'edge'
   )
   instancedEdge.castShadow = ambiance.shadow
   instancedEdge.name = 'instanced-edge'
@@ -270,17 +274,19 @@ export const initFace = rt => {
   )
   const instancedFace = new Mesh(
     faceGeometry,
-    hyperMathMaterial(ambiance.faceMaterial, rt)
+    hyperMathMaterial(ambiance.faceMaterial, rt, 'face')
   )
   instancedFace.geometry.instanceCount = 0
   instancedFace.frustumCulled = false
   instancedFace.customDepthMaterial = hyperMathMaterial(
     new MeshDepthMaterial({ depthPacking: RGBADepthPacking }),
-    rt
+    rt,
+    'face'
   )
   instancedFace.customDistanceMaterial = hyperMathMaterial(
     new MeshDistanceMaterial(),
-    rt
+    rt,
+    'face'
   )
   // instancedFace.castShadow = ambiance.shadow
   instancedFace.name = 'instanced-face'
@@ -503,9 +509,13 @@ export const changeAmbiance = rt => {
   const instancedEdge = rt.scene.getObjectByName('instanced-edge')
   const instancedFace = rt.scene.getObjectByName('instanced-face')
 
-  instancedVertex.material = hyperMathMaterial(ambiance.vertexMaterial, rt)
-  instancedEdge.material = hyperMathMaterial(ambiance.edgeMaterial, rt)
-  instancedFace.material = hyperMathMaterial(ambiance.faceMaterial, rt)
+  instancedVertex.material = hyperMathMaterial(
+    ambiance.vertexMaterial,
+    rt,
+    'vertex'
+  )
+  instancedEdge.material = hyperMathMaterial(ambiance.edgeMaterial, rt, 'edge')
+  instancedFace.material = hyperMathMaterial(ambiance.faceMaterial, rt, 'face')
 
   if (ambiance.env) {
     scene.environment = ambiance.env
@@ -649,7 +659,7 @@ export const changeAmbiance = rt => {
       )
       composer.addPass(bloomPass)
       // Tweaks if face are shown
-      instancedFace.material.opacity = 0.1 / rt.dimensions
+      instancedFace.material.opacity = rt.dimensions === 3 ? 0.075 : 0.025
     } else if (fx === 'godray') {
       const godrayPass = new GodRayPass(scene, camera)
       godrayPass.materialDepth = hyperMathMaterial(godrayPass.materialDepth, rt)

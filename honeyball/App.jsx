@@ -59,7 +59,7 @@ export default function App({ gl, params, updateParams }) {
         coxeter: params.coxeter,
         mirrors: params.mirrors,
         stellation: params.stellation,
-      }),
+      }).params,
     }))
   }, [
     params.order,

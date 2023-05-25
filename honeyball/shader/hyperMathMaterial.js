@@ -7,6 +7,7 @@ import {
 } from 'three'
 import hyperMathVertexShader from './hyperMathVertex.glsl'
 import projectionVertexShader from './projectionVertex.glsl'
+import normalizationVertexShader from './normalizationVertex.glsl'
 import { projections } from '../../statics'
 
 const header = hyperMathVertexShader.match(
@@ -15,11 +16,16 @@ const header = hyperMathVertexShader.match(
 const main = hyperMathVertexShader.match(
   /\/\* BEGIN MAIN \*\/([\s\S]*?)\/\* END MAIN \*\//m
 )[1]
-const include = projectionVertexShader.match(
-  /\/\* BEGIN INCLUDE \*\/([\s\S]*?)\/\* END INCLUDE \*\//m
-)[1]
+const include =
+  projectionVertexShader.match(
+    /\/\* BEGIN INCLUDE \*\/([\s\S]*?)\/\* END INCLUDE \*\//m
+  )[1] +
+  '\n' +
+  normalizationVertexShader.match(
+    /\/\* BEGIN INCLUDE \*\/([\s\S]*?)\/\* END INCLUDE \*\//m
+  )[1]
 
-export const hyperMathMaterial = (material, rt) => {
+export const hyperMathMaterial = (material, rt, type = 'universal') => {
   material = material.clone()
   material.vertexColors = ![
     MeshDepthMaterial,
@@ -28,6 +34,7 @@ export const hyperMathMaterial = (material, rt) => {
     MeshDistanceMaterial,
   ].find(cls => material instanceof cls)
   material._rt = rt
+  material._type = type
   material.uniforms = {
     ...(material.uniforms || {}),
     curvature: { value: 0 },
@@ -44,6 +51,9 @@ export const hyperMathMaterial = (material, rt) => {
     const defines = [
       `#define DIMENSIONS ${dimensions}`,
       `#define PROJECTION ${projections.indexOf(projection)}`,
+      `#define HYPERTYPE ${['vertex', 'edge', 'face', 'universal'].indexOf(
+        material._type
+      )}`,
     ]
 
     Object.assign(shader.uniforms, material.uniforms)
@@ -75,7 +85,7 @@ export const hyperMathMaterial = (material, rt) => {
     ].join('\n')
   }
   material.customProgramCacheKey = () => {
-    return `hypermath_${material.constructor.name}_${material._rt.dimensions}_${material._rt.projection}`
+    return `hypermath_${material._type}_${material.constructor.name}_${material._rt.dimensions}_${material._rt.projection}`
   }
   return material
 }

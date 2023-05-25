@@ -73,11 +73,6 @@ struct vec9 {
 
 attribute vec3 instanceColor;
 
-const float radial = 8.;
-const float TAU = 6.28318530717958647692528676655900576;
-const float EPS = .001;
-const vec3 NOISE = vec3(.000003, -.000002, .000017);
-
 /* END HEADER */
 
 void main() {
@@ -88,130 +83,27 @@ void main() {
   vColor.rgb = instanceColor.rgb;
   #endif
 
-  #if DIMENSIONS == 2
-  vec2 pos;
-  vec2 next;
-  vec2 other;
-  #elif DIMENSIONS == 3
-  vec3 pos;
-  vec3 next;
-  vec3 other;
-  #elif DIMENSIONS == 4
-  vec4 pos;
-  vec4 next;
-  vec4 other;
-  #elif DIMENSIONS == 5
-  vec5 pos;
-  vec5 next;
-  vec5 other;
-  vec5 instancePosition = fromMat(instancePosition);
-  vec5 instanceTarget = fromMat(instanceTarget);
-  vec5 instanceCentroid = fromMat(instanceCentroid);
-  #elif DIMENSIONS == 6
-  vec6 pos;
-  vec6 next;
-  vec6 other;
-  vec6 instancePosition = fromMat(instancePosition);
-  vec6 instanceTarget = fromMat(instanceTarget);
-  vec6 instanceCentroid = fromMat(instanceCentroid);
-  #elif DIMENSIONS == 7
-  vec7 pos;
-  vec7 next;
-  vec7 other;
-  vec7 instancePosition = fromMat(instancePosition);
-  vec7 instanceTarget = fromMat(instanceTarget);
-  vec7 instanceCentroid = fromMat(instanceCentroid);
-  #elif DIMENSIONS == 8
-  vec8 pos;
-  vec8 next;
-  vec8 other;
-  vec8 instancePosition = fromMat(instancePosition);
-  vec8 instanceTarget = fromMat(instanceTarget);
-  vec8 instanceCentroid = fromMat(instanceCentroid);
-  #elif DIMENSIONS == 9
-  vec9 pos;
-  vec9 next;
-  vec9 other;
-  vec9 instancePosition = fromMat(instancePosition);
-  vec9 instanceTarget = fromMat(instanceTarget);
-  vec9 instanceCentroid = fromMat(instanceCentroid);
-  #endif
-
-  vec3 norm;
   // <begin_vertex>
   vec3 transformed;
-  float vid = float(gl_VertexID);
-
-  if(!nan(instanceCentroid)) {
-    pos = trix(instanceCentroid, instancePosition, instanceTarget, uv);
-    next = trix(instanceCentroid, instancePosition, instanceTarget, uv + vec2(EPS, 0.));
-    other = trix(instanceCentroid, instancePosition, instanceTarget, uv + vec2(0., EPS));
-
-    if(length(uv) != 0. || segments > 1.) {
-      pos = xnormalize(pos);
-      next = xnormalize(next);
-      other = xnormalize(other);
-    }
-    transformed = xproject(pos);
-    vec3 n = xproject(next);
-    vec3 o = xproject(other);
-    norm = cross(n - transformed, o - transformed);
-  } else if(!nan(instanceTarget)) {
-
-    float h = floor(vid / (radial + 1.)) / (segments);
-    float r = mod(vid, radial + 1.) / (radial);
-
-    pos = mix(instancePosition, instanceTarget, h);
-    next = mix(instancePosition, instanceTarget, h + EPS);
-
-    // Position segments on hypersurface
-    pos = xnormalize(pos);
-    next = xnormalize(next);
-
-    transformed = xproject(pos);
-    vec3 n = xproject(next) + NOISE; // Avoid collinearity
-    vec3 k = normalize(transformed - n); // current segment direction
-
-    // Rodrigues' rotation formula
-    // To rotate v around axis k by angle r:
-    vec3 v = normalize(cross(n, transformed));
-    norm = v * cos(r * TAU) + cross(k, v) * sin(r * TAU);// + k * dot(k, v) * (1. - cos(r * TAU));
-    norm = normalize(norm);
-    float sizeFactor = .001 * edgeThickness;
-
-    // Removing 3d length in perspective computation
-    #if DIMENSIONS < 5
-    pos.xy = vec2(1.);
-    #if DIMENSIONS >= 3
-    pos.z = 1.;
-    #endif
-    #else
-    pos.v.xyz = vec3(1.);
-    #endif
-
-    transformed += sizeFactor * norm / len(pos);
-
-  } else {
-    pos = instancePosition;
-    transformed = xproject(pos);
-    norm = normal;
-    float sizeFactor = .001 * vertexThickness;
-
-    // Removing 3d length in perspective computation
-    #if DIMENSIONS < 5
-    pos.xy = vec2(1.);
-    #if DIMENSIONS >= 3
-    pos.z = 1.;
-    #endif
-    #else
-    pos.v.xyz = vec3(1.);
-    #endif
-
-    transformed += sizeFactor * norm / len(pos);
-  }
 
   // <beginnormal_vertex>
-  vec3 objectNormal = norm;
+  vec3 objectNormal;
+
+  #if HYPERTYPE == 2 // Face
+  faceVertex(transformed, objectNormal);
+  #elif HYPERTYPE == 1 // Edge
+  edgeVertex(transformed, objectNormal);
+  #elif HYPERTYPE == 0 // Vertex
+  vertexVertex(transformed, objectNormal);
+  #elif HYPERTYPE == 3
+  if(!nan(instanceCentroid)) {
+    faceVertex(transformed, objectNormal);
+  } else if(!nan(instanceTarget)) {
+    edgeVertex(transformed, objectNormal);
+  } else {
+    vertexVertex(transformed, objectNormal);
+  }
+  #endif
 
   #ifdef USE_TANGENT
   vec3 objectTangent = vec3(tangent.xyz);
