@@ -151,18 +151,18 @@ export default function UI({
             togglerName="showEdges"
             onChange={handleChange}
           />
-          {runtime.grouper.replace(/^auto-/, '') === 'toddcoxeter' ||
-            (runtime.grouper === 'fundamental' && (
-              <label>
-                Faces
-                <input
-                  type="checkbox"
-                  name="showFaces"
-                  checked={params.showFaces}
-                  onChange={handleChange}
-                />
-              </label>
-            ))}
+          {(runtime.grouper.replace(/^auto-/, '') === 'toddcoxeter' ||
+            runtime.grouper === 'fundamental') && (
+            <label>
+              Faces
+              <input
+                type="checkbox"
+                name="showFaces"
+                checked={params.showFaces}
+                onChange={handleChange}
+              />
+            </label>
+          )}
           <label>
             Ambiance
             <select

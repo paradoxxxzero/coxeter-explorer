@@ -296,13 +296,36 @@ export const getFundamentalSimplexMirrorsShifted = (shift, gram, curvature) => {
   return mirrorsPlanes
 }
 
-export const getFundamentalSimplexMirrors = (gram, curvature) => {
+export const getFundamentalSimplexMirrors = (
+  gram,
+  curvature,
+  centered = false
+) => {
   const dimensions = gram[0].length
   let mirrorsPlanes = null
   for (let i = 0; i < dimensions; i++) {
     mirrorsPlanes = getFundamentalSimplexMirrorsShifted(i, gram, curvature)
     if (mirrorsPlanes) {
       break
+    }
+  }
+  if (mirrorsPlanes && centered) {
+    const omnipoint = getFundamentalVertex(
+      new Array(dimensions).fill(1),
+      mirrorsPlanes,
+      curvature
+    )
+    if (curvature === 0) {
+      // ?
+    } else {
+      const mirror = normalize(
+        omnipoint.slice().map((x, i) => (i === dimensions - 1 ? x - 1 : x)),
+        curvature
+      )
+
+      for (let i = 0; i < dimensions; i++) {
+        mirrorsPlanes[i] = reflect(mirrorsPlanes[i], mirror, curvature)
+      }
     }
   }
   if (!mirrorsPlanes && dimensions > 2) {

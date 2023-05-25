@@ -101,7 +101,11 @@ export const useProcess = (runtime, setRuntime) => {
       }
       const curvature =
         spaceType === 'finite' ? 1 : spaceType === 'affine' ? 0 : -1
-      const mirrorsPlanes = getFundamentalSimplexMirrors(gram, curvature)
+      const mirrorsPlanes = getFundamentalSimplexMirrors(
+        gram,
+        curvature,
+        runtime.grouper !== 'knuthbendix'
+      )
       const rootVertex = getFundamentalVertex(
         runtime.mirrors,
         mirrorsPlanes,
