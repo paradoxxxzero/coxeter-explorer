@@ -488,8 +488,8 @@ export const getFundamentalSimplexMirrors = (gram, curvature) => {
 
     mirrorsPlanes[0][0] = 1
     mirrorsPlanes[1][0] = -1
-    mirrorsPlanes[0][1] = sqrt(1 / 3)
-    mirrorsPlanes[1][1] = sqrt(1 / 3)
+    mirrorsPlanes[0][1] = sqrt(alphas[1])
+    mirrorsPlanes[1][1] = sqrt(alphas[1])
 
     for (let i = 0; i < dimensions; i++) {
       for (let j = 0; j < dimensions; j++) {

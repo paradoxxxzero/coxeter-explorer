@@ -193,8 +193,10 @@ export const initEdge = rt => {
 }
 
 export const initFace = rt => {
+  let overridenOpacity = null
   let existingFace = rt.scene.getObjectByName('instanced-face')
   if (existingFace) {
+    overridenOpacity = existingFace.material.opacity
     rt.scene.remove(existingFace)
     existingFace.geometry.dispose()
     existingFace.material.dispose()
@@ -284,6 +286,9 @@ export const initFace = rt => {
   instancedFace.name = 'instanced-face'
   instancedFace.visible = rt.showFaces
   instancedFace.renderOrder = 1
+  if (overridenOpacity) {
+    instancedFace.material.opacity = overridenOpacity
+  }
   rt.scene.add(instancedFace)
 }
 
@@ -644,7 +649,7 @@ export const changeAmbiance = rt => {
       )
       composer.addPass(bloomPass)
       // Tweaks if face are shown
-      instancedFace.material.opacity = 0.025
+      instancedFace.material.opacity = 0.1 / rt.dimensions
     } else if (fx === 'godray') {
       const godrayPass = new GodRayPass(scene, camera)
       godrayPass.materialDepth = hyperMathMaterial(godrayPass.materialDepth, rt)

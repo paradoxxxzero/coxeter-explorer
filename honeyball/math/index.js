@@ -22,8 +22,39 @@ export const {
   PI,
 } = Math
 
-export const combinations = array =>
-  [].concat(...array.map((v, i) => array.slice(i + 1).map(w => [v, w])))
+function* genCombinations(arr, size) {
+  if (size < 0 || arr.length < size) {
+    return
+  }
+  const combIndices = Array.from(Array(size).keys())
+
+  while (true) {
+    yield combIndices.map(x => arr[x])
+
+    let indexToUpdate = size - 1
+    while (
+      indexToUpdate >= 0 &&
+      combIndices[indexToUpdate] >= arr.length - size + indexToUpdate
+    ) {
+      indexToUpdate--
+    }
+
+    if (indexToUpdate < 0) {
+      return
+    }
+
+    for (
+      let combIndex = combIndices[indexToUpdate] + 1;
+      indexToUpdate < size;
+      indexToUpdate++, combIndex++
+    ) {
+      combIndices[indexToUpdate] = combIndex
+    }
+  }
+}
+
+export const combinations = (array, len = 2) =>
+  Array.from(genCombinations(array, len))
 
 export const cartesian = (...a) =>
   a.reduce((a, b) => a.flatMap(d => b.map(e => [d, e].flat())))
