@@ -22,6 +22,29 @@ export const {
   PI,
 } = Math
 
+const kBuf = new ArrayBuffer(8)
+const kBufAsF64 = new Float64Array(kBuf)
+const kBufAsI32 = new Int32Array(kBuf)
+function hashNumber(n) {
+  if (~~n === n) {
+    return ~~n
+  }
+  kBufAsF64[0] = n
+  return kBufAsI32[0] ^ kBufAsI32[1]
+}
+const precision = 4
+const order = 10 ** precision
+export const hash = v => {
+  let s = ''
+  for (let i = 0; i < v.length; i++) {
+    s += hashNumber(round(v[i] * order) / order).toString() // toExponential(4)
+    if (i < v.length - 1) {
+      s += '|'
+    }
+  }
+  return s
+}
+
 function* genCombinations(arr, size) {
   if (size < 0 || arr.length < size) {
     return

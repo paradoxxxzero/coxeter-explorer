@@ -1,9 +1,13 @@
-import { combinations } from '../math'
+import { combinations, hash } from '../math'
 import { getVerticesCosetsParams, solve } from '../math/coset'
 import { getFundamentalVertex, reflect } from '../math/hypermath'
 
 let verticesParams = null
 let fundamentalVertices = null
+let vertexHashes = null
+let edgeHashes = null
+let faceHashes = null
+let baseIndex = 0
 
 const initCosets = (
   dimensions,
@@ -42,6 +46,10 @@ const initCosets = (
     ),
     ...defaultParams(),
   }
+  vertexHashes = new Map()
+  edgeHashes = new Set()
+  faceHashes = new Set()
+  baseIndex = 0
 }
 
 const reflectWord = (state, word) => {
@@ -91,7 +99,6 @@ onmessage = ({
     let faces = []
     if (!verticesParams.done) {
       verticesParams.limit = limit
-      const baseIndex = verticesParams.lastDrawn * fundamentalVertices.length
       solve(verticesParams)
       for (
         let i = verticesParams.lastDrawn;
@@ -109,32 +116,53 @@ onmessage = ({
             { rootVertex: fundamentalVertex, mirrorsPlanes, curvature },
             word
           )
-          vertices.push({
-            vertex,
-            word,
-            i,
-          })
-          indexes.push(baseIndex + vertices.length - 1)
+
+          const vertexHash = hash(vertex)
+          if (!vertexHashes.has(vertexHash)) {
+            vertices.push({
+              vertex,
+              word,
+              i,
+            })
+            const index = baseIndex + vertices.length - 1
+            vertexHashes.set(vertexHash, index)
+            indexes.push(index)
+          } else {
+            indexes.push(vertexHashes.get(vertexHash))
+          }
         }
         verticesParams.lastDrawn = i + 1
 
         for (let j = 0; j < edgeProduct.length; j++) {
           const [startIndex, endIndex] = edgeProduct[j]
-
+          const [start, end] = [indexes[startIndex], indexes[endIndex]]
+          const edgeHash =
+            startIndex < endIndex ? `${start}-${end}` : `${end}-${start}`
+          if (edgeHashes.has(edgeHash)) {
+            continue
+          }
           edges.push({
-            start: indexes[startIndex],
-            end: indexes[endIndex],
+            start,
+            end,
             word,
           })
+          edgeHashes.add(edgeHash)
         }
         for (let j = 0; j < faceProduct.length; j++) {
+          const vertices = faceProduct[j].map(index => indexes[index])
+          const faceHash = vertices.sort().join('-')
+          if (faceHashes.has(faceHash)) {
+            continue
+          }
           faces.push({
-            vertices: faceProduct[j].map(index => indexes[index]),
+            vertices,
             word,
           })
+          faceHashes.add(faceHash)
         }
       }
     }
+    baseIndex += vertices.length
 
     postMessage({ vertices, edges, faces, order, uuid })
   } catch (e) {

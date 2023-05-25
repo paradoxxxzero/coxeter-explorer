@@ -1,4 +1,4 @@
-import { getBaseRules, itoa, round } from '../math'
+import { getBaseRules, hash, itoa, round } from '../math'
 import { knuthBendix, shorten } from '../math/group'
 import { reflect } from '../math/hypermath'
 
@@ -32,29 +32,6 @@ const init = (rootVertex, newRules, newMirrors) => {
   // cleanInactive = new RegExp(
   //   `[${mirrors.map((m, i) => (m ? '' : itoa(i))).join('')}]*$`
   // )
-}
-
-const kBuf = new ArrayBuffer(8)
-const kBufAsF64 = new Float64Array(kBuf)
-const kBufAsI32 = new Int32Array(kBuf)
-function hashNumber(n) {
-  if (~~n === n) {
-    return ~~n
-  }
-  kBufAsF64[0] = n
-  return kBufAsI32[0] ^ kBufAsI32[1]
-}
-const precision = 4
-const exp = 10 ** precision
-const hash = v => {
-  let s = ''
-  for (let i = 0; i < v.length; i++) {
-    s += hashNumber(round(v[i] * exp) / exp).toString() // toExponential(4)
-    if (i < v.length - 1) {
-      s += '|'
-    }
-  }
-  return s
 }
 
 const reflectWord = (state, word) => {
