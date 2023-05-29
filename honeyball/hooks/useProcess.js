@@ -104,7 +104,9 @@ export const useProcess = (runtime, setRuntime) => {
       const mirrorsPlanes = getFundamentalSimplexMirrors(
         gram,
         curvature,
-        runtime.grouper.replace(/^auto-/, '') !== 'knuthbendix'
+        runtime.grouper.includes('auto')
+          ? runtime.grouper.replace(/^auto-/, '') !== 'knuthbendix'
+          : runtime.centered
       )
       const rootVertex = getFundamentalVertex(
         runtime.mirrors,
@@ -142,6 +144,7 @@ export const useProcess = (runtime, setRuntime) => {
     runtime.coxeter,
     runtime.mirrors,
     runtime.stellation,
+    runtime.centered,
     runtime.grouper,
     setRuntime,
   ])

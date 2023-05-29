@@ -86,6 +86,17 @@ export default function UI({
               </select>
             </label>
           )}
+          {(params.extended || params.grouper) && (
+            <label>
+              inCentered
+              <input
+                name="centered"
+                type="checkbox"
+                checked={params.centered}
+                onChange={handleChange}
+              />
+            </label>
+          )}
           {(params.extended ||
             runtime.grouper.replace(/^auto-/, '') === 'knuthbendix' ||
             runtime.curvature <= 0) && (

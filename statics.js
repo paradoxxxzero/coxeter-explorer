@@ -307,6 +307,7 @@ export const defaultParams = {
   controls: 'orbit',
   controlsShift: 0,
   ambiance: 'neon',
+  centered: false,
 
   fov3: 90,
   fov4: 90,

@@ -302,7 +302,513 @@ export const getFundamentalSimplexMirrors = (
   centered = false
 ) => {
   const dimensions = gram[0].length
+
+  // Hyperideal case like
+  // o - ∞ - o
+  //  \     /
+  //   ∞   ∞
+  //    \ /
+  //     o
+
+  // 3D case vectors:
+  // v0 [x0  y0  z0]
+  // v1 [x1  y1  z1]
+  // v2 [x2  y2  z2]
+  // (1) <v0, v0> = 1
+  // (2) <v1, v1> = 1
+  // (3) <v2, v2> = 1
+  // (4) <v0, v1> = -1
+  // (5) <v0, v2> = -1
+  // (6) <v1, v2> = -1
+
+  // We want to be centered at 0,0,0
+  // so z0 = z1 = z2 and we set x2 = 0 to have as many equations as variables
+  // v0 [x0  y0  z]
+  // v1 [x1  y1  z]
+  // v2 [ 0  y2  z]
+
+  // (1) x0^2 + y0^2 - z^2 = 1
+  // (2) x1^2 + y1^2 - z^2 = 1
+  // (3) y2^2 - z^2 = 1
+  // (4) x0 * x1 + y0 * y1 - z^2 = -1
+  // (5) y0 * y2 - z^2 = -1
+  // (6) y1 * y2 - z^2 = -1
+
+  // (7) : (5) + (6) => y0 = y1
+  // (8) : (3) => y2 = -sqrt(1 + z^2) (we take the negative solution)
+
+  // (4) : x0 * x1 + y0^2 - z^2 = -1
+  // (1) : x0^2 + y0^2 - z^2 = 1
+  // (9) : (1) + (4) => x0^2 + x1 * x0 = 0 => x0 = -x1
+
+  // (5) + (8) => y0 * -sqrt(1 + z^2) - z^2 = -1
+  // (10) : y0 = y1 = (1 - z^2) / sqrt(1 + z^2)
+
+  // (1) + (10) => x0^2 + (z^2 - 1)^2 / (1 + z^2) - z^2 = 1
+  // x0^2 = 1 + z^2 - (z^2 - 1)^2 / (1 + z^2)
+  // x0^2 = ((1 + z^2) * (1 + z^2) - (z^2 - 1)^2) / (1 + z^2)
+  // x0^2 = (1 + 2z^2 + z^4 - z^4 + 2z^2 - 1) / (1 + z^2)
+  // (11) : x0^2 = (4z^2) / (1 + z^2)
+  // (9) + (11) => (4z^2) / (1 + z^2) = 1
+  // 4z^2 = 1 + z^2
+  // 3z^2 = 1
+  // (12) : z = 1 / sqrt(3)
+  // (10) + (12) => y0 = y1 = (1  - 1/ 3) / sqrt(1 + 1 / 3) = 1 / sqrt(3)
+
+  // Therefore
+  // v0 [ 1   1 / sqrt(3)  1 / sqrt(3)]
+  // v1 [-1   1 / sqrt(3)  1 / sqrt(3)]
+  // v2 [ 0  -2 / sqrt(3)  1 / sqrt(3)]
+
+  // 4D case
+  // v0 [x0  y0  z0  w0]
+  // v1 [x1  y1  z1  w1]
+  // v2 [x2  y2  z2  w2]
+  // v3 [x3  y3  z3  w3]
+  // (1) <v0, v0> = 1
+  // (2) <v1, v1> = 1
+  // (3) <v2, v2> = 1
+  // (4) <v3, v3> = 1
+  // (5) <v0, v1> = -1
+  // (6) <v0, v2> = -1
+  // (7) <v0, v3> = -1
+  // (8) <v1, v2> = -1
+  // (9) <v1, v3> = -1
+  // (10) <v2, v3> = -1
+
+  // We want to be centered at 0,0,0,0
+  // so w0 = w1 = w2 = w3 and we set x3 = y3 = x2 = 0 to have as many equations as variables:
+  // v0 [x0  y0  z0  w]
+  // v1 [x1  y1  z1  w]
+  // v2 [ 0  y2  z2  w]
+  // v3 [ 0   0  z3  w]
+
+  // (1) x0^2 + y0^2 + z0^2 - w^2 = 1
+  // (2) x1^2 + y1^2 + z1^2 - w^2 = 1
+  // (3) y2^2 + z2^2 - w^2 = 1
+  // (4) z3^2 - w^2 = 1
+  // (5) x0 * x1 + y0 * y1 + z0 * z1 - w^2 = -1
+  // (6) y0 * y2 + z0 * z2 - w^2 = -1
+  // (7) z0 * z3 - w^2 = -1
+  // (8) y1 * y2 + z1 * z2 - w^2 = -1
+  // (9) z1 * z3 - w^2 = -1
+  // (10) z2 * z3 - w^2 = -1
+
+  // We can do the same as in 3D case but it's a bit fastidious.
+  // We take a shortcut here by reusing the 3D case.
+  // We see from (7) + (9) + (10) that z0 = z1 = z2 = z3 = z
+  // By posing zt = w^2 - z^2
+  // We get the same equations as in 3D case:
+  // (1) x0^2 + y0^2 - zt^2 = 1
+  // (2) x1^2 + y1^2 - zt^2 = 1
+  // (3) y2^2 - zt^2 = 1
+  // (5) x0 * x1 + y0 * y1 - zt^2 = -1
+  // (6) y0 * y2 - zt^2 = -1
+  // (8) y1 * y2 - zt^2 = -1
+
+  // And therefore the same solution:
+  // v0 [ 1   1/sqrt(3)  z   w]
+  // v1 [-1   1/sqrt(3)  z   w]
+  // v2 [ 0  -2/sqrt(3)  z   w]
+  // v3 [ 0   0          z3  w]
+
+  // AND zt^2 = 1/3 = w^2 - z^2 (11)
+  // So to solve for w and z we have:
+  // (11) : w^2 = 1/3 + z^2
+  // (4)  : w^2 = z3^2 - 1
+  // (7)  : w^2 = z * z3 + 1
+
+  // (11) + (4) => z3^2 - 1 = 1/3 + z^2
+  // (12) : z3^2 = 4/3 + z^2
+  // (11) + (7) => z * z3 + 1 = 1/3 + z^2
+  // (13) : z * z3 = -2/3 + z^2
+  // (13') : z^2 * z3^2 = (-2/3 + z^2)^2
+  // (12) + (13') : z^2 * (4/3 + z^2) = (-2/3 + z^2)^2
+  // z^4 + 4/3 * z^2 = 4/9 - 4/3 * z^2 + z^4
+  // 8/3 * z^2 = 4/9
+  // z^2 = 1/6
+  // (14) : z = 1/sqrt(6)
+  // (4) + (14) : w^2 = 1/3 + 1/6 = 1/2
+  // (15) : w = 1/sqrt(2)
+  // (4) + (15) : z3^2 = 1/2 + 1 = 3/2
+  // (16) : z3 = -sqrt(3/2) = -3/sqrt(6)
+
+  // So we have:
+  // v0 [ 1   1/sqrt(3)  1/sqrt(6)  1/sqrt(2)]
+  // v1 [-1   1/sqrt(3)  1/sqrt(6)  1/sqrt(2)]
+  // v2 [ 0  -2/sqrt(3)  1/sqrt(6)  1/sqrt(2)]
+  // v3 [ 0   0         -3/sqrt(6)  1/sqrt(2)]
+
+  // 5d case
+  // Again we can reuse the last case by posing wt = v^2 - w^2
+  // We have:
+  // v0 [ 1   1/sqrt(3)  1/sqrt(6)  w  v]
+  // v1 [-1   1/sqrt(3)  1/sqrt(6)  w  v]
+  // v2 [ 0  -2/sqrt(3)  1/sqrt(6)  w  v]
+  // v3 [ 0   0         -3/sqrt(6)  w  v]
+  // v4 [ 0   0         0           w4 v]
+  // AND wt^2 = 1/2 = v^2 - w^2 (17)
+  // v^2 = w^2 + 1/2
+  // v^2 = w4^2 - 1
+  // v^2 = w * w4 + 1
+  // w4^2 - 1 = w^2 + 1/2
+  // w4^2 = w^2 + 3/2
+  // w * w4 + 1 = w^2 + 1/2
+  // w * w4 = w^2 - 1/2
+  // w^2 * w4^2 = (w^2 - 1/2)^2
+  // w^2 * (w^2 + 3/2) = (w^2 - 1/2)^2
+  // w^4 + 3/2 * w^2 = w^4 - w^2 + 1/4
+  // 5/2 * w^2 = 1/4
+  // w^2 = 1/10
+  // (18) : w = 1/sqrt(10)
+  // (17) + (18) : v^2 = 1/10 + 1/2 = 3/5
+  // (19) : v = sqrt(3/5)
+  // (17) + (19) : w4^2 = 3/5 + 1 = 8/5
+  // (20) : w4 = sqrt(8/5) = 2/sqrt(5)
+  // General case
+  // v-1[n-2] -> Last coordinate of the n-1 dimensions vector
+  // v[n-1]^2 -> Last coordinate of the n dimensions vector
+  // vn[n-2]^2 -> Before last coordinate of the last n dimensions vector
+  // vi[n-2]^2 -> Before last coordinate of the except last n dimensions vector
+
+  // v[n-1]^2 = (v-1[n-2] + 1) / (3 - v-1[n-2])) = alpha
+  // vn[n-2]^2 = 4 / (3 - v-1[n-2]))
+  // vi[n-2]^2 = (v-1[n-2] - 1)^2 / (3 - v-1[n-2])
+
+  // Let's begin again but with the gram coefficients
+  // Dimension 2
+  // v0 [x0 y0]
+  // v1 [x1 y1]
+  // We insist on the fact that the vectors have the same n-1 coordinates
+  // So y0 = y1 = y = sqrt(±α)
+  // In positive curvature α = y^2
+  // In negative curvature α = -y^2
+  // In null curvature α = 0 (?)
+
+  // We have:
+  // (1) : x0^2 + α = 1
+  // (2) : x1^2 + α = 1
+  // (3) : x0 * x1 + α = g01 = -cos(π/p) = Π
+  // => α = (Π + 1) / 2
+  // => x0 =  sqrt(2(1 - Π)) / 2
+  // => x1 = -sqrt(2(1 - Π)) / 2
+
+  // Dimension 3
+  // v0 [x0 y0 z0]
+  // v1 [x1 y1 z1]
+  // v2 [x2 y2 z2]
+  // We insist on the fact that the vectors have the same n-1 coordinates
+  // So z0 = z1 = z2 = z = sqrt(±α)
+  // In positive curvature α = z^2
+  // In negative curvature α = -z^2
+  // In null curvature α = 0 (?)
+  // We have 6 equations and 7 unknowns so we choose x2 = 0:
+
+  // We have:
+  // (1) : x0^2 + y0^2 + α = 1
+  // (2) : x1^2 + y1^2 + α = 1
+  // (3) : y2^2 + α = 1
+  // (4) : x0 * x1 + y0 * y1 + α = g01 = -cos(π/p) = Π
+  // (5) : y1 * y2 + α = g12 = -cos(π/q) = χ
+  // (6) : y0 * y2 + α = g02 = -cos(π/r) = ρ
+
+  // (3) => y2^2 = 1 - α
+  //     => y2 = -sqrt(1 - α)
+  // (6) => y0 * y2 = ρ - α
+  //     => y0 = -(ρ - α) / sqrt(1 - α)
+  //     => y0^2 = (ρ - α)^2 / (1 - α)
+  // (5) => y1 * y2 = χ - α
+  //     => y1 * -sqrt(1 - α) = χ - α
+  //     => y1 = -(χ - α) / sqrt(1 - α)
+  //     => y1^2 = (χ - α)^2 / (1 - α)
+  //     => y1 = (χ - α) / ((ρ - α) / y0)
+  //     => y1 = y0 * (χ - α) / (ρ - α)
+  //     => y0^2 = ((ρ - α) / (χ - α))^2 * y1^2
+  // (1) => x0^2 = 1 - y0^2 - α
+  //     => x0^2 = 1 - (ρ - α)^2 / (1 - α) - α
+  //     => x0^2 = (2 * α * ρ - 2 * α - ρ^2 + 1)/(1 - α)
+  //     => x0^2 = -((ρ - 1) * (2*α - ρ - 1) / (α - 1))
+  // (2) => x1^2 = 1 - y1^2 - α
+  //     => x1^2 = 1 - (χ - α)^2 / (1 - α) - α
+  //     => x1^2 = (2 * α * χ - 2 * α - χ^2 + 1)/(1 - α)
+  //     => x1^2 = -((χ - 1) * (2*α - χ - 1) / (α - 1))
+
+  // (4) => x0 * x1 + y0 * y1 + α = Π
+  //     => sqrt(2 * α * ρ - 2 * α - ρ^2 + 1) * sqrt(2 * α * χ - 2 * α - χ^2 + 1) / (1 - α) + y0 * y0 * (χ - α) / (ρ - α) + α = Π
+  //     => α = (Π * Π + χ * χ + ρ * ρ - 2 * Π * χ * ρ - 1) / (Π * Π + χ * χ + ρ * ρ - 2 * Π * χ - 2 * Π * ρ - 2 * χ * ρ + 2 * Π + 2 * χ + 2 * ρ - 3)
+
+  // z0 = z1 = z2 = sqrt(curvature * α)
+
+  // Dimension 4
+  // v0 [x0 y0 z0 w0]
+  // v1 [x1 y1 z1 w1]
+  // v2 [x2 y2 z2 w2]
+  // v3 [x3 y3 z3 w3]
+
+  // w0 = w1 = w2 = w3 = sqrt(±α)
+  // x2 = x3 = y3 = 0
+
+  // (1) :          x0^2 + y0^2 + z0^2 + α = 1
+  // (2) :          x1^2 + y1^2 + z1^2 + α = 1
+  // (3) :                 y2^2 + z2^2 + α = 1
+  // (4) :                        z3^2 + α = 1
+  // (5) : x0 * x1 + y0 * y1 + z0 * z1 + α = g01 (p)
+  // (6) :           y1 * y2 + z1 * z2 + α = g12 (q)
+  // (7) :                     z2 * z3 + α = g23 (r)
+  // (8) :           y0 * y2 + z0 * z2 + α = g02 (s)
+  // (9) :                     z1 * z3 + α = g13 (t)
+  // (10):                     z0 * z3 + α = g03 (u)
+
+  // z3^2 = 1 - α
+  // z3 = -sqrt(1 - α)
+  // z0 * z3 = u - α
+  // z0 = -(u - α) / sqrt(1 - α)
+  // z0^2 = (u - α)^2 / (1 - α)
+  // z1^2 = (t - α)^2 / (1 - α)
+  // z2^2 = (r - α)^2 / (1 - α)
+  // y2^2 = 1 - α - z2^2
+  // y2^2 = 1 - α - (r - α)^2 / (1 - α)
+  // y1 = (q - α - z1 * z2) / y2
+  // y1 = (q - α - ((t - α) * (r - α) / (1 - α))) /  sqrt(1 - α - (r - α)^2 / (1 - α))
+  // y1^2 = (q - α - ((t - α) * (r - α) / (1 - α)))^2 / (1 - α - (r - α)^2 / (1 - α))
+  // y0^2 = (s - α - ((u - α) * (r - α) / (1 - α)))^2 / (1 - α - (r - α)^2 / (1 - α))
+  // x0^2 = 1 - α - y0^2 - z0^2
+  // x0^2 = 1 - α - (s - α - ((u - α) * (r - α) / (1 - α)))^2 / (1 - α - (r - α)^2 / (1 - α)) - (u - α)^2 / (1 - α)
+
+  // Dimension 5
+  // v0 [x0 y0 z0 w0 v]
+  // v1 [x1 y1 z1 w1 v]
+  // v2 [0  y2 z2 w2 v]
+  // v3 [0  0  z3 w3 v]
+  // v4 [0  0  0  w4 v]
+
+  // p t w y
+  //   q u x
+  //     r v
+  //       s
+  // (01) :             x0^2 + y0^2 + z0^2 + w0^2 + α = 1
+  // (02) :             x1^2 + y1^2 + z1^2 + w1^2 + α = 1
+  // (03) :                    y2^2 + z2^2 + w2^2 + α = 1
+  // (04) :                           z3^2 + w3^2 + α = 1
+  // (05) :                                  w4^2 + α = 1
+  // (06) : x0 * x1 + y0 * y1 + z0 * z1 + w0 * w1 + α = p
+  // (07) :           y1 * y2 + z1 * z2 + w1 * w2 + α = q
+  // (08) :                     z2 * z3 + w2 * w3 + α = r
+  // (09) :                               w3 * w4 + α = s
+  // (10) :           y0 * y2 + z0 * z2 + w0 * w2 + α = t
+  // (11) :                     z1 * z3 + w1 * w3 + α = u
+  // (12) :                               w2 * w4 + α = v
+  // (13) :                     z0 * z3 + w0 * w3 + α = w
+  // (14) :                               w1 * w4 + α = x
+  // (15) :                               w0 * w4 + α = y
   let mirrorsPlanes = null
+  if (centered) {
+    mirrorsPlanes = new Array(dimensions)
+      .fill(0)
+      .map(() => new Array(dimensions).fill(0))
+
+    if (dimensions === 2) {
+      const alpha = (gram[0][1] + 1) / 2
+      mirrorsPlanes[0][0] = sqrt(alpha - gram[0][1])
+      mirrorsPlanes[1][0] = -sqrt(alpha - gram[0][1])
+      mirrorsPlanes[0][1] = mirrorsPlanes[1][1] = sqrt((curvature || 1) * alpha)
+      // FIXME:
+      if (curvature === 0) {
+        mirrorsPlanes[1][1] = 0.5
+      }
+      return mirrorsPlanes
+    } else if (dimensions === 3) {
+      const p = gram[0][1]
+      const q = gram[1][2]
+      const r = gram[0][2]
+      // prettier-ignore
+      const alpha =
+          (p * p + q * q + r * r - 2 * p * q * r - 1) /
+          (p * p + q * q + r * r
+            - 2 * p * q
+            - 2 * p * r
+            - 2 * q * r
+            + 2 * p
+            + 2 * q
+            + 2 * r
+            - 3)
+
+      console.log(alpha)
+      // z0 = z1 = z2 = sqrt(curvature * α)
+      mirrorsPlanes[0][2] =
+        mirrorsPlanes[1][2] =
+        mirrorsPlanes[2][2] =
+          curvature * sqrt(curvature * alpha)
+      // y2 = -sqrt(1 - α)
+      mirrorsPlanes[2][1] = -sqrt(1 - alpha)
+      // y1 = (χ - α) / y2
+      mirrorsPlanes[1][1] = (q - alpha) / mirrorsPlanes[2][1]
+      // y0 = (ρ - α) / y2
+      mirrorsPlanes[0][1] = (r - alpha) / mirrorsPlanes[2][1]
+      // x1 = -sqrt(1 - y1^2 - α)
+      mirrorsPlanes[1][0] = -sqrt(1 - mirrorsPlanes[1][1] ** 2 - alpha)
+      // x0 = sqrt(1 - y0^2 - α)
+      mirrorsPlanes[0][0] = sqrt(1 - mirrorsPlanes[0][1] ** 2 - alpha)
+      check(mirrorsPlanes, gram, curvature)
+      // FIXME:
+      if (curvature === 0) {
+        mirrorsPlanes[2][2] = 0.5
+      }
+      return mirrorsPlanes
+    } else if (dimensions === 4) {
+      const p = gram[0][1]
+      const q = gram[1][2]
+      const r = gram[2][3]
+      const s = gram[0][2]
+      const t = gram[1][3]
+      const u = gram[0][3]
+      // prettier-ignore
+      const alpha =
+          (
+              p * p * r * r
+            + q * q * u * u
+            + s * s * t * t
+            - p * p
+            - q * q
+            - r * r
+            - s * s
+            - t * t
+            - u * u
+            + 2 * p * t * u
+            + 2 * p * q * s
+            + 2 * q * r * t
+            + 2 * r * s * u
+            - 2 * q * s * t * u
+            - 2 * p * q * r * u
+            - 2 * p * r * s * t
+            + 1) /
+          (2 *
+            (
+                p * p * r
+              + q * q * u
+              + r * r * p
+              + s * s * t
+              + t * t * s
+              + u * u * q
+              - p * p
+              - q * q
+              - r * r
+              - s * s
+              - t * t
+              - u * u
+              - p * q * r
+              - p * q * u
+              - p * r * s
+              - p * r * t
+              - p * r * u
+              - p * s * t
+              - q * r * u
+              - q * s * t
+              - q * s * u
+              - q * t * u
+              - r * s * t
+              - s * t * u
+              + p * q * s
+              + p * t * u
+              + q * r * t
+              + r * s * u
+              + p * q
+              + p * s
+              + p * t
+              + p * u
+              + q * r
+              + q * s
+              + q * t
+              + r * s
+              + r * t
+              + r * u
+              + s * u
+              + t * u
+              - p
+              - q
+              - r
+              - s
+              - t
+              - u
+              + 2))
+
+      // console.log(alpha)
+      // w0 = w1 = w2 = w3 = sqrt(curvature * α)
+      mirrorsPlanes[0][3] =
+        mirrorsPlanes[1][3] =
+        mirrorsPlanes[2][3] =
+        mirrorsPlanes[3][3] =
+          curvature * sqrt(curvature * alpha)
+      // z3 = -sqrt(1 - α)
+      mirrorsPlanes[3][2] = -sqrt(1 - alpha)
+      // z2 = (r - α) / z3
+      mirrorsPlanes[2][2] = (r - alpha) / mirrorsPlanes[3][2]
+      // z1 = (t - α) / z3
+      mirrorsPlanes[1][2] = (t - alpha) / mirrorsPlanes[3][2]
+      // z0 = (u - α) / z3
+      mirrorsPlanes[0][2] = (u - alpha) / mirrorsPlanes[3][2]
+
+      // y2 = -sqrt(1 - α - z2^2)
+      mirrorsPlanes[2][1] = -sqrt(1 - alpha - mirrorsPlanes[2][2] ** 2)
+      // y1 = (q - α - z1 * z2) / y2
+      mirrorsPlanes[1][1] =
+        (q - alpha - mirrorsPlanes[1][2] * mirrorsPlanes[2][2]) /
+        mirrorsPlanes[2][1]
+      // y0 = (s - α - z0 * z2) / y2
+      mirrorsPlanes[0][1] =
+        (s - alpha - mirrorsPlanes[0][2] * mirrorsPlanes[2][2]) /
+        mirrorsPlanes[2][1]
+
+      // x1 = -sqrt(1 - α - y1^2 - z1^2)
+      mirrorsPlanes[1][0] = -sqrt(
+        1 - alpha - mirrorsPlanes[1][1] ** 2 - mirrorsPlanes[1][2] ** 2
+      )
+      // x0 = sqrt(1 - α - y0^2 - z0^2)
+      mirrorsPlanes[0][0] = sqrt(
+        1 - alpha - mirrorsPlanes[0][1] ** 2 - mirrorsPlanes[0][2] ** 2
+      )
+
+      // check(mirrorsPlanes, gram, curvature)
+      // FIXME:
+      if (curvature === 0) {
+        mirrorsPlanes[3][3] = 0.5
+      }
+      return mirrorsPlanes
+    }
+    // TODO: general case for higher dimensions
+
+    // Other dimensions case, hyperideal only:
+    if (gram.every(row => row.every(x => x === -1))) {
+      const alphas = [0]
+      for (let i = 1; i < dimensions; i++) {
+        alphas[i] = (alphas[i - 1] + 1) / (3 - alphas[i - 1])
+      }
+
+      mirrorsPlanes[0][0] = 1
+      mirrorsPlanes[1][0] = -1
+      mirrorsPlanes[0][1] = sqrt(alphas[1])
+      mirrorsPlanes[1][1] = sqrt(alphas[1])
+
+      for (let i = 0; i < dimensions; i++) {
+        for (let j = 0; j < dimensions; j++) {
+          if (i < 2 && j < 2) {
+            continue
+          }
+          mirrorsPlanes[i][j] =
+            j < i - 1
+              ? 0
+              : j === i - 1
+              ? -(i * sqrt(alphas[j] - alphas[j - 1]))
+              : j < dimensions - 1
+              ? sqrt(alphas[j] - alphas[j - 1])
+              : sqrt(alphas[j - 1])
+        }
+      }
+
+      return mirrorsPlanes
+    }
+  }
+
   for (let i = 0; i < dimensions; i++) {
     mirrorsPlanes = getFundamentalSimplexMirrorsShifted(i, gram, curvature)
     if (mirrorsPlanes) {
@@ -328,210 +834,16 @@ export const getFundamentalSimplexMirrors = (
       }
     }
   }
-  if (!mirrorsPlanes && dimensions > 2) {
-    // Hyperideal case like
-    // o - ∞ - o
-    //  \     /
-    //   ∞   ∞
-    //    \ /
-    //     o
+  return mirrorsPlanes
+}
 
-    // 3D case vectors:
-    // v0 [x0  y0  z0]
-    // v1 [x1  y1  z1]
-    // v2 [x2  y2  z2]
-    // (1) <v0, v0> = 1
-    // (2) <v1, v1> = 1
-    // (3) <v2, v2> = 1
-    // (4) <v0, v1> = -1
-    // (5) <v0, v2> = -1
-    // (6) <v1, v2> = -1
-
-    // We want to be centered at 0,0,0
-    // so z0 = z1 = z2 and we set x2 = 0 to have as many equations as variables
-    // v0 [x0  y0  z]
-    // v1 [x1  y1  z]
-    // v2 [ 0  y2  z]
-
-    // (1) x0^2 + y0^2 - z^2 = 1
-    // (2) x1^2 + y1^2 - z^2 = 1
-    // (3) y2^2 - z^2 = 1
-    // (4) x0 * x1 + y0 * y1 - z^2 = -1
-    // (5) y0 * y2 - z^2 = -1
-    // (6) y1 * y2 - z^2 = -1
-
-    // (7) : (5) + (6) => y0 = y1
-    // (8) : (3) => y2 = -sqrt(1 + z^2) (we take the negative solution)
-
-    // (4) : x0 * x1 + y0^2 - z^2 = -1
-    // (1) : x0^2 + y0^2 - z^2 = 1
-    // (9) : (1) + (4) => x0^2 + x1 * x0 = 0 => x0 = -x1
-
-    // (5) + (8) => y0 * -sqrt(1 + z^2) - z^2 = -1
-    // (10) : y0 = y1 = (1 - z^2) / sqrt(1 + z^2)
-
-    // (1) + (10) => x0^2 + (z^2 - 1)^2 / (1 + z^2) - z^2 = 1
-    // x0^2 = 1 + z^2 - (z^2 - 1)^2 / (1 + z^2)
-    // x0^2 = ((1 + z^2) * (1 + z^2) - (z^2 - 1)^2) / (1 + z^2)
-    // x0^2 = (1 + 2z^2 + z^4 - z^4 + 2z^2 - 1) / (1 + z^2)
-    // (11) : x0^2 = (4z^2) / (1 + z^2)
-    // (9) + (11) => (4z^2) / (1 + z^2) = 1
-    // 4z^2 = 1 + z^2
-    // 3z^2 = 1
-    // (12) : z = 1 / sqrt(3)
-    // (10) + (12) => y0 = y1 = (1  - 1/ 3) / sqrt(1 + 1 / 3) = 1 / sqrt(3)
-
-    // Therefore
-    // v0 [ 1   1 / sqrt(3)  1 / sqrt(3)]
-    // v1 [-1   1 / sqrt(3)  1 / sqrt(3)]
-    // v2 [ 0  -2 / sqrt(3)  1 / sqrt(3)]
-
-    // 4D case
-    // v0 [x0  y0  z0  w0]
-    // v1 [x1  y1  z1  w1]
-    // v2 [x2  y2  z2  w2]
-    // v3 [x3  y3  z3  w3]
-    // (1) <v0, v0> = 1
-    // (2) <v1, v1> = 1
-    // (3) <v2, v2> = 1
-    // (4) <v3, v3> = 1
-    // (5) <v0, v1> = -1
-    // (6) <v0, v2> = -1
-    // (7) <v0, v3> = -1
-    // (8) <v1, v2> = -1
-    // (9) <v1, v3> = -1
-    // (10) <v2, v3> = -1
-
-    // We want to be centered at 0,0,0,0
-    // so w0 = w1 = w2 = w3 and we set x3 = y3 = x2 = 0 to have as many equations as variables:
-    // v0 [x0  y0  z0  w]
-    // v1 [x1  y1  z1  w]
-    // v2 [ 0  y2  z2  w]
-    // v3 [ 0   0  z3  w]
-
-    // (1) x0^2 + y0^2 + z0^2 - w^2 = 1
-    // (2) x1^2 + y1^2 + z1^2 - w^2 = 1
-    // (3) y2^2 + z2^2 - w^2 = 1
-    // (4) z3^2 - w^2 = 1
-    // (5) x0 * x1 + y0 * y1 + z0 * z1 - w^2 = -1
-    // (6) y0 * y2 + z0 * z2 - w^2 = -1
-    // (7) z0 * z3 - w^2 = -1
-    // (8) y1 * y2 + z1 * z2 - w^2 = -1
-    // (9) z1 * z3 - w^2 = -1
-    // (10) z2 * z3 - w^2 = -1
-
-    // We can do the same as in 3D case but it's a bit fastidious.
-    // We take a shortcut here by reusing the 3D case.
-    // We see from (7) + (9) + (10) that z0 = z1 = z2 = z3 = z
-    // By posing zt = w^2 - z^2
-    // We get the same equations as in 3D case:
-    // (1) x0^2 + y0^2 - zt^2 = 1
-    // (2) x1^2 + y1^2 - zt^2 = 1
-    // (3) y2^2 - zt^2 = 1
-    // (5) x0 * x1 + y0 * y1 - zt^2 = -1
-    // (6) y0 * y2 - zt^2 = -1
-    // (8) y1 * y2 - zt^2 = -1
-
-    // And therefore the same solution:
-    // v0 [ 1   1/sqrt(3)  z   w]
-    // v1 [-1   1/sqrt(3)  z   w]
-    // v2 [ 0  -2/sqrt(3)  z   w]
-    // v3 [ 0   0          z3  w]
-
-    // AND zt^2 = 1/3 = w^2 - z^2 (11)
-    // So to solve for w and z we have:
-    // (11) : w^2 = 1/3 + z^2
-    // (4)  : w^2 = z3^2 - 1
-    // (7)  : w^2 = z * z3 + 1
-
-    // (11) + (4) => z3^2 - 1 = 1/3 + z^2
-    // (12) : z3^2 = 4/3 + z^2
-    // (11) + (7) => z * z3 + 1 = 1/3 + z^2
-    // (13) : z * z3 = -2/3 + z^2
-    // (13') : z^2 * z3^2 = (-2/3 + z^2)^2
-    // (12) + (13') : z^2 * (4/3 + z^2) = (-2/3 + z^2)^2
-    // z^4 + 4/3 * z^2 = 4/9 - 4/3 * z^2 + z^4
-    // 8/3 * z^2 = 4/9
-    // z^2 = 1/6
-    // (14) : z = 1/sqrt(6)
-    // (4) + (14) : w^2 = 1/3 + 1/6 = 1/2
-    // (15) : w = 1/sqrt(2)
-    // (4) + (15) : z3^2 = 1/2 + 1 = 3/2
-    // (16) : z3 = -sqrt(3/2) = -3/sqrt(6)
-
-    // So we have:
-    // v0 [ 1   1/sqrt(3)  1/sqrt(6)  1/sqrt(2)]
-    // v1 [-1   1/sqrt(3)  1/sqrt(6)  1/sqrt(2)]
-    // v2 [ 0  -2/sqrt(3)  1/sqrt(6)  1/sqrt(2)]
-    // v3 [ 0   0         -3/sqrt(6)  1/sqrt(2)]
-
-    // 5d case
-    // Again we can reuse the last case by posing wt = v^2 - w^2
-    // We have:
-    // v0 [ 1   1/sqrt(3)  1/sqrt(6)  w  v]
-    // v1 [-1   1/sqrt(3)  1/sqrt(6)  w  v]
-    // v2 [ 0  -2/sqrt(3)  1/sqrt(6)  w  v]
-    // v3 [ 0   0         -3/sqrt(6)  w  v]
-    // v4 [ 0   0         0           w4 v]
-    // AND wt^2 = 1/2 = v^2 - w^2 (17)
-    // v^2 = w^2 + 1/2
-    // v^2 = w4^2 - 1
-    // v^2 = w * w4 + 1
-    // w4^2 - 1 = w^2 + 1/2
-    // w4^2 = w^2 + 3/2
-    // w * w4 + 1 = w^2 + 1/2
-    // w * w4 = w^2 - 1/2
-    // w^2 * w4^2 = (w^2 - 1/2)^2
-    // w^2 * (w^2 + 3/2) = (w^2 - 1/2)^2
-    // w^4 + 3/2 * w^2 = w^4 - w^2 + 1/4
-    // 5/2 * w^2 = 1/4
-    // w^2 = 1/10
-    // (18) : w = 1/sqrt(10)
-    // (17) + (18) : v^2 = 1/10 + 1/2 = 3/5
-    // (19) : v = sqrt(3/5)
-    // (17) + (19) : w4^2 = 3/5 + 1 = 8/5
-    // (20) : w4 = sqrt(8/5) = 2/sqrt(5)
-    // General case
-    // v-1[n-2] -> Last coordinate of the n-1 dimensions vector
-    // v[n-1]^2 -> Last coordinate of the n dimensions vector
-    // vn[n-2]^2 -> Before last coordinate of the last n dimensions vector
-    // vi[n-2]^2 -> Before last coordinate of the except last n dimensions vector
-
-    // v[n-1]^2 = (v-1[n-2] + 1) / (3 - v-1[n-2])) = alpha
-    // vn[n-2]^2 = 4 / (3 - v-1[n-2]))
-    // vi[n-2]^2 = (v-1[n-2] - 1)^2 / (3 - v-1[n-2])
-    mirrorsPlanes = new Array(dimensions)
-      .fill(0)
-      .map(() => new Array(dimensions).fill(0))
-
-    const alphas = [0]
-    for (let i = 1; i < dimensions; i++) {
-      alphas[i] = (alphas[i - 1] + 1) / (3 - alphas[i - 1])
-    }
-
-    mirrorsPlanes[0][0] = 1
-    mirrorsPlanes[1][0] = -1
-    mirrorsPlanes[0][1] = sqrt(alphas[1])
-    mirrorsPlanes[1][1] = sqrt(alphas[1])
-
-    for (let i = 0; i < dimensions; i++) {
-      for (let j = 0; j < dimensions; j++) {
-        if (i < 2 && j < 2) {
-          continue
-        }
-        mirrorsPlanes[i][j] =
-          j < i - 1
-            ? 0
-            : j === i - 1
-            ? -(i * sqrt(alphas[j] - alphas[j - 1]))
-            : j < dimensions - 1
-            ? sqrt(alphas[j] - alphas[j - 1])
-            : sqrt(alphas[j - 1])
-      }
+const check = (m, g, curvature) => {
+  for (let i = 0; i < m.length; i++) {
+    for (let j = 0; j < m[i].length; j++) {
+      const d = xdot(m[i], m[j], curvature)
+      console.log(i, j, d, g[i][j], abs(d - g[i][j]) < 1e-10 ? 'OK' : 'FAIL')
     }
   }
-
-  return mirrorsPlanes
 }
 
 export const getFundamentalVertex = (mirrors, mirrorsPlanes, curvature) => {

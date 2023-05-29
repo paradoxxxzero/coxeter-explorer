@@ -59,11 +59,13 @@ export default function App({ gl, params, updateParams }) {
         coxeter: params.coxeter,
         mirrors: params.mirrors,
         stellation: params.stellation,
+        centered: params.centered,
       }).params,
     }))
   }, [
     params.order,
     params.ambiance,
+    params.centered,
     params.controls,
     params.controlsShift,
     params.coxeter,
@@ -193,6 +195,9 @@ export default function App({ gl, params, updateParams }) {
           params.controlsShift,
           round(binomial(value, 2) / 2 - 1)
         )
+      }
+      if (name === 'grouper') {
+        newParams.centered = value !== 'knuthbendix'
       }
 
       if (name.startsWith('coxeter')) {
