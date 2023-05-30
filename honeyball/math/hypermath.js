@@ -243,14 +243,17 @@ export const normalize = (v, curvature) => {
 // ...
 
 export const xtranslate = (offset, level, dimensions, curvature) => {
-  level = level % binomial(dimensions, 2)
   const matrix = ident(dimensions)
-  const [i, j] = combinations(
+  const cb = combinations(
     new Array(dimensions)
       .fill()
       .map((_, i) => i)
       .reverse()
-  )[level]
+  )
+  if (level > cb.length - 1) {
+    return matrix
+  }
+  const [i, j] = cb[level]
   const c = i === dimensions - 1 ? curvature : 1
 
   const cost = sqrt(1 - c * offset * offset)

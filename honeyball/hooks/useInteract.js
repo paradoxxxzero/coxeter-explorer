@@ -9,15 +9,13 @@ const translate = (offset, shift, matrix, dimensions, curvature) => {
     matrix,
     multiply(matrix, xtranslate(offset[0], shift * 2, dimensions, curvature))
   )
-  if (shift * 2 + 1 < dimensions) {
-    set(
+  set(
+    matrix,
+    multiply(
       matrix,
-      multiply(
-        matrix,
-        xtranslate(offset[1], shift * 2 + 1, dimensions, curvature)
-      )
+      xtranslate(offset[1], shift * 2 + 1, dimensions, curvature)
     )
-  }
+  )
 }
 
 export const dragMove = (e, matrix, dimensions, curvature, shift) => {

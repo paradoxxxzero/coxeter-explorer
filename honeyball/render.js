@@ -23,12 +23,11 @@ import {
   WebGLRenderer,
   WebGLRenderTarget,
 } from 'three'
-// import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 import { SAOPass } from 'three/examples/jsm/postprocessing/SAOPass'
+import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
 import { LuminosityShader } from 'three/examples/jsm/shaders/LuminosityShader.js'
@@ -63,7 +62,6 @@ export const initializeGl = () => {
   camera.updateProjectionMatrix()
 
   const scene = new Scene()
-  // scene.fog = new Fog(colors.background, 1, size)
 
   camera.updateProjectionMatrix()
   scene.add(camera)
@@ -493,12 +491,22 @@ export const updateCameraFov = (composer, camera, fov) => {
   composer.render()
 }
 
+const fxaa = new ShaderPass(FXAAShader)
 export const resetComposerTarget = (composer, msaa, msaaSamples) => {
   const size = composer.renderer.getDrawingBufferSize(new Vector2())
   const renderTarget = new WebGLRenderTarget(size.width, size.height, {
     samples: msaa ? msaaSamples : 0,
   })
   composer.reset(renderTarget)
+  composer.removePass(fxaa)
+  if (!msaa) {
+    const pixelRatio = composer.renderer.getPixelRatio()
+    fxaa.material.uniforms['resolution'].value.x =
+      1 / (window.innerWidth * pixelRatio)
+    fxaa.material.uniforms['resolution'].value.y =
+      1 / (window.innerHeight * pixelRatio)
+    composer.addPass(fxaa)
+  }
   composer.render()
 }
 
@@ -666,6 +674,15 @@ export const changeAmbiance = rt => {
       composer.addPass(godrayPass)
     }
   })
+  if (!rt.msaa) {
+    const pixelRatio = composer.renderer.getPixelRatio()
+    fxaa.material.uniforms['resolution'].value.x =
+      1 / (window.innerWidth * pixelRatio)
+    fxaa.material.uniforms['resolution'].value.y =
+      1 / (window.innerHeight * pixelRatio)
+    composer.addPass(fxaa)
+  }
+
   updateMaterials(rt)
   composer.render()
 }
