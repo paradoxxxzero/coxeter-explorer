@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import {
   coxeterToGram,
   getFundamentalSimplexMirrors,
@@ -8,14 +8,19 @@ import {
 import { killRunningWorkers, workers } from '../workers/worker'
 import { ident } from '../math/matrix'
 
-const asyncProcess = async (runtime, setRuntime) => {
+const asyncProcess = async (runtime, running, setRuntime) => {
   // Rules gets computed on non stellated coxeter group
   const worker = workers[runtime.grouper.replace(/^auto-/, '')]
   if (runtime.currentOrder === 0) {
     killRunningWorkers()
+    running.current = false
   }
-
+  if (running.current === runtime.currentOrder) {
+    console.log('already processing at ', runtime.currentOrder)
+    return
+  }
   try {
+    running.current = runtime.currentOrder
     const { vertices, edges, faces, order } = await worker.process({
       order: runtime.currentOrder,
       coxeter: runtime.coxeter,
@@ -26,6 +31,7 @@ const asyncProcess = async (runtime, setRuntime) => {
       rootVertex: runtime.rootVertex,
       dimensions: runtime.dimensions,
     })
+    running.current = false
     setRuntime(runtime => {
       if (runtime.currentOrder !== order) {
         console.warn('Mismatched order, ignoring', runtime.currentOrder, order)
@@ -64,6 +70,7 @@ const asyncProcess = async (runtime, setRuntime) => {
     })
   } catch (e) {
     // Change current order to allow user to retry
+    running.current = false
     console.error(e)
     const newRuntime = {
       ...runtime,
@@ -77,6 +84,8 @@ const asyncProcess = async (runtime, setRuntime) => {
 }
 
 export const useProcess = (runtime, setRuntime) => {
+  const running = useRef(false)
+
   useEffect(() => {
     setRuntime(runtime => {
       if (runtime.order < runtime.currentOrder) {
@@ -136,7 +145,7 @@ export const useProcess = (runtime, setRuntime) => {
         processing: true,
         error: null,
       }
-      asyncProcess(newRuntime, setRuntime)
+      asyncProcess(newRuntime, running, setRuntime)
       return newRuntime
     })
   }, [
@@ -168,7 +177,7 @@ export const useProcess = (runtime, setRuntime) => {
           askedOrder: null,
         }
       }
-      asyncProcess(runtime, setRuntime)
+      asyncProcess(runtime, running, setRuntime)
       return {
         ...runtime,
         error: null,

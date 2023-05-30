@@ -1,31 +1,6 @@
 import { xdot, xdot2 } from './hypermath.js'
 import { acos, acosh, sin, sinh, sqrt } from './index.js'
 
-export const det = m => {
-  if (m.length === 1) {
-    return m[0][0]
-  }
-  let sum = 0
-  for (let i = 0; i < m.length; i++) {
-    const cofactor = new Array(m.length - 1)
-      .fill()
-      .map(() => new Array(m.length - 1).fill(0))
-    // Compute the cofactor of m[0][i]:
-    for (let j = 1; j < m.length; j++) {
-      for (let k = 0; k < m.length; k++) {
-        if (k < i) {
-          cofactor[j - 1][k] = m[j][k]
-        } else if (k > i) {
-          cofactor[j - 1][k - 1] = m[j][k]
-        }
-      }
-    }
-
-    const sign = i % 2 === 0 ? 1 : -1
-    sum += m[0][i] * sign * det(cofactor)
-  }
-  return sum
-}
 export const xcross = (v1, v2, v3, curvature) => {
   if (typeof v3 === 'number') {
     curvature = v3

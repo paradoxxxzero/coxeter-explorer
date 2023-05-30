@@ -602,7 +602,10 @@ export const getFundamentalSimplexMirrors = (
   // (14) :                               w1 * w4 + α = x
   // (15) :                               w0 * w4 + α = y
   let mirrorsPlanes = null
-  if (centered) {
+  const hyperideal = gram.every((row, i) =>
+    row.every((x, j) => x === (i === j ? 1 : -1))
+  )
+  if (centered || hyperideal) {
     mirrorsPlanes = new Array(dimensions)
       .fill(0)
       .map(() => new Array(dimensions).fill(0))
@@ -633,7 +636,6 @@ export const getFundamentalSimplexMirrors = (
             + 2 * r
             - 3)
 
-      console.log(alpha)
       // z0 = z1 = z2 = sqrt(curvature * α)
       mirrorsPlanes[0][2] =
         mirrorsPlanes[1][2] =
@@ -649,7 +651,7 @@ export const getFundamentalSimplexMirrors = (
       mirrorsPlanes[1][0] = -sqrt(1 - mirrorsPlanes[1][1] ** 2 - alpha)
       // x0 = sqrt(1 - y0^2 - α)
       mirrorsPlanes[0][0] = sqrt(1 - mirrorsPlanes[0][1] ** 2 - alpha)
-      check(mirrorsPlanes, gram, curvature)
+      // check(mirrorsPlanes, gram, curvature)
       // FIXME:
       if (curvature === 0) {
         mirrorsPlanes[2][2] = 0.5
@@ -732,7 +734,6 @@ export const getFundamentalSimplexMirrors = (
               - u
               + 2))
 
-      // console.log(alpha)
       // w0 = w1 = w2 = w3 = sqrt(curvature * α)
       mirrorsPlanes[0][3] =
         mirrorsPlanes[1][3] =
@@ -773,12 +774,13 @@ export const getFundamentalSimplexMirrors = (
       if (curvature === 0) {
         mirrorsPlanes[3][3] = 0.5
       }
+
       return mirrorsPlanes
     }
     // TODO: general case for higher dimensions
 
     // Other dimensions case, hyperideal only:
-    if (gram.every(row => row.every(x => x === -1))) {
+    if (hyperideal) {
       const alphas = [0]
       for (let i = 1; i < dimensions; i++) {
         alphas[i] = (alphas[i - 1] + 1) / (3 - alphas[i - 1])
@@ -848,8 +850,25 @@ const check = (m, g, curvature) => {
 
 export const getFundamentalVertex = (mirrors, mirrorsPlanes, curvature) => {
   // solve linear system for mirrors
-  const active = mirrors.map(v => (isNaN(v) ? 1 : +v))
-  const p = multiplyVector(active, inverse(mirrorsPlanes))
+  let active = mirrors.map(v => (isNaN(v) ? 1 : +v))
+  let hyperPlanes = mirrorsPlanes.slice()
+
+  let inv
+  for (let i = 0; i < active.length; i++) {
+    inv = inverse(hyperPlanes)
+    if (inv.some(row => row.some(x => isNaN(x) || abs(x) > 1e8))) {
+      console.warn('Non invertible matrix, retrying by shifting mirrors')
+      hyperPlanes.push(hyperPlanes.shift())
+      active.push(active.shift())
+    } else {
+      break
+    }
+    if (i === active.length - 1) {
+      console.warn('Non invertible matrix, returning default value')
+      return [0, 0, 1]
+    }
+  }
+  const p = multiplyVector(active, inv)
 
   p[p.length - 1] *= curvature || 1
   return normalize(p, curvature)

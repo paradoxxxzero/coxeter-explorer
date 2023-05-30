@@ -97,11 +97,12 @@ onmessage = ({
   if (order === 0) {
     initCosets(dimensions, coxeter, stellation, mirrors, curvature)
   }
-  const limit = (order + 1) * (curvature > 0 ? 1000 : 250)
+  const limit = (order + 1) * (curvature > 0 ? 10 : 250)
   try {
     let vertices = []
     let edges = []
     let faces = []
+
     if (!verticesParams.done) {
       verticesParams.limit = limit
 
@@ -134,7 +135,7 @@ onmessage = ({
       if (edgeParams.done) {
         continue
       }
-      edgeParams.limit = limit
+      edgeParams.limit = limit * (curvature > 0 ? 1 : curvature < 0 ? 1.5 : 3) // ???
       solve(edgeParams)
       const startIndex = edgeParams.pair[0]
       const endIndex = vertexIndex(edgeParams.pair[1])

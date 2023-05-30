@@ -32,28 +32,39 @@ export default function UI({
 
   return (
     <div className={runtime.error ? 'error' : ''} title={runtime.error}>
-      <button className="control-indicator" onClick={onControls}>
+      <button
+        className="control-indicator"
+        onClick={onControls}
+        title="Rotation Mode"
+      >
         {runtime.controls === 'orbit' ? '⇹' : '↭'}
         {runtime.controls === 'free' ? (
           <sup>{runtime.controlsShift + 1}</sup>
         ) : null}
       </button>
       {!diagonal(runtime.matrix) && (
-        <button className="button reset-view" onClick={onMatrixReset}>
+        <button
+          className="button reset-view"
+          onClick={onMatrixReset}
+          title="Reset View"
+        >
           ↻
         </button>
       )}
       <button
         className={`space-indicator${runtime.processing ? ' processing' : ''}`}
         onClick={handleUI}
+        title={`Space ${runtime.spaceType}`}
       >
-        {runtime.spaceType === null || runtime.spaceType === 'indefinite'
-          ? '𝕏'
-          : runtime.spaceType === 'affine'
-          ? '𝔼'
-          : runtime.spaceType === 'finite'
-          ? '𝕊'
-          : 'ℍ'}
+        <span className="space">
+          {runtime.spaceType === null || runtime.spaceType === 'indefinite'
+            ? '𝕏'
+            : runtime.spaceType === 'affine'
+            ? '𝔼'
+            : runtime.spaceType === 'finite'
+            ? '𝕊'
+            : 'ℍ'}
+        </span>
         <sup>
           {runtime.spaceType === 'hyperbolic-paracompact' ? '*' : ''}
           {runtime.dimensions - 1}

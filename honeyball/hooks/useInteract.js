@@ -103,7 +103,11 @@ export const useInteract = (runtime, updateMatrix_) => {
     }
 
     const onDown = e => {
-      if (runtime.controls !== 'free' || e.button !== 0) {
+      if (
+        runtime.controls !== 'free' ||
+        e.button !== 0 ||
+        e.target.tagName !== 'CANVAS'
+      ) {
         return
       }
       const onUp = e => {

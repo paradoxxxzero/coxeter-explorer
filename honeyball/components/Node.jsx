@@ -75,7 +75,7 @@ export default function Node({ index, value, extended, onChange }) {
   }
 
   return (
-    <div className="coxeter-node">
+    <div className="coxeter-node" title={type}>
       <svg
         className={`coxeter-graphic ${type}`}
         viewBox="0 0 32 32"
