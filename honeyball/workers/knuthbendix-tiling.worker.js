@@ -226,7 +226,6 @@ onmessage = ({
       try {
         rules = knuthBendix(baseRules, dimensions)
       } catch (e) {
-        // TODO: Report warning
         rules = new Map(Object.entries(baseRules))
       }
 

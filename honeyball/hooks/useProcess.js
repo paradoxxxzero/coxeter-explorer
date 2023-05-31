@@ -123,7 +123,9 @@ export const useProcess = (runtime, setRuntime) => {
         gram,
         curvature,
         runtime.centered === null
-          ? grouper.replace(/^auto-/, '') === 'toddcoxeter' && curvature <= 0
+          ? (grouper.replace(/^auto-/, '') === 'toddcoxeter' &&
+              curvature <= 0) ||
+              gram.some(row => row.some(x => x === -1))
           : runtime.centered
       )
       const rootVertex = getFundamentalVertex(
@@ -223,7 +225,6 @@ export const useProcess = (runtime, setRuntime) => {
         const vertices = runtime.faces[i].vertices.length
         faces += vertices === 3 ? 1 : vertices
       }
-      // TODO: Count faces instances
       if (faces > runtime.maxFaces) {
         return {
           ...runtime,
