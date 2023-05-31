@@ -174,7 +174,6 @@ export const getRels = (
             }
           }
         }
-        console.log(rules)
       }
     }
   }

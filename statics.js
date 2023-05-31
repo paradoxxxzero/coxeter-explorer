@@ -368,7 +368,6 @@ export const filterParams = maybeBadParams => {
       }
     }
   })
-  console.log('badParams', badParams)
 
   // Normalize params
   if (

@@ -97,7 +97,7 @@ onmessage = ({
   if (order === 0) {
     initCosets(dimensions, coxeter, stellation, mirrors, curvature)
   }
-  const limit = (order + 1) * (curvature > 0 ? 1000 : 250)
+  const limit = (order + 1) * (curvature > 0 ? 500 : 100)
   try {
     let vertices = []
     let edges = []

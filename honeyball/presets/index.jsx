@@ -58,11 +58,34 @@ const polytope = (coxeterArgs, mirrors, stellationArgs, extra) => {
   return params
 }
 
+const tiling = (coxeterArgs, mirrors, stellationArgs, extra) => {
+  return {
+    ...polytope(coxeterArgs, mirrors, stellationArgs),
+    ambiance: 'plain',
+    controls: 'free',
+    showVertices: false,
+    curve: true,
+    ...extra,
+  }
+}
+const ehoneycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
+  return {
+    ...polytope(coxeterArgs, mirrors, stellationArgs),
+    ambiance: 'neon',
+    showFaces: false,
+    showVertices: false,
+    grouper: '',
+    edgeThickness: 10,
+    ...extra,
+  }
+}
 const honeycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
   return {
     ...polytope(coxeterArgs, mirrors, stellationArgs),
     ambiance: 'neon',
     showFaces: false,
+    showVertices: false,
+    curve: true,
     grouper: '',
     edgeThickness: 10,
     ...extra,
@@ -703,11 +726,11 @@ export const presetsGroups = {
     '3d': [
       {
         name: 'Cubic',
-        params: honeycomb([4, 3, 4], [1, 0, 0, 0]),
+        params: ehoneycomb([4, 3, 4], [1, 0, 0, 0]),
       },
       {
         name: 'Octet',
-        params: honeycomb(
+        params: ehoneycomb(
           [
             [1, 3, 2, 2],
             [3, 1, 3, 4],
@@ -719,7 +742,7 @@ export const presetsGroups = {
       },
       {
         name: 'Quarter cubic',
-        params: honeycomb(
+        params: ehoneycomb(
           [
             [1, 3, 2, 3],
             [3, 1, 3, 2],
@@ -733,23 +756,23 @@ export const presetsGroups = {
     '4d': [
       {
         name: 'Tesseractic',
-        params: honeycomb([4, 3, 3, 4], [1, 0, 0, 0, 0]),
+        params: ehoneycomb([4, 3, 3, 4], [1, 0, 0, 0, 0]),
       },
       {
         name: '16-cellic',
-        params: honeycomb([3, 3, 4, 3], [1, 0, 0, 0, 0], null, {
+        params: ehoneycomb([3, 3, 4, 3], [1, 0, 0, 0, 0], null, {
           grouper: 'toddcoxeter',
         }),
       },
       {
         name: '24-cellic',
-        params: honeycomb([3, 4, 3, 3], [1, 0, 0, 0, 0], null, {
+        params: ehoneycomb([3, 4, 3, 3], [1, 0, 0, 0, 0], null, {
           grouper: 'toddcoxeter',
         }),
       },
       {
         name: '4-simpletic',
-        params: honeycomb(
+        params: ehoneycomb(
           [
             [1, 3, 2, 2, 3],
             [3, 1, 3, 2, 2],
@@ -764,7 +787,7 @@ export const presetsGroups = {
       },
       {
         name: 'Quarter tesseractic',
-        params: honeycomb(
+        params: ehoneycomb(
           [
             [1, 2, 3, 2, 2],
             [2, 1, 3, 2, 2],
@@ -783,167 +806,591 @@ export const presetsGroups = {
     '2d': [
       {
         name: 'Order-7 triangular',
-        params: polytope([3, 7], [1, 0, 0]),
+        params: tiling([3, 7], [1, 0, 0]),
       },
       {
         name: 'Order-8 triangular',
-        params: polytope([3, 8], [1, 0, 0]),
+        params: tiling([3, 8], [1, 0, 0]),
       },
       {
         name: 'Infinite Order triangular',
-        params: polytope([3, Infinity], [1, 0, 0]),
+        params: tiling([3, Infinity], [1, 0, 0]),
       },
       {
         name: 'Order-5 square',
-        params: polytope([4, 5], [1, 0, 0]),
+        params: tiling([4, 5], [1, 0, 0]),
       },
       {
         name: 'Order-6 square',
-        params: polytope([4, 6], [1, 0, 0]),
+        params: tiling([4, 6], [1, 0, 0]),
       },
       {
         name: 'Order-7 square',
-        params: polytope([4, 7], [1, 0, 0]),
+        params: tiling([4, 7], [1, 0, 0]),
       },
       {
         name: 'Order-8 square',
-        params: polytope([4, 8], [1, 0, 0]),
+        params: tiling([4, 8], [1, 0, 0]),
       },
       {
         name: 'Infinite Order square',
-        params: polytope([4, Infinity], [1, 0, 0]),
+        params: tiling([4, Infinity], [1, 0, 0]),
       },
       {
         name: 'Order-4 pentagonal',
-        params: polytope([5, 4], [1, 0, 0]),
+        params: tiling([5, 4], [1, 0, 0]),
       },
       {
         name: 'Order-5 pentagonal',
-        params: polytope([5, 5], [1, 0, 0]),
+        params: tiling([5, 5], [1, 0, 0]),
       },
       {
         name: 'Order-6 pentagonal',
-        params: polytope([5, 6], [1, 0, 0]),
+        params: tiling([5, 6], [1, 0, 0]),
       },
       {
         name: 'Order-7 pentagonal',
-        params: polytope([5, 7], [1, 0, 0]),
+        params: tiling([5, 7], [1, 0, 0]),
       },
       {
         name: 'Order-8 pentagonal',
-        params: polytope([5, 8], [1, 0, 0]),
+        params: tiling([5, 8], [1, 0, 0]),
       },
       {
         name: 'Infinite Order pentagonal',
-        params: polytope([5, Infinity], [1, 0, 0]),
+        params: tiling([5, Infinity], [1, 0, 0]),
       },
       {
         name: 'Order-4 hexagonal',
-        params: polytope([6, 4], [1, 0, 0]),
+        params: tiling([6, 4], [1, 0, 0]),
       },
       {
         name: 'Order-5 hexagonal',
-        params: polytope([6, 5], [1, 0, 0]),
+        params: tiling([6, 5], [1, 0, 0]),
       },
       {
         name: 'Order-6 hexagonal',
-        params: polytope([6, 6], [1, 0, 0]),
+        params: tiling([6, 6], [1, 0, 0]),
       },
       {
         name: 'Order-7 hexagonal',
-        params: polytope([6, 7], [1, 0, 0]),
+        params: tiling([6, 7], [1, 0, 0]),
       },
       {
         name: 'Order-8 hexagonal',
-        params: polytope([6, 8], [1, 0, 0]),
+        params: tiling([6, 8], [1, 0, 0]),
       },
       {
         name: 'Infinite Order hexagonal',
-        params: polytope([6, Infinity], [1, 0, 0]),
+        params: tiling([6, Infinity], [1, 0, 0]),
       },
       {
         name: 'Order-3 heptagonal',
-        params: polytope([7, 3], [1, 0, 0]),
+        params: tiling([7, 3], [1, 0, 0]),
       },
       {
         name: 'Order-4 heptagonal',
-        params: polytope([7, 4], [1, 0, 0]),
+        params: tiling([7, 4], [1, 0, 0]),
       },
       {
         name: 'Order-5 heptagonal',
-        params: polytope([7, 5], [1, 0, 0]),
+        params: tiling([7, 5], [1, 0, 0]),
       },
       {
         name: 'Order-6 heptagonal',
-        params: polytope([7, 6], [1, 0, 0]),
+        params: tiling([7, 6], [1, 0, 0]),
       },
       {
         name: 'Order-7 heptagonal',
-        params: polytope([7, 7], [1, 0, 0]),
+        params: tiling([7, 7], [1, 0, 0]),
       },
       {
         name: 'Order-8 heptagonal',
-        params: polytope([7, 8], [1, 0, 0]),
+        params: tiling([7, 8], [1, 0, 0]),
       },
       {
         name: 'Infinite Order heptagonal',
-        params: polytope([7, Infinity], [1, 0, 0]),
+        params: tiling([7, Infinity], [1, 0, 0]),
       },
       {
         name: 'Order-3 octagonal',
-        params: polytope([8, 3], [1, 0, 0]),
+        params: tiling([8, 3], [1, 0, 0]),
       },
       {
         name: 'Order-4 octagonal',
-        params: polytope([8, 4], [1, 0, 0]),
+        params: tiling([8, 4], [1, 0, 0]),
       },
       {
         name: 'Order-5 octagonal',
-        params: polytope([8, 5], [1, 0, 0]),
+        params: tiling([8, 5], [1, 0, 0]),
       },
       {
         name: 'Order-6 octagonal',
-        params: polytope([8, 6], [1, 0, 0]),
+        params: tiling([8, 6], [1, 0, 0]),
       },
       {
         name: 'Order-7 octagonal',
-        params: polytope([8, 7], [1, 0, 0]),
+        params: tiling([8, 7], [1, 0, 0]),
       },
       {
         name: 'Order-8 octagonal',
-        params: polytope([8, 8], [1, 0, 0]),
+        params: tiling([8, 8], [1, 0, 0]),
       },
       {
         name: 'Infinite Order octagonal',
-        params: polytope([8, Infinity], [1, 0, 0]),
+        params: tiling([8, Infinity], [1, 0, 0]),
       },
       {
         name: 'Order-3 apeirogonal',
-        params: polytope([Infinity, 3], [1, 0, 0]),
+        params: tiling([Infinity, 3], [1, 0, 0]),
       },
       {
         name: 'Order-4 apeirogonal',
-        params: polytope([Infinity, 4], [1, 0, 0]),
+        params: tiling([Infinity, 4], [1, 0, 0]),
       },
       {
         name: 'Order-5 apeirogonal',
-        params: polytope([Infinity, 5], [1, 0, 0]),
+        params: tiling([Infinity, 5], [1, 0, 0]),
       },
       {
         name: 'Order-6 apeirogonal',
-        params: polytope([Infinity, 6], [1, 0, 0]),
+        params: tiling([Infinity, 6], [1, 0, 0]),
       },
       {
         name: 'Order-7 apeirogonal',
-        params: polytope([Infinity, 7], [1, 0, 0]),
+        params: tiling([Infinity, 7], [1, 0, 0]),
       },
       {
         name: 'Order-8 apeirogonal',
-        params: polytope([Infinity, 8], [1, 0, 0]),
+        params: tiling([Infinity, 8], [1, 0, 0]),
       },
       {
         name: 'Infinite Order apeirogonal',
-        params: polytope([Infinity, Infinity], [1, 0, 0]),
+        params: tiling([Infinity, Infinity], [1, 0, 0]),
+      },
+    ],
+    '3d compact': [
+      {
+        name: 'Icosahedral',
+        params: honeycomb([3, 5, 3], [1, 0, 0, 0]),
+      },
+      {
+        name: 'Order-4 dodecahedral',
+        params: honeycomb([5, 3, 4], [1, 0, 0, 0]),
+      },
+      {
+        name: 'Order-5 dodecahedral',
+        params: honeycomb([5, 3, 5], [1, 0, 0, 0], null, {
+          grouper: 'toddcoxeter',
+        }),
+      },
+      {
+        name: 'Alternated Order-5 cubic',
+        params: honeycomb(
+          [
+            [1, 2, 3, 2],
+            [2, 1, 3, 2],
+            [3, 3, 1, 5],
+            [2, 2, 5, 1],
+          ],
+          [1, 0, 0, 0]
+        ),
+      },
+      {
+        name: 'Tetrahedral cubic',
+        params: honeycomb(
+          [
+            [1, 4, 2, 3],
+            [4, 1, 3, 2],
+            [2, 3, 1, 3],
+            [3, 2, 3, 1],
+          ],
+          [1, 0, 0, 0],
+          null,
+          {
+            grouper: 'toddcoxeter',
+          }
+        ),
+      },
+      {
+        name: 'Tetrahedral dodecahedral',
+        params: honeycomb(
+          [
+            [1, 3, 2, 5],
+            [3, 1, 3, 2],
+            [2, 3, 1, 3],
+            [5, 2, 3, 1],
+          ],
+          [1, 0, 0, 0],
+          null,
+          {
+            grouper: 'toddcoxeter',
+          }
+        ),
+      },
+      {
+        name: 'Cubic octahedral',
+        params: honeycomb(
+          [
+            [1, 3, 2, 4],
+            [3, 1, 4, 2],
+            [2, 4, 1, 3],
+            [4, 2, 3, 1],
+          ],
+          [1, 0, 0, 0],
+          null,
+          {
+            grouper: 'toddcoxeter',
+          }
+        ),
+      },
+      {
+        name: 'Octahedral Dodcahedral',
+        params: honeycomb(
+          [
+            [1, 3, 2, 5],
+            [3, 1, 4, 2],
+            [2, 4, 1, 3],
+            [5, 2, 3, 1],
+          ],
+          [1, 0, 0, 0],
+          null,
+          {
+            grouper: 'toddcoxeter',
+          }
+        ),
+      },
+      {
+        name: 'Octahedral Icosahedral',
+        params: honeycomb(
+          [
+            [1, 3, 2, 5],
+            [3, 1, 5, 2],
+            [2, 5, 1, 3],
+            [5, 2, 3, 1],
+          ],
+          [1, 0, 0, 0],
+          null,
+          {
+            grouper: 'toddcoxeter',
+          }
+        ),
+      },
+    ],
+    '3d paracompact': [
+      {
+        name: 'Triangular',
+        params: honeycomb([3, 6, 3], [1, 0, 0, 0], null, {
+          grouper: 'toddcoxeter',
+        }),
+      },
+      {
+        name: 'Hexagonal',
+        params: honeycomb([6, 3, 3], [1, 0, 0, 0], null, {
+          grouper: 'toddcoxeter',
+        }),
+      },
+      {
+        name: 'Order-6 tetrahedral',
+        params: honeycomb([3, 3, 6], [1, 0, 0, 0], null, {
+          grouper: 'toddcoxeter',
+        }),
+      },
+      {
+        name: 'Alternated Order-6 cubic',
+        params: honeycomb(
+          [
+            [1, 2, 3, 2],
+            [2, 1, 3, 2],
+            [3, 3, 1, 6],
+            [2, 2, 6, 1],
+          ],
+          [1, 0, 0, 0],
+          null,
+          {
+            grouper: 'toddcoxeter',
+          }
+        ),
+      },
+      {
+        name: 'Order-5 hexagonal',
+        params: honeycomb([6, 3, 5], [1, 0, 0, 0], null, {
+          grouper: 'toddcoxeter',
+        }),
+      },
+      {
+        name: 'Alternated Order-5 hexagonal',
+        params: honeycomb(
+          [
+            [1, 2, 3, 2],
+            [2, 1, 3, 2],
+            [3, 3, 1, 5],
+            [2, 2, 5, 1],
+          ],
+          [1, 0, 0, 0],
+          null,
+          {
+            grouper: 'toddcoxeter',
+          }
+        ),
+      },
+      {
+        name: 'Order-6 hexagonal',
+        params: honeycomb([6, 3, 6], [1, 0, 0, 0], null, {
+          grouper: 'toddcoxeter',
+        }),
+      },
+      {
+        name: 'Square',
+        params: honeycomb([4, 4, 3], [1, 0, 0, 0], null, {
+          grouper: 'toddcoxeter',
+        }),
+      },
+      {
+        name: 'Alternated square',
+        params: honeycomb(
+          [
+            [1, 2, 4, 2],
+            [2, 1, 4, 2],
+            [4, 4, 1, 3],
+            [2, 2, 3, 1],
+          ],
+          [1, 0, 0, 0],
+          null,
+          {
+            grouper: 'toddcoxeter',
+          }
+        ),
+      },
+      {
+        name: 'Order-4 square',
+        params: honeycomb([4, 4, 4], [0, 1, 0, 0], null, {
+          grouper: 'toddcoxeter',
+        }),
+      },
+      {
+        name: 'Tetrahedral square',
+        params: honeycomb(
+          [
+            [1, 4, 2, 4],
+            [4, 1, 3, 2],
+            [2, 3, 1, 3],
+            [4, 2, 3, 1],
+          ],
+          [0, 1, 0, 0],
+          null,
+          {
+            grouper: 'toddcoxeter',
+          }
+        ),
+      },
+      {
+        name: 'Cubic square',
+        params: honeycomb(
+          [
+            [1, 4, 2, 4],
+            [4, 1, 3, 2],
+            [2, 3, 1, 4],
+            [4, 2, 4, 1],
+          ],
+          [1, 0, 0, 0],
+          null,
+          {
+            grouper: 'toddcoxeter',
+          }
+        ),
+      },
+      // {
+      //   name: 'Alternated Cubic square',
+      //   params: honeycomb(
+      //     [
+      //       [1, 2, 4, 3],
+      //       [2, 1, 3, 2],
+      //       [4, 3, 1, 4],
+      //       [3, 2, 4, 1],
+      //     ],
+      //     [1, 0, 0, 0, 1],
+      //     null,
+      //     {
+      //       grouper: 'toddcoxeter',
+      //     }
+      //   ),
+      // },
+      {
+        name: 'Quarter order square',
+        params: honeycomb(
+          [
+            [1, 4, 2, 4],
+            [4, 1, 4, 2],
+            [2, 4, 1, 4],
+            [4, 2, 4, 1],
+          ],
+          [1, 0, 0, 0],
+          null,
+          {
+            grouper: 'toddcoxeter',
+          }
+        ),
+      },
+      {
+        name: 'Tetrahedral Hexagonal',
+        params: honeycomb(
+          [
+            [1, 3, 2, 6],
+            [3, 1, 3, 2],
+            [2, 3, 1, 3],
+            [6, 2, 3, 1],
+          ],
+          [1, 0, 0, 0],
+          null,
+          {
+            grouper: 'toddcoxeter',
+          }
+        ),
+      },
+      {
+        name: 'Octahedral Hexagonal',
+        params: honeycomb(
+          [
+            [1, 3, 2, 6],
+            [3, 1, 4, 2],
+            [2, 4, 1, 3],
+            [6, 2, 3, 1],
+          ],
+          [1, 0, 0, 0],
+          null,
+          {
+            grouper: 'toddcoxeter',
+          }
+        ),
+      },
+      {
+        name: 'Icosahedral Hexagonal',
+        params: honeycomb(
+          [
+            [1, 3, 2, 6],
+            [3, 1, 5, 2],
+            [2, 5, 1, 3],
+            [6, 2, 3, 1],
+          ],
+          [1, 0, 0, 0],
+          null,
+          {
+            grouper: 'toddcoxeter',
+          }
+        ),
+      },
+      {
+        name: 'Hexagonal Triangular',
+        params: honeycomb(
+          [
+            [1, 3, 2, 6],
+            [3, 1, 6, 2],
+            [2, 6, 1, 3],
+            [6, 2, 3, 1],
+          ],
+          [1, 0, 0, 0],
+          null,
+          {
+            grouper: 'toddcoxeter',
+          }
+        ),
+      },
+      {
+        name: 'Alternated Hexagonal',
+        params: honeycomb(
+          [
+            [1, 3, 3, 2],
+            [3, 1, 3, 2],
+            [3, 3, 1, 3],
+            [2, 2, 3, 1],
+          ],
+          [1, 0, 0, 0],
+          null,
+          {
+            grouper: 'toddcoxeter',
+          }
+        ),
+      },
+      {
+        name: 'Alternated Order-4 Hexagonal',
+        params: honeycomb(
+          [
+            [1, 3, 3, 2],
+            [3, 1, 3, 2],
+            [3, 3, 1, 4],
+            [2, 2, 4, 1],
+          ],
+          [1, 0, 0, 0],
+          null,
+          {
+            grouper: 'toddcoxeter',
+          }
+        ),
+      },
+      {
+        name: 'Alternated Order-5 Hexagonal',
+        params: honeycomb(
+          [
+            [1, 3, 3, 2],
+            [3, 1, 3, 2],
+            [3, 3, 1, 5],
+            [2, 2, 5, 1],
+          ],
+          [1, 0, 0, 0],
+          null,
+          {
+            grouper: 'toddcoxeter',
+          }
+        ),
+      },
+      {
+        name: 'Runcic Order-6 Hexagonal',
+        params: honeycomb(
+          [
+            [1, 3, 3, 2],
+            [3, 1, 3, 2],
+            [3, 3, 1, 6],
+            [2, 2, 6, 1],
+          ],
+          [1, 0, 0, 1],
+          null,
+          {
+            grouper: 'toddcoxeter',
+          }
+        ),
+      },
+      {
+        name: 'Quarter Order-4 hexagonal',
+        params: honeycomb(
+          [
+            [1, 3, 3, 2],
+            [3, 1, 3, 3],
+            [3, 3, 1, 3],
+            [2, 3, 3, 1],
+          ],
+          [1, 1, 0, 0],
+          null,
+          {
+            grouper: 'toddcoxeter',
+          }
+        ),
+      },
+      {
+        name: 'Hexagonal',
+        params: honeycomb(
+          [
+            [1, 3, 3, 3],
+            [3, 1, 3, 3],
+            [3, 3, 1, 3],
+            [3, 3, 3, 1],
+          ],
+          [1, 1, 1, 1],
+          null,
+          {
+            grouper: 'toddcoxeter',
+          }
+        ),
       },
     ],
   },

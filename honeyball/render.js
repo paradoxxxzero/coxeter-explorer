@@ -616,7 +616,7 @@ export const changeAmbiance = rt => {
   composer.renderer.toneMapping = fxs.includes('bloom')
     ? ReinhardToneMapping
     : NoToneMapping
-  composer.renderer.toneMappingExposure = fxs.includes('bloom') ? 1.5 : 1
+  composer.renderer.toneMappingExposure = fxs.includes('bloom') ? 1 : 1
   composer.passes.slice(1).forEach(pass => {
     composer.removePass(pass)
     pass.dispose()
