@@ -167,7 +167,11 @@ export default function App({ gl, params, updateParams }) {
       if (name === 'dimensions' && value) {
         newParams.coxeter = new Array(value)
           .fill()
-          .map(() => new Array(value).fill(2))
+          .map((row, i) =>
+            new Array(value)
+              .fill()
+              .map((_, j) => (i === j ? 1 : i === j + 1 || i + 1 === j ? 3 : 2))
+          )
         newParams.stellation = new Array(value)
           .fill()
           .map(() => new Array(value).fill(1))
@@ -195,9 +199,6 @@ export default function App({ gl, params, updateParams }) {
           params.controlsShift,
           round(binomial(value, 2) / 2 - 1)
         )
-      }
-      if (name === 'grouper') {
-        newParams.centered = value !== 'knuthbendix'
       }
 
       if (name.startsWith('coxeter')) {

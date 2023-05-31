@@ -1,4 +1,0 @@
-- Rotation in matrix given to the shader
-- Handle all infinity
-- Holosnub
-- Duals

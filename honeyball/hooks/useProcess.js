@@ -110,18 +110,7 @@ export const useProcess = (runtime, setRuntime) => {
       }
       const curvature =
         spaceType === 'finite' ? 1 : spaceType === 'affine' ? 0 : -1
-      const mirrorsPlanes = getFundamentalSimplexMirrors(
-        gram,
-        curvature,
-        runtime.grouper.includes('auto')
-          ? runtime.grouper.replace(/^auto-/, '') !== 'knuthbendix'
-          : runtime.centered
-      )
-      const rootVertex = getFundamentalVertex(
-        runtime.mirrors,
-        mirrorsPlanes,
-        curvature
-      )
+
       const grouper =
         runtime.grouper === '' || runtime.grouper.startsWith('auto-')
           ? curvature > 0 &&
@@ -129,6 +118,20 @@ export const useProcess = (runtime, setRuntime) => {
             ? 'auto-toddcoxeter'
             : 'auto-knuthbendix'
           : runtime.grouper
+
+      const mirrorsPlanes = getFundamentalSimplexMirrors(
+        gram,
+        curvature,
+        runtime.centered === null
+          ? grouper.replace(/^auto-/, '') === 'toddcoxeter' && curvature <= 0
+          : runtime.centered
+      )
+      const rootVertex = getFundamentalVertex(
+        runtime.mirrors,
+        mirrorsPlanes,
+        curvature
+      )
+
       const newRuntime = {
         ...runtime,
         currentOrder: 0,

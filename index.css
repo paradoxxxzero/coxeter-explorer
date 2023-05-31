@@ -9,6 +9,18 @@ canvas {
   font-family: 'Fira Code', monospace;
 }
 
+input.muted {
+  opacity: 0.5;
+}
+
+.processing-counter {
+  position: absolute;
+  right: -0.25em;
+  bottom: -0.25em;
+  font-size: 0.4em;
+  color: rgba(255, 255, 255, 0.5);
+}
+
 .space-indicator {
   position: absolute;
   bottom: 0.25em;
@@ -22,16 +34,16 @@ canvas {
   background: none;
   border: none;
 }
-.space-indicator.processing .space,
-.space-indicator.processing sup {
-  animation: processing 1s infinite;
-}
+
 .space-indicator sub {
   position: absolute;
-  right: -0.25em;
-  bottom: -0.25em;
+  bottom: 0.5em;
+  left: 2.5em;
   font-size: 0.4em;
-  color: rgba(255, 255, 255, 0.5);
+}
+
+.space-indicator.processing {
+  animation: processing 1s infinite;
 }
 
 .control-indicator {

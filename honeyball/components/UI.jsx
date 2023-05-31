@@ -5,6 +5,7 @@ import Node from './Node'
 import Value from './Value'
 import Number from './Number'
 import { diagonal } from '../math/matrix'
+import Boolean from './Boolean'
 
 export default function UI({
   params,
@@ -17,21 +18,22 @@ export default function UI({
 }) {
   const [showUI, setShowUI] = useState(true)
 
-  const handleUI = useCallback(() => setShowUI(showUI => !showUI), [])
-
   const handleChange = useCallback(
     e => {
-      let { name, checked, type, value } = e.target
-      if (type === 'checkbox') {
-        value = checked
-      }
+      let { name, value } = e.target
       onChange(name, value)
     },
     [onChange]
   )
+  const handleUI = useCallback(() => setShowUI(showUI => !showUI), [])
 
   return (
     <div className={runtime.error ? 'error' : ''} title={runtime.error}>
+      {runtime.currentOrder < runtime.order ? (
+        <aside className="processing-counter">
+          {runtime.currentOrder}/{runtime.order}
+        </aside>
+      ) : null}
       <button
         className="control-indicator"
         onClick={onControls}
@@ -65,13 +67,15 @@ export default function UI({
             ? '𝕊'
             : 'ℍ'}
         </span>
-        <sup>
-          {runtime.spaceType === 'hyperbolic-paracompact' ? '*' : ''}
-          {runtime.dimensions - 1}
-        </sup>
-        {runtime.currentOrder < runtime.order ? (
+        <sup>{runtime.dimensions - 1}</sup>
+        {runtime.spaceType?.startsWith('hyperbolic') ? (
           <sub>
-            {runtime.currentOrder}/{runtime.order}
+            {{ compact: ' ', paracompact: '*' }[
+              runtime.spaceType.replace(/^hyperbolic-/, '')
+            ] ||
+              (runtime.spaceType.startsWith('hyperbolic-level')
+                ? `L${runtime.spaceType.replace(/^hyperbolic-level/, '')}`
+                : null)}
           </sub>
         ) : null}
       </button>
@@ -100,24 +104,22 @@ export default function UI({
           {(params.extended || params.grouper) && (
             <label>
               inCentered
-              <input
+              <Boolean
                 name="centered"
-                type="checkbox"
-                checked={params.centered}
-                onChange={handleChange}
+                allowNull
+                value={params.centered}
+                onChange={onChange}
               />
             </label>
           )}
-          {(params.extended ||
-            runtime.grouper.replace(/^auto-/, '') === 'knuthbendix' ||
-            runtime.curvature <= 0) && (
+          {params.extended && (
             <Number
               name="order"
               label="Precision"
               min={1}
               step={1}
               value={params.order}
-              onChange={handleChange}
+              onChange={onChange}
             />
           )}
           <Number
@@ -128,7 +130,7 @@ export default function UI({
             value={params.segments}
             toggler={params.curve}
             togglerName="curve"
-            onChange={handleChange}
+            onChange={onChange}
           />
           <Number
             name="dimensions"
@@ -137,7 +139,7 @@ export default function UI({
             max={9}
             step={1}
             value={params.dimensions}
-            onChange={handleChange}
+            onChange={onChange}
           />
           <label>
             Projection
@@ -161,7 +163,7 @@ export default function UI({
             value={params.vertexThickness}
             toggler={params.showVertices}
             togglerName="showVertices"
-            onChange={handleChange}
+            onChange={onChange}
           />
           <Number
             name="edgeThickness"
@@ -171,17 +173,16 @@ export default function UI({
             value={params.edgeThickness}
             toggler={params.showEdges}
             togglerName="showEdges"
-            onChange={handleChange}
+            onChange={onChange}
           />
           {(runtime.grouper.replace(/^auto-/, '') === 'toddcoxeter' ||
             runtime.grouper === 'fundamental') && (
             <label>
               Faces
-              <input
-                type="checkbox"
+              <Boolean
                 name="showFaces"
-                checked={params.showFaces}
-                onChange={handleChange}
+                value={params.showFaces}
+                onChange={onChange}
               />
             </label>
           )}
@@ -216,7 +217,7 @@ export default function UI({
             value={params.msaaSamples}
             toggler={params.msaa}
             togglerName="msaa"
-            onChange={handleChange}
+            onChange={onChange}
           />
           <Number
             name="fov3"
@@ -224,7 +225,7 @@ export default function UI({
             min={0}
             step={1}
             value={params.fov3}
-            onChange={handleChange}
+            onChange={onChange}
           />
           {params.dimensions > 3
             ? [...Array(params.dimensions - 3).keys()].map(i => (
@@ -234,7 +235,7 @@ export default function UI({
                   name={`fov${i + 4}`}
                   step={1}
                   value={params[`fov${i + 4}`]}
-                  onChange={handleChange}
+                  onChange={onChange}
                 />
               ))
             : null}
@@ -256,7 +257,7 @@ export default function UI({
                             value={params.coxeter[i][j]}
                             stellation={params.stellation[i][j]}
                             key={`${i}x${j}`}
-                            onChange={handleChange}
+                            onChange={onChange}
                           />
                         )
                     )}

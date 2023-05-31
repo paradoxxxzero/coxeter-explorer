@@ -80,9 +80,9 @@ export default function Number({
       setRaw(parsed.raw)
       setValid(parsed.valid)
       if (parsed.valid) {
-        onChange({ target: { name, value: parsed.value } })
+        onChange(name, parsed.value)
         if (fractionName) {
-          onChange({ target: { name: fractionName, value: parsed.fraction } })
+          onChange(fractionName, parsed.fraction)
         }
       }
     },

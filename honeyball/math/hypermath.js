@@ -17,29 +17,50 @@ export const coxeterToGram = (coxter, stellation) =>
     row.map((column, j) => -cos((stellation[i][j] * PI) / column))
   )
 
+export const getSignature = gram => {
+  const eigenValues = eigen(gram).values
+  return {
+    '+': eigenValues.filter(v => v > 0).length,
+    '-': eigenValues.filter(v => v < 0).length,
+    0: eigenValues.filter(v => v === 0).length,
+  }
+}
+
 export const getSpaceType = gram => {
   const eigenValues = eigen(gram).values
-  if (eigenValues.every(v => v > 0)) {
+  const signature = getSignature(gram)
+
+  if (signature['-'] === 0 && signature['0'] === 0) {
     return 'finite'
   }
-  if (eigenValues.every(v => v >= 0)) {
+  if (signature['-'] === 0 && signature['0'] === 1) {
     return 'affine'
   }
   // Indefinite, check subgroups
-  const subSpaceType = []
+  const subSignature = []
   for (let i = 0; i < eigenValues.length; i++) {
-    subSpaceType.push(
-      getSpaceType(
+    subSignature.push(
+      getSignature(
         gram.filter((_, j) => j !== i).map(row => row.filter((_, j) => j !== i))
       )
     )
   }
-  if (subSpaceType.every(t => t === 'finite')) {
+  console.log(subSignature)
+  if (subSignature.every(s => s['-'] === 0 && s['0'] === 0)) {
     return 'hyperbolic-compact'
   }
-  if (subSpaceType.every(t => t === 'finite' || t === 'affine')) {
+  if (subSignature.every(s => s['-'] === 0)) {
     return 'hyperbolic-paracompact'
   }
+  if (
+    subSignature.every(s => s['-'] <= 1) &&
+    subSignature.some(s => s['-'] === 1)
+  ) {
+    return `hyperbolic-level${
+      subSignature.filter(s => s['-'] === 1).length + 1
+    }`
+  }
+  // TODO: hypercompact, cocompact, etc...
   return 'indefinite'
 }
 
