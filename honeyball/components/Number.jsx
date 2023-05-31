@@ -125,6 +125,10 @@ export default function Number({
     update(raw)
   }
 
+  const handleCheckBoxChange = event => {
+    onChange(event.target.name, event.target.checked)
+  }
+
   return (
     <label className={`number ${valid ? 'valid' : 'invalid'}`}>
       {label && <span className="number-label">{label}</span>}
@@ -133,7 +137,7 @@ export default function Number({
           type="checkbox"
           name={togglerName}
           checked={toggler}
-          onChange={onChange}
+          onChange={handleCheckBoxChange}
         />
       )}
       {(!togglerName || toggler) && (

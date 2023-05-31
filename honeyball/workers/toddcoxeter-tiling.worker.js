@@ -132,11 +132,10 @@ onmessage = ({
 
     for (let i = 0; i < edgesParams.length; i++) {
       const edgeParams = edgesParams[i]
-      if (edgeParams.done) {
-        continue
+      if (!edgeParams.done) {
+        edgeParams.limit = limit * (curvature > 0 ? 1 : curvature < 0 ? 1.5 : 3) // ???
+        solve(edgeParams)
       }
-      edgeParams.limit = limit * (curvature > 0 ? 1 : curvature < 0 ? 1.5 : 3) // ???
-      solve(edgeParams)
       const startIndex = edgeParams.pair[0]
       const endIndex = vertexIndex(edgeParams.pair[1])
       for (let j = edgeParams.lastDrawn; j < edgeParams.words.length; j++) {
@@ -161,11 +160,10 @@ onmessage = ({
 
     for (let i = 0; i < facesParams.length; i++) {
       const faceParams = facesParams[i]
-      if (faceParams.done) {
-        continue
+      if (!faceParams.done) {
+        faceParams.limit = limit
+        solve(faceParams)
       }
-      faceParams.limit = limit
-      solve(faceParams)
 
       let fail = false
       const indexes = []
