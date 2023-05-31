@@ -151,8 +151,8 @@ export const getRels = (
             if (stellation[j][i] > 1) {
               if (j + 2 < dimensions) {
                 const angle = getStellationSphericalOppositeAngle(
-                  coxeter[j][i],
                   coxeter[j + 1][i + 1],
+                  coxeter[j][i],
                   coxeter[j][i + 1],
                   stellation[j][i]
                 )
@@ -162,8 +162,8 @@ export const getRels = (
               }
               if (j - 1 >= 0) {
                 const angle = getStellationSphericalOppositeAngle(
-                  coxeter[j][i],
                   coxeter[j - 1][i - 1],
+                  coxeter[j][i],
                   coxeter[j - 1][i],
                   stellation[j][i]
                 )
@@ -174,6 +174,7 @@ export const getRels = (
             }
           }
         }
+        console.log(rules)
       }
     }
   }

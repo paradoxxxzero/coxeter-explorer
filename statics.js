@@ -21,7 +21,8 @@ import {
   SRGBColorSpace,
   TextureLoader,
 } from 'three'
-import { atoi, itoa } from './honeyball/math'
+import { atoi, binomial, itoa, min, round } from './honeyball/math'
+import { ident } from './honeyball/math/matrix'
 
 export const projections = [
   'stereographic',
@@ -78,6 +79,23 @@ export const ambiances = {
       // const i = word.match(dimensionsRegExps[dimensions - 1])?.length || 0
       // return _color.setHSL((i * 0.07) % 1, 0.5, 0.5)
     },
+  },
+  colorfulDepth: {
+    background: 0xffffff,
+    shadow: false,
+    material: new MeshPhongMaterial(),
+    lights: [new AmbientLight(0xffffff, 0.25)],
+    cameraLights: [new PointLight(0xffffff, 0.75)],
+    color: ({ word }, type, dimensions) => {
+      return _color.setHSL((word.length * 0.03) % 1, 1, 0.8)
+      // const i = word.match(dimensionsRegExps[dimensions - 1])?.length || 0
+      // return _color.setHSL((i * 0.07) % 1, 0.5, 0.5)
+    },
+    faceMaterial: new MeshPhongMaterial({
+      side: DoubleSide,
+      transparent: true,
+      opacity: 0.75,
+    }),
   },
   reflection: {
     background: 0xffffff,
@@ -351,5 +369,68 @@ export const filterParams = maybeBadParams => {
     }
   })
 
+  // Normalize params
+  if (
+    params.coxeter.length !== params.dimensions ||
+    params.coxeter.some(r => r.length !== params.dimensions)
+  ) {
+    const oldCoxeter = params.coxeter
+    params.coxeter = new Array(params.dimensions)
+      .fill()
+      .map((row, i) =>
+        new Array(params.dimensions)
+          .fill()
+          .map((_, j) => (i === j ? 1 : i === j + 1 || i + 1 === j ? 3 : 2))
+      )
+
+    for (let i = 0; i < min(oldCoxeter.length, params.dimensions); i++) {
+      for (let j = 0; j < i; j++) {
+        params.coxeter[i][j] = oldCoxeter[i][j]
+        params.coxeter[j][i] = oldCoxeter[j][i]
+      }
+    }
+  }
+  if (params.mirrors.length !== params.dimensions) {
+    const oldMirrors = params.mirrors
+    params.mirrors = new Array(params.dimensions).fill(0)
+
+    for (let i = 0; i < min(oldMirrors.length, params.dimensions); i++) {
+      params.mirrors[i] = oldMirrors[i]
+    }
+  }
+  if (
+    params.stellation.length !== params.dimensions ||
+    params.stellation.some(r => r.length !== params.dimensions)
+  ) {
+    const oldStellation = params.stellation
+    params.stellation = new Array(params.dimensions)
+      .fill()
+      .map(() => new Array(params.dimensions).fill(1))
+
+    for (let i = 0; i < min(oldStellation.length, params.dimensions); i++) {
+      for (let j = 0; j < i; j++) {
+        params.stellation[i][j] = oldStellation[i][j]
+        params.stellation[j][i] = oldStellation[j][i]
+      }
+    }
+  }
+  if (
+    params.matrix.length !== params.dimensions ||
+    params.matrix.some(r => r.length !== params.dimensions)
+  ) {
+    params.matrix = ident(params.dimensions)
+  }
+  for (let i = 4; i <= 9; i++) {
+    if (i <= params.dimensions && !params[`fov${i}`]) {
+      params[`fov${i}`] = i === 4 ? 90 : 45
+    }
+    if (i > params.dimensions && params[`fov${i}`]) {
+      delete params[`fov${i}`]
+    }
+  }
+  params.controlsShift = min(
+    params.controlsShift,
+    round(binomial(params.dimensions, 2) / 2 - 1)
+  )
   return { params, badParams }
 }

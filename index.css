@@ -9,10 +9,6 @@ canvas {
   font-family: 'Fira Code', monospace;
 }
 
-input.muted {
-  opacity: 0.5;
-}
-
 .processing-counter {
   position: absolute;
   right: -0.25em;
@@ -121,8 +117,7 @@ label {
   font-size: 0.9em;
   align-items: baseline;
   font-size: 0.75em;
-  margin: 1em;
-  margin-right: 4.5rem;
+  margin: 1em 4.5rem;
   font-size: calc(min(1.5vw, 0.75em));
   mix-blend-mode: difference;
 }
@@ -213,14 +208,6 @@ label {
   margin: 0 1.25em;
 }
 
-input {
-  color: white;
-  border: none;
-  background-color: rgba(150, 150, 150, 0.15);
-  padding: 0.25em;
-  max-width: 5ch;
-  font-size: 1.5em;
-}
 select {
   color: white;
   border: none;
@@ -244,6 +231,12 @@ select option {
 }
 
 .number input {
+  color: white;
+  border: none;
+  background-color: rgba(150, 150, 150, 0.15);
+  padding: 0.25em;
+  max-width: 5ch;
+  font-size: 1.5em;
   padding: 0.25em 1.75em;
 }
 .number-label {
@@ -281,4 +274,87 @@ select option {
 }
 .number.invalid input {
   outline: 2px solid red;
+}
+
+.presets {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  flex-direction: column;
+  align-items: flex-end;
+  backdrop-filter: blur(1.5em);
+  width: 80vw;
+  height: 75vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+.presets-modal {
+  width: 100%;
+  height: 100%;
+  color: white;
+  display: flex;
+  flex-direction: column;
+}
+.presets-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 2em;
+  line-height: 1;
+  color: rgba(33, 150, 243);
+  mix-blend-mode: difference;
+  background: none;
+  cursor: pointer;
+  border: none;
+  padding: 0.5em;
+}
+.presets-search {
+  color: white;
+  border: none;
+  background-color: rgba(150, 150, 150, 0.15);
+  padding: 0.5em 0.25em;
+  font-size: 1.5em;
+  margin: 0 4em;
+}
+.presets.shown {
+  display: flex;
+}
+.presets.hidden {
+  display: none;
+}
+.presets-group {
+  display: flex;
+  flex-direction: column;
+  margin: 0.5em 1em;
+}
+.presets-list {
+  flex: 1;
+  overflow-y: auto;
+  margin: 2em 0 2em 0.5em;
+}
+.preset {
+  cursor: pointer;
+  padding: 0.5em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+.preset:last-child {
+  border-bottom: none;
+}
+
+.preset:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+.preset-button {
+  position: absolute;
+  bottom: 0.25em;
+  left: 0.25em;
+  padding: 0.25em;
+  font-size: 3em;
+  line-height: 1;
+  color: rgba(33, 150, 243);
+  mix-blend-mode: difference;
+  background: none;
+  cursor: pointer;
+  border: none;
 }

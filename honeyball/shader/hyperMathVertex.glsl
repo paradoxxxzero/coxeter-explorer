@@ -96,9 +96,9 @@ void main() {
   #elif HYPERTYPE == 0 // Vertex
   vertexVertex(transformed, objectNormal);
   #elif HYPERTYPE == 3
-  if(!nan(instanceCentroid)) {
+  if(!nan(iCentroid)) {
     faceVertex(transformed, objectNormal);
-  } else if(!nan(instanceTarget)) {
+  } else if(!nan(iTarget)) {
     edgeVertex(transformed, objectNormal);
   } else {
     vertexVertex(transformed, objectNormal);

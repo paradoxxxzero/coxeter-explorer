@@ -46,6 +46,7 @@ export default function App({ gl, params, updateParams }) {
         projection: params.projection,
         msaa: params.msaa,
         msaaSamples: params.msaaSamples,
+        matrix: params.matrix,
         fov3: params.fov3,
         fov4: params.fov4,
         fov5: params.fov5,
@@ -79,6 +80,7 @@ export default function App({ gl, params, updateParams }) {
     params.fov7,
     params.fov8,
     params.fov9,
+    params.matrix,
     params.mirrors,
     params.msaa,
     params.msaaSamples,
@@ -163,44 +165,6 @@ export default function App({ gl, params, updateParams }) {
 
   const handleChange = useCallback(
     (name, value) => {
-      const newParams = {}
-      if (name === 'dimensions' && value) {
-        newParams.coxeter = new Array(value)
-          .fill()
-          .map((row, i) =>
-            new Array(value)
-              .fill()
-              .map((_, j) => (i === j ? 1 : i === j + 1 || i + 1 === j ? 3 : 2))
-          )
-        newParams.stellation = new Array(value)
-          .fill()
-          .map(() => new Array(value).fill(1))
-        newParams.mirrors = new Array(value).fill(0)
-
-        for (let i = 0; i < min(params.coxeter.length, value); i++) {
-          for (let j = 0; j < i; j++) {
-            newParams.coxeter[i][j] = params.coxeter[i][j]
-            newParams.coxeter[j][i] = params.coxeter[j][i]
-            newParams.stellation[i][j] = params.stellation[i][j]
-            newParams.stellation[j][i] = params.stellation[j][i]
-          }
-          newParams.mirrors[i] = params.mirrors[i]
-        }
-        for (let i = 0; i < value; i++) {
-          newParams.coxeter[i][i] = 1
-        }
-        newParams.matrix = ident(value)
-        for (let i = 4; i <= value; i++) {
-          if (!params[`fov${i}`]) {
-            newParams[`fov${i}`] = i === 4 ? 90 : 45
-          }
-        }
-        newParams.controlsShift = min(
-          params.controlsShift,
-          round(binomial(value, 2) / 2 - 1)
-        )
-      }
-
       if (name.startsWith('coxeter')) {
         const [i, j] = name
           .split('-')
@@ -225,9 +189,7 @@ export default function App({ gl, params, updateParams }) {
         value = stellation
       }
 
-      newParams[name] = value
-
-      updateParams(newParams)
+      updateParams({ [name]: value })
     },
     [params, updateParams]
   )
@@ -249,6 +211,7 @@ export default function App({ gl, params, updateParams }) {
       <UI
         runtime={runtime}
         params={params}
+        updateParams={updateParams}
         onChange={handleChange}
         onExtend={handleExtend}
         onControls={handleControls}

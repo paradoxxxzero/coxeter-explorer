@@ -45,7 +45,6 @@ export const getSpaceType = gram => {
       )
     )
   }
-  console.log(subSignature)
   if (subSignature.every(s => s['-'] === 0 && s['0'] === 0)) {
     return 'hyperbolic-compact'
   }
