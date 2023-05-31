@@ -12,13 +12,14 @@ export const parse = (raw, min, max, step, allowInfinity) => {
     value = Infinity
   } else if (raw.includes('/')) {
     const [numerator, denominator] = raw.split('/')
-    value = +numerator
-    fraction = +denominator
+    value = numerator === '' ? '' : +numerator
+    fraction = denominator === '' ? '' : +denominator
     if (fraction === 1) {
       raw = `${value}`
     }
 
     valid = !(
+      value === '' ||
       isNaN(value) ||
       value < min ||
       value > max ||
@@ -29,8 +30,14 @@ export const parse = (raw, min, max, step, allowInfinity) => {
       fraction % step !== 0
     )
   } else {
-    value = +raw
-    valid = !(isNaN(value) || value < min || value > max || value % step !== 0)
+    value = raw === '' ? '' : +raw
+    valid = !(
+      value === '' ||
+      isNaN(value) ||
+      value < min ||
+      value > max ||
+      value % step !== 0
+    )
   }
 
   return {

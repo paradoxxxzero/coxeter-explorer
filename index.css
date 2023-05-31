@@ -11,10 +11,10 @@ canvas {
 
 .processing-counter {
   position: absolute;
-  right: -0.25em;
-  bottom: -0.25em;
-  font-size: 0.4em;
-  color: rgba(255, 255, 255, 0.5);
+  right: 0;
+  bottom: 0;
+  font-size: 1em;
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .space-indicator {
@@ -316,6 +316,7 @@ select option {
   padding: 0.5em 0.25em;
   font-size: 1.5em;
   margin: 0 4em;
+  outline: 1px solid rgba(150, 150, 150, 0.5);
 }
 .presets.shown {
   display: flex;
@@ -323,15 +324,19 @@ select option {
 .presets.hidden {
   display: none;
 }
-.presets-group {
-  display: flex;
-  flex-direction: column;
-  margin: 0.5em 1em;
-}
 .presets-list {
   flex: 1;
   overflow-y: auto;
-  margin: 2em 0 2em 0.5em;
+  margin: 0.5em 0 2em 0.5em;
+}
+.presets-list h2 {
+  margin-left: 0.75em;
+}
+.presets-list h4 {
+  margin-left: 2em;
+}
+.preset-list {
+  margin-left: 2.5em;
 }
 .preset {
   cursor: pointer;

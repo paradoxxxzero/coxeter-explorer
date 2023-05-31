@@ -341,7 +341,7 @@ export const filterParams = maybeBadParams => {
   const badParams = []
   // Remove bad params
   Object.entries(params).forEach(([key, value]) => {
-    if (typeof defaultParams[key] === 'number') {
+    if (typeof defaultParams[key] === 'number' || key.startsWith('fov')) {
       if (value === '' || isNaN(value)) {
         delete params[key]
         badParams.push(key)
@@ -368,6 +368,7 @@ export const filterParams = maybeBadParams => {
       }
     }
   })
+  console.log('badParams', badParams)
 
   // Normalize params
   if (
@@ -421,7 +422,11 @@ export const filterParams = maybeBadParams => {
     params.matrix = ident(params.dimensions)
   }
   for (let i = 4; i <= 9; i++) {
-    if (i <= params.dimensions && !params[`fov${i}`]) {
+    if (
+      i <= params.dimensions &&
+      !params[`fov${i}`] &&
+      !badParams.includes(`fov${i}`)
+    ) {
       params[`fov${i}`] = i === 4 ? 90 : 45
     }
     if (i > params.dimensions && params[`fov${i}`]) {

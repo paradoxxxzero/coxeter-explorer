@@ -226,6 +226,7 @@ onmessage = ({
       try {
         rules = knuthBendix(baseRules, dimensions)
       } catch (e) {
+        console.warn(e)
         rules = new Map(Object.entries(baseRules))
       }
 
