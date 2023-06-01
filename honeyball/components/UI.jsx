@@ -7,6 +7,7 @@ import Number from './Number'
 import { diagonal } from '../math/matrix'
 import Boolean from './Boolean'
 import Presets from './Presets'
+import Space from './Space'
 
 export default function UI({
   params,
@@ -84,26 +85,7 @@ export default function UI({
           onClick={handleUI}
           title={`Space ${runtime.spaceType}`}
         >
-          <span className="space">
-            {runtime.spaceType === null || runtime.spaceType === 'indefinite'
-              ? '𝕏'
-              : runtime.spaceType === 'affine'
-              ? '𝔼'
-              : runtime.spaceType === 'finite'
-              ? '𝕊'
-              : 'ℍ'}
-          </span>
-          <sup>{runtime.dimensions - 1}</sup>
-          {runtime.spaceType?.startsWith('hyperbolic') ? (
-            <sub>
-              {{ compact: ' ', paracompact: '*' }[
-                runtime.spaceType.replace(/^hyperbolic-/, '')
-              ] ||
-                (runtime.spaceType.startsWith('hyperbolic-level')
-                  ? `L${runtime.spaceType.replace(/^hyperbolic-level/, '')}`
-                  : null)}
-            </sub>
-          ) : null}
+          <Space type={runtime.spaceType} dimensions={runtime.dimensions} />
         </button>
         {showUI && (
           <aside className="controls">

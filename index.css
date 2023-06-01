@@ -335,13 +335,14 @@ select option {
 .presets-list h4 {
   margin-left: 2em;
 }
-.preset-list {
-  margin-left: 2.5em;
-}
 .preset {
+  margin-left: 2.5em;
   cursor: pointer;
   padding: 0.5em;
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+.presets-list .space {
+  font-size: 1.5em;
 }
 .preset:last-child {
   border-bottom: none;
@@ -362,4 +363,9 @@ select option {
   background: none;
   cursor: pointer;
   border: none;
+}
+
+h4 + h4,
+h4:has(+ h4) {
+  display: none;
 }

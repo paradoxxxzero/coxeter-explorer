@@ -1,18 +1,6 @@
 import { Fragment, useCallback, useState } from 'react'
-import { defaultParams } from '../../statics'
-import { presetsGroups } from '../presets'
-
-const getNodeText = node => {
-  if (['string', 'number'].includes(typeof node)) {
-    return node
-  }
-  if (node instanceof Array) {
-    return node.map(getNodeText).join('')
-  }
-  if (typeof node === 'object' && node) {
-    return getNodeText(node.props.children)
-  }
-}
+import { presets } from '../presets'
+import Preset from './Preset'
 
 export default function Presets({ onPreset, closePresets }) {
   const [search, setSearch] = useState('')
@@ -30,31 +18,20 @@ export default function Presets({ onPreset, closePresets }) {
         onChange={handleSearch}
       />
       <div className="presets-list">
-        {Object.entries(presetsGroups).map(([group, presetsGroup]) => (
-          <Fragment key={group}>
-            <h2>{group}</h2>
-            {Object.entries(presetsGroup).map(([name, presets]) => (
-              <Fragment key={name}>
-                <h4>{name}</h4>
-                <div className="preset-list">
-                  {presets
-                    .filter(
-                      ({ name }) => !search || getNodeText(name).match(search)
-                    )
-                    .map((preset, i) => (
-                      <div
-                        key={`${group}-${i}`}
-                        className="preset"
-                        onClick={() =>
-                          onPreset({ ...defaultParams, ...preset.params })
-                        }
-                      >
-                        {preset.name}
-                      </div>
-                    ))}
-                </div>
-              </Fragment>
-            ))}
+        {presets.map(({ type, content, name, params }, i) => (
+          <Fragment key={i}>
+            {type === 'title' ? (
+              <h2>{content}</h2>
+            ) : type === 'group' ? (
+              <h4>{content}</h4>
+            ) : (
+              <Preset
+                name={name}
+                preset={params}
+                search={search}
+                onPreset={onPreset}
+              />
+            )}
           </Fragment>
         ))}
       </div>

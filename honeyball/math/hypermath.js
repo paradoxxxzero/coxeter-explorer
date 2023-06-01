@@ -2,7 +2,6 @@ import {
   PI,
   abs,
   acos,
-  binomial,
   combinations,
   cos,
   round,
@@ -12,8 +11,8 @@ import {
 } from './index.js'
 import { eigen, ident, inverse, multiplyVector } from './matrix.js'
 
-export const coxeterToGram = (coxter, stellation) =>
-  coxter.map((row, i) =>
+export const coxeterToGram = (coxeter, stellation) =>
+  coxeter.map((row, i) =>
     row.map((column, j) => -cos((stellation[i][j] * PI) / column))
   )
 
@@ -25,9 +24,21 @@ export const getSignature = gram => {
     0: eigenValues.filter(v => v === 0).length,
   }
 }
+export const getSubSignatures = (gram, sub = [], level = 0) => {
+  sub[level] = sub[level] || []
+  for (let i = 0; i < gram.length; i++) {
+    const subgram = gram
+      .filter((_, j) => j !== i)
+      .map(row => row.filter((_, j) => j !== i))
+    sub[level].push(getSignature(subgram))
+    if (subgram.length > 1) {
+      getSubSignatures(subgram, sub, level + 1)
+    }
+  }
+  return sub
+}
 
 export const getSpaceType = gram => {
-  const eigenValues = eigen(gram).values
   const signature = getSignature(gram)
 
   if (signature['-'] === 0 && signature['0'] === 0) {
@@ -37,29 +48,23 @@ export const getSpaceType = gram => {
     return 'affine'
   }
   // Indefinite, check subgroups
-  const subSignature = []
-  for (let i = 0; i < eigenValues.length; i++) {
-    subSignature.push(
-      getSignature(
-        gram.filter((_, j) => j !== i).map(row => row.filter((_, j) => j !== i))
-      )
-    )
-  }
+  const subSignatures = getSubSignatures(gram)
+
+  const subSignature = subSignatures[0]
+
   if (subSignature.every(s => s['-'] === 0 && s['0'] === 0)) {
     return 'hyperbolic-compact'
   }
   if (subSignature.every(s => s['-'] === 0)) {
     return 'hyperbolic-paracompact'
   }
-  if (
-    subSignature.every(s => s['-'] <= 1) &&
-    subSignature.some(s => s['-'] === 1)
-  ) {
-    return `hyperbolic-level${
-      subSignature.filter(s => s['-'] === 1).length + 1
-    }`
+  for (let i = 1; i < subSignatures.length; i++) {
+    const subSignature = subSignatures[i]
+    if (subSignature.every(s => s['-'] === 0)) {
+      return 'hyperbolic-lorentzian-level-' + (i + 1)
+    }
   }
-  // TODO: hypercompact, cocompact, etc...
+
   return 'indefinite'
 }
 
