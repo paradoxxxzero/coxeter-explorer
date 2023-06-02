@@ -339,7 +339,7 @@ export const normalizeCoxeter = params => {
     for (let i = 0; i < min(oldCoxeter.length, params.dimensions); i++) {
       for (let j = 0; j < i; j++) {
         params.coxeter[i][j] = oldCoxeter[i][j]
-        params.coxeter[j][i] = oldCoxeter[j][i]
+        params.coxeter[j][i] = oldCoxeter[i][j]
       }
     }
   }

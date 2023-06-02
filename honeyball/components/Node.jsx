@@ -95,6 +95,7 @@ export default function Node({ index, value, extended, onChange }) {
           type="number"
           value={value}
           step=".01"
+          style={{ width: `${value.toString().length + 1.5}ch` }}
           onChange={e => onChange(index, e.target.value)}
         />
       )}

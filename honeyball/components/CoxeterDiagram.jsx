@@ -1,4 +1,4 @@
-import { abs, atan2, ceil, cos, floor, max, min, sin } from '../math'
+import { abs, atan2, cos, max, min, sin, sqrt } from '../math'
 import { circleSize, dotSize, mirrorSymbols, mirrorToType } from './Node'
 
 const baseSize = 32
@@ -9,48 +9,46 @@ export default function CoxeterDiagram({ coxeter, mirrors, stellation }) {
   const nodes = mirrors.map((mirror, i) => {
     const type = mirrorToType(mirror)
     return {
-      index: i,
+      n: i,
       type,
-      x: i,
-      y: 0,
+      i,
+      j: 0,
       r: type === 'inactive' ? dotSize : circleSize,
     }
   })
-  const mirrorRels = mirrors.map((mirror, i) =>
-    coxeter[i].map((m, j) => (m > 2 ? j : null)).filter(x => x !== null)
-  )
-  console.log(mirrorRels)
-  if (mirrorRels[0].includes(mirrorRels.length - 1)) {
-    // Split into two rows
-    for (let i = ceil(dimensions / 2); i < dimensions; i++) {
-      nodes[i].x = dimensions - i - 1
-      nodes[i].y = 1
-    }
-    if (dimensions % 2 === 1) {
-      nodes[floor(dimensions / 2)].y = 0.5
-    }
-  } else {
-    for (let i = 0; i < dimensions; i++) {
-      const mirrorRel = mirrorRels[i]
-      if (mirrorRel.length === 3 || (mirrorRel.length === 2 && i === 0)) {
-        // TODO: debugger
-        const prev = mirrorRel.filter(x => x < i).sort()
-        const next = mirrorRel.filter(x => x > i).sort()
-        const isPrev = prev.length > next.length
-        const a = isPrev ? prev[0] : next[1]
-        const b = isPrev ? prev[1] : next[0]
+  // TODO:
+  // 3 3 2
+  //   3 3
+  //     3
+  // TODO: Text anchoring for diagonal
+  for (let i = 0; i < dimensions; i++) {
+    for (let j = dimensions - 1; j > i + 1; j--) {
+      if (coxeter[i][j] > 2) {
+        // Here's a loop from i to j, j stays at same height, i to j form a circle
+        const start = i === 0
+        const end = j === dimensions - 1
+        const middle = !start && !end
+        const n = j - i + 1
+        const loopRadius = sqrt(n - 1) / 2
+        const angle = (2 * Math.PI) / n
+        const center = {
+          i: nodes[i].i + loopRadius,
+          j:
+            nodes[i].j +
+            (middle ? -loopRadius * sin(((2 + n) / 4) * angle) : 0),
+        }
 
-        nodes[b].y++
-        for (let j = b; j < dimensions; j++) {
-          nodes[j].x--
+        for (let k = i; k <= j; k++) {
+          let o = k - i + (start ? 1 : end ? n / 2 : (2 + n) / 4)
+          nodes[k].i = center.i + loopRadius * cos(angle * o)
+          nodes[k].j = center.j + loopRadius * sin(angle * o)
         }
-        if (nodes[b].x !== nodes[i].x) {
-          for (let j = 0; j < dimensions; j++) {
-            if (j !== b && j !== a) {
-              nodes[j].y += 0.5
-            }
-          }
+        for (let k = j + 1; k < dimensions; k++) {
+          nodes[k].i -= j - i
+          nodes[k].i += 2 * loopRadius
         }
+        i = j - 1
+        break
       }
     }
   }
@@ -80,26 +78,48 @@ export default function CoxeterDiagram({ coxeter, mirrors, stellation }) {
     }
   }
 
-  const width = max(...nodes.map(({ x }) => x)) + 1
-  const height = max(...nodes.map(({ y }) => y)) + 1
+  // TODO: Clean mono-branch:
+  // o - o - o - o - o
+  //         |
+  //         o
+  //         |
+  //         o
+
+  const is = nodes.map(({ i }) => i)
+  const js = nodes.map(({ j }) => j)
+  const imin = min(...is)
+  const imax = max(...is)
+  const jmin = min(...js)
+  const jmax = max(...js)
+  let xmax = 0
+  let ymax = 0
+
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i]
+    node.x = (node.i - imin) * 2 * baseSize
+    node.y = (node.j - jmin) * 2 * baseSize
+    xmax = max(xmax, node.x)
+    ymax = max(ymax, node.y)
+  }
+  const l = v => v + max(v - 1, 0)
 
   return (
     <svg
       className="coxeter-diagram"
-      viewBox={`0 0 ${(2 * width - 1) * baseSize} ${
-        (2 * height - 1) * baseSize
+      viewBox={`${-baseSize / 2} ${-baseSize / 2} ${xmax + baseSize} ${
+        ymax + baseSize
       }`}
-      width={`${width}em`}
-      height={`${height + 0.5}em`}
+      width={`${l(imax - imin + 1)}em`}
+      height={`${l(jmax - jmin + 1)}em`}
       strokeWidth="2"
       fill="transparent"
       stroke="currentColor"
     >
-      {nodes.map(({ index, type, x, y, r }) => (
+      {nodes.map(({ n, type, x, y, r }) => (
         <g
-          key={index}
+          key={n}
           className="coxeter-diagram-node"
-          transform={`translate(${x * 2 * baseSize} ${y * 2 * baseSize})`}
+          transform={`translate(${x - baseSize / 2} ${y - baseSize / 2})`}
           title={type}
         >
           {mirrorSymbols[type]}
@@ -107,12 +127,12 @@ export default function CoxeterDiagram({ coxeter, mirrors, stellation }) {
       ))}
       {links.map(({ source, target, value }) => {
         const start = {
-          x: source.x * 2 * baseSize + baseSize / 2,
-          y: source.y * 2 * baseSize + baseSize / 2,
+          x: source.x,
+          y: source.y,
         }
         const end = {
-          x: target.x * 2 * baseSize + baseSize / 2,
-          y: target.y * 2 * baseSize + baseSize / 2,
+          x: target.x,
+          y: target.y,
         }
         const text = {}
         if (abs(start.x - end.x) < abs(start.y - end.y)) {
@@ -133,10 +153,7 @@ export default function CoxeterDiagram({ coxeter, mirrors, stellation }) {
         end.y -= (target.r + 1) * sin(angle)
 
         return (
-          <g
-            key={`${source.index}-${target.index}`}
-            className="coxeter-diagram-link"
-          >
+          <g key={`${source.n}-${target.n}`} className="coxeter-diagram-link">
             <path
               d={`M ${start.x} ${start.y} L ${end.x} ${end.y}`}
               strokeWidth="1"
