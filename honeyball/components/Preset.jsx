@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { defaultParams } from '../../statics'
+import { defaultParams, filterParams } from '../../statics'
+import CoxeterDiagram from './CoxeterDiagram'
 
 const getNodeText = node => {
   if (['string', 'number'].includes(typeof node)) {
@@ -14,7 +15,10 @@ const getNodeText = node => {
 }
 
 export default function Preset({ name, params, search, onPreset }) {
-  const fullParams = useMemo(() => ({ ...defaultParams, ...params }), [params])
+  const fullParams = useMemo(
+    () => filterParams({ ...defaultParams, ...params }).params,
+    [params]
+  )
   const [display, setDisplay] = useState(true)
 
   useEffect(() => {
@@ -29,7 +33,6 @@ export default function Preset({ name, params, search, onPreset }) {
   //   setSpaceType(getSpaceType(coxeterToGram(params.coxeter, params.stellation)))
   //   // }, 1000)
   // }, [params.coxeter, params.stellation])
-
   return display ? (
     <div className="preset" onClick={() => onPreset(fullParams)}>
       {/* <span className="preset-space">
@@ -37,6 +40,12 @@ export default function Preset({ name, params, search, onPreset }) {
           <Space type={spaceType} dimensions={params.dimensions} />
         ) : null}
       </span> */}
+      <pre>{fullParams.coxeter.map((row, i) => row.join(' ')).join('\n')}</pre>
+      <CoxeterDiagram
+        coxeter={fullParams.coxeter}
+        mirrors={fullParams.mirrors}
+        stellation={fullParams.stellation}
+      />
       <span className="preset-name">{name}</span>
     </div>
   ) : null

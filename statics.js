@@ -79,18 +79,6 @@ export const ambiances = {
       // const i = word.match(dimensionsRegExps[dimensions - 1])?.length || 0
       // return _color.setHSL((i * 0.07) % 1, 0.5, 0.5)
     },
-  },
-  colorfulDepth: {
-    background: 0xffffff,
-    shadow: false,
-    material: new MeshPhongMaterial(),
-    lights: [new AmbientLight(0xffffff, 0.25)],
-    cameraLights: [new PointLight(0xffffff, 0.75)],
-    color: ({ word }, type, dimensions) => {
-      return _color.setHSL((word.length * 0.03) % 1, 1, 0.8)
-      // const i = word.match(dimensionsRegExps[dimensions - 1])?.length || 0
-      // return _color.setHSL((i * 0.07) % 1, 0.5, 0.5)
-    },
     faceMaterial: new MeshPhongMaterial({
       side: DoubleSide,
       transparent: true,
@@ -334,42 +322,7 @@ export const defaultParams = {
   msaaSamples: 8,
 }
 
-export const filterParams = maybeBadParams => {
-  const params = {
-    ...maybeBadParams,
-  }
-  const badParams = []
-  // Remove bad params
-  Object.entries(params).forEach(([key, value]) => {
-    if (typeof defaultParams[key] === 'number' || key.startsWith('fov')) {
-      if (value === '' || isNaN(value)) {
-        delete params[key]
-        badParams.push(key)
-      }
-    } else if (Array.isArray(defaultParams[key])) {
-      // arrays of arrays of numbers
-      if (Array.isArray(value[0])) {
-        if (value.find(c => c.find(d => value === '' || isNaN(d)))) {
-          delete params[key]
-          badParams.push(key)
-        }
-      } else {
-        // arrays of numbers
-        if (
-          value.find(
-            c =>
-              value === '' ||
-              (isNaN(c) && !(key === 'mirrors' && 'sß'.includes(c)))
-          )
-        ) {
-          delete params[key]
-          badParams.push(key)
-        }
-      }
-    }
-  })
-
-  // Normalize params
+export const normalizeCoxeter = params => {
   if (
     params.coxeter.length !== params.dimensions ||
     params.coxeter.some(r => r.length !== params.dimensions)
@@ -414,6 +367,47 @@ export const filterParams = maybeBadParams => {
       }
     }
   }
+  return params
+}
+
+export const filterParams = maybeBadParams => {
+  const params = {
+    ...maybeBadParams,
+  }
+  const badParams = []
+  // Remove bad params
+  Object.entries(params).forEach(([key, value]) => {
+    if (typeof defaultParams[key] === 'number' || key.startsWith('fov')) {
+      if (value === '' || isNaN(value)) {
+        delete params[key]
+        badParams.push(key)
+      }
+    } else if (Array.isArray(defaultParams[key])) {
+      // arrays of arrays of numbers
+      if (Array.isArray(value[0])) {
+        if (value.find(c => c.find(d => value === '' || isNaN(d)))) {
+          delete params[key]
+          badParams.push(key)
+        }
+      } else {
+        // arrays of numbers
+        if (
+          value.find(
+            c =>
+              value === '' ||
+              (isNaN(c) && !(key === 'mirrors' && 'sß'.includes(c)))
+          )
+        ) {
+          delete params[key]
+          badParams.push(key)
+        }
+      }
+    }
+  })
+
+  // Normalize params
+  normalizeCoxeter(params)
+
   if (
     params.matrix.length !== params.dimensions ||
     params.matrix.some(r => r.length !== params.dimensions)

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { filterParams } from '../statics'
 import Runtime from './components/Runtime'
 import UI from './components/UI'
-import { binomial, min, round } from './math'
+import { binomial } from './math'
 import { ident } from './math/matrix'
 
 export default function App({ gl, params, updateParams }) {
@@ -146,61 +146,12 @@ export default function App({ gl, params, updateParams }) {
     [updateParams]
   )
 
-  const handleExtend = useCallback(() => {
-    const newParams = {
-      extended: !params.extended,
-    }
-
-    if (params.extended) {
-      newParams.coxeter = params.coxeter.map(row => row.slice())
-      for (let i = 0; i < params.dimensions; i++) {
-        for (let j = 0; j < i - 1; j++) {
-          newParams.coxeter[i][j] = 2
-          newParams.coxeter[j][i] = 2
-        }
-      }
-    }
-    updateParams(newParams)
-  }, [params.extended, params.dimensions, params.coxeter, updateParams])
-
   const handleChange = useCallback(
     (name, value) => {
-      if (name.startsWith('coxeter')) {
-        const [i, j] = name
-          .split('-')
-          .slice(1)
-          .map(x => +x)
-        const coxeter = params.coxeter.map(x => x.slice())
-        coxeter[i][j] = value
-        coxeter[j][i] = value
-        name = 'coxeter'
-        value = coxeter
-      }
-
-      if (name.startsWith('stellation')) {
-        const [i, j] = name
-          .split('-')
-          .slice(1)
-          .map(x => +x)
-        const stellation = params.stellation.map(x => x.slice())
-        stellation[i][j] = value
-        stellation[j][i] = value
-        name = 'stellation'
-        value = stellation
-      }
-
-      updateParams({ [name]: value })
+      const params = typeof name === 'string' ? { [name]: value } : name
+      updateParams(params)
     },
-    [params, updateParams]
-  )
-
-  const handleMirrorChange = useCallback(
-    (index, value) => {
-      const mirrors = params.mirrors.slice()
-      mirrors[index] = value
-      updateParams({ mirrors })
-    },
-    [params.mirrors, updateParams]
+    [updateParams]
   )
 
   return (
@@ -211,11 +162,8 @@ export default function App({ gl, params, updateParams }) {
       <UI
         runtime={runtime}
         params={params}
-        updateParams={updateParams}
         onChange={handleChange}
-        onExtend={handleExtend}
         onControls={handleControls}
-        onMirrorChange={handleMirrorChange}
         onMatrixReset={handleMatrixReset}
       />
       <Runtime

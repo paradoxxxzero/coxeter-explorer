@@ -178,7 +178,7 @@ label {
 }
 
 .coxeter-link {
-  color: white;
+  color: rgba(255, 255, 255);
   font-size: 3em;
   width: 1.5em;
   margin: 0 -0.5em;
@@ -302,7 +302,7 @@ select option {
   right: 0;
   font-size: 2em;
   line-height: 1;
-  color: rgba(33, 150, 243);
+  color: rgba(255, 255, 255, 0.75);
   mix-blend-mode: difference;
   background: none;
   cursor: pointer;
@@ -317,6 +317,9 @@ select option {
   font-size: 1.5em;
   margin: 0 4em;
   outline: 1px solid rgba(150, 150, 150, 0.5);
+}
+.presets-search::placeholder {
+  color: rgba(255, 255, 255, 0.5);
 }
 .presets.shown {
   display: flex;
@@ -368,4 +371,8 @@ select option {
 h4 + h4,
 h4:has(+ h4) {
   display: none;
+}
+
+.coxeter-diagram {
+  font-size: 3em;
 }

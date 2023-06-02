@@ -27,7 +27,7 @@ export default function Presets({ onPreset, closePresets }) {
             ) : (
               <Preset
                 name={name}
-                preset={params}
+                params={params}
                 search={search}
                 onPreset={onPreset}
               />

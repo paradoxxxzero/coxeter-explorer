@@ -42,7 +42,7 @@ const polytope = (coxeterArgs, mirrors, stellationArgs, extra) => {
     showFaces: dimensions <= 4,
     curve: dimensions > 3,
     grouper: 'toddcoxeter',
-    ambiance: dimensions > 3 ? 'colorful' : 'colorfulDepth',
+    ambiance: 'colorful',
     ...(extra || {}),
   }
   if (mirrors) {
@@ -93,6 +93,124 @@ const honeycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
   }
 }
 
+const getOperators = d => {
+  if (d === 4) {
+    return {
+      '': [1, 0, 0, 0],
+      Rectified: [0, 1, 0, 0],
+      Truncated: [1, 1, 0, 0],
+      Cantellated: [1, 0, 1, 0],
+      Cantitruncated: [1, 1, 1, 0],
+      Runcitruncated: [1, 1, 0, 1],
+      Runcinated: [1, 0, 0, 1],
+      Bitruncated: [0, 1, 1, 0],
+      Omnitruncated: [1, 1, 1, 1],
+      // Birectified: [0, 0, 1, 0],
+      // 'Trirectified': [0, 0, 0, 1] ,
+      // Omnisub: ['s', 's', 's', 's'],
+    }
+  }
+  if (d === 5) {
+    return {
+      '': [1, 0, 0, 0, 0],
+      Rectified: [0, 1, 0, 0, 0],
+      Birectified: [0, 0, 1, 0, 0],
+      // Trirectified: [0, 0, 0, 1, 0],
+      // Quadrirectified: [0, 0, 0, 0, 1],
+      Truncated: [1, 1, 0, 0, 0],
+      Cantellated: [1, 0, 1, 0, 0],
+      Runcinated: [1, 0, 0, 1, 0],
+      Stericated: [1, 0, 0, 0, 1],
+      Omnitruncated: [1, 1, 1, 1, 1],
+      // Omnisub: ['s', 's', 's', 's', 's'],
+    }
+  }
+  if (d === 6) {
+    return {
+      '': [1, 0, 0, 0, 0, 0],
+      Rectified: [0, 1, 0, 0, 0, 0],
+      Birectified: [0, 0, 1, 0, 0, 0],
+      Truncated: [1, 1, 0, 0, 0, 0],
+      Bitruncated: [0, 1, 1, 0, 0, 0],
+      Tritruncated: [0, 0, 1, 1, 0, 0],
+      Cantellated: [1, 0, 1, 0, 0, 0],
+      Bicantellated: [0, 1, 0, 1, 0, 0],
+      Runcinated: [1, 0, 0, 1, 0, 0],
+      Biruncinated: [0, 1, 0, 0, 1, 0],
+      Stericated: [1, 0, 0, 0, 1, 0],
+      Pentellated: [1, 0, 0, 0, 0, 1],
+      Omnitruncated: [1, 1, 1, 1, 1, 1],
+      // Omnisub: ['s', 's', 's', 's', 's', 's'],
+    }
+  }
+  if (d === 7) {
+    return {
+      '': [1, 0, 0, 0, 0, 0, 0],
+      Rectified: [0, 1, 0, 0, 0, 0, 0],
+      Birectified: [0, 0, 1, 0, 0, 0, 0],
+      Truncated: [1, 1, 0, 0, 0, 0, 0],
+      Bitruncated: [0, 1, 1, 0, 0, 0, 0],
+      Tritruncated: [0, 0, 1, 1, 0, 0, 0],
+      Cantellated: [1, 0, 1, 0, 0, 0, 0],
+      Bicantellated: [0, 1, 0, 1, 0, 0, 0],
+      Runcinated: [1, 0, 0, 1, 0, 0, 0],
+      Biruncinated: [0, 1, 0, 0, 1, 0, 0],
+      Stericated: [1, 0, 0, 0, 1, 0, 0],
+      Pentellated: [1, 0, 0, 0, 0, 1, 0],
+      Hexicated: [1, 0, 0, 0, 0, 0, 1],
+      Omnitruncated: [1, 1, 1, 1, 1, 1, 1],
+      // Omnisub: ['s', 's', 's', 's', 's', 's', 's'],
+    }
+  }
+  if (d === 8) {
+    return {
+      '': [1, 0, 0, 0, 0, 0, 0, 0],
+      Rectified: [0, 1, 0, 0, 0, 0, 0, 0],
+      Birectified: [0, 0, 1, 0, 0, 0, 0, 0],
+      Truncated: [1, 1, 0, 0, 0, 0, 0, 0],
+      Bitruncated: [0, 1, 1, 0, 0, 0, 0, 0],
+      Tritruncated: [0, 0, 1, 1, 0, 0, 0, 0],
+      Quadritruncated: [0, 0, 0, 1, 1, 0, 0, 0],
+      Cantellated: [1, 0, 1, 0, 0, 0, 0, 0],
+      Bicantellated: [0, 1, 0, 1, 0, 0, 0, 0],
+      Tricantellated: [0, 0, 1, 0, 1, 0, 0, 0],
+      Runcinated: [1, 0, 0, 1, 0, 0, 0, 0],
+      Biruncinated: [0, 1, 0, 0, 1, 0, 0, 0],
+      Triruncinated: [0, 0, 1, 0, 0, 1, 0, 0],
+      Stericated: [1, 0, 0, 0, 1, 0, 0, 0],
+      Pentellated: [1, 0, 0, 0, 0, 1, 0, 0],
+      Hexicated: [1, 0, 0, 0, 0, 0, 1, 0],
+      Heptellated: [1, 0, 0, 0, 0, 0, 0, 1],
+      Omnitruncated: [1, 1, 1, 1, 1, 1, 1, 1],
+      // Omnisub: ['s', 's', 's', 's', 's', 's', 's', 's'],
+    }
+  }
+  if (d === 9) {
+    return {
+      '': [1, 0, 0, 0, 0, 0, 0, 0, 0],
+      Rectified: [0, 1, 0, 0, 0, 0, 0, 0, 0],
+      Birectified: [0, 0, 1, 0, 0, 0, 0, 0, 0],
+      Truncated: [1, 1, 0, 0, 0, 0, 0, 0, 0],
+      Bitruncated: [0, 1, 1, 0, 0, 0, 0, 0, 0],
+      Tritruncated: [0, 0, 1, 1, 0, 0, 0, 0, 0],
+      Quadritruncated: [0, 0, 0, 1, 1, 0, 0, 0, 0],
+      Cantellated: [1, 0, 1, 0, 0, 0, 0, 0, 0],
+      Bicantellated: [0, 1, 0, 1, 0, 0, 0, 0, 0],
+      Tricantellated: [0, 0, 1, 0, 1, 0, 0, 0, 0],
+      Runcinated: [1, 0, 0, 1, 0, 0, 0, 0, 0],
+      Biruncinated: [0, 1, 0, 0, 1, 0, 0, 0, 0],
+      Triruncinated: [0, 0, 1, 0, 0, 1, 0, 0, 0],
+      Stericated: [1, 0, 0, 0, 1, 0, 0, 0, 0],
+      Pentellated: [1, 0, 0, 0, 0, 1, 0, 0, 0],
+      Hexicated: [1, 0, 0, 0, 0, 0, 1, 0, 0],
+      Heptellated: [1, 0, 0, 0, 0, 0, 0, 1, 0],
+      Octellated: [1, 0, 0, 0, 0, 0, 0, 0, 1],
+      Omnitruncated: [1, 1, 1, 1, 1, 1, 1, 1, 1],
+      // Omnisub: ['s', 's', 's', 's', 's', 's', 's', 's', 's'],
+    }
+  }
+}
+
 export const presets = [
   {
     type: 'title',
@@ -101,6 +219,16 @@ export const presets = [
         <Space type="finite" /> Spherical space
       </>
     ),
+  },
+  {
+    name: 'Flat Torus',
+    params: polytope([30, 2, 30], [1, 0, 0, 1], null, {
+      showVertices: false,
+      showFaces: false,
+      curve: true,
+      ambiance: 'neon',
+      controls: 'free',
+    }),
   },
   {
     type: 'group',
@@ -201,222 +329,34 @@ export const presets = [
       </>
     ),
   },
-  {
-    name: '5-cell',
-    params: polytope([3, 3, 3]),
-  },
-  {
-    name: '8-cell',
-    params: polytope([4, 3, 3]),
-  },
-  {
-    name: '16-cell',
-    params: polytope([3, 3, 4]),
-  },
-  {
-    name: '24-cell',
-    params: polytope([3, 4, 3]),
-  },
-  {
-    name: '120-cell',
-    params: polytope([5, 3, 3]),
-  },
-  {
-    name: '600-cell',
-    params: polytope([3, 3, 5]),
-  },
-  {
-    name: 'Rectified 5-cell',
-    params: polytope([3, 3, 3], [0, 1, 0, 0]),
-  },
-  {
-    name: 'Rectified 8-cell',
-    params: polytope([4, 3, 3], [0, 1, 0, 0]),
-  },
-  {
-    name: 'Rectified 16-cell',
-    params: polytope([3, 3, 4], [0, 1, 0, 0]),
-  },
-  {
-    name: 'Rectified 24-cell',
-    params: polytope([3, 4, 3], [0, 1, 0, 0]),
-  },
-  {
-    name: 'Rectified 120-cell',
-    params: polytope([5, 3, 3], [0, 1, 0, 0]),
-  },
-  {
-    name: 'Rectified 600-cell',
-    params: polytope([3, 3, 5], [0, 1, 0, 0]),
-  },
-  {
-    name: 'Birectified 5-cell',
-    params: polytope([3, 3, 3], [0, 0, 1, 0]),
-  },
-  {
-    name: 'Birectified 8-cell',
-    params: polytope([4, 3, 3], [0, 0, 1, 0]),
-  },
-  {
-    name: 'Birectified 16-cell',
-    params: polytope([3, 3, 4], [0, 0, 1, 0]),
-  },
-  {
-    name: 'Birectified 24-cell',
-    params: polytope([3, 4, 3], [0, 0, 1, 0]),
-  },
-  {
-    name: 'Birectified 120-cell',
-    params: polytope([5, 3, 3], [0, 0, 1, 0]),
-  },
-  {
-    name: 'Birectified 600-cell',
-    params: polytope([3, 3, 5], [0, 0, 1, 0]),
-  },
-  {
-    name: 'Truncated 5-cell',
-    params: polytope([3, 3, 3], [1, 1, 0, 0]),
-  },
-  {
-    name: 'Truncated 8-cell',
-    params: polytope([4, 3, 3], [1, 1, 0, 0]),
-  },
-  {
-    name: 'Truncated 16-cell',
-    params: polytope([3, 3, 4], [1, 1, 0, 0]),
-  },
-  {
-    name: 'Truncated 24-cell',
-    params: polytope([3, 4, 3], [1, 1, 0, 0]),
-  },
-  {
-    name: 'Truncated 120-cell',
-    params: polytope([5, 3, 3], [1, 1, 0, 0]),
-  },
-  {
-    name: 'Truncated 600-cell',
-    params: polytope([3, 3, 5], [1, 1, 0, 0]),
-  },
-  {
-    name: 'Cantellated 5-cell',
-    params: polytope([3, 3, 3], [1, 0, 1, 0]),
-  },
-  {
-    name: 'Cantellated 8-cell',
-    params: polytope([4, 3, 3], [1, 0, 1, 0]),
-  },
-  {
-    name: 'Cantellated 16-cell',
-    params: polytope([3, 3, 4], [1, 0, 1, 0]),
-  },
-  {
-    name: 'Cantellated 24-cell',
-    params: polytope([3, 4, 3], [1, 0, 1, 0]),
-  },
-  {
-    name: 'Cantellated 120-cell',
-    params: polytope([5, 3, 3], [1, 0, 1, 0]),
-  },
-  {
-    name: 'Cantellated 600-cell',
-    params: polytope([3, 3, 5], [1, 0, 1, 0]),
-  },
-  {
-    name: 'Bitruncated 5-cell',
-    params: polytope([3, 3, 3], [0, 1, 1, 0]),
-  },
-  {
-    name: 'Bitruncated 8-cell',
-    params: polytope([4, 3, 3], [0, 1, 1, 0]),
-  },
-  {
-    name: 'Bitruncated 16-cell',
-    params: polytope([3, 3, 4], [0, 1, 1, 0]),
-  },
-  {
-    name: 'Bitruncated 24-cell',
-    params: polytope([3, 4, 3], [0, 1, 1, 0]),
-  },
-  {
-    name: 'Bitruncated 120-cell',
-    params: polytope([5, 3, 3], [0, 1, 1, 0]),
-  },
-  {
-    name: 'Bitruncated 600-cell',
-    params: polytope([3, 3, 5], [0, 1, 1, 0]),
-  },
-  {
-    name: 'Runcinated 5-cell',
-    params: polytope([3, 3, 3], [1, 0, 0, 1]),
-  },
-  {
-    name: 'Runcinated 8-cell',
-    params: polytope([4, 3, 3], [1, 0, 0, 1]),
-  },
-  {
-    name: 'Runcinated 16-cell',
-    params: polytope([3, 3, 4], [1, 0, 0, 1]),
-  },
-  {
-    name: 'Runcinated 24-cell',
-    params: polytope([3, 4, 3], [1, 0, 0, 1]),
-  },
-  {
-    name: 'Runcinated 120-cell',
-    params: polytope([5, 3, 3], [1, 0, 0, 1]),
-  },
-  {
-    name: 'Runcinated 600-cell',
-    params: polytope([3, 3, 5], [1, 0, 0, 1]),
-  },
-  {
-    name: 'Runcitruncated 5-cell',
-    params: polytope([3, 3, 3], [1, 1, 0, 1]),
-  },
-  {
-    name: 'Runcitruncated 8-cell',
-    params: polytope([4, 3, 3], [1, 1, 0, 1]),
-  },
-  {
-    name: 'Runcitruncated 16-cell',
-    params: polytope([3, 3, 4], [1, 1, 0, 1]),
-  },
-  {
-    name: 'Runcitruncated 24-cell',
-    params: polytope([3, 4, 3], [1, 1, 0, 1]),
-  },
-  {
-    name: 'Runcitruncated 120-cell',
-    params: polytope([5, 3, 3], [1, 1, 0, 1]),
-  },
-  {
-    name: 'Runcitruncated 600-cell',
-    params: polytope([3, 3, 5], [1, 1, 0, 1]),
-  },
-  {
-    name: 'Omnitruncated 5-cell',
-    params: polytope([3, 3, 3], [1, 1, 1, 1]),
-  },
-  {
-    name: 'Omnitruncated 8-cell',
-    params: polytope([4, 3, 3], [1, 1, 1, 1]),
-  },
-  {
-    name: 'Omnitruncated 16-cell',
-    params: polytope([3, 3, 4], [1, 1, 1, 1]),
-  },
-  {
-    name: 'Omnitruncated 24-cell',
-    params: polytope([3, 4, 3], [1, 1, 1, 1]),
-  },
-  {
-    name: 'Omnitruncated 120-cell',
-    params: polytope([5, 3, 3], [1, 1, 1, 1]),
-  },
-  {
-    name: 'Omnitruncated 600-cell',
-    params: polytope([3, 3, 5], [1, 1, 1, 1]),
-  },
+  ...Object.entries(getOperators(4))
+    .map(([name, mirrors]) => [
+      {
+        name: `${name ? `${name} ` : ''}5-cell`,
+        params: polytope([3, 3, 3], mirrors),
+      },
+      {
+        name: `${name ? `${name} ` : ''}8-cell`,
+        params: polytope([4, 3, 3], mirrors),
+      },
+      {
+        name: `${name ? `${name} ` : ''}16-cell`,
+        params: polytope([3, 3, 4], mirrors),
+      },
+      {
+        name: `${name ? `${name} ` : ''}24-cell`,
+        params: polytope([3, 4, 3], mirrors),
+      },
+      {
+        name: `${name ? `${name} ` : ''}120-cell`,
+        params: polytope([5, 3, 3], mirrors),
+      },
+      {
+        name: `${name ? `${name} ` : ''}600-cell`,
+        params: polytope([3, 3, 5], mirrors),
+      },
+    ])
+    .flat(),
   {
     name: 'Snub 24-cell',
     params: polytope([3, 4, 3], ['s', 's', 0, 0]),
@@ -429,31 +369,35 @@ export const presets = [
       </>
     ),
   },
-  {
-    name: '5-simplex',
-    params: polytope([3, 3, 3, 3], [1, 0, 0, 0, 0]),
-  },
-  {
-    name: '5-cube',
-    params: polytope([4, 3, 3, 3], [1, 0, 0, 0, 0]),
-  },
-  {
-    name: '5-orthoplex',
-    params: polytope([3, 3, 3, 4], [1, 0, 0, 0, 0]),
-  },
-  {
-    name: '5-demicube',
-    params: polytope(
-      [
-        [1, 2, 3, 2, 2],
-        [2, 1, 3, 2, 2],
-        [3, 3, 1, 3, 2],
-        [2, 2, 3, 1, 3],
-        [2, 2, 2, 3, 1],
-      ],
-      [1, 0, 0, 0, 0]
-    ),
-  },
+  ...Object.entries(getOperators(5))
+    .map(([name, mirrors]) => [
+      {
+        name: `${name ? `${name} ` : ''}5-simplex`,
+        params: polytope([3, 3, 3, 3], mirrors),
+      },
+      {
+        name: `${name ? `${name} ` : ''}5-cube`,
+        params: polytope([4, 3, 3, 3], mirrors),
+      },
+      {
+        name: `${name ? `${name} ` : ''}5-orthoplex`,
+        params: polytope([3, 3, 3, 4], mirrors),
+      },
+      {
+        name: `${name ? `${name} ` : ''}5-demicube`,
+        params: polytope(
+          [
+            [1, 2, 3, 2, 2],
+            [2, 1, 3, 2, 2],
+            [3, 3, 1, 3, 2],
+            [2, 2, 3, 1, 3],
+            [2, 2, 2, 3, 1],
+          ],
+          mirrors
+        ),
+      },
+    ])
+    .flat(),
   {
     type: 'group',
     content: (
@@ -462,32 +406,36 @@ export const presets = [
       </>
     ),
   },
-  {
-    name: '6-simplex',
-    params: polytope([3, 3, 3, 3, 3], [1, 0, 0, 0, 0, 0]),
-  },
-  {
-    name: '6-cube',
-    params: polytope([4, 3, 3, 3, 3], [1, 0, 0, 0, 0, 0]),
-  },
-  {
-    name: '6-orthoplex',
-    params: polytope([3, 3, 3, 3, 4], [1, 0, 0, 0, 0, 0]),
-  },
-  {
-    name: '6-demicube',
-    params: polytope(
-      [
-        [1, 2, 3, 2, 2, 2],
-        [2, 1, 3, 2, 2, 2],
-        [3, 3, 1, 3, 2, 2],
-        [2, 2, 3, 1, 3, 2],
-        [2, 2, 2, 3, 1, 3],
-        [2, 2, 2, 2, 3, 1],
-      ],
-      [1, 0, 0, 0, 0, 0]
-    ),
-  },
+  ...Object.entries(getOperators(6))
+    .map(([name, mirrors]) => [
+      {
+        name: `${name ? `${name} ` : ''}6-simplex`,
+        params: polytope([3, 3, 3, 3, 3], mirrors),
+      },
+      {
+        name: `${name ? `${name} ` : ''}6-cube`,
+        params: polytope([4, 3, 3, 3, 3], mirrors),
+      },
+      {
+        name: `${name ? `${name} ` : ''}6-orthoplex`,
+        params: polytope([3, 3, 3, 3, 4], mirrors),
+      },
+      {
+        name: `${name ? `${name} ` : ''}6-demicube`,
+        params: polytope(
+          [
+            [1, 2, 3, 2, 2, 2],
+            [2, 1, 3, 2, 2, 2],
+            [3, 3, 1, 3, 2, 2],
+            [2, 2, 3, 1, 3, 2],
+            [2, 2, 2, 3, 1, 3],
+            [2, 2, 2, 2, 3, 1],
+          ],
+          mirrors
+        ),
+      },
+    ])
+    .flat(),
   {
     name: (
       <>
@@ -532,33 +480,37 @@ export const presets = [
       </>
     ),
   },
-  {
-    name: '7-simplex',
-    params: polytope([3, 3, 3, 3, 3, 3], [1, 0, 0, 0, 0, 0, 0]),
-  },
-  {
-    name: '7-cube',
-    params: polytope([4, 3, 3, 3, 3, 3], [1, 0, 0, 0, 0, 0, 0]),
-  },
-  {
-    name: '7-orthoplex',
-    params: polytope([3, 3, 3, 3, 3, 4], [1, 0, 0, 0, 0, 0, 0]),
-  },
-  {
-    name: '7-demicube',
-    params: polytope(
-      [
-        [1, 2, 3, 2, 2, 2, 2],
-        [2, 1, 3, 2, 2, 2, 2],
-        [3, 3, 1, 3, 2, 2, 2],
-        [2, 2, 3, 1, 3, 2, 2],
-        [2, 2, 2, 3, 1, 3, 2],
-        [2, 2, 2, 2, 3, 1, 3],
-        [2, 2, 2, 2, 2, 3, 1],
-      ],
-      [1, 0, 0, 0, 0, 0, 0]
-    ),
-  },
+  ...Object.entries(getOperators(7))
+    .map(([name, mirrors]) => [
+      {
+        name: `${name ? `${name} ` : ''}7-simplex`,
+        params: polytope([3, 3, 3, 3, 3, 3], mirrors),
+      },
+      {
+        name: `${name ? `${name} ` : ''}7-cube`,
+        params: polytope([4, 3, 3, 3, 3, 3], mirrors),
+      },
+      {
+        name: `${name ? `${name} ` : ''}7-orthoplex`,
+        params: polytope([3, 3, 3, 3, 3, 4], mirrors),
+      },
+      {
+        name: `${name ? `${name} ` : ''}7-demicube`,
+        params: polytope(
+          [
+            [1, 2, 3, 2, 2, 2, 2],
+            [2, 1, 3, 2, 2, 2, 2],
+            [3, 3, 1, 3, 2, 2, 2],
+            [2, 2, 3, 1, 3, 2, 2],
+            [2, 2, 2, 3, 1, 3, 2],
+            [2, 2, 2, 2, 3, 1, 3],
+            [2, 2, 2, 2, 2, 3, 1],
+          ],
+          mirrors
+        ),
+      },
+    ])
+    .flat(),
   {
     name: (
       <>
@@ -624,34 +576,38 @@ export const presets = [
       </>
     ),
   },
-  {
-    name: '8-simplex',
-    params: polytope([3, 3, 3, 3, 3, 3, 3], [1, 0, 0, 0, 0, 0, 0, 0]),
-  },
-  {
-    name: '8-cube',
-    params: polytope([4, 3, 3, 3, 3, 3, 3], [1, 0, 0, 0, 0, 0, 0, 0]),
-  },
-  {
-    name: '8-orthoplex',
-    params: polytope([3, 3, 3, 3, 3, 3, 4], [1, 0, 0, 0, 0, 0, 0, 0]),
-  },
-  {
-    name: '8-demicube',
-    params: polytope(
-      [
-        [1, 2, 3, 2, 2, 2, 2, 2],
-        [2, 1, 3, 2, 2, 2, 2, 2],
-        [3, 3, 1, 3, 2, 2, 2, 2],
-        [2, 2, 3, 1, 3, 2, 2, 2],
-        [2, 2, 2, 3, 1, 3, 2, 2],
-        [2, 2, 2, 2, 3, 1, 3, 2],
-        [2, 2, 2, 2, 2, 3, 1, 3],
-        [2, 2, 2, 2, 2, 2, 3, 1],
-      ],
-      [1, 0, 0, 0, 0, 0, 0, 0]
-    ),
-  },
+  ...Object.entries(getOperators(8))
+    .map(([name, mirrors]) => [
+      {
+        name: `${name ? `${name} ` : ''}8-simplex`,
+        params: polytope([3, 3, 3, 3, 3, 3, 3], mirrors),
+      },
+      {
+        name: `${name ? `${name} ` : ''}8-cube`,
+        params: polytope([4, 3, 3, 3, 3, 3, 3], mirrors),
+      },
+      {
+        name: `${name ? `${name} ` : ''}8-orthoplex`,
+        params: polytope([3, 3, 3, 3, 3, 3, 4], mirrors),
+      },
+      {
+        name: `${name ? `${name} ` : ''}8-demicube`,
+        params: polytope(
+          [
+            [1, 2, 3, 2, 2, 2, 2, 2],
+            [2, 1, 3, 2, 2, 2, 2, 2],
+            [3, 3, 1, 3, 2, 2, 2, 2],
+            [2, 2, 3, 1, 3, 2, 2, 2],
+            [2, 2, 2, 3, 1, 3, 2, 2],
+            [2, 2, 2, 2, 3, 1, 3, 2],
+            [2, 2, 2, 2, 2, 3, 1, 3],
+            [2, 2, 2, 2, 2, 2, 3, 1],
+          ],
+          mirrors
+        ),
+      },
+    ])
+    .flat(),
 
   {
     name: (
@@ -722,35 +678,39 @@ export const presets = [
       </>
     ),
   },
-  {
-    name: '9-simplex',
-    params: polytope([3, 3, 3, 3, 3, 3, 3, 3], [1, 0, 0, 0, 0, 0, 0, 0, 0]),
-  },
-  {
-    name: '9-cube',
-    params: polytope([4, 3, 3, 3, 3, 3, 3, 3], [1, 0, 0, 0, 0, 0, 0, 0, 0]),
-  },
-  {
-    name: '9-orthoplex',
-    params: polytope([3, 3, 3, 3, 3, 3, 3, 4], [1, 0, 0, 0, 0, 0, 0, 0, 0]),
-  },
-  {
-    name: '9-demicube',
-    params: polytope(
-      [
-        [1, 2, 3, 2, 2, 2, 2, 2, 2],
-        [2, 1, 3, 2, 2, 2, 2, 2, 2],
-        [3, 3, 1, 3, 2, 2, 2, 2, 2],
-        [2, 2, 3, 1, 3, 2, 2, 2, 2],
-        [2, 2, 2, 3, 1, 3, 2, 2, 2],
-        [2, 2, 2, 2, 3, 1, 3, 2, 2],
-        [2, 2, 2, 2, 2, 3, 1, 3, 2],
-        [2, 2, 2, 2, 2, 2, 3, 1, 3],
-        [2, 2, 2, 2, 2, 2, 2, 3, 1],
-      ],
-      [1, 0, 0, 0, 0, 0, 0, 0]
-    ),
-  },
+  ...Object.entries(getOperators(9))
+    .map(([name, mirrors]) => [
+      {
+        name: `${name ? `${name} ` : ''}9-simplex`,
+        params: polytope([3, 3, 3, 3, 3, 3, 3, 3], mirrors),
+      },
+      {
+        name: `${name ? `${name} ` : ''}9-cube`,
+        params: polytope([4, 3, 3, 3, 3, 3, 3, 3], mirrors),
+      },
+      {
+        name: `${name ? `${name} ` : ''}9-orthoplex`,
+        params: polytope([3, 3, 3, 3, 3, 3, 3, 4], mirrors),
+      },
+      {
+        name: `${name ? `${name} ` : ''}9-demicube`,
+        params: polytope(
+          [
+            [1, 2, 3, 2, 2, 2, 2, 2, 2],
+            [2, 1, 3, 2, 2, 2, 2, 2, 2],
+            [3, 3, 1, 3, 2, 2, 2, 2, 2],
+            [2, 2, 3, 1, 3, 2, 2, 2, 2],
+            [2, 2, 2, 3, 1, 3, 2, 2, 2],
+            [2, 2, 2, 2, 3, 1, 3, 2, 2],
+            [2, 2, 2, 2, 2, 3, 1, 3, 2],
+            [2, 2, 2, 2, 2, 2, 3, 1, 3],
+            [2, 2, 2, 2, 2, 2, 2, 3, 1],
+          ],
+          mirrors
+        ),
+      },
+    ])
+    .flat(),
   {
     type: 'title',
     content: (
@@ -1505,6 +1465,18 @@ export const presets = [
   {
     name: '3-3-7',
     params: honeycomb([3, 3, 7], [1, 0, 0, 0], null, {
+      grouper: 'toddcoxeter',
+    }),
+  },
+  {
+    name: '3-4-7',
+    params: honeycomb([3, 3, 7], [1, 0, 0, 0], null, {
+      grouper: 'toddcoxeter',
+    }),
+  },
+  {
+    name: '3-5-7',
+    params: honeycomb([3, 5, 7], [1, 0, 0, 0], null, {
       grouper: 'toddcoxeter',
     }),
   },

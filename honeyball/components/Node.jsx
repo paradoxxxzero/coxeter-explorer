@@ -1,34 +1,34 @@
 import { sign } from '../math'
 
-const dot = 6
-const circle = 14
+export const dotSize = 6
+export const circleSize = 14
 
-const symbols = {
+export const mirrorSymbols = {
   active: (
     <>
-      <circle cx="16" cy="16" r={circle} />
-      <circle cx="16" cy="16" r={dot} fill="currentColor" />
+      <circle cx="16" cy="16" r={circleSize} />
+      <circle cx="16" cy="16" r={dotSize} fill="currentColor" />
     </>
   ),
   inactive: (
     <>
-      <circle cx="16" cy="16" r={dot} fill="currentColor" />
+      <circle cx="16" cy="16" r={dotSize} fill="currentColor" />
     </>
   ),
   snub: (
     <>
-      <circle cx="16" cy="16" r={circle} />
+      <circle cx="16" cy="16" r={circleSize} />
     </>
   ),
   holosnub: (
     <>
-      <circle cx="16" cy="16" r={circle} />
-      <circle cx="16" cy="16" r={dot} />
+      <circle cx="16" cy="16" r={circleSize} />
+      <circle cx="16" cy="16" r={dotSize} />
     </>
   ),
   custom: (
     <>
-      <circle cx="16" cy="16" r={circle} />
+      <circle cx="16" cy="16" r={circleSize} />
       <path d="M 10 14 L 10 18 L 22 18 L 22 14" />
     </>
   ),
@@ -42,20 +42,22 @@ export const mirrorTypes = {
   custom: 0.5,
 }
 
+export const mirrorToType = v =>
+  v === 0
+    ? 'inactive'
+    : v === 1
+    ? 'active'
+    : v === 's'
+    ? 'snub'
+    : v === 'ß'
+    ? 'holosnub'
+    : 'custom'
+
 export default function Node({ index, value, extended, onChange }) {
-  const type =
-    value === 0
-      ? 'inactive'
-      : value === 1
-      ? 'active'
-      : value === 's'
-      ? 'snub'
-      : value === 'ß'
-      ? 'holosnub'
-      : 'custom'
+  const type = mirrorToType(value)
 
   const handleClick = () => {
-    const types = Object.keys(symbols)
+    const types = Object.keys(mirrorSymbols)
     const current = types.indexOf(type)
     const next = extended
       ? types[(current + 1) % types.length]
@@ -67,7 +69,7 @@ export default function Node({ index, value, extended, onChange }) {
   }
 
   const handleWheel = e => {
-    const types = Object.keys(symbols)
+    const types = Object.keys(mirrorSymbols)
     const current = types.indexOf(type)
     const next = types[(types.length + current + sign(e.deltaY)) % types.length]
     const newValue = mirrorTypes[next]
@@ -82,10 +84,11 @@ export default function Node({ index, value, extended, onChange }) {
         width="1em"
         strokeWidth="2"
         stroke="currentColor"
+        fill="black"
         onClick={handleClick}
         onWheel={handleWheel}
       >
-        {symbols[type]}
+        {mirrorSymbols[type]}
       </svg>
       {type === 'custom' && (
         <input

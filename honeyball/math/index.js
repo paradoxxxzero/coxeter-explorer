@@ -10,6 +10,7 @@ export const {
   acos,
   acosh,
   atan,
+  atan2,
   min,
   max,
   round,

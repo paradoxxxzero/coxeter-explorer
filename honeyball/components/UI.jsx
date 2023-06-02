@@ -1,22 +1,17 @@
-import { Fragment, useCallback, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { ambiances, groupers, projections } from '../../statics'
-import Link from './Link'
-import Node from './Node'
-import Value from './Value'
-import Number from './Number'
 import { diagonal } from '../math/matrix'
 import Boolean from './Boolean'
+import CoxeterMatrix from './CoxeterMatrix'
+import Number from './Number'
 import Presets from './Presets'
 import Space from './Space'
 
 export default function UI({
   params,
-  updateParams,
-  runtime,
   onChange,
-  onExtend,
   onControls,
-  onMirrorChange,
+  runtime,
   onMatrixReset,
 }) {
   const [showUI, setShowUI] = useState(true)
@@ -35,10 +30,10 @@ export default function UI({
 
   const handlePreset = useCallback(
     preset => {
-      updateParams(preset)
+      onChange(preset)
       closePresets()
     },
-    [updateParams, closePresets]
+    [onChange, closePresets]
   )
 
   return (
@@ -252,48 +247,14 @@ export default function UI({
           </aside>
         )}
         {showUI && (
-          <aside className="coxeters">
-            <div className="coxeter-matrix">
-              {[...Array(params.dimensions).keys()].map(i => (
-                <Fragment key={i}>
-                  {i > 0 && (
-                    <div className="coxeter-column">
-                      {[...Array(i).keys()].map(
-                        j =>
-                          (params.extended || i === j + 1) && (
-                            <Value
-                              i={i}
-                              j={j}
-                              value={params.coxeter[i][j]}
-                              stellation={params.stellation[i][j]}
-                              key={`${i}x${j}`}
-                              onChange={onChange}
-                            />
-                          )
-                      )}
-                    </div>
-                  )}
-                  {i > 0 && <Link />}
-                  <Node
-                    index={i}
-                    value={params.mirrors[i]}
-                    extended={params.extended}
-                    onChange={onMirrorChange}
-                  />
-                  {i < params.dimensions - 1 && <Link />}
-                </Fragment>
-              ))}
-            </div>
-            <div className="coxeter-toggles">
-              <button
-                className="button"
-                onClick={onExtend}
-                title="extended mode"
-              >
-                {params.extended ? '▲' : '▼'}
-              </button>
-            </div>
-          </aside>
+          <CoxeterMatrix
+            dimensions={params.dimensions}
+            coxeter={params.coxeter}
+            mirrors={params.mirrors}
+            stellation={params.stellation}
+            extended={params.extended}
+            onChange={onChange}
+          />
         )}
       </div>
     </>
