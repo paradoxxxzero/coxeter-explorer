@@ -628,10 +628,10 @@ export const changeAmbiance = rt => {
       const saoPass = new SAOPass(scene, camera, false, true)
       saoPass.depthMaterial = hyperMathMaterial(saoPass.depthMaterial, rt)
       saoPass.normalMaterial = hyperMathMaterial(saoPass.normalMaterial, rt)
-      saoPass.params.output = SAOPass.OUTPUT.Default
 
-      saoPass.params.saoBias = -0.5
-      saoPass.params.saoIntensity = 0.175
+      saoPass.params.output = SAOPass.OUTPUT.Default
+      saoPass.params.saoBias = 0.5
+      saoPass.params.saoIntensity = 0.000001
       saoPass.params.saoScale = 10
       saoPass.params.saoKernelRadius = 50
       saoPass.params.saoMinResolution = 0

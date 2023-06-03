@@ -113,11 +113,12 @@ export const useProcess = (runtime, setRuntime) => {
 
       const grouper =
         runtime.grouper === '' || runtime.grouper.startsWith('auto-')
-          ? curvature > 0 &&
-            !runtime.stellation.some(row => row.some(x => x > 1))
-            ? 'auto-toddcoxeter'
-            : 'auto-knuthbendix'
-          : runtime.grouper
+          ? 'auto-toddcoxeter'
+          : // curvature
+            //   !runtime.stellation.some(row => row.some(x => x > 1))
+            //   ? 'auto-toddcoxeter'
+            //   : 'auto-knuthbendix'
+            runtime.grouper
 
       const mirrorsPlanes = getFundamentalSimplexMirrors(
         gram,

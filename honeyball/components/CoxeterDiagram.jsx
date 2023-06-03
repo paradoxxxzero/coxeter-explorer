@@ -1,5 +1,6 @@
 import { abs, atan2, cos, max, min, sin, sqrt } from '../math'
-import { circleSize, dotSize, mirrorSymbols, mirrorToType } from './Node'
+import { mirrorToType } from '../mirrors'
+import { circleSize, dotSize, mirrorSymbols } from './Node'
 
 const baseSize = 32
 

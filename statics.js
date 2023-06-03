@@ -1,6 +1,5 @@
 import {
   AddEquation,
-  AdditiveBlending,
   AmbientLight,
   Color,
   CustomBlending,
@@ -23,6 +22,7 @@ import {
 } from 'three'
 import { atoi, binomial, itoa, min, round } from './honeyball/math'
 import { ident } from './honeyball/math/matrix'
+import { mirrorChars } from './honeyball/mirrors'
 
 export const projections = [
   'stereographic',
@@ -145,6 +145,9 @@ export const ambiances = {
     color: ({ word }) => {
       return _color.setHSL((word.length * 0.03) % 1, 0.75, 0.7)
     },
+    faceMaterial: new MeshLambertMaterial({
+      side: DoubleSide,
+    }),
   },
   glass: {
     extended: true,
@@ -395,7 +398,7 @@ export const filterParams = maybeBadParams => {
           value.find(
             c =>
               value === '' ||
-              (isNaN(c) && !(key === 'mirrors' && 'sß'.includes(c)))
+              (isNaN(c) && !(key === 'mirrors' && mirrorChars.includes(c)))
           )
         ) {
           delete params[key]

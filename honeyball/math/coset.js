@@ -1,4 +1,8 @@
-import { abs, ceil, combinations, getRels, itoa } from '.'
+import { combinations, getRels, itoa } from '.'
+import { enabled } from '../mirrors'
+
+export const getGens = mirrors =>
+  mirrors.map((m, i) => (enabled(m) ? itoa(i) : '')).join('')
 
 export const getVerticesCosetsParams = (
   dimensions,
@@ -9,9 +13,10 @@ export const getVerticesCosetsParams = (
 ) => {
   const rels = getRels(dimensions, coxeter, stellation, mirrors, curvature)
 
-  const gens = [...Array(dimensions).keys()].map(i => itoa(i)).join('')
-  const subgens = mirrors.map((m, i) => (m ? '' : itoa(abs(i)))).join('')
-
+  const gens = getGens(mirrors)
+  const subgens = mirrors
+    .map((m, i) => (m || !enabled(m) ? '' : itoa(i)))
+    .join('')
   return { gens, subgens, rels }
 }
 
@@ -23,7 +28,7 @@ export const getEdgesCosetsParams = (
   curvature
 ) => {
   const rels = getRels(dimensions, coxeter, stellation, mirrors, curvature)
-  const gens = [...Array(dimensions).keys()].map(i => itoa(i)).join('')
+  const gens = getGens(mirrors)
   const params = []
 
   for (let i = 0; i < mirrors.length; i++) {
@@ -55,7 +60,7 @@ export const getFacesCosetsParams = (
   curvature
 ) => {
   const rels = getRels(dimensions, coxeter, stellation, mirrors, curvature)
-  const gens = [...Array(dimensions).keys()].map(i => itoa(i)).join('')
+  const gens = getGens(mirrors)
   const params = []
 
   const mirrorsPairs = combinations([...Array(dimensions).keys()])

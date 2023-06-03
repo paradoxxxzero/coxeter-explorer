@@ -1,4 +1,5 @@
 import { sign } from '../math'
+import { mirrorToType, mirrorTypes } from '../mirrors'
 
 export const dotSize = 6
 export const circleSize = 14
@@ -32,26 +33,20 @@ export const mirrorSymbols = {
       <path d="M 10 14 L 10 18 L 22 18 L 22 14" />
     </>
   ),
+  activeVoid: (
+    <>
+      <circle cx="16" cy="16" r={circleSize} />
+      <path d="M 6 6 L 26 26" />
+      <path d="M 6 26 L 26 6" />
+    </>
+  ),
+  void: (
+    <>
+      <path d="M 10 10 L 22 22" />
+      <path d="M 10 22 L 22 10" />
+    </>
+  ),
 }
-
-export const mirrorTypes = {
-  active: 1,
-  inactive: 0,
-  snub: 's',
-  holosnub: 'ß',
-  custom: 0.5,
-}
-
-export const mirrorToType = v =>
-  v === 0
-    ? 'inactive'
-    : v === 1
-    ? 'active'
-    : v === 's'
-    ? 'snub'
-    : v === 'ß'
-    ? 'holosnub'
-    : 'custom'
 
 export default function Node({ index, value, extended, onChange }) {
   const type = mirrorToType(value)
