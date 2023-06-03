@@ -186,6 +186,7 @@ vec4 xnormalize(in vec4 v) {
   }
   // Unalias?
   v.w *= .999999;
+  // TODO if -xdot is negative, force point on hypersphere
   return v / (sqrt(abs(xdot(v))));
 }
 
