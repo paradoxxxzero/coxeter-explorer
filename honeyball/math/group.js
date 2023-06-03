@@ -8,13 +8,24 @@ export const shortLex = (a, b) => {
   return a <= b ? -1 : 1
 }
 
-export const inverseShortLex = (a, b) => {
+export const oppositeShortLex = (a, b) => {
   const l = a.length - b.length
   if (l !== 0) {
     return Math.sign(l)
   }
   return a <= b ? 1 : -1
 }
+
+const rev = w => w.split('').reverse().join('')
+
+export const inverseShortLex = (a, b) => {
+  const l = a.length - b.length
+  if (l !== 0) {
+    return Math.sign(l)
+  }
+  return shortLex(rev(a), rev(b))
+}
+
 export const weight = (word, weights) => {
   let w = 0
   for (let i = 0; i < word.length; i++) {
