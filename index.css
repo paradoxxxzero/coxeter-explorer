@@ -310,17 +310,35 @@ select option {
   padding: 0.5em;
 }
 .presets-search {
+  position: relative;
+  margin: 0 5em;
+  display: flex;
+}
+.presets-search input {
+  flex: 1;
   color: white;
   border: none;
   background-color: rgba(150, 150, 150, 0.15);
-  padding: 0.5em 0.25em;
+  padding: 0.5em 3.5em 0.5em 0.5em;
   font-size: 1.5em;
-  margin: 0 4em;
   outline: 1px solid rgba(150, 150, 150, 0.5);
 }
-.presets-search::placeholder {
+.presets-search input::placeholder {
   color: rgba(255, 255, 255, 0.5);
 }
+.presets-clear {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 1em;
+  font-size: 2em;
+  line-height: 1;
+  color: rgba(255, 255, 255);
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
 .presets.shown {
   display: flex;
 }
@@ -330,7 +348,7 @@ select option {
 .presets-list {
   flex: 1;
   overflow-y: auto;
-  margin: 0.5em 0 2em 0.5em;
+  margin: 1em 0 2em 0.5em;
 }
 .presets-list h2 {
   margin-left: 0.75em;
@@ -339,10 +357,16 @@ select option {
   margin-left: 2em;
 }
 .preset {
-  margin-left: 2.5em;
+  margin: 2.5em;
   cursor: pointer;
   padding: 0.5em;
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  justify-content: space-between;
+}
+.preset-name {
+  margin: 0.5em;
+  vertical-align: middle;
 }
 .presets-list .space {
   font-size: 1.5em;
@@ -367,12 +391,11 @@ select option {
   cursor: pointer;
   border: none;
 }
-
 h4 + h4,
 h4:has(+ h4) {
   display: none;
 }
 
 .coxeter-diagram {
-  font-size: 3em;
+  font-size: 1.5em;
 }

@@ -318,6 +318,7 @@ export const defaultParams = {
   ambiance: 'neon',
   centered: null,
 
+  view: [0, 0, -1],
   fov3: 90,
   fov4: 90,
 

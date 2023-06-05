@@ -1,8 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { xtranslate } from '../math/hypermath'
 import { multiply, set } from '../math/matrix'
 import { plot } from '../render'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+import { debounce } from '../../utils'
+import { abs } from '../math'
 
 const translate = (offset, shift, matrix, dimensions, curvature) => {
   set(
@@ -69,19 +71,10 @@ export const keydown = (e, matrix, dimensions, curvature) => {
   }
   return true
 }
-
-const debounce = (fn, delay) => {
-  let timeout
-  return (...args) => {
-    clearTimeout(timeout)
-    timeout = setTimeout(() => fn(...args), delay)
-
-    return () => clearTimeout(timeout)
-  }
-}
-
-export const useInteract = (runtime, updateMatrix_) => {
+export const useInteract = (runtime, updateMatrix_, updateView_) => {
   const updateMatrix = debounce(updateMatrix_, 100)
+  const updateView = debounce(updateView_, 1000)
+  const controls = useRef()
 
   useEffect(() => {
     const onMove = e => {
@@ -119,7 +112,7 @@ export const useInteract = (runtime, updateMatrix_) => {
     }
     document.addEventListener('pointerdown', onDown)
     return () => document.removeEventListener('pointerdown', onDown)
-  }, [runtime, updateMatrix])
+  }, [runtime, runtime.matrix, updateMatrix])
 
   useEffect(() => {
     const onKeyDown = e => {
@@ -138,35 +131,56 @@ export const useInteract = (runtime, updateMatrix_) => {
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [runtime, updateMatrix])
+  }, [runtime, runtime.matrix, updateMatrix])
 
   useEffect(() => {
-    const orbitControls = new OrbitControls(
+    controls.current = new OrbitControls(
       runtime.camera,
       runtime.composer.renderer.domElement
     )
-    orbitControls.target.set(0, 0, 0)
-    orbitControls.minDistance = 0
-    orbitControls.maxDistance = 100
-    orbitControls.addEventListener('change', () => runtime.composer.render())
-    orbitControls.update()
+    controls.current.target.set(0, 0, 0)
+    controls.current.position0.set(...runtime.view)
+    controls.current.reset()
+    controls.current.minDistance = 0
+    controls.current.maxDistance = 100
 
-    runtime.composer.renderer.domElement.addEventListener('dblclick', () => {
-      orbitControls.position0.set(
-        0,
-        0,
-        orbitControls.position0.z === -1
-          ? -0.25
-          : orbitControls.position0.z === -0.25
-          ? -10
-          : -1,
-        0,
-        0
-      )
-      orbitControls.reset()
+    controls.current.addEventListener('change', () => {
+      updateView(runtime.camera.position.toArray())
+      runtime.composer.render()
     })
-    return () => {
-      orbitControls.dispose()
+    controls.current.update()
+
+    const handleDblClick = () => {
+      const len = runtime.camera.position.length()
+      const newLen = len < 0.5 ? 5 : len < 2 ? 0.25 : 1
+      const view = [0, 0, -newLen]
+      controls.current.position0.set(...view)
+      controls.current.reset()
+      updateView_(view)
     }
+    runtime.composer.renderer.domElement.addEventListener(
+      'dblclick',
+      handleDblClick
+    )
+    return () => {
+      runtime.composer.renderer.domElement.removeEventListener(
+        'dblclick',
+        handleDblClick
+      )
+      controls.current.dispose()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runtime.camera, runtime.composer])
+
+  useEffect(() => {
+    if (
+      runtime.view.find(
+        (v, i) => abs(v - controls.current.position0.toArray()[i]) > 1e-4
+      )
+    ) {
+      controls.current.position0.set(...runtime.view)
+      controls.current.reset()
+      runtime.composer.render()
+    }
+  }, [runtime.composer, runtime.view])
 }

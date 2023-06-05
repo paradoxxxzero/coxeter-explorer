@@ -2,10 +2,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { filterParams } from '../statics'
 import Runtime from './components/Runtime'
 import UI from './components/UI'
-import { binomial } from './math'
+import { abs, binomial } from './math'
 import { ident } from './math/matrix'
 
 export default function App({ gl, params, updateParams }) {
+  window.p = params
   const [runtime, setRuntime] = useState(() => {
     return {
       ...params,
@@ -14,7 +15,7 @@ export default function App({ gl, params, updateParams }) {
       currentOrder: 0,
       askedOrder: null,
       spaceType: null,
-      curvature: 0,
+      curvature: null,
       mirrorsPlanes: null,
       rootVertex: null,
       vertices: [],
@@ -54,6 +55,7 @@ export default function App({ gl, params, updateParams }) {
         fov7: params.fov7,
         fov8: params.fov8,
         fov9: params.fov9,
+        view: params.view,
         curve: params.curve,
         segments: params.segments,
         dimensions: params.dimensions,
@@ -91,6 +93,7 @@ export default function App({ gl, params, updateParams }) {
     params.showVertices,
     params.stellation,
     params.vertexThickness,
+    params.view,
   ])
   useEffect(() => {
     setRuntime(runtime => {
@@ -103,15 +106,6 @@ export default function App({ gl, params, updateParams }) {
       }
     })
   }, [params.grouper])
-
-  useEffect(() => {
-    setRuntime(runtime => {
-      return {
-        ...runtime,
-        matrix: params.matrix,
-      }
-    })
-  }, [params.matrix])
 
   const handleControls = useCallback(() => {
     let controls, controlsShift
@@ -145,6 +139,16 @@ export default function App({ gl, params, updateParams }) {
     },
     [updateParams]
   )
+  const handleViewUpdate = useCallback(
+    view => {
+      if (params.view.find((v, i) => abs(v - view[i]) > 1e-4)) {
+        updateParams({
+          view,
+        })
+      }
+    },
+    [params.view, updateParams]
+  )
 
   const handleChange = useCallback(
     (name, value) => {
@@ -153,6 +157,14 @@ export default function App({ gl, params, updateParams }) {
     },
     [updateParams]
   )
+
+  useEffect(() => {
+    return () => {
+      if (runtime.curvature !== null) {
+        handleMatrixReset()
+      }
+    }
+  }, [runtime.curvature])
 
   return (
     <div
@@ -170,6 +182,7 @@ export default function App({ gl, params, updateParams }) {
         runtime={runtime}
         setRuntime={setRuntime}
         onUpdateMatrix={handleMatrixUpdate}
+        onUpdateView={handleViewUpdate}
       />
     </div>
   )

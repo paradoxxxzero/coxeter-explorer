@@ -21,7 +21,7 @@ import {
   SphereGeometry,
   Vector2,
   WebGLRenderer,
-  WebGLRenderTarget
+  WebGLRenderTarget,
 } from 'three'
 import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
@@ -55,7 +55,6 @@ export const initializeGl = () => {
     0.01,
     1000000
   )
-  camera.position.set(0, 0, -1)
   camera.up.set(0, 1, 0)
   camera.lookAt(0, 0, 0)
   camera.zoom = Math.min(1, window.innerWidth / window.innerHeight)

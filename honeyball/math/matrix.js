@@ -25,6 +25,7 @@ export const set = (m, nm) => {
       m[i][j] = nm[i][j]
     }
   }
+  return m
 }
 
 export const multiplyVector = (v, m) => {

@@ -1,8 +1,9 @@
-import { abs, atan2, cos, max, min, sin, sqrt } from '../math'
+import { PI, atan2, cos, max, min, sin, sqrt } from '../math'
 import { mirrorToType } from '../mirrors'
 import { circleSize, dotSize, mirrorSymbols } from './Node'
 
 const baseSize = 32
+const textSpacing = 18
 
 export default function CoxeterDiagram({ coxeter, mirrors, stellation }) {
   const dimensions = coxeter.length
@@ -111,7 +112,7 @@ export default function CoxeterDiagram({ coxeter, mirrors, stellation }) {
         ymax + baseSize
       }`}
       width={`${l(imax - imin + 1)}em`}
-      height={`${l(jmax - jmin + 1)}em`}
+      height={`${l(jmax - jmin + 1) + 0.5}em`}
       strokeWidth="2"
       fill="transparent"
       stroke="currentColor"
@@ -136,18 +137,13 @@ export default function CoxeterDiagram({ coxeter, mirrors, stellation }) {
           y: target.y,
         }
         const text = {}
-        if (abs(start.x - end.x) < abs(start.y - end.y)) {
-          text.x = (start.x + end.x) / 2 - 8
-          text.y = (start.y + end.y) / 2
-          text.textAnchor = 'middle'
-          text.dominantBaseline = 'middle'
-        } else {
-          text.x = (start.x + end.x) / 2
-          text.y = (start.y + end.y) / 2 + 8
-          text.textAnchor = 'middle'
-          text.dominantBaseline = 'hanging'
-        }
         const angle = atan2(end.y - start.y, end.x - start.x)
+
+        text.x =
+          (start.x + end.x) / 2 +
+          (textSpacing + (value.length - 2) * 5) * cos(angle - PI / 2)
+        text.y = (start.y + end.y) / 2 + textSpacing * sin(angle - PI / 2)
+
         start.x += (source.r + 1) * cos(angle)
         start.y += (source.r + 1) * sin(angle)
         end.x -= (target.r + 1) * cos(angle)
@@ -161,10 +157,13 @@ export default function CoxeterDiagram({ coxeter, mirrors, stellation }) {
               stroke="currentColor"
             />
             <text
-              {...text}
-              style={{ fontSize: '.35em' }}
+              style={{ fontSize: '1.25rem' }}
               stroke="none"
               fill="currentColor"
+              textAnchor="middle"
+              dominantBaseline="middle"
+              x={text.x}
+              y={text.y}
             >
               {value}
             </text>

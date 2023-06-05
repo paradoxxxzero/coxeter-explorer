@@ -4,7 +4,12 @@ import { ErrorBoundary } from './ErrorBoundary'
 import Interact from './Interact'
 import Render from './Render'
 
-export default function Runtime({ runtime, setRuntime, onUpdateMatrix }) {
+export default function Runtime({
+  runtime,
+  setRuntime,
+  onUpdateMatrix,
+  onUpdateView,
+}) {
   window.rt = runtime
   useProcess(runtime, setRuntime)
 
@@ -22,7 +27,11 @@ export default function Runtime({ runtime, setRuntime, onUpdateMatrix }) {
     <>
       <ErrorBoundary error={runtime.renderError} onError={handleError}>
         <Render runtime={runtime} />
-        <Interact runtime={runtime} updateMatrix={onUpdateMatrix} />
+        <Interact
+          runtime={runtime}
+          updateMatrix={onUpdateMatrix}
+          updateView={onUpdateView}
+        />
       </ErrorBoundary>
     </>
   )

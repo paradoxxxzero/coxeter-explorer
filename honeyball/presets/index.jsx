@@ -1,5 +1,7 @@
+import { defaultParams } from '../../statics'
 import Space from '../components/Space'
 import { min } from '../math'
+import { ident } from '../math/matrix'
 
 const coxeter_ = (...args) => {
   // Simple coxeter shortcut
@@ -37,19 +39,29 @@ const polytope = (coxeterArgs, mirrors, stellationArgs, extra) => {
   const coxeterParams = coxeter_(...coxeterArgs)
   const { dimensions } = coxeterParams
   const params = {
+    ...defaultParams,
     ...coxeterParams,
     showVertices: dimensions <= 3,
     showFaces: dimensions <= 4,
     curve: dimensions > 3,
     grouper: 'toddcoxeter',
     ambiance: 'colorful',
+    matrix: ident(dimensions),
     ...(extra || {}),
   }
   if (mirrors) {
     params.mirrors = mirrors
+  } else {
+    params.mirrors = new Array(dimensions)
+      .fill()
+      .map((_, i) => (i === 0 ? 1 : 0))
   }
   if (stellationArgs) {
     params.stellation = stellation_(...stellationArgs).stellation
+  } else {
+    params.stellation = new Array(dimensions)
+      .fill()
+      .map((_, i) => new Array(dimensions).fill(1))
   }
   if (dimensions > 4) {
     for (let i = 4; i <= dimensions; i++) {
@@ -216,19 +228,129 @@ export const presets = [
     type: 'title',
     content: (
       <>
-        <Space type="finite" /> Spherical space
+        <span style={{ color: 'orange' }}>★</span> Highlights
       </>
     ),
   },
   {
-    name: 'Flat Torus',
-    params: polytope([30, 2, 30], [1, 0, 0, 1], null, {
+    name: (
+      <>
+        <Space type="finite" dimensions={4} /> Tesseract
+      </>
+    ),
+    params: polytope([4, 3, 3], [1, 0, 0, 0], null, {
+      showVertices: false,
+      showFaces: true,
+      curve: true,
+      ambiance: 'neon',
+      controls: 'free',
+      centered: false,
+    }),
+  },
+  {
+    name: (
+      <>
+        <Space type="hyperbolic" dimensions={3} /> 7-3-2 tiling
+      </>
+    ),
+    params: tiling([7, 3], [1, 0, 0], null, {
+      showVertices: false,
+      showFaces: true,
+      curve: true,
+      ambiance: 'neon',
+      controls: 'free',
+    }),
+  },
+  {
+    name: (
+      <>
+        <Space type="hyperbolic" dimensions={3} /> Ideal triangles
+      </>
+    ),
+    params: tiling(
+      [
+        [1, Infinity, Infinity],
+        [Infinity, 1, Infinity],
+        [Infinity, Infinity, 1],
+      ],
+      [1, 1, 1],
+      null,
+      {
+        grouper: 'fundamental',
+        showVertices: false,
+        showFaces: true,
+        curve: true,
+        segments: 256,
+        ambiance: 'neon',
+        controls: 'free',
+      }
+    ),
+  },
+  {
+    name: (
+      <>
+        <Space type="hyperbolic" dimensions={4} /> Ideal tetrahedron
+      </>
+    ),
+    params: tiling([3, 3, 6], [1, 0, 0, ''], null, {
+      showVertices: false,
+      showFaces: true,
+      curve: true,
+      order: 1,
+      centered: false,
+      segments: 256,
+      ambiance: 'pure',
+      controls: 'orbit',
+    }),
+  },
+
+  {
+    name: (
+      <>
+        <Space type="hyperbolic" dimensions={4} /> 5-3-4 honeycomb
+      </>
+    ),
+    params: honeycomb([5, 3, 4], [1, 0, 0, 0]),
+  },
+  {
+    name: (
+      <>
+        <Space type="hyperbolic" dimensions={4} /> Ideal Pentahedron
+      </>
+    ),
+    params: tiling([5, 3, 6], [1, 0, 0, ''], null, {
+      showVertices: false,
+      showFaces: true,
+      curve: true,
+      order: 1,
+      centered: false,
+      segments: 128,
+      ambiance: 'pure',
+      controls: 'orbit',
+    }),
+  },
+  {
+    name: (
+      <>
+        <Space type="finite" dimensions={4} /> Flat Torus
+      </>
+    ),
+    params: polytope([32, 2, 32], [1, 0, 0, 1], null, {
       showVertices: false,
       showFaces: false,
       curve: true,
       ambiance: 'neon',
       controls: 'free',
     }),
+  },
+
+  {
+    type: 'title',
+    content: (
+      <>
+        <Space type="finite" /> Spherical space
+      </>
+    ),
   },
   {
     type: 'group',
