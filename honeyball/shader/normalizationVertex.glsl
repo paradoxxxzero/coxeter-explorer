@@ -3,104 +3,35 @@
 
 const float TAU = 6.28318530717958647692528676655900576;
 const float EPS = .001;
+const float SCALING = .001;
 const vec3 NOISE = vec3(.000003, -.000002, .000017);
 
-#if DIMENSIONS == 2
-vec2 pos;
-vec2 iPosition;
+vecN pos;
+vecN iPosition;
 #if HYPERTYPE > 0
-vec2 next;
-vec2 iTarget;
+vecN next;
+vecN iTarget;
 #endif
 #if HYPERTYPE > 1
-vec2 other;
-vec2 iCentroid;
+vecN other;
+vecN iCentroid;
 #endif
 
-#elif DIMENSIONS == 3
-vec3 pos;
-vec3 iPosition;
-#if HYPERTYPE > 0
-vec3 next;
-vec3 iTarget;
-#endif
-#if HYPERTYPE > 1
-vec3 other;
-vec3 iCentroid;
-#endif
+vec3 inflate(in vec3 point, in vecN pos, in vec3 norm, in float size, in float min) {
+  // Removing 3d length in perspective computation
+  #if DIMENSIONS < 5
+  pos.xy = vec2(1.);
+  #if DIMENSIONS >= 3
+  pos.z = 1.;
+  #endif
+  #else
+  pos.v.xyz = vec3(1.);
+  #endif
 
-#elif DIMENSIONS == 4
-vec4 pos;
-vec4 iPosition;
-#if HYPERTYPE > 0
-vec4 next;
-vec4 iTarget;
-#endif
-#if HYPERTYPE > 1
-vec4 other;
-vec4 iCentroid;
-#endif
+  float inv = max(min, 1. / len(pos));
 
-#elif DIMENSIONS == 5
-vec5 pos;
-vec5 iPosition;
-#if HYPERTYPE > 0
-vec5 next;
-vec5 iTarget;
-#endif
-#if HYPERTYPE > 1
-vec5 other;
-vec5 iCentroid;
-#endif
-
-#elif DIMENSIONS == 6
-vec6 pos;
-vec6 iPosition;
-#if HYPERTYPE > 0
-vec6 next;
-vec6 iTarget;
-#endif
-#if HYPERTYPE > 1
-vec6 other;
-vec6 iCentroid;
-#endif
-
-#elif DIMENSIONS == 7
-vec7 pos;
-vec7 iPosition;
-#if HYPERTYPE > 0
-vec7 next;
-vec7 iTarget;
-#endif
-#if HYPERTYPE > 1
-vec7 other;
-vec7 iCentroid;
-#endif
-
-#elif DIMENSIONS == 8
-vec8 pos;
-vec8 iPosition;
-#if HYPERTYPE > 0
-vec8 next;
-vec8 iTarget;
-#endif
-#if HYPERTYPE > 1
-vec8 other;
-vec8 iCentroid;
-#endif
-
-#elif DIMENSIONS == 9
-vec9 pos;
-vec9 iPosition;
-#if HYPERTYPE > 0
-vec9 next;
-vec9 iTarget;
-#endif
-#if HYPERTYPE > 1
-vec9 other;
-vec9 iCentroid;
-#endif
-#endif
+  return size * SCALING * norm * inv + point;
+}
 
 #if HYPERTYPE == 2 || HYPERTYPE == 3
 void faceVertex(out vec3 transformed, out vec3 objectNormal) {
@@ -154,21 +85,8 @@ void edgeVertex(out vec3 transformed, out vec3 objectNormal) {
     // To rotate v around axis k by angle r:
   float r = (1. - uv.x) * TAU;
   vec3 v = normalize(cross(n, transformed));
-  objectNormal = v * cos(r) + cross(k, v) * sin(r);// + k * dot(k, v) * (1. - cos(r));
-  objectNormal = normalize(objectNormal);
-  float sizeFactor = .001 * edgeThickness;
-
-    // Removing 3d length in perspective computation
-  #if DIMENSIONS < 5
-  pos.xy = vec2(1.);
-  #if DIMENSIONS >= 3
-  pos.z = 1.;
-  #endif
-  #else
-  pos.v.xyz = vec3(1.);
-  #endif
-
-  transformed += sizeFactor * objectNormal / len(pos);
+  objectNormal = normalize(objectNormal = v * cos(r) + cross(k, v) * sin(r)); // + k * dot(k, v) * (1. - cos(r));
+  transformed = inflate(transformed, pos, objectNormal, edgeThickness, 0.);
 }
 #endif
 
@@ -180,22 +98,10 @@ void vertexVertex(out vec3 transformed, out vec3 objectNormal) {
   iPosition = instancePosition;
   #endif
 
-  pos = iPosition;
+  pos = xnormalize(iPosition);
   transformed = xproject(pos);
   objectNormal = normal;
-
-  float sizeFactor = .001 * vertexThickness;
-  // Removing 3d length in perspective computation
-  #if DIMENSIONS < 5
-  pos.xy = vec2(1.);
-  #if DIMENSIONS >= 3
-  pos.z = 1.;
-  #endif
-  #else
-  pos.v.xyz = vec3(1.);
-  #endif
-
-  transformed += sizeFactor * objectNormal / len(pos);
+  transformed = inflate(transformed, pos, objectNormal, vertexThickness, .1);
 }
 #endif
 /* END INCLUDE */

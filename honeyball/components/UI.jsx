@@ -117,7 +117,7 @@ export default function UI({
                 />
               </label>
             )}
-            {params.extended && (
+            {(params.extended || runtime.curvature <= 0) && (
               <Number
                 name="order"
                 label="Precision"

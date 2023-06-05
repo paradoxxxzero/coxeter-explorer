@@ -46,7 +46,6 @@ bool nan(in vec9 v) {
 float trix(in float c, in float p, in float t, in vec2 a) {
   return a.x * p + a.y * t + c * (1. - a.x - a.y);
 }
-
 vec2 trix(in vec2 c, in vec2 p, in vec2 t, in vec2 a) {
   return a.x * p + a.y * t + c * (1. - a.x - a.y);
 }
@@ -168,7 +167,8 @@ vec2 xnormalize(in vec2 v) {
   }
   // Unalias?
   v.y *= .999999;
-  return v / (sqrt(abs(xdot(v))));
+  float n = sqrt(curvature * xdot(v));
+  return v / n;
 }
 
 vec3 xnormalize(in vec3 v) {
@@ -177,7 +177,8 @@ vec3 xnormalize(in vec3 v) {
   }
   // Unalias?
   v.z *= .999999;
-  return v / (sqrt(abs(xdot(v))));
+  float n = sqrt(curvature * xdot(v));
+  return v / n;
 }
 
 vec4 xnormalize(in vec4 v) {
@@ -186,8 +187,14 @@ vec4 xnormalize(in vec4 v) {
   }
   // Unalias?
   v.w *= .999999;
-  // TODO if -xdot is negative, force point on hypersphere
-  return v / (sqrt(abs(xdot(v))));
+  // float d = curvature * xdot(v);
+  // if(d < 0.) {
+  //   v.w = 0.;
+  //   v.xyz /= sqrt(dot(v.xyz, v.xyz));
+  //   return v;
+  // }
+  float n = sqrt(curvature * xdot(v));
+  return v / n;
 }
 
 #if DIMENSIONS == 5
@@ -197,7 +204,7 @@ vec5 xnormalize(in vec5 v) {
   }
   // Unalias?
   v.u *= .999999;
-  float n = sqrt(abs(xdot(v)));
+  float n = sqrt(curvature * xdot(v));
   return vec5(v.v / n, v.u / n);
 }
 #elif DIMENSIONS == 6
@@ -207,7 +214,7 @@ vec6 xnormalize(in vec6 v) {
   }
   // Unalias?
   v.u.x *= .999999;
-  float n = sqrt(abs(xdot(v)));
+  float n = sqrt(curvature * xdot(v));
   return vec6(v.v / n, v.u / n);
 }
 #elif DIMENSIONS == 7
@@ -217,7 +224,7 @@ vec7 xnormalize(in vec7 v) {
   }
   // Unalias?
   v.u.y *= .999999;
-  float n = sqrt(abs(xdot(v)));
+  float n = sqrt(curvature * xdot(v));
   return vec7(v.v / n, v.u / n);
 }
 #elif DIMENSIONS == 8
@@ -227,7 +234,7 @@ vec8 xnormalize(in vec8 v) {
   }
   // Unalias?
   v.u.z *= .999999;
-  float n = sqrt(abs(xdot(v)));
+  float n = sqrt(curvature * xdot(v));
   return vec8(v.v / n, v.u / n);
 }
 #elif DIMENSIONS == 9
@@ -237,7 +244,7 @@ vec9 xnormalize(in vec9 v) {
   }
   // Unalias?
   v.t *= .999999;
-  float n = sqrt(abs(xdot(v)));
+  float n = sqrt(curvature * xdot(v));
   return vec9(v.v / n, v.u / n, v.t / n);
 }
 #endif

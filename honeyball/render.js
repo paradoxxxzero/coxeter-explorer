@@ -21,23 +21,23 @@ import {
   SphereGeometry,
   Vector2,
   WebGLRenderer,
-  WebGLRenderTarget,
+  WebGLRenderTarget
 } from 'three'
 import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 import { SAOPass } from 'three/examples/jsm/postprocessing/SAOPass'
-import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
+import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
 import { LuminosityShader } from 'three/examples/jsm/shaders/LuminosityShader.js'
 import { SobelOperatorShader } from 'three/examples/jsm/shaders/SobelOperatorShader.js'
 import { degToRad } from 'three/src/math/MathUtils'
 import { ambiances } from '../statics'
 import { tan } from './math'
-import { GodRayPass } from './shader/GodRayPass'
-import { hyperMathMaterial } from './shader/hyperMathMaterial'
 import { multiplyVector } from './math/matrix'
+import { GodRayPass } from './shader/GodRayPass'
+import { hyperMaterial } from './shader/hyperMaterial'
 
 export const initializeGl = () => {
   // stats = new Stats()
@@ -65,6 +65,17 @@ export const initializeGl = () => {
 
   camera.updateProjectionMatrix()
   scene.add(camera)
+  // scene.add(
+  //   new Mesh(
+  //     new SphereGeometry(1, 32, 32),
+  //     new MeshPhongMaterial({
+  //       color: 0xff0000,
+  //       transparent: true,
+  //       opacity: 0.25,
+  //       side: DoubleSide,
+  //     })
+  //   )
+  // )
 
   const composer = new EffectComposer(renderer)
   composer.setPixelRatio(window.devicePixelRatio)
@@ -119,18 +130,18 @@ export const initVertex = rt => {
 
   const instancedVertex = new Mesh(
     vertexGeometry,
-    hyperMathMaterial(ambiance.vertexMaterial, rt, 'vertex')
+    hyperMaterial(ambiance.vertexMaterial, rt, 'vertex')
   )
   vertexGeometry.attributes.instanceTarget.array.fill(NaN)
   vertexGeometry.attributes.instanceCentroid.array.fill(NaN)
   instancedVertex.geometry.instanceCount = 0
   instancedVertex.frustumCulled = false
-  instancedVertex.customDepthMaterial = hyperMathMaterial(
+  instancedVertex.customDepthMaterial = hyperMaterial(
     new MeshDepthMaterial({ depthPacking: RGBADepthPacking }),
     rt,
     'vertex'
   )
-  instancedVertex.customDistanceMaterial = hyperMathMaterial(
+  instancedVertex.customDistanceMaterial = hyperMaterial(
     new MeshDistanceMaterial(),
     rt,
     'vertex'
@@ -173,17 +184,17 @@ export const initEdge = rt => {
 
   const instancedEdge = new Mesh(
     edgeGeometry,
-    hyperMathMaterial(ambiance.edgeMaterial, rt, 'edge')
+    hyperMaterial(ambiance.edgeMaterial, rt, 'edge')
   )
   edgeGeometry.attributes.instanceCentroid.array.fill(NaN)
   instancedEdge.geometry.instanceCount = 0
   instancedEdge.frustumCulled = false
-  instancedEdge.customDepthMaterial = hyperMathMaterial(
+  instancedEdge.customDepthMaterial = hyperMaterial(
     new MeshDepthMaterial({ depthPacking: RGBADepthPacking }),
     rt,
     'edge'
   )
-  instancedEdge.customDistanceMaterial = hyperMathMaterial(
+  instancedEdge.customDistanceMaterial = hyperMaterial(
     new MeshDistanceMaterial(),
     rt,
     'edge'
@@ -272,16 +283,16 @@ export const initFace = rt => {
   )
   const instancedFace = new Mesh(
     faceGeometry,
-    hyperMathMaterial(ambiance.faceMaterial, rt, 'face')
+    hyperMaterial(ambiance.faceMaterial, rt, 'face')
   )
   instancedFace.geometry.instanceCount = 0
   instancedFace.frustumCulled = false
-  instancedFace.customDepthMaterial = hyperMathMaterial(
+  instancedFace.customDepthMaterial = hyperMaterial(
     new MeshDepthMaterial({ depthPacking: RGBADepthPacking }),
     rt,
     'face'
   )
-  instancedFace.customDistanceMaterial = hyperMathMaterial(
+  instancedFace.customDistanceMaterial = hyperMaterial(
     new MeshDistanceMaterial(),
     rt,
     'face'
@@ -517,13 +528,13 @@ export const changeAmbiance = rt => {
   const instancedEdge = rt.scene.getObjectByName('instanced-edge')
   const instancedFace = rt.scene.getObjectByName('instanced-face')
 
-  instancedVertex.material = hyperMathMaterial(
+  instancedVertex.material = hyperMaterial(
     ambiance.vertexMaterial,
     rt,
     'vertex'
   )
-  instancedEdge.material = hyperMathMaterial(ambiance.edgeMaterial, rt, 'edge')
-  instancedFace.material = hyperMathMaterial(ambiance.faceMaterial, rt, 'face')
+  instancedEdge.material = hyperMaterial(ambiance.edgeMaterial, rt, 'edge')
+  instancedFace.material = hyperMaterial(ambiance.faceMaterial, rt, 'face')
 
   if (ambiance.env) {
     scene.environment = ambiance.env
@@ -626,8 +637,8 @@ export const changeAmbiance = rt => {
       composer.addPass(composer.copyPass)
     } else if (fx === 'sao') {
       const saoPass = new SAOPass(scene, camera, false, true)
-      saoPass.depthMaterial = hyperMathMaterial(saoPass.depthMaterial, rt)
-      saoPass.normalMaterial = hyperMathMaterial(saoPass.normalMaterial, rt)
+      saoPass.depthMaterial = hyperMaterial(saoPass.depthMaterial, rt)
+      saoPass.normalMaterial = hyperMaterial(saoPass.normalMaterial, rt)
 
       saoPass.params.output = SAOPass.OUTPUT.Default
       saoPass.params.saoBias = 0.5
@@ -647,7 +658,7 @@ export const changeAmbiance = rt => {
         aperture: 0.005,
         maxblur: 0.005,
       })
-      bokehPass.materialDepth = hyperMathMaterial(bokehPass.materialDepth, rt)
+      bokehPass.materialDepth = hyperMaterial(bokehPass.materialDepth, rt)
       composer.addPass(bokehPass)
     } else if (fx === 'sobel') {
       const effectGrayScale = new ShaderPass(LuminosityShader)
@@ -670,7 +681,7 @@ export const changeAmbiance = rt => {
       instancedFace.material.opacity = rt.dimensions === 3 ? 0.075 : 0.025
     } else if (fx === 'godray') {
       const godrayPass = new GodRayPass(scene, camera)
-      godrayPass.materialDepth = hyperMathMaterial(godrayPass.materialDepth, rt)
+      godrayPass.materialDepth = hyperMaterial(godrayPass.materialDepth, rt)
       composer.addPass(godrayPass)
     }
   })

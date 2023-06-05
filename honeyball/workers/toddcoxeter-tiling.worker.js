@@ -161,7 +161,8 @@ onmessage = ({
     for (let i = 0; i < facesParams.length; i++) {
       const faceParams = facesParams[i]
       if (!faceParams.done) {
-        faceParams.limit = limit
+        faceParams.limit =
+          limit * (curvature > 0 ? 1 : curvature < 0 ? 1.5 : 2.5) // ???
         solve(faceParams)
       }
 

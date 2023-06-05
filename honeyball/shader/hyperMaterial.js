@@ -5,15 +5,15 @@ import {
   MeshNormalMaterial,
   MeshDistanceMaterial,
 } from 'three'
-import hyperMathVertexShader from './hyperMathVertex.glsl'
+import hyperVertexShader from './hyperVertex.glsl'
 import projectionVertexShader from './projectionVertex.glsl'
 import normalizationVertexShader from './normalizationVertex.glsl'
 import { projections } from '../../statics'
 
-const header = hyperMathVertexShader.match(
+const header = hyperVertexShader.match(
   /\/\* BEGIN HEADER \*\/([\s\S]*?)\/\* END HEADER \*\//m
 )[1]
-const main = hyperMathVertexShader.match(
+const main = hyperVertexShader.match(
   /\/\* BEGIN MAIN \*\/([\s\S]*?)\/\* END MAIN \*\//m
 )[1]
 const include =
@@ -25,7 +25,10 @@ const include =
     /\/\* BEGIN INCLUDE \*\/([\s\S]*?)\/\* END INCLUDE \*\//m
   )[1]
 
-export const hyperMathMaterial = (material, rt, type = 'universal') => {
+export const preprocess = (shader, dimensions) =>
+  shader.replace(/\bvecN\b/g, `vec${dimensions}`)
+
+export const hyperMaterial = (material, rt, type = 'universal') => {
   material = material.clone()
   material.vertexColors = ![
     MeshDepthMaterial,
@@ -77,8 +80,8 @@ export const hyperMathMaterial = (material, rt, type = 'universal') => {
     }
     shader.vertexShader = [
       ...defines,
-      header,
-      include,
+      preprocess(header, dimensions),
+      preprocess(include, dimensions),
       shader.vertexShader
         .replace('#include <begin_vertex>', '')
         .replace('#include <beginnormal_vertex>', main),
