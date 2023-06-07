@@ -31,7 +31,6 @@ export const preprocess = (shader, dimensions) =>
 export const hyperMaterials = new Set()
 
 export const hyperMaterial = (material, rt, type = 'universal') => {
-  console.log(hyperMaterials.size)
   material = material.clone()
   material.vertexColors = ![
     MeshDepthMaterial,

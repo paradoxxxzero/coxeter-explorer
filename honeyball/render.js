@@ -404,14 +404,16 @@ const plotFaces = (rt, range = null) => {
     let vertices
     if (face.vertices.length === 3) {
       vertices = [
-        rt.vertices[face.vertices[0]].vertex,
-        rt.vertices[face.vertices[1]].vertex,
-        rt.vertices[face.vertices[2]].vertex,
+        [
+          rt.vertices[face.vertices[0]].vertex,
+          rt.vertices[face.vertices[1]].vertex,
+          rt.vertices[face.vertices[2]].vertex,
+        ],
       ]
       if (dimensions > 4) {
-        vertices[0] = multiplyVector(rt.matrix, vertices[0])
-        vertices[1] = multiplyVector(rt.matrix, vertices[1])
-        vertices[2] = multiplyVector(rt.matrix, vertices[2])
+        vertices[0][0] = multiplyVector(rt.matrix, vertices[0][0])
+        vertices[0][1] = multiplyVector(rt.matrix, vertices[0][1])
+        vertices[0][2] = multiplyVector(rt.matrix, vertices[0][2])
       }
     } else {
       const faceVertices = new Array(face.vertices.length)
