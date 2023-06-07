@@ -133,6 +133,7 @@ export const useRender = (runtime, setRuntime) => {
     runtime.segments,
     runtime.maxVertices,
     runtime.maxEdges,
+    runtime.matrix,
     setRuntime,
   ])
 

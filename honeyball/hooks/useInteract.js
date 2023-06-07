@@ -1,11 +1,12 @@
 import { useEffect } from 'react'
 import { debounce } from '../../utils'
 import { xtranslate } from '../math/hypermath'
-import { multiply, set } from '../math/matrix'
+import { columnMajor, multiply, set } from '../math/matrix'
 import { plot } from '../render'
-import { hypot } from '../math'
+import { PI, hypot } from '../math'
+import { hyperMaterials } from '../shader/hyperMaterial'
 
-const zoomSpeed = 0.975
+const zoomSpeed = 0.95
 const translate = (x, y, shift, rotations, matrix, dimensions, curvature) => {
   set(
     matrix,
@@ -60,6 +61,20 @@ export const keydown = (e, rotations, matrix, dimensions, curvature) => {
   }
   return true
 }
+
+const quickUpdateMatrix = runtime => {
+  if (runtime.dimensions > 4) {
+    plot(runtime)
+  } else {
+    const it = hyperMaterials.values()
+    for (let i = 0; i < hyperMaterials.size; i++) {
+      const material = it.next().value
+      material.uniforms.rotationMatrix.value = columnMajor(runtime.matrix)
+    }
+    runtime.composer.render()
+  }
+}
+
 export const useInteract = (runtime, rotations, updateParams) => {
   const updateMatrix = debounce(matrix => updateParams({ matrix }), 100)
   const updateZoom = debounce(zoom => updateParams({ zoom }), 100)
@@ -84,7 +99,7 @@ export const useInteract = (runtime, rotations, updateParams) => {
       }
       let last = pointers.get(e.pointerId)
       const delta = [
-        (e.clientX - last[0]) / window.innerWidth,
+        (e.clientX - last[0]) / window.innerHeight, // height is intentional
         (e.clientY - last[1]) / window.innerHeight,
       ]
       pointers.set(e.pointerId, [e.clientX, e.clientY])
@@ -116,15 +131,15 @@ export const useInteract = (runtime, rotations, updateParams) => {
         shift += pointers.size - 2
       }
       translate(
-        2 * delta[0],
-        -2 * delta[1],
+        PI * delta[0],
+        -PI * delta[1],
         shift,
         rotations,
         runtime.matrix,
         runtime.dimensions,
         runtime.curvature
       )
-      plot(runtime)
+      quickUpdateMatrix(runtime)
       updateMatrix(runtime.matrix)
     }
 
@@ -157,7 +172,7 @@ export const useInteract = (runtime, rotations, updateParams) => {
           runtime.controlsShift
         )
       ) {
-        plot(runtime)
+        quickUpdateMatrix(runtime)
         updateMatrix(runtime.matrix)
       }
     }

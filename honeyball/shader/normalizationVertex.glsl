@@ -40,9 +40,9 @@ void faceVertex(out vec3 transformed, out vec3 objectNormal) {
   iTarget = fromMat(instanceTarget);
   iCentroid = fromMat(instanceCentroid);
   #else
-  iPosition = instancePosition;
-  iTarget = instanceTarget;
-  iCentroid = instanceCentroid;
+  iPosition = rotationMatrix * instancePosition;
+  iTarget = rotationMatrix * instanceTarget;
+  iCentroid = rotationMatrix * instanceCentroid;
   #endif
 
   pos = trix(iCentroid, iPosition, iTarget, uv);
@@ -66,8 +66,8 @@ void edgeVertex(out vec3 transformed, out vec3 objectNormal) {
   iPosition = fromMat(instancePosition);
   iTarget = fromMat(instanceTarget);
   #else
-  iPosition = instancePosition;
-  iTarget = instanceTarget;
+  iPosition = rotationMatrix * instancePosition;
+  iTarget = rotationMatrix * instanceTarget;
   #endif
 
   pos = mix(iPosition, iTarget, uv.y);
@@ -95,7 +95,7 @@ void vertexVertex(out vec3 transformed, out vec3 objectNormal) {
   #if DIMENSIONS > 4
   iPosition = fromMat(instancePosition);
   #else
-  iPosition = instancePosition;
+  iPosition = rotationMatrix * instancePosition;
   #endif
 
   pos = xnormalize(iPosition);

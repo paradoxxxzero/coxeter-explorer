@@ -12,20 +12,18 @@ export default function CoxeterMatrix({
   onChange,
 }) {
   const handleExtend = useCallback(() => {
-    const newParams = {
-      extended: !extended,
-    }
+    onChange('extended', !extended)
 
     if (extended) {
-      newParams.coxeter = coxeter.map(row => row.slice())
+      const coxeter_ = coxeter.map(row => row.slice())
       for (let i = 0; i < dimensions; i++) {
         for (let j = 0; j < i - 1; j++) {
-          newParams.coxeter[i][j] = 2
-          newParams.coxeter[j][i] = 2
+          coxeter_[i][j] = 2
+          coxeter_[j][i] = 2
         }
       }
+      onChange('coxeter', coxeter_)
     }
-    onChange(newParams)
   }, [extended, onChange, coxeter, dimensions])
 
   const handleChange = useCallback(

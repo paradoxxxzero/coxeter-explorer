@@ -28,7 +28,10 @@ const include =
 export const preprocess = (shader, dimensions) =>
   shader.replace(/\bvecN\b/g, `vec${dimensions}`)
 
+export const hyperMaterials = new Set()
+
 export const hyperMaterial = (material, rt, type = 'universal') => {
+  console.log(hyperMaterials.size)
   material = material.clone()
   material.vertexColors = ![
     MeshDepthMaterial,
@@ -47,6 +50,11 @@ export const hyperMaterial = (material, rt, type = 'universal') => {
   }
   for (let i = 4; i <= rt.dimensions; i++) {
     material.uniforms[`fov${i}`] = { value: 90 }
+  }
+  if (rt.dimensions < 5) {
+    material.uniforms.rotationMatrix = {
+      value: rt.matrix,
+    }
   }
 
   material.onBeforeCompile = shader => {
@@ -90,5 +98,9 @@ export const hyperMaterial = (material, rt, type = 'universal') => {
   material.customProgramCacheKey = () => {
     return `hypermath_${material._type}_${material.constructor.name}_${material._rt.dimensions}_${material._rt.projection}`
   }
+  material.addEventListener('dispose', () => {
+    hyperMaterials.delete(material)
+  })
+  hyperMaterials.add(material)
   return material
 }

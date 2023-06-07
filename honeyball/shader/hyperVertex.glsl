@@ -24,14 +24,17 @@ uniform float fov9;
 #endif
 
 #if DIMENSIONS == 2
+uniform mat2 rotationMatrix;
 attribute vec2 instancePosition;
 attribute vec2 instanceTarget;
 attribute vec2 instanceCentroid;
 #elif DIMENSIONS == 3
+uniform mat3 rotationMatrix;
 attribute vec3 instancePosition;
 attribute vec3 instanceTarget;
 attribute vec3 instanceCentroid;
 #elif DIMENSIONS == 4
+uniform mat4 rotationMatrix;
 attribute vec4 instancePosition;
 attribute vec4 instanceTarget;
 attribute vec4 instanceCentroid;

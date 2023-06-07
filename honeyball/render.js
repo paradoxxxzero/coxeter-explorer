@@ -35,9 +35,9 @@ import { SobelOperatorShader } from 'three/examples/jsm/shaders/SobelOperatorSha
 import { degToRad } from 'three/src/math/MathUtils'
 import { ambiances } from '../statics'
 import { tan } from './math'
-import { multiplyVector } from './math/matrix'
+import { columnMajor, multiplyVector } from './math/matrix'
 import { GodRayPass } from './shader/GodRayPass'
-import { hyperMaterial } from './shader/hyperMaterial'
+import { hyperMaterial, hyperMaterials } from './shader/hyperMaterial'
 
 export const initializeGl = () => {
   // stats = new Stats()
@@ -96,6 +96,8 @@ export const initVertex = rt => {
     rt.scene.remove(existingVertex)
     existingVertex.geometry.dispose()
     existingVertex.material.dispose()
+    existingVertex.customDepthMaterial.dispose()
+    existingVertex.customDistanceMaterial.dispose()
   }
   const ambiance = ambiances[rt.ambiance]
   const { dimensions } = rt
@@ -159,6 +161,8 @@ export const initEdge = rt => {
     rt.scene.remove(existingEdge)
     existingEdge.geometry.dispose()
     existingEdge.material.dispose()
+    existingEdge.customDepthMaterial.dispose()
+    existingEdge.customDistanceMaterial.dispose()
   }
   const ambiance = ambiances[rt.ambiance]
   const { dimensions, curve, segments: rawSegments } = rt
@@ -214,6 +218,8 @@ export const initFace = rt => {
     rt.scene.remove(existingFace)
     existingFace.geometry.dispose()
     existingFace.material.dispose()
+    existingFace.customDepthMaterial.dispose()
+    existingFace.customDistanceMaterial.dispose()
   }
   const ambiance = ambiances[rt.ambiance]
   const { dimensions, curve, segments: rawSegments } = rt
@@ -319,7 +325,10 @@ const plotVertices = (rt, range = null) => {
   const arity = dimensions > 4 ? 9 : dimensions
   instancedVertex.geometry.instanceCount = stop
   for (let i = start; i < stop; i++) {
-    const vertex = multiplyVector(rt.matrix, rt.vertices[i].vertex)
+    let vertex = rt.vertices[i].vertex
+    if (dimensions > 4) {
+      vertex = multiplyVector(rt.matrix, vertex)
+    }
     for (let j = 0; j < dimensions; j++) {
       ipos[i * arity + j] = vertex[j]
     }
@@ -348,9 +357,13 @@ const plotEdges = (rt, range = null) => {
   for (let i = start; i < stop; i++) {
     const edge = rt.edges[i]
 
-    const start = multiplyVector(rt.matrix, rt.vertices[edge.start].vertex)
-    const end = multiplyVector(rt.matrix, rt.vertices[edge.end].vertex)
+    let start = rt.vertices[edge.start].vertex
+    let end = rt.vertices[edge.end].vertex
 
+    if (dimensions > 4) {
+      start = multiplyVector(rt.matrix, start)
+      end = multiplyVector(rt.matrix, end)
+    }
     for (let j = 0; j < dimensions; j++) {
       iposstart[i * arity + j] = start[j]
       iposend[i * arity + j] = end[j]
@@ -388,15 +401,27 @@ const plotFaces = (rt, range = null) => {
     if (face.vertices.length < 3) {
       continue
     }
-    let vertices = []
+    let vertices
     if (face.vertices.length === 3) {
-      vertices.push(
-        face.vertices.map(v => multiplyVector(rt.matrix, rt.vertices[v].vertex))
-      )
+      vertices = [
+        rt.vertices[face.vertices[0]].vertex,
+        rt.vertices[face.vertices[1]].vertex,
+        rt.vertices[face.vertices[2]].vertex,
+      ]
+      if (dimensions > 4) {
+        vertices[0] = multiplyVector(rt.matrix, vertices[0])
+        vertices[1] = multiplyVector(rt.matrix, vertices[1])
+        vertices[2] = multiplyVector(rt.matrix, vertices[2])
+      }
     } else {
-      const faceVertices = face.vertices.map(v =>
-        multiplyVector(rt.matrix, rt.vertices[v].vertex)
-      )
+      const faceVertices = new Array(face.vertices.length)
+      for (let j = 0; j < face.vertices.length; j++) {
+        faceVertices[j] = rt.vertices[face.vertices[j]].vertex
+
+        if (dimensions > 4) {
+          faceVertices[j] = multiplyVector(rt.matrix, faceVertices[j])
+        }
+      }
       const centroid = new Array(dimensions).fill(0)
       for (let j = 0; j < faceVertices.length; j++) {
         const vertex = faceVertices[j]
@@ -407,13 +432,13 @@ const plotFaces = (rt, range = null) => {
       for (let j = 0; j < dimensions; j++) {
         centroid[j] /= faceVertices.length
       }
-
+      vertices = new Array(faceVertices.length)
       for (let j = 0; j < faceVertices.length; j++) {
-        vertices.push([
+        vertices[j] = [
           centroid,
           faceVertices[j],
           faceVertices[(j + 1) % faceVertices.length],
-        ])
+        ]
       }
     }
 
@@ -529,6 +554,9 @@ export const changeAmbiance = rt => {
   const instancedVertex = rt.scene.getObjectByName('instanced-vertex')
   const instancedEdge = rt.scene.getObjectByName('instanced-edge')
   const instancedFace = rt.scene.getObjectByName('instanced-face')
+  instancedVertex.material.dispose()
+  instancedEdge.material.dispose()
+  instancedFace.material.dispose()
 
   instancedVertex.material = hyperMaterial(
     ambiance.vertexMaterial,
@@ -701,23 +729,14 @@ export const changeAmbiance = rt => {
 }
 
 export const updateMaterials = rt => {
-  const {
-    composer,
-    scene,
-    dimensions,
-    curvature,
-    projection,
-    vertexThickness,
-    edgeThickness,
-  } = rt
+  const { dimensions, curvature, projection, vertexThickness, edgeThickness } =
+    rt
   const segments = rt.curve ? rt.segments : 1
-  const instancedVertex = scene.getObjectByName('instanced-vertex')
-  const instancedEdge = scene.getObjectByName('instanced-edge')
-  const instancedFace = scene.getObjectByName('instanced-face')
-  const update = material => {
-    if (!material?._rt) {
-      return
-    }
+
+  const it = hyperMaterials.values()
+  for (let i = 0; i < hyperMaterials.size; i++) {
+    const material = it.next().value
+
     material.uniforms.curvature.value = curvature
     material.uniforms.vertexThickness.value = vertexThickness
     material.uniforms.edgeThickness.value = edgeThickness
@@ -732,20 +751,8 @@ export const updateMaterials = rt => {
       }
       material.uniforms[`fov${i}`].value = tan(degToRad(rt[`fov${i}`]) * 0.5)
     }
+    if (rt.dimensions < 5) {
+      material.uniforms.rotationMatrix.value = columnMajor(rt.matrix)
+    }
   }
-
-  update(instancedVertex.material)
-  update(instancedEdge.material)
-  update(instancedFace.material)
-  composer.passes.forEach(pass =>
-    Object.values(pass)
-      .filter(value => value?.isMaterial)
-      .forEach(value => update(value))
-  )
-  update(instancedVertex.customDepthMaterial)
-  update(instancedVertex.customDistanceMaterial)
-  update(instancedEdge.customDepthMaterial)
-  update(instancedEdge.customDistanceMaterial)
-  update(instancedFace.customDepthMaterial)
-  update(instancedFace.customDistanceMaterial)
 }

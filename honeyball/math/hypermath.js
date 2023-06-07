@@ -309,7 +309,7 @@ export const sortRotations = rotations =>
 export const xtranslate = (offset, level, rotations, dimensions, curvature) => {
   const matrix = ident(dimensions)
 
-  if (level > rotations.length - 1) {
+  if (level > rotations.length - 1 || abs(offset) > 1) {
     return matrix
   }
   const [i, j] = rotations[level]
