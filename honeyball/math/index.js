@@ -21,6 +21,8 @@ export const {
   floor,
   log,
   exp,
+  hypot,
+  pow,
   PI,
 } = Math
 

@@ -53,9 +53,10 @@ export const initializeGl = () => {
     90,
     window.innerWidth / window.innerHeight,
     0.01,
-    1000000
+    10000
   )
-  camera.up.set(0, 1, 0)
+  camera.position.set(0, 0, -1)
+  camera.up.set(1, 0, 0)
   camera.lookAt(0, 0, 0)
   camera.zoom = Math.min(1, window.innerWidth / window.innerHeight)
   camera.updateProjectionMatrix()
@@ -64,6 +65,7 @@ export const initializeGl = () => {
 
   camera.updateProjectionMatrix()
   scene.add(camera)
+
   // scene.add(
   //   new Mesh(
   //     new SphereGeometry(1, 32, 32),
@@ -317,7 +319,7 @@ const plotVertices = (rt, range = null) => {
   const arity = dimensions > 4 ? 9 : dimensions
   instancedVertex.geometry.instanceCount = stop
   for (let i = start; i < stop; i++) {
-    const vertex = multiplyVector(rt.vertices[i].vertex, rt.matrix)
+    const vertex = multiplyVector(rt.matrix, rt.vertices[i].vertex)
     for (let j = 0; j < dimensions; j++) {
       ipos[i * arity + j] = vertex[j]
     }
@@ -345,8 +347,9 @@ const plotEdges = (rt, range = null) => {
   instancedEdge.geometry.instanceCount = stop
   for (let i = start; i < stop; i++) {
     const edge = rt.edges[i]
-    const start = multiplyVector(rt.vertices[edge.start].vertex, rt.matrix)
-    const end = multiplyVector(rt.vertices[edge.end].vertex, rt.matrix)
+
+    const start = multiplyVector(rt.matrix, rt.vertices[edge.start].vertex)
+    const end = multiplyVector(rt.matrix, rt.vertices[edge.end].vertex)
 
     for (let j = 0; j < dimensions; j++) {
       iposstart[i * arity + j] = start[j]
@@ -388,11 +391,11 @@ const plotFaces = (rt, range = null) => {
     let vertices = []
     if (face.vertices.length === 3) {
       vertices.push(
-        face.vertices.map(v => multiplyVector(rt.vertices[v].vertex, rt.matrix))
+        face.vertices.map(v => multiplyVector(rt.matrix, rt.vertices[v].vertex))
       )
     } else {
       const faceVertices = face.vertices.map(v =>
-        multiplyVector(rt.vertices[v].vertex, rt.matrix)
+        multiplyVector(rt.matrix, rt.vertices[v].vertex)
       )
       const centroid = new Array(dimensions).fill(0)
       for (let j = 0; j < faceVertices.length; j++) {

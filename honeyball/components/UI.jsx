@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { ambiances, groupers, projections } from '../../statics'
-import { diagonal } from '../math/matrix'
+import { diagonal, ident } from '../math/matrix'
 import Boolean from './Boolean'
 import CoxeterMatrix from './CoxeterMatrix'
 import Number from './Number'
@@ -8,33 +8,45 @@ import Presets from './Presets'
 import Space from './Space'
 
 export default function UI({
-  params,
-  onChange,
-  onControls,
   runtime,
-  onMatrixReset,
+  params,
+  rotations,
+  updateParams,
+  onControls,
 }) {
   const [showUI, setShowUI] = useState(true)
   const [presets, setPresets] = useState(false)
 
   const closePresets = useCallback(() => setPresets(false), [])
 
-  const handleChange = useCallback(
+  const handleRawChange = useCallback(
     e => {
       let { name, value } = e.target
-      onChange(name, value)
+      updateParams({ [name]: value })
     },
-    [onChange]
+    [updateParams]
+  )
+  const handleChange = useCallback(
+    (name, value) => {
+      updateParams({ [name]: value })
+    },
+    [updateParams]
   )
   const handleUI = useCallback(() => setShowUI(showUI => !showUI), [])
 
   const handlePreset = useCallback(
     preset => {
-      onChange(preset)
+      updateParams(preset)
       closePresets()
     },
-    [onChange, closePresets]
+    [updateParams, closePresets]
   )
+
+  const handleMatrixReset = useCallback(() => {
+    updateParams({
+      matrix: ident(runtime.dimensions),
+    })
+  }, [updateParams, runtime.dimensions])
 
   return (
     <>
@@ -59,18 +71,25 @@ export default function UI({
           onClick={onControls}
           title="Rotation Mode"
         >
-          {runtime.controls === 'orbit' ? '⇹' : '↭'}
-          {runtime.controls === 'free' ? (
-            <sup>{runtime.controlsShift + 1}</sup>
-          ) : null}
+          <span
+            style={{
+              display: 'inline-block',
+              transform: `rotate(${
+                (runtime.controlsShift / rotations.maxShift) * 360
+              }deg)`,
+            }}
+          >
+            ⥁
+          </span>
+          <sup>{runtime.controlsShift + 1}</sup>
         </button>
         {!diagonal(runtime.matrix) && (
           <button
             className="button reset-view"
-            onClick={onMatrixReset}
+            onClick={handleMatrixReset}
             title="Reset View"
           >
-            ↻
+            ⌖
           </button>
         )}
         <button
@@ -90,7 +109,7 @@ export default function UI({
                 <select
                   name="grouper"
                   value={params.grouper}
-                  onChange={handleChange}
+                  onChange={handleRawChange}
                 >
                   {groupers.map(p => (
                     <option key={p} value={p}>
@@ -113,7 +132,7 @@ export default function UI({
                   name="centered"
                   allowNull
                   value={params.centered}
-                  onChange={onChange}
+                  onChange={handleChange}
                 />
               </label>
             )}
@@ -124,7 +143,7 @@ export default function UI({
                 min={1}
                 step={1}
                 value={params.order}
-                onChange={onChange}
+                onChange={handleChange}
               />
             )}
             <Number
@@ -135,7 +154,7 @@ export default function UI({
               value={params.segments}
               toggler={params.curve}
               togglerName="curve"
-              onChange={onChange}
+              onChange={handleChange}
             />
             <Number
               name="dimensions"
@@ -144,14 +163,14 @@ export default function UI({
               max={9}
               step={1}
               value={params.dimensions}
-              onChange={onChange}
+              onChange={handleChange}
             />
             <label>
               Projection
               <select
                 name="projection"
                 value={params.projection}
-                onChange={handleChange}
+                onChange={handleRawChange}
               >
                 {projections.map(p => (
                   <option key={p} value={p}>
@@ -168,7 +187,7 @@ export default function UI({
               value={params.vertexThickness}
               toggler={params.showVertices}
               togglerName="showVertices"
-              onChange={onChange}
+              onChange={handleChange}
             />
             <Number
               name="edgeThickness"
@@ -178,7 +197,7 @@ export default function UI({
               value={params.edgeThickness}
               toggler={params.showEdges}
               togglerName="showEdges"
-              onChange={onChange}
+              onChange={handleChange}
             />
             {(runtime.grouper.replace(/^auto-/, '') === 'toddcoxeter' ||
               runtime.grouper === 'fundamental') && (
@@ -187,7 +206,7 @@ export default function UI({
                 <Boolean
                   name="showFaces"
                   value={params.showFaces}
-                  onChange={onChange}
+                  onChange={handleChange}
                 />
               </label>
             )}
@@ -196,7 +215,7 @@ export default function UI({
               <select
                 name="ambiance"
                 value={params.ambiance}
-                onChange={handleChange}
+                onChange={handleRawChange}
               >
                 {(params.extended
                   ? Object.keys(ambiances)
@@ -222,7 +241,7 @@ export default function UI({
               value={params.msaaSamples}
               toggler={params.msaa}
               togglerName="msaa"
-              onChange={onChange}
+              onChange={handleChange}
             />
             <Number
               name="fov3"
@@ -230,7 +249,7 @@ export default function UI({
               min={0}
               step={1}
               value={params.fov3}
-              onChange={onChange}
+              onChange={handleChange}
             />
             {params.dimensions > 3
               ? [...Array(params.dimensions - 3).keys()].map(i => (
@@ -240,7 +259,7 @@ export default function UI({
                     name={`fov${i + 4}`}
                     step={1}
                     value={params[`fov${i + 4}`]}
-                    onChange={onChange}
+                    onChange={handleChange}
                   />
                 ))
               : null}
@@ -253,7 +272,7 @@ export default function UI({
             mirrors={params.mirrors}
             stellation={params.stellation}
             extended={params.extended}
-            onChange={onChange}
+            onChange={handleChange}
           />
         )}
       </div>

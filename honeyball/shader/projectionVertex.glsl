@@ -270,9 +270,10 @@ vec3 xproject(in vec3 v) {
   v.xy /= v.z;
   v.z = 1. / v.z;
 
-  v.xz *= 2. / (1. + v.y);
-  v.y = 1.;
-  return v.xzy;
+  v.yz *= 2. / (1. + v.x);
+  v.x = 1.;
+  v.z -= 2.;
+  return v.zyx;
   #endif
 
   return v.xyz;
@@ -289,14 +290,14 @@ vec3 xproject(in vec4 v) {
   #elif PROJECTION == 3 // INVERTED
   return v.xyz / (v.w * fov4 - 1.);
   #elif PROJECTION == 4 // JEMISPHERE
-  return v.xyz;
+  return vec3(v.xyz / v.w) / (v.w * fov4 + 1.);
   #elif PROJECTION == 5 // UPPERHALF
   v.xyz /= v.w;
   v.w = 1. / v.w;
 
-  v.xyw *= 2. / (1. + v.z);
+  v.yzw *= 2. / (1. + v.x);
   v.w -= 1.;
-  return v.xwy;
+  return v.wyx;
   #endif
 }
 #endif

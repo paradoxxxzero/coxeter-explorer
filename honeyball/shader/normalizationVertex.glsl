@@ -21,7 +21,7 @@ vec3 inflate(in vec3 point, in vecN pos, in vec3 norm, in float size, in float m
   // Removing 3d length in perspective computation
   #if DIMENSIONS < 5
   pos.xy = vec2(1.);
-  #if DIMENSIONS >= 3
+  #if DIMENSIONS >= 3 && PROJECTION == 0
   pos.z = 1.;
   #endif
   #else

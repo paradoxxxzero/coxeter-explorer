@@ -1,14 +1,4 @@
-import {
-  PI,
-  abs,
-  acos,
-  combinations,
-  cos,
-  round,
-  sign,
-  sin,
-  sqrt,
-} from './index.js'
+import { PI, abs, acos, cos, round, sign, sin, sqrt } from './index.js'
 import { eigen, ident, inverse, multiplyVector } from './matrix.js'
 
 export const coxeterToGram = (coxeter, stellation) =>
@@ -267,19 +257,64 @@ export const normalize = (v, curvature) => {
 
 // ...
 
-export const xtranslate = (offset, level, dimensions, curvature) => {
+// We want this order :
+// [1, 2], // 0, 3, 4, 5
+// [0, 2], // 1, 3, 4, 5
+// [1, 3], // 0, 2, 4, 5
+// [0, 3], // 1, 2, 4, 5
+// [1, 4], // 0, 2, 3, 5
+// [0, 4], // 1, 2, 3, 5
+// [1, 5], // 0, 2, 3, 4
+// [0, 5], // 1, 2, 3, 4
+
+// [4, 5], // 0, 1, 2, 3
+// [3, 5], // 0, 1, 2, 4
+// [2, 5], // 0, 1, 3, 4
+// [3, 4], // 0, 1, 2, 5
+// [2, 4], // 0, 1, 3, 5
+// [2, 3], // 0, 1, 4, 5
+// [0, 1], // 2, 3, 4, 5
+
+export const sortRotations = rotations =>
+  rotations.sort((a, b) => {
+    const [ai, aj] = a
+    const [bi, bj] = b
+    // Place [0, 1] at the end
+    if (ai === 0 && aj === 1) {
+      return 1
+    }
+    if (bi === 0 && bj === 1) {
+      return -1
+    }
+
+    // Place [0, n] and [1, n] before others
+    if (ai < 2 && bi >= 2) {
+      return -1
+    }
+    if (bi < 2 && ai >= 2) {
+      return 1
+    }
+    if (ai < 2 && bi < 2) {
+      // Place [1, n] before [0, n]
+      if (aj === bj) {
+        return bi - ai
+      }
+      // Place [1, n] before [1, n+1]
+      return aj - bj
+    }
+    // Rest is reverse order
+    return ai === bi ? bj - aj : bi - ai
+  })
+
+export const xtranslate = (offset, level, rotations, dimensions, curvature) => {
   const matrix = ident(dimensions)
-  const cb = combinations(
-    new Array(dimensions)
-      .fill()
-      .map((_, i) => i)
-      .reverse()
-  )
-  if (level > cb.length - 1) {
+
+  if (level > rotations.length - 1) {
     return matrix
   }
-  const [i, j] = cb[level]
-  const c = i === dimensions - 1 ? curvature : 1
+  const [i, j] = rotations[level]
+  // Handle hyperbolic rotation -> cosh, sinh (last coordinate is hyperbolic for now)
+  const c = j === dimensions - 1 ? curvature : 1
 
   const cost = sqrt(1 - c * offset * offset)
   const sint = offset
@@ -896,7 +931,7 @@ export const getFundamentalVertex = (mirrors, mirrorsPlanes, curvature) => {
       return [0, 0, 1]
     }
   }
-  const p = multiplyVector(active, inv)
+  const p = multiplyVector(inv, active)
 
   p[p.length - 1] *= curvature || 1
   return normalize(p, curvature)

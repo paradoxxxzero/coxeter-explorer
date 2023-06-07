@@ -313,12 +313,12 @@ export const defaultParams = {
 
   grouper: '',
   projection: 'stereographic',
-  controls: 'orbit',
+  controls: 'space',
   controlsShift: 0,
   ambiance: 'neon',
   centered: null,
 
-  view: [0, 0, -1],
+  zoom: 1,
   fov3: 90,
   fov4: 90,
 

@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { filterParams } from '../statics'
 import Runtime from './components/Runtime'
 import UI from './components/UI'
-import { abs, binomial } from './math'
-import { ident } from './math/matrix'
+import { binomial, ceil, combinations } from './math'
+import { sortRotations } from './math/hypermath'
 
 export default function App({ gl, params, updateParams }) {
   window.p = params
@@ -36,7 +36,6 @@ export default function App({ gl, params, updateParams }) {
       ...runtime,
       ...filterParams({
         order: params.order,
-        controls: params.controls,
         controlsShift: params.controlsShift,
         ambiance: params.ambiance,
         showVertices: params.showVertices,
@@ -55,7 +54,7 @@ export default function App({ gl, params, updateParams }) {
         fov7: params.fov7,
         fov8: params.fov8,
         fov9: params.fov9,
-        view: params.view,
+        zoom: params.zoom,
         curve: params.curve,
         segments: params.segments,
         dimensions: params.dimensions,
@@ -69,7 +68,6 @@ export default function App({ gl, params, updateParams }) {
     params.order,
     params.ambiance,
     params.centered,
-    params.controls,
     params.controlsShift,
     params.coxeter,
     params.curve,
@@ -93,8 +91,20 @@ export default function App({ gl, params, updateParams }) {
     params.showVertices,
     params.stellation,
     params.vertexThickness,
-    params.view,
+    params.zoom,
   ])
+  const rotations = useMemo(() => {
+    return {
+      maxShift: ~~ceil(binomial(params.dimensions, 2) / 2),
+      combinations: sortRotations(
+        combinations(
+          new Array(params.dimensions).fill().map((_, i) => i),
+          2
+        )
+      ),
+    }
+  }, [params.dimensions])
+
   useEffect(() => {
     setRuntime(runtime => {
       if (params.grouper === '' && runtime.grouper.startsWith('auto-')) {
@@ -108,63 +118,9 @@ export default function App({ gl, params, updateParams }) {
   }, [params.grouper])
 
   const handleControls = useCallback(() => {
-    let controls, controlsShift
-    const maxControlsShift = binomial(params.dimensions, 2) / 2 - 1
-    if (params.controls === 'orbit') {
-      controls = 'free'
-      controlsShift = 0
-    } else {
-      if (params.controlsShift >= maxControlsShift) {
-        controls = 'orbit'
-        controlsShift = 0
-      } else {
-        controls = 'free'
-        controlsShift = params.controlsShift + 1
-      }
-    }
-    updateParams({ controls, controlsShift })
-  }, [params.controls, params.controlsShift, params.dimensions, updateParams])
-
-  const handleMatrixReset = useCallback(() => {
-    updateParams({
-      matrix: ident(runtime.dimensions),
-    })
-  }, [updateParams, runtime.dimensions])
-
-  const handleMatrixUpdate = useCallback(
-    matrix => {
-      updateParams({
-        matrix,
-      })
-    },
-    [updateParams]
-  )
-  const handleViewUpdate = useCallback(
-    view => {
-      if (params.view.find((v, i) => abs(v - view[i]) > 1e-4)) {
-        updateParams({
-          view,
-        })
-      }
-    },
-    [params.view, updateParams]
-  )
-
-  const handleChange = useCallback(
-    (name, value) => {
-      const params = typeof name === 'string' ? { [name]: value } : name
-      updateParams(params)
-    },
-    [updateParams]
-  )
-
-  useEffect(() => {
-    return () => {
-      if (runtime.curvature !== null) {
-        handleMatrixReset()
-      }
-    }
-  }, [runtime.curvature])
+    const controlsShift = (params.controlsShift + 1) % rotations.maxShift
+    updateParams({ controlsShift })
+  }, [rotations.maxShift, params.controlsShift, updateParams])
 
   return (
     <div
@@ -174,15 +130,15 @@ export default function App({ gl, params, updateParams }) {
       <UI
         runtime={runtime}
         params={params}
-        onChange={handleChange}
+        rotations={rotations}
         onControls={handleControls}
-        onMatrixReset={handleMatrixReset}
+        updateParams={updateParams}
       />
       <Runtime
         runtime={runtime}
+        rotations={rotations}
         setRuntime={setRuntime}
-        onUpdateMatrix={handleMatrixUpdate}
-        onUpdateView={handleViewUpdate}
+        updateParams={updateParams}
       />
     </div>
   )

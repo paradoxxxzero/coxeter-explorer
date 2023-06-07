@@ -1,6 +1,6 @@
 import { useRender } from '../hooks/useRender'
 
-export default function Render({ runtime }) {
-  useRender(runtime)
+export default function Render({ runtime, setRuntime }) {
+  useRender(runtime, setRuntime)
   return null
 }

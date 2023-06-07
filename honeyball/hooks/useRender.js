@@ -12,57 +12,75 @@ import {
   updateMaterials,
 } from '../render'
 
-export const useRender = runtime => {
+export const useRender = (runtime, setRuntime) => {
   useEffect(() => {
-    resetComposerTarget(runtime.composer, runtime.msaa, runtime.msaaSamples)
-  }, [runtime.msaa, runtime.msaaSamples, runtime.composer])
+    setRuntime(runtime => {
+      resetComposerTarget(runtime.composer, runtime.msaa, runtime.msaaSamples)
+      return runtime
+    })
+  }, [runtime.msaa, runtime.msaaSamples, runtime.composer, setRuntime])
 
   useEffect(() => {
-    updateCameraFov(runtime.composer, runtime.camera, runtime.fov3)
-  }, [runtime.fov3, runtime.camera, runtime.composer])
+    setRuntime(runtime => {
+      updateCameraFov(runtime.composer, runtime.camera, runtime.fov3)
+      return runtime
+    })
+  }, [runtime.fov3, runtime.camera, runtime.composer, setRuntime])
 
   useEffect(() => {
-    initVertex(runtime)
-    initEdge(runtime)
-    initFace(runtime)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runtime.dimensions, runtime.curve, runtime.segments])
-
-  useEffect(() => {
-    if (runtime.vertices.length) {
-      console.warn(`Extending vertex buffer to ${runtime.vertices.length}`)
+    setRuntime(runtime => {
       initVertex(runtime)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runtime.maxVertices])
-
-  useEffect(() => {
-    if (runtime.edges.length) {
-      console.warn(`Extending edge buffer to ${runtime.edges.length}`)
       initEdge(runtime)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runtime.maxEdges])
+      initFace(runtime)
+      return runtime
+    })
+  }, [runtime.dimensions, runtime.curve, runtime.segments, setRuntime])
 
   useEffect(() => {
-    changeAmbiance(runtime)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runtime.ambiance])
+    setRuntime(runtime => {
+      if (runtime.vertices.length) {
+        console.warn(`Extending vertex buffer to ${runtime.vertices.length}`)
+        initVertex(runtime)
+      }
+      return runtime
+    })
+  }, [runtime.maxVertices, setRuntime])
 
   useEffect(() => {
-    show(runtime, 'vertex')
-    show(runtime, 'edge')
-    show(runtime, 'face')
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runtime.showVertices, runtime.showEdges, runtime.showFaces])
+    setRuntime(runtime => {
+      if (runtime.edges.length) {
+        console.warn(`Extending edge buffer to ${runtime.edges.length}`)
+        initEdge(runtime)
+      }
+      return runtime
+    })
+  }, [runtime.maxEdges, setRuntime])
 
   useEffect(() => {
-    // Order plot
-    if (runtime.currentOrder < 0) {
-      return
-    }
-    plot(runtime, runtime.currentOrder - 1)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setRuntime(runtime => {
+      changeAmbiance(runtime)
+      return runtime
+    })
+  }, [runtime.ambiance, setRuntime])
+
+  useEffect(() => {
+    setRuntime(runtime => {
+      show(runtime, 'vertex')
+      show(runtime, 'edge')
+      show(runtime, 'face')
+      return runtime
+    })
+  }, [runtime.showVertices, runtime.showEdges, runtime.showFaces, setRuntime])
+
+  useEffect(() => {
+    setRuntime(runtime => {
+      // Order plot
+      if (runtime.currentOrder < 0) {
+        return
+      }
+      plot(runtime, runtime.currentOrder - 1)
+      return runtime
+    })
   }, [
     runtime.currentOrder,
     runtime.vertices,
@@ -71,12 +89,15 @@ export const useRender = runtime => {
     runtime.showVertices,
     runtime.showEdges,
     runtime.showFaces,
+    setRuntime,
   ])
 
   useEffect(() => {
-    // Full plot
-    plot(runtime)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setRuntime(runtime => {
+      // Full plot
+      plot(runtime)
+      return runtime
+    })
   }, [
     runtime.ambiance,
     runtime.showVertices,
@@ -87,12 +108,15 @@ export const useRender = runtime => {
     runtime.curve,
     runtime.segments,
     runtime.matrix,
+    setRuntime,
   ])
 
   useEffect(() => {
-    updateMaterials(runtime)
-    runtime.composer.render()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setRuntime(runtime => {
+      updateMaterials(runtime)
+      runtime.composer.render()
+      return runtime
+    })
   }, [
     runtime.fov4,
     runtime.fov5,
@@ -109,6 +133,7 @@ export const useRender = runtime => {
     runtime.segments,
     runtime.maxVertices,
     runtime.maxEdges,
+    setRuntime,
   ])
 
   useEffect(() => {

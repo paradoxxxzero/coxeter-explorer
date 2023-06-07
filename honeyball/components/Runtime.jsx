@@ -1,17 +1,17 @@
-import { useCallback } from 'react'
-import { useProcess } from '../hooks/useProcess'
+import { useCallback, useEffect } from 'react'
 import { ErrorBoundary } from './ErrorBoundary'
 import Interact from './Interact'
 import Render from './Render'
+import { ident } from '../math/matrix'
+import Process from './Process'
 
 export default function Runtime({
   runtime,
   setRuntime,
-  onUpdateMatrix,
-  onUpdateView,
+  rotations,
+  updateParams,
 }) {
   window.rt = runtime
-  useProcess(runtime, setRuntime)
 
   const handleError = useCallback(
     error => {
@@ -23,14 +23,25 @@ export default function Runtime({
     [setRuntime]
   )
 
+  useEffect(() => {
+    return () => {
+      if (runtime.curvature !== null) {
+        updateParams({
+          matrix: ident(runtime.dimensions),
+        })
+      }
+    }
+  }, [runtime.curvature])
+
   return (
     <>
       <ErrorBoundary error={runtime.renderError} onError={handleError}>
-        <Render runtime={runtime} />
+        <Process runtime={runtime} setRuntime={setRuntime} />
+        <Render runtime={runtime} setRuntime={setRuntime} />
         <Interact
           runtime={runtime}
-          updateMatrix={onUpdateMatrix}
-          updateView={onUpdateView}
+          rotations={rotations}
+          updateParams={updateParams}
         />
       </ErrorBoundary>
     </>

@@ -133,7 +133,6 @@ export const useProcess = (runtime, setRuntime) => {
         mirrorsPlanes,
         curvature
       )
-
       const newRuntime = {
         ...runtime,
         currentOrder: 0,

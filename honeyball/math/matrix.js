@@ -1,17 +1,57 @@
 import { PI, abs, atan, cos, sign, sin } from '.'
 
-export const multiply = (m1, m2) => {
-  // Multiply two matrices m1, m2 and store result in m1
+export const transpose = m => {
+  // Transpose matrix m (swap rows and columns)
   const res = []
-  for (let i = 0; i < m1.length; i++) {
+  for (let i = 0; i < m[0].length; i++) {
     res.push([])
+    for (let j = 0; j < m.length; j++) {
+      res[i].push(m[j][i])
+    }
+  }
+  return res
+}
+
+export const multiply = (m1, m2) => {
+  // Multiply two matrices m1, m2
+  // if (m1.length === 0 || m2.length === 0) {
+  //   return []
+  // }
+  // if (!Array.isArray(m1[0])) {
+  //   m1 = [m1]
+  // }
+  // if (!Array.isArray(m2[0])) {
+  //   m2 = [m2]
+  // }
+  // if (m1[0].length !== m2.length) {
+  //   throw new Error(
+  //     `Matrix dimensions do not match (${m1[0].length} != ${m2.length})`
+  //   )
+  // }
+
+  const res = new Array(m1.length)
+  for (let i = 0; i < m1.length; i++) {
+    res[i] = new Array(m2[0].length)
     for (let j = 0; j < m2[0].length; j++) {
       let sum = 0
       for (let k = 0; k < m2.length; k++) {
         sum += m1[i][k] * m2[k][j]
       }
-      res[i].push(sum)
+      res[i][j] = sum
     }
+  }
+  return res
+}
+
+export const multiplyVector = (m, v) => {
+  // Multiply matrix m and vector v
+  const res = new Array(m.length)
+  for (let i = 0; i < m.length; i++) {
+    let sum = 0
+    for (let j = 0; j < m[0].length; j++) {
+      sum += m[i][j] * v[j]
+    }
+    res[i] = sum
   }
   return res
 }
@@ -28,26 +68,14 @@ export const set = (m, nm) => {
   return m
 }
 
-export const multiplyVector = (v, m) => {
-  const res = []
-  for (let i = 0; i < m.length; i++) {
-    let sum = 0
-    for (let j = 0; j < m[0].length; j++) {
-      sum += m[i][j] * v[j]
-    }
-    res.push(sum)
+export const ident = dimensions => {
+  const id = new Array(dimensions)
+  for (let i = 0; i < dimensions; i++) {
+    id[i] = new Array(dimensions).fill(0)
+    id[i][i] = 1
   }
-  return res
+  return id
 }
-
-export const ident = dimensions =>
-  new Array(dimensions)
-    .fill()
-    .map((_, i) =>
-      new Array(dimensions).fill().map((_, j) => (i === j ? 1 : 0))
-    )
-
-export const transpose = m => m.map((row, i) => row.map((_, j) => m[j][i]))
 
 export const diagonal = m =>
   m.every((row, i) => row.every((_, j) => i === j || m[i][j] === 0))

@@ -75,7 +75,6 @@ const tiling = (coxeterArgs, mirrors, stellationArgs, extra) => {
   return {
     ...polytope(coxeterArgs, mirrors, stellationArgs),
     ambiance: 'plain',
-    controls: 'free',
     showVertices: false,
     curve: true,
     ...extra,
@@ -243,7 +242,6 @@ export const presets = [
       showFaces: true,
       curve: true,
       ambiance: 'neon',
-      controls: 'free',
       centered: false,
     }),
   },
@@ -258,7 +256,6 @@ export const presets = [
       showFaces: true,
       curve: true,
       ambiance: 'neon',
-      controls: 'free',
     }),
   },
   {
@@ -282,7 +279,6 @@ export const presets = [
         curve: true,
         segments: 256,
         ambiance: 'neon',
-        controls: 'free',
       }
     ),
   },
@@ -300,7 +296,6 @@ export const presets = [
       centered: false,
       segments: 256,
       ambiance: 'pure',
-      controls: 'orbit',
     }),
   },
 
@@ -326,7 +321,6 @@ export const presets = [
       centered: false,
       segments: 128,
       ambiance: 'pure',
-      controls: 'orbit',
     }),
   },
   {
@@ -340,7 +334,6 @@ export const presets = [
       showFaces: false,
       curve: true,
       ambiance: 'neon',
-      controls: 'free',
     }),
   },
 
