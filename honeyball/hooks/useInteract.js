@@ -130,6 +130,7 @@ export const useInteract = (runtime, rotations, updateParams) => {
         loop.current = null
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rotations.auto])
 
   useEffect(() => {
@@ -142,11 +143,11 @@ export const useInteract = (runtime, rotations, updateParams) => {
     let time = null
 
     const getDistance = () => {
-      const vals = pointers.iterator()
+      const vals = pointers.values()
       const p1 = vals.next().value
       const p2 = vals.next().value
 
-      hypot(p1[0] - p2[0], p1[1] - p2[1])
+      return hypot(p1[0] - p2[0], p1[1] - p2[1])
     }
 
     const onMove = e => {
@@ -273,7 +274,8 @@ export const useInteract = (runtime, rotations, updateParams) => {
     return () => {
       document.removeEventListener('wheel', handleWheel)
     }
-  }, [runtime.camera.position, runtime.composer, updateZoom])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runtime.camera, runtime.composer, updateZoom])
 
   useEffect(() => {
     const handleDblClick = e => {
@@ -292,5 +294,6 @@ export const useInteract = (runtime, rotations, updateParams) => {
     return () => {
       document.removeEventListener('dblclick', handleDblClick)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runtime.camera, runtime.composer, updateZoom])
 }

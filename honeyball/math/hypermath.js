@@ -314,7 +314,7 @@ export const xtranslate = (offset, level, rotations, dimensions, curvature) => {
   }
   const [i, j] = rotations[level]
   // Handle hyperbolic rotation -> cosh, sinh (last coordinate is hyperbolic for now)
-  const c = j === dimensions - 1 ? curvature : 1
+  const c = j === dimensions - 1 ? curvature || 1 : 1
 
   const cost = sqrt(1 - c * offset * offset)
   const sint = offset
