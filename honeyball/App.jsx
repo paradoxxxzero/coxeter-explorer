@@ -30,13 +30,18 @@ export default function App({ gl, params, updateParams }) {
       renderError: null,
     }
   })
+  const [rotations, setRotations] = useState({
+    shift: 0,
+    maxShift: 0,
+    combinations: [],
+    auto: false,
+  })
 
   useEffect(() => {
     setRuntime(runtime => ({
       ...runtime,
       ...filterParams({
         order: params.order,
-        controlsShift: params.controlsShift,
         ambiance: params.ambiance,
         showVertices: params.showVertices,
         showEdges: params.showEdges,
@@ -68,7 +73,6 @@ export default function App({ gl, params, updateParams }) {
     params.order,
     params.ambiance,
     params.centered,
-    params.controlsShift,
     params.coxeter,
     params.curve,
     params.dimensions,
@@ -93,8 +97,10 @@ export default function App({ gl, params, updateParams }) {
     params.vertexThickness,
     params.zoom,
   ])
-  const rotations = useMemo(() => {
-    return {
+  useEffect(() => {
+    setRotations(rotations => ({
+      ...rotations,
+      shift: 0,
       maxShift: ~~ceil(binomial(params.dimensions, 2) / 2),
       combinations: sortRotations(
         combinations(
@@ -102,7 +108,8 @@ export default function App({ gl, params, updateParams }) {
           2
         )
       ),
-    }
+      auto: false,
+    }))
   }, [params.dimensions])
 
   useEffect(() => {
@@ -117,10 +124,15 @@ export default function App({ gl, params, updateParams }) {
     })
   }, [params.grouper])
 
-  const handleControls = useCallback(() => {
-    const controlsShift = (params.controlsShift + 1) % rotations.maxShift
-    updateParams({ controlsShift })
-  }, [rotations.maxShift, params.controlsShift, updateParams])
+  const updateRotations = useCallback(
+    (key, value) => {
+      setRotations(rotations => ({
+        ...rotations,
+        [key]: value,
+      }))
+    },
+    [setRotations]
+  )
 
   return (
     <div
@@ -131,7 +143,7 @@ export default function App({ gl, params, updateParams }) {
         runtime={runtime}
         params={params}
         rotations={rotations}
-        onControls={handleControls}
+        updateRotations={updateRotations}
         updateParams={updateParams}
       />
       <Runtime

@@ -9,56 +9,50 @@ canvas {
   font-family: 'Fira Code', monospace;
 }
 
+aside {
+  pointer-events: none;
+}
+aside input,
+aside button,
+aside label,
+aside select,
+aside svg {
+  pointer-events: all;
+}
+
+label {
+  white-space: nowrap;
+}
+
+select {
+  color: white;
+  border: none;
+  background-color: rgba(25, 25, 25);
+  padding: 0.25em;
+  font-size: 1.5em;
+}
+select option {
+  background-color: rgba(25, 25, 25);
+}
+
+.error * {
+  color: red !important;
+}
+.warning * {
+  color: orange !important;
+}
+
+#stats {
+  top: 225px !important;
+  left: 20px !important;
+}
+
 .processing-counter {
   position: absolute;
   right: 0;
   bottom: 0;
   font-size: 1em;
   color: rgba(255, 255, 255, 0.75);
-}
-
-.space-indicator {
-  position: absolute;
-  bottom: 0.25em;
-  right: 0.25em;
-  padding: 0.25em;
-  font-size: 3em;
-  line-height: 1;
-  color: rgba(255, 255, 255);
-  mix-blend-mode: difference;
-  cursor: pointer;
-  background: none;
-  border: none;
-}
-
-.space-indicator sub {
-  position: absolute;
-  bottom: 0.5em;
-  left: 2.5em;
-  font-size: 0.4em;
-}
-
-.space-indicator.processing {
-  animation: processing 1s infinite;
-}
-
-.control-indicator {
-  position: absolute;
-  top: 0.125em;
-  left: 0.125em;
-  padding: 0.125em;
-  font-size: 5em;
-  line-height: 1;
-  color: rgba(255, 255, 255);
-  mix-blend-mode: difference;
-  cursor: pointer;
-  background: none;
-  border: none;
-}
-.control-indicator sup {
-  position: absolute;
-  top: 0.25em;
-  font-size: 0.3em;
 }
 
 .button {
@@ -77,12 +71,30 @@ button:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-.reset-view {
+.preset-button {
   position: absolute;
-  font-size: 2.5em;
-  top: 2.75em;
-  left: 0.4em;
-  line-height: 1;
+  bottom: 0.25em;
+  left: 0.25em;
+  font-size: 3em;
+  color: rgba(33, 150, 243);
+}
+
+.space-button {
+  position: absolute;
+  bottom: 0.25em;
+  right: 0.25em;
+  font-size: 3em;
+}
+
+.space-button sub {
+  position: absolute;
+  bottom: 0.5em;
+  left: 2.5em;
+  font-size: 0.4em;
+}
+
+.space-button.processing {
+  animation: processing 1s infinite;
 }
 
 @keyframes processing {
@@ -97,18 +109,23 @@ button:hover {
   }
 }
 
-aside {
-  pointer-events: none;
+.controls-button {
+  position: relative;
+  padding: 0.125em;
+  font-size: 4em;
+  z-index: 2;
 }
-aside > * {
-  pointer-events: all;
+.controls-button sup {
+  position: absolute;
+  top: 0.25em;
+  font-size: 0.3em;
+}
+.subcontrols {
+  display: flex;
+  font-size: 0.8em;
 }
 
-label {
-  white-space: nowrap;
-}
-
-.controls {
+.parameters {
   position: absolute;
   bottom: 0;
   left: 0;
@@ -117,17 +134,26 @@ label {
   font-size: 0.9em;
   align-items: baseline;
   font-size: 0.75em;
-  margin: 1em 4.5rem;
+  margin: 1em 7rem;
   font-size: calc(min(1.5vw, 0.75em));
   mix-blend-mode: difference;
 }
 
-.controls label {
+.parameters label {
   margin: 0.2em 0.75em;
   color: rgba(255, 255, 255, 0.65);
   display: flex;
   align-items: center;
 }
+
+.controls {
+  position: absolute;
+  top: 0.125em;
+  left: 0.125em;
+  display: flex;
+  flex-direction: column;
+}
+
 .view {
   position: absolute;
   left: 0;
@@ -156,11 +182,13 @@ label {
   position: absolute;
   top: 0;
   right: 0;
-  font-size: calc(min(1.5vw, 0.75em));
   mix-blend-mode: difference;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  transform-origin: top right;
+  font-size: 0.75em;
+  transition: transform 0.5s;
 }
 
 .coxeter-matrix {
@@ -208,24 +236,6 @@ label {
   margin: 0 1.25em;
 }
 
-select {
-  color: white;
-  border: none;
-  background-color: rgba(25, 25, 25);
-  padding: 0.25em;
-  font-size: 1.5em;
-}
-select option {
-  background-color: rgba(25, 25, 25);
-}
-
-.error * {
-  color: red !important;
-}
-.warning * {
-  color: orange !important;
-}
-
 .number-control {
   position: relative;
 }
@@ -256,6 +266,7 @@ select option {
   top: 50%;
   transform: translateY(-50%) scale(0.75);
   padding: 0.5em 0.25em;
+  z-index: 1000;
 }
 .number .plusminus:hover,
 .number .plusminus:focus,
@@ -356,6 +367,12 @@ select option {
 .presets-list h4 {
   margin-left: 2em;
 }
+
+.presets-list h4 + h4,
+.presets-list h4:has(+ h4) {
+  display: none;
+}
+
 .preset {
   margin: 2.5em;
   cursor: pointer;
@@ -378,24 +395,7 @@ select option {
 .preset:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
-.preset-button {
-  position: absolute;
-  bottom: 0.25em;
-  left: 0.25em;
-  padding: 0.25em;
-  font-size: 3em;
-  line-height: 1;
-  color: rgba(33, 150, 243);
-  mix-blend-mode: difference;
-  background: none;
-  cursor: pointer;
-  border: none;
-}
-h4 + h4,
-h4:has(+ h4) {
-  display: none;
-}
 
-.coxeter-diagram {
+.presets-list .coxeter-diagram {
   font-size: 1.5em;
 }

@@ -20,7 +20,7 @@ import {
   SRGBColorSpace,
   TextureLoader,
 } from 'three'
-import { atoi, binomial, itoa, min, round } from './honeyball/math'
+import { atoi, itoa, min } from './honeyball/math'
 import { ident } from './honeyball/math/matrix'
 import { mirrorChars } from './honeyball/mirrors'
 
@@ -314,7 +314,6 @@ export const defaultParams = {
   grouper: '',
   projection: 'stereographic',
   controls: 'space',
-  controlsShift: 0,
   ambiance: 'neon',
   centered: null,
 
@@ -430,9 +429,5 @@ export const filterParams = maybeBadParams => {
       delete params[`fov${i}`]
     }
   }
-  params.controlsShift = min(
-    params.controlsShift,
-    round(binomial(params.dimensions, 2) / 2 - 1)
-  )
   return { params, badParams }
 }

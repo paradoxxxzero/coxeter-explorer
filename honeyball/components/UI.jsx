@@ -12,7 +12,7 @@ export default function UI({
   params,
   rotations,
   updateParams,
-  onControls,
+  updateRotations,
 }) {
   const [showUI, setShowUI] = useState(true)
   const [presets, setPresets] = useState(false)
@@ -48,6 +48,26 @@ export default function UI({
     })
   }, [updateParams, runtime.dimensions])
 
+  const handleShift = useCallback(
+    param => {
+      updateRotations('shift', (rotations.shift + 1) % rotations.maxShift)
+    },
+    [rotations.maxShift, rotations.shift, updateRotations]
+  )
+  const handleAuto = useCallback(
+    param => {
+      updateRotations(
+        'auto',
+        rotations.auto === 'free'
+          ? 'damp'
+          : rotations.auto === 'damp'
+          ? false
+          : 'free'
+      )
+    },
+    [rotations.auto, updateRotations]
+  )
+
   return (
     <>
       <aside className={`presets ${presets ? 'shown' : 'hidden'}`}>
@@ -60,40 +80,55 @@ export default function UI({
           </aside>
         ) : null}
         <button
-          className="preset-button"
+          className="preset-button button"
           onClick={() => setPresets(presets => !presets)}
           title="Presets"
         >
           ◭
         </button>
-        <button
-          className="control-indicator"
-          onClick={onControls}
-          title="Rotation Mode"
-        >
-          <span
-            style={{
-              display: 'inline-block',
-              transform: `rotate(${
-                (runtime.controlsShift / rotations.maxShift) * 360
-              }deg)`,
-            }}
-          >
-            ⥁
-          </span>
-          <sup>{runtime.controlsShift + 1}</sup>
-        </button>
-        {!diagonal(runtime.matrix) && (
+        <aside className="controls">
           <button
-            className="button reset-view"
-            onClick={handleMatrixReset}
-            title="Reset View"
+            className="controls-button button"
+            onClick={handleShift}
+            title="Rotation Mode"
           >
-            ⌖
+            <span
+              style={{
+                display: 'inline-block',
+                transform: `rotate(${
+                  (rotations.shift / rotations.maxShift) * 360
+                }deg)`,
+              }}
+            >
+              ⥁
+            </span>
+            <sup>{rotations.shift + 1}</sup>
           </button>
-        )}
+          <div className="subcontrols">
+            <button
+              className="button anim-view"
+              onClick={handleAuto}
+              title="Animate rotations"
+            >
+              {rotations.auto === 'free'
+                ? '⏸'
+                : rotations.auto === 'damp'
+                ? '⏯'
+                : '▶'}
+            </button>
+            {!diagonal(runtime.matrix) && !rotations.auto && (
+              <button
+                className="button reset-view"
+                onClick={handleMatrixReset}
+                title="Reset View"
+              >
+                ⌖
+              </button>
+            )}
+          </div>
+        </aside>
         <button
-          className={`space-indicator${
+          className={`space-button button${
             runtime.processing ? ' processing' : ''
           }`}
           onClick={handleUI}
@@ -102,7 +137,7 @@ export default function UI({
           <Space type={runtime.spaceType} dimensions={runtime.dimensions} />
         </button>
         {showUI && (
-          <aside className="controls">
+          <aside className="parameters">
             {(params.extended || params.grouper !== '') && (
               <label>
                 Grouper

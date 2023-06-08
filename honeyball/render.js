@@ -33,15 +33,22 @@ import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
 import { LuminosityShader } from 'three/examples/jsm/shaders/LuminosityShader.js'
 import { SobelOperatorShader } from 'three/examples/jsm/shaders/SobelOperatorShader.js'
 import { degToRad } from 'three/src/math/MathUtils'
+import Stats from 'three/examples/jsm/libs/stats.module.js'
 import { ambiances } from '../statics'
 import { tan } from './math'
 import { columnMajor, multiplyVector } from './math/matrix'
 import { GodRayPass } from './shader/GodRayPass'
 import { hyperMaterial, hyperMaterials } from './shader/hyperMaterial'
 
+const showStats = window.location.search.includes('stats')
+
 export const initializeGl = () => {
-  // stats = new Stats()
-  // document.body.appendChild(stats.dom)
+  let stats
+  if (showStats) {
+    stats = new Stats()
+    stats.dom.id = 'stats'
+    document.body.appendChild(stats.dom)
+  }
   const renderer = new WebGLRenderer()
   renderer.autoClear = false
   renderer.setPixelRatio(window.devicePixelRatio)
@@ -83,10 +90,19 @@ export const initializeGl = () => {
   const renderPass = new RenderPass(scene, camera)
   composer.addPass(renderPass)
 
+  const render = showStats
+    ? () => {
+        stats.update()
+        composer.render()
+        // stats.end()
+      }
+    : () => composer.render()
+
   return {
     composer,
     camera,
     scene,
+    render,
   }
 }
 
@@ -517,7 +533,7 @@ export const plot = (rt, order = null) => {
   if (rt.scene.getObjectByName('instanced-face').visible) {
     plotFaces(rt, range.faces)
   }
-  rt.composer.render()
+  rt.render()
   document.title = `Honeyball^${rt.dimensions} ${
     rt.currentOrder < rt.order ? `(${rt.currentOrder}/${rt.order})…` : ''
   }- ${rt.vertices.length} vertices, ${rt.edges.length} edges, ${
@@ -525,14 +541,15 @@ export const plot = (rt, order = null) => {
   } faces`
 }
 
-export const updateCameraFov = (composer, camera, fov) => {
-  camera.fov = fov
-  camera.updateProjectionMatrix()
-  composer.render()
+export const updateCameraFov = rt => {
+  rt.camera.fov = rt.fov3
+  rt.camera.updateProjectionMatrix()
+  rt.render()
 }
 
 const fxaa = new ShaderPass(FXAAShader)
-export const resetComposerTarget = (composer, msaa, msaaSamples) => {
+export const resetComposerTarget = rt => {
+  const { composer, msaa, msaaSamples } = rt
   const size = composer.renderer.getDrawingBufferSize(new Vector2())
   const renderTarget = new WebGLRenderTarget(size.width, size.height, {
     samples: msaa ? msaaSamples : 0,
@@ -547,7 +564,7 @@ export const resetComposerTarget = (composer, msaa, msaaSamples) => {
       1 / (window.innerHeight * pixelRatio)
     composer.addPass(fxaa)
   }
-  composer.render()
+  rt.render()
 }
 
 export const changeAmbiance = rt => {

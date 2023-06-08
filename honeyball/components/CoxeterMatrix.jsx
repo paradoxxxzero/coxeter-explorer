@@ -1,7 +1,8 @@
-import { Fragment, useCallback } from 'react'
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import Value from './Value'
 import Link from './Link'
 import Node from './Node'
+import { min } from '../math'
 
 export default function CoxeterMatrix({
   dimensions,
@@ -11,6 +12,9 @@ export default function CoxeterMatrix({
   extended,
   onChange,
 }) {
+  const [scale, setScale] = useState(1)
+  const ref = useRef()
+
   const handleExtend = useCallback(() => {
     onChange('extended', !extended)
 
@@ -61,8 +65,30 @@ export default function CoxeterMatrix({
     },
     [mirrors, onChange]
   )
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (!ref.current) {
+        return
+      }
+      const newScale = min(
+        1,
+        (window.innerWidth - 125) / ref.current.offsetWidth
+      )
+      setScale(newScale)
+    }
+
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [dimensions])
+
   return (
-    <aside className="coxeters">
+    <aside
+      className="coxeters"
+      style={scale === 1 ? undefined : { transform: `scale(${scale})` }}
+      ref={ref}
+    >
       <div className="coxeter-matrix">
         {[...Array(dimensions).keys()].map(i => (
           <Fragment key={i}>

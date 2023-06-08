@@ -15,14 +15,14 @@ import {
 export const useRender = (runtime, setRuntime) => {
   useEffect(() => {
     setRuntime(runtime => {
-      resetComposerTarget(runtime.composer, runtime.msaa, runtime.msaaSamples)
+      resetComposerTarget(runtime)
       return runtime
     })
   }, [runtime.msaa, runtime.msaaSamples, runtime.composer, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => {
-      updateCameraFov(runtime.composer, runtime.camera, runtime.fov3)
+      updateCameraFov(runtime)
       return runtime
     })
   }, [runtime.fov3, runtime.camera, runtime.composer, setRuntime])
@@ -114,7 +114,7 @@ export const useRender = (runtime, setRuntime) => {
   useEffect(() => {
     setRuntime(runtime => {
       updateMaterials(runtime)
-      runtime.composer.render()
+      runtime.render()
       return runtime
     })
   }, [

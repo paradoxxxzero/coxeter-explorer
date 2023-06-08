@@ -14,14 +14,14 @@ export const getSignature = gram => {
     0: eigenValues.filter(v => v === 0).length,
   }
 }
-export const getSubSignatures = (gram, sub = [], level = 0) => {
+export const getSubSignatures = (gram, sub = [], level = 0, maxLevel = 2) => {
   sub[level] = sub[level] || []
   for (let i = 0; i < gram.length; i++) {
     const subgram = gram
       .filter((_, j) => j !== i)
       .map(row => row.filter((_, j) => j !== i))
     sub[level].push(getSignature(subgram))
-    if (subgram.length > 1) {
+    if (subgram.length > 1 && level + 1 < maxLevel) {
       getSubSignatures(subgram, sub, level + 1)
     }
   }

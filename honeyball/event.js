@@ -43,5 +43,5 @@ export const size = rt => {
     }
   }
 
-  composer.render()
+  rt.render()
 }
