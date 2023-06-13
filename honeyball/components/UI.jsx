@@ -70,9 +70,9 @@ export default function UI({
 
   return (
     <>
-      <aside className={`presets ${presets ? 'shown' : 'hidden'}`}>
+      <div className={`presets ${presets ? 'shown' : 'hidden'}`}>
         <Presets onPreset={handlePreset} closePresets={closePresets} />
-      </aside>
+      </div>
       <div className={runtime.error ? 'error' : ''} title={runtime.error}>
         {runtime.currentOrder < runtime.order ? (
           <aside className="processing-counter">

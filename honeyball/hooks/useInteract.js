@@ -266,6 +266,9 @@ export const useInteract = (runtime, rotations, updateParams) => {
 
   useEffect(() => {
     const handleWheel = e => {
+      if (e.target.tagName !== 'CANVAS') {
+        return
+      }
       runtime.camera.position.z *= e.deltaY < 0 ? zoomSpeed : 1 / zoomSpeed
       runtime.render()
       updateZoom(-runtime.camera.position.z)

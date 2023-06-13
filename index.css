@@ -374,7 +374,7 @@ button:hover {
 }
 
 .preset {
-  margin: 2.5em;
+  margin: 0 2.5em;
   cursor: pointer;
   padding: 0.5em;
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);
@@ -382,7 +382,7 @@ button:hover {
   justify-content: space-between;
 }
 .preset-name {
-  margin: 0.5em;
+  margin: auto 0.5em;
   vertical-align: middle;
 }
 .presets-list .space {
