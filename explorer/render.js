@@ -534,7 +534,9 @@ export const plot = (rt, order = null) => {
     plotFaces(rt, range.faces)
   }
   rt.render()
-  document.title = `Honeyball^${rt.dimensions} ${
+  document.title = `Coxeter Explorer - ${
+    rt.spaceType === 'finite' ? 'S' : rt.spaceType === 'affine' ? 'E' : 'H'
+  }^${rt.dimensions} ${
     rt.currentOrder < rt.order ? `(${rt.currentOrder}/${rt.order})…` : ''
   }- ${rt.vertices.length} vertices, ${rt.edges.length} edges, ${
     rt.faces.length

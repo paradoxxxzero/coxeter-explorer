@@ -24,25 +24,32 @@ export default function Presets({ onPreset, closePresets }) {
 
   return (
     <div className="presets-modal">
-      <button className="presets-close" onClick={closePresets}>
-        ✖
-      </button>
-      <div className="presets-search">
-        <input
-          type="text"
-          placeholder="Search"
-          value={rawSearch}
-          onChange={handleSearch}
-        />
-        <button
-          className="presets-clear"
-          onClick={() => {
-            setSearch('')
-            setRawSearch('')
-          }}
-        >
-          ⌫
-        </button>
+      <div className="presets-header">
+        <div className="presets-search">
+          <input
+            type="text"
+            placeholder="Search"
+            value={rawSearch}
+            onChange={handleSearch}
+          />
+          <button
+            className="presets-clear"
+            onClick={() => {
+              setSearch('')
+              setRawSearch('')
+            }}
+          >
+            ⌫
+          </button>
+        </div>
+        <div className="presets-actions">
+          <a className="presets-author" href="https://florian.mounier.dev/">
+            ❓
+          </a>
+          <button className="presets-close" onClick={closePresets}>
+            ✖️
+          </button>
+        </div>
       </div>
       <div className="presets-list">
         {presets.map(({ type, content, name, params }, i) => (

@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './honeyball/App.jsx'
+import App from './explorer/App.jsx'
 import './index.css'
-import { initializeGl } from './honeyball/render.js'
+import { initializeGl } from './explorer/render.js'
 import { defaultParams, filterParams } from './statics.js'
 
 const gl = initializeGl()
@@ -67,6 +67,17 @@ const AppWithHistory = () => {
 
   const updateParams = useCallback(newParams => {
     setParams(params => {
+      // Check if there is one new newParams
+      if (
+        !Object.entries(newParams).filter(([k, v]) => {
+          if (Array.isArray(v)) {
+            return !arrayEquals(v, params[k])
+          }
+          return params[k] !== v
+        }).length
+      ) {
+        return params
+      }
       const { params: finalParams, badParams } = filterParams({
         ...params,
         ...newParams,
@@ -95,7 +106,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 )
 
 if (import.meta.hot) {
-  import.meta.hot.accept('./honeyball/render.js', module => {
+  import.meta.hot.accept('./explorer/render.js', module => {
     console.debug('Accepting the updated render module!')
   })
 }

@@ -7,7 +7,7 @@ import { plot } from '../render'
 import { hyperMaterials } from '../shader/hyperMaterial'
 
 const zoomSpeed = 0.95
-const autoSpeed = 10
+const autoSpeed = 25
 
 const translate = (x, y, shift, rotations, matrix, dimensions, curvature) => {
   set(
@@ -82,10 +82,9 @@ export const useInteract = (runtime, rotations, updateParams) => {
     pause: new Set(),
     speed: null,
   })
-
   useEffect(() => {
     animation.current.speed = new Array(rotations.combinations.length).fill(0)
-  }, [rotations.combinations, rotations.auto])
+  }, [rotations.combinations])
 
   useEffect(() => {
     const animate = () => {
@@ -94,9 +93,10 @@ export const useInteract = (runtime, rotations, updateParams) => {
         if (speed[i] === 0 || (rotations.auto === 'damp' && pause.has(i))) {
           continue
         }
+
         if (rotations.auto === 'damp') {
           speed[i] *= 0.96
-          if (abs(speed[i]) < 1e-5) {
+          if (abs(speed[i]) < 1e-4) {
             speed[i] = 0
           }
         }
@@ -119,7 +119,6 @@ export const useInteract = (runtime, rotations, updateParams) => {
         loop.current = requestAnimationFrame(animate)
       }
     }
-
     if (rotations.auto) {
       loop.current = requestAnimationFrame(animate)
     }
@@ -130,8 +129,7 @@ export const useInteract = (runtime, rotations, updateParams) => {
         loop.current = null
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rotations.auto])
+  }, [rotations, runtime, updateMatrix])
 
   useEffect(() => {
     runtime.camera.position.z = -runtime.zoom
@@ -159,13 +157,11 @@ export const useInteract = (runtime, rotations, updateParams) => {
         (e.clientX - last[0]) / window.innerHeight, // height is intentional
         -(e.clientY - last[1]) / window.innerHeight,
       ]
-      // Compute moving average of the delta
       if (rotations.auto) {
         const newTime = performance.now()
         const dt = newTime - time
         time = newTime
-        const k = autoSpeed * (rotations.auto === 'damp' ? 2 : 1)
-        const speed = [(k * delta[0]) / dt, (k * delta[1]) / dt]
+        const speed = [(autoSpeed * delta[0]) / dt, (autoSpeed * delta[1]) / dt]
         animation.current.speed[rotations.shift * 2] = speed[0]
         animation.current.speed[rotations.shift * 2 + 1] = speed[1]
       }
@@ -198,19 +194,17 @@ export const useInteract = (runtime, rotations, updateParams) => {
       if (pointers.size > 2) {
         shift += pointers.size - 2
       }
-      if (rotations.auto !== 'free') {
-        translate(
-          PI * delta[0],
-          PI * delta[1],
-          shift,
-          rotations,
-          runtime.matrix,
-          runtime.dimensions,
-          runtime.curvature
-        )
-        quickUpdateMatrix(runtime)
-        updateMatrix(runtime.matrix)
-      }
+      translate(
+        PI * delta[0],
+        PI * delta[1],
+        shift,
+        rotations,
+        runtime.matrix,
+        runtime.dimensions,
+        runtime.curvature
+      )
+      quickUpdateMatrix(runtime)
+      updateMatrix(runtime.matrix)
     }
 
     const onDown = e => {
@@ -228,6 +222,15 @@ export const useInteract = (runtime, rotations, updateParams) => {
       pointers.set(e.pointerId, [e.clientX, e.clientY])
       const onUp = e => {
         if (rotations.auto) {
+          const newTime = performance.now()
+          const dt = newTime - time
+          if (dt > 100) {
+            animation.current.speed[rotations.shift * 2] = 0
+            animation.current.speed[rotations.shift * 2 + 1] = 0
+          } else if (rotations.auto === 'free') {
+            animation.current.speed[rotations.shift * 2] *= 0.5
+            animation.current.speed[rotations.shift * 2 + 1] *= 0.5
+          }
           animation.current.pause.delete(rotations.shift * 2)
           animation.current.pause.delete(rotations.shift * 2 + 1)
         }
@@ -277,8 +280,7 @@ export const useInteract = (runtime, rotations, updateParams) => {
     return () => {
       document.removeEventListener('wheel', handleWheel)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runtime.camera, runtime.composer, updateZoom])
+  }, [runtime, updateZoom])
 
   useEffect(() => {
     const handleDblClick = e => {
@@ -297,6 +299,5 @@ export const useInteract = (runtime, rotations, updateParams) => {
     return () => {
       document.removeEventListener('dblclick', handleDblClick)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runtime.camera, runtime.composer, updateZoom])
+  }, [runtime, updateZoom])
 }

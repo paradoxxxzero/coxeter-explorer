@@ -10,7 +10,7 @@ export default {
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        'coxeter-diagram': resolve(__dirname, 'coxeter-diagram.html'),
+        diagram: resolve(__dirname, 'diagram.html'),
       },
     },
   },

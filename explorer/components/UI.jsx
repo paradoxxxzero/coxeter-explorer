@@ -14,7 +14,7 @@ export default function UI({
   updateParams,
   updateRotations,
 }) {
-  const [showUI, setShowUI] = useState(true)
+  const [showUI, setShowUI] = useState('simple')
   const [presets, setPresets] = useState(false)
 
   const closePresets = useCallback(() => setPresets(false), [])
@@ -32,7 +32,18 @@ export default function UI({
     },
     [updateParams]
   )
-  const handleUI = useCallback(() => setShowUI(showUI => !showUI), [])
+  const handleUI = useCallback(
+    () =>
+      setShowUI(
+        showUI =>
+          ({
+            simple: 'advanced',
+            advanced: 'empty',
+            empty: 'simple',
+          }[showUI])
+      ),
+    []
+  )
 
   const handlePreset = useCallback(
     preset => {
@@ -56,14 +67,7 @@ export default function UI({
   )
   const handleAuto = useCallback(
     param => {
-      updateRotations(
-        'auto',
-        rotations.auto === 'free'
-          ? 'damp'
-          : rotations.auto === 'damp'
-          ? false
-          : 'free'
-      )
+      updateRotations('auto', rotations.auto === 'free' ? 'damp' : 'free')
     },
     [rotations.auto, updateRotations]
   )
@@ -79,54 +83,58 @@ export default function UI({
             {runtime.currentOrder}/{runtime.order}
           </aside>
         ) : null}
-        <button
-          className="preset-button button"
-          onClick={() => setPresets(presets => !presets)}
-          title="Presets"
-        >
-          ◭
-        </button>
-        <aside className="controls">
+        {['simple', 'advanced'].includes(showUI) ? (
           <button
-            className="controls-button button"
-            onClick={handleShift}
-            title="Rotation Mode"
+            className="preset-button button"
+            onClick={() => setPresets(presets => !presets)}
+            title="Presets"
           >
-            <span
-              style={{
-                display: 'inline-block',
-                transform: `rotate(${
-                  (rotations.shift / rotations.maxShift) * 360
-                }deg)`,
-              }}
-            >
-              ⥁
-            </span>
-            <sup>{rotations.shift + 1}</sup>
+            ◭
           </button>
-          <div className="subcontrols">
+        ) : null}
+        {['simple', 'advanced'].includes(showUI) ? (
+          <aside className="controls">
             <button
-              className="button anim-view"
-              onClick={handleAuto}
-              title="Animate rotations"
+              className="controls-button button"
+              onClick={handleShift}
+              title="Rotation Mode"
             >
-              {rotations.auto === 'free'
-                ? '⏸'
-                : rotations.auto === 'damp'
-                ? '⏯'
-                : '▶'}
-            </button>
-            {!diagonal(runtime.matrix) && !rotations.auto && (
-              <button
-                className="button reset-view"
-                onClick={handleMatrixReset}
-                title="Reset View"
+              <span
+                style={{
+                  display: 'inline-block',
+                  transform: `rotate(${
+                    (rotations.shift / rotations.maxShift) * 360
+                  }deg)`,
+                }}
               >
-                ⌖
+                ⥁
+              </span>
+              <sup>{rotations.shift + 1}</sup>
+            </button>
+            <div className="subcontrols">
+              <button
+                className="button anim-view"
+                onClick={handleAuto}
+                title="Animate rotations"
+              >
+                {rotations.auto === 'free'
+                  ? '⤞'
+                  : rotations.auto === 'damp'
+                  ? '↠'
+                  : '?'}
               </button>
-            )}
-          </div>
-        </aside>
+              {!diagonal(runtime.matrix) && !rotations.auto && (
+                <button
+                  className="button reset-view"
+                  onClick={handleMatrixReset}
+                  title="Reset View"
+                >
+                  ⌖
+                </button>
+              )}
+            </div>
+          </aside>
+        ) : null}
         <button
           className={`space-button button${
             runtime.processing ? ' processing' : ''
@@ -136,7 +144,7 @@ export default function UI({
         >
           <Space type={runtime.spaceType} dimensions={runtime.dimensions} />
         </button>
-        {showUI && (
+        {['advanced'].includes(showUI) && (
           <aside className="parameters">
             {(params.extended || params.grouper !== '') && (
               <label>
@@ -266,7 +274,7 @@ export default function UI({
             </label>
           </aside>
         )}
-        {showUI && (
+        {showUI === 'advanced' && (
           <aside className="view">
             <Number
               name="msaaSamples"
@@ -300,7 +308,7 @@ export default function UI({
               : null}
           </aside>
         )}
-        {showUI && (
+        {['simple', 'advanced'].includes(showUI) && (
           <CoxeterMatrix
             dimensions={params.dimensions}
             coxeter={params.coxeter}

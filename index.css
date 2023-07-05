@@ -67,7 +67,7 @@ select option {
   height: 2em;
 }
 
-button:hover {
+.button:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -306,24 +306,37 @@ button:hover {
   color: white;
   display: flex;
   flex-direction: column;
+  font-size: 1.25em;
 }
-.presets-close {
-  position: absolute;
-  top: 0;
-  right: 0;
+.presets-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: top;
+}
+.presets-actions > * {
   font-size: 2em;
   line-height: 1;
+  padding: 0.75em;
+}
+.presets-actions > *:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.presets-author {
+  text-decoration: none;
+}
+
+.presets-close {
   color: rgba(255, 255, 255, 0.75);
-  mix-blend-mode: difference;
   background: none;
   cursor: pointer;
   border: none;
-  padding: 0.5em;
 }
+
 .presets-search {
   position: relative;
-  margin: 0 5em;
   display: flex;
+  flex: 1;
 }
 .presets-search input {
   flex: 1;

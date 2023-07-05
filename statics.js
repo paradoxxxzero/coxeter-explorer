@@ -20,9 +20,9 @@ import {
   SRGBColorSpace,
   TextureLoader,
 } from 'three'
-import { atoi, itoa, min } from './honeyball/math'
-import { ident } from './honeyball/math/matrix'
-import { mirrorChars } from './honeyball/mirrors'
+import { atoi, itoa, min } from './explorer/math'
+import { ident } from './explorer/math/matrix'
+import { mirrorChars } from './explorer/mirrors'
 
 export const projections = [
   'stereographic',
@@ -317,7 +317,7 @@ export const defaultParams = {
   ambiance: 'neon',
   centered: null,
 
-  zoom: 1,
+  zoom: 1.5,
   fov3: 90,
   fov4: 90,
 

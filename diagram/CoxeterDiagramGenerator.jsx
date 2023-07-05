@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
-import CoxeterDiagram from '../honeyball/components/CoxeterDiagram'
-import CoxeterMatrix from '../honeyball/components/CoxeterMatrix'
-import Number from '../honeyball/components/Number'
+import CoxeterDiagram from '../explorer/components/CoxeterDiagram'
+import CoxeterMatrix from '../explorer/components/CoxeterMatrix'
+import Number from '../explorer/components/Number'
 import { normalizeCoxeter } from '../statics'
 
 export default function CoxeterDiagramGenerator() {

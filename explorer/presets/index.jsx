@@ -47,6 +47,7 @@ const polytope = (coxeterArgs, mirrors, stellationArgs, extra) => {
     grouper: 'toddcoxeter',
     ambiance: 'colorful',
     matrix: ident(dimensions),
+    zoom: dimensions <= 3 ? 2 : dimensions > 4 ? 3 : 5,
     ...(extra || {}),
   }
   if (mirrors) {
@@ -77,6 +78,7 @@ const tiling = (coxeterArgs, mirrors, stellationArgs, extra) => {
     ambiance: 'plain',
     showVertices: false,
     curve: true,
+    zoom: 1,
     ...extra,
   }
 }
@@ -88,6 +90,7 @@ const ehoneycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
     showVertices: false,
     grouper: '',
     edgeThickness: 10,
+    zoom: 2,
     ...extra,
   }
 }
@@ -100,6 +103,7 @@ const honeycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
     curve: true,
     grouper: '',
     edgeThickness: 10,
+    zoom: 1.5,
     ...extra,
   }
 }
@@ -243,6 +247,7 @@ export const presets = [
       curve: true,
       ambiance: 'neon',
       centered: false,
+      zoom: 4.2,
     }),
   },
   {
@@ -305,7 +310,9 @@ export const presets = [
         <Space type="hyperbolic" dimensions={4} /> 5-3-4 honeycomb
       </>
     ),
-    params: honeycomb([5, 3, 4], [1, 0, 0, 0]),
+    params: honeycomb([5, 3, 4], [1, 0, 0, 0], null, {
+      zoom: 1.5,
+    }),
   },
   {
     name: (
@@ -321,6 +328,7 @@ export const presets = [
       centered: false,
       segments: 128,
       ambiance: 'pure',
+      zoom: 1.5,
     }),
   },
   {
@@ -334,6 +342,7 @@ export const presets = [
       showFaces: false,
       curve: true,
       ambiance: 'neon',
+      zoom: 3,
     }),
   },
 

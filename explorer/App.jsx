@@ -34,7 +34,7 @@ export default function App({ gl, params, updateParams }) {
     shift: 0,
     maxShift: 0,
     combinations: [],
-    auto: false,
+    auto: 'damp',
   })
 
   useEffect(() => {
@@ -108,7 +108,7 @@ export default function App({ gl, params, updateParams }) {
           2
         )
       ),
-      auto: false,
+      auto: 'damp',
     }))
   }, [params.dimensions])
 
