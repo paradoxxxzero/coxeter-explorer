@@ -123,7 +123,7 @@ export default function UI({
                   ? '↠'
                   : '?'}
               </button>
-              {!diagonal(runtime.matrix) && !rotations.auto && (
+              {!diagonal(runtime.matrix) && (
                 <button
                   className="button reset-view"
                   onClick={handleMatrixReset}

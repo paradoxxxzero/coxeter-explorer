@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { debounce } from '../../utils'
 import { PI, abs, hypot } from '../math'
 import { xtranslate } from '../math/hypermath'
-import { columnMajor, multiply, set } from '../math/matrix'
+import { columnMajor, diagonal, multiply, set } from '../math/matrix'
 import { plot } from '../render'
 import { hyperMaterials } from '../shader/hyperMaterial'
 
@@ -61,47 +61,98 @@ export const keydown = (e, rotations, matrix, dimensions, curvature) => {
   return true
 }
 
-const quickUpdateMatrix = runtime => {
-  if (runtime.dimensions > 4) {
-    plot(runtime)
-  } else {
-    const it = hyperMaterials.values()
-    for (let i = 0; i < hyperMaterials.size; i++) {
-      const material = it.next().value
-      material.uniforms.rotationMatrix.value = columnMajor(runtime.matrix)
-    }
-    runtime.render()
-  }
-}
-
 export const useInteract = (runtime, rotations, updateParams) => {
-  const updateMatrix = debounce(matrix => updateParams({ matrix }), 100)
-  const updateZoom = debounce(zoom => updateParams({ zoom }), 100)
+  const updateMatrix = useCallback(
+    debounce(matrix => updateParams({ matrix }), 100),
+    []
+  )
+  const updateZoom = useCallback(
+    debounce(zoom => updateParams({ zoom }), 100),
+    []
+  )
+
   const loop = useRef(null)
   const animation = useRef({
     pause: new Set(),
     speed: null,
   })
+
+  const localMatrix = useRef(runtime.matrix.map(x => x.slice()))
+
+  useEffect(() => {
+    localMatrix.current = runtime.matrix.map(x => x.slice())
+  }, [runtime.matrix])
+
+  const quickUpdateMatrix = useCallback(() => {
+    if (runtime.dimensions > 4) {
+      plot({
+        currentOrder: runtime.currentOrder,
+        dimensions: runtime.dimensions,
+        curvature: runtime.curvature,
+        ranges: runtime.ranges,
+        matrix: localMatrix.current,
+        render: runtime.render,
+        scene: runtime.scene,
+        spaceType: runtime.spaceType,
+        vertices: runtime.vertices,
+        edges: runtime.edges,
+        faces: runtime.faces,
+        ambiance: runtime.ambiance,
+      })
+    } else {
+      const it = hyperMaterials.values()
+      for (let i = 0; i < hyperMaterials.size; i++) {
+        const material = it.next().value
+        material.uniforms.rotationMatrix.value = columnMajor(
+          localMatrix.current
+        )
+      }
+      const render = runtime.render
+      render()
+    }
+  }, [
+    runtime.dimensions,
+    runtime.render,
+    runtime.curvature,
+    runtime.ranges,
+    runtime.currentOrder,
+    runtime.scene,
+    runtime.spaceType,
+    runtime.vertices,
+    runtime.edges,
+    runtime.faces,
+    runtime.ambiance,
+  ])
+
   useEffect(() => {
     animation.current.speed = new Array(rotations.combinations.length).fill(0)
   }, [rotations.combinations])
 
   useEffect(() => {
+    if (diagonal(runtime.matrix)) {
+      animation.current.speed = new Array(rotations.combinations.length).fill(0)
+    }
+  }, [rotations.combinations.length, runtime.matrix])
+
+  useEffect(() => {
     const animate = () => {
       const { pause, speed } = animation.current
+      let changed = false
       for (let i = 0; i < speed.length; i++) {
         if (speed[i] === 0 || (rotations.auto === 'damp' && pause.has(i))) {
           continue
         }
+        changed = true
 
         if (rotations.auto === 'damp') {
           speed[i] *= 0.96
           if (abs(speed[i]) < 1e-4) {
             speed[i] = 0
+            updateMatrix(localMatrix.current)
           }
         }
         set(
-          runtime.matrix,
+          localMatrix.current,
           multiply(
             xtranslate(
               speed[i],
@@ -110,26 +161,36 @@ export const useInteract = (runtime, rotations, updateParams) => {
               runtime.dimensions,
               runtime.curvature
             ),
-            runtime.matrix
+            localMatrix.current
           )
         )
       }
-      quickUpdateMatrix(runtime)
+      if (changed) {
+        quickUpdateMatrix()
+      }
       if (loop.current !== null) {
         loop.current = requestAnimationFrame(animate)
       }
     }
+
     if (rotations.auto) {
       loop.current = requestAnimationFrame(animate)
     }
     return () => {
       if (loop.current) {
-        updateMatrix(runtime.matrix)
         cancelAnimationFrame(loop.current)
         loop.current = null
       }
+      updateMatrix(localMatrix.current)
     }
-  }, [rotations, runtime, updateMatrix])
+  }, [
+    rotations.auto,
+    rotations.combinations,
+    runtime.dimensions,
+    runtime.curvature,
+    updateMatrix,
+    quickUpdateMatrix,
+  ])
 
   useEffect(() => {
     runtime.camera.position.z = -runtime.zoom
@@ -176,10 +237,12 @@ export const useInteract = (runtime, rotations, updateParams) => {
         const newDistance = getDistance()
         runtime.camera.position.z *= distance / newDistance
         distance = newDistance
-        runtime.render()
+        const render = runtime.render
+        render()
         updateZoom(-runtime.camera.position.z)
         return
       }
+
       let shift = rotations.shift
       if (!shift && e.shiftKey) {
         shift = 1
@@ -198,13 +261,17 @@ export const useInteract = (runtime, rotations, updateParams) => {
         PI * delta[0],
         PI * delta[1],
         shift,
-        rotations,
-        runtime.matrix,
+        {
+          combinations: rotations.combinations,
+          auto: rotations.auto,
+          shift: rotations.shift,
+        },
+        localMatrix.current,
         runtime.dimensions,
         runtime.curvature
       )
-      quickUpdateMatrix(runtime)
-      updateMatrix(runtime.matrix)
+      quickUpdateMatrix()
+      updateMatrix(localMatrix.current)
     }
 
     const onDown = e => {
@@ -243,7 +310,19 @@ export const useInteract = (runtime, rotations, updateParams) => {
     }
     document.addEventListener('pointerdown', onDown)
     return () => document.removeEventListener('pointerdown', onDown)
-  }, [rotations, runtime, runtime.matrix, updateMatrix, updateZoom])
+  }, [
+    rotations.auto,
+    rotations.combinations,
+    rotations.shift,
+    runtime.dimensions,
+    runtime.curvature,
+    runtime.render,
+    runtime.camera,
+
+    quickUpdateMatrix,
+    updateMatrix,
+    updateZoom,
+  ])
 
   useEffect(() => {
     const onKeyDown = e => {
@@ -253,19 +332,31 @@ export const useInteract = (runtime, rotations, updateParams) => {
       if (
         keydown(
           e,
-          rotations,
-          runtime.matrix,
+          {
+            combinations: rotations.combinations,
+            auto: rotations.auto,
+            shift: rotations.shift,
+          },
+          localMatrix.current,
           runtime.dimensions,
           runtime.curvature
         )
       ) {
-        quickUpdateMatrix(runtime)
-        updateMatrix(runtime.matrix)
+        quickUpdateMatrix()
+        updateMatrix(localMatrix.current)
       }
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [rotations, runtime, updateMatrix])
+  }, [
+    quickUpdateMatrix,
+    rotations.auto,
+    rotations.combinations,
+    rotations.shift,
+    runtime.curvature,
+    runtime.dimensions,
+    updateMatrix,
+  ])
 
   useEffect(() => {
     const handleWheel = e => {
