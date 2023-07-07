@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react'
 import CoxeterDiagram from '../explorer/components/CoxeterDiagram'
 import CoxeterMatrix from '../explorer/components/CoxeterMatrix'
-import Number from '../explorer/components/Number'
 import { normalizeCoxeter } from '../statics'
 
 export default function CoxeterDiagramGenerator() {
@@ -34,15 +33,6 @@ export default function CoxeterDiagramGenerator() {
   return (
     <main>
       <div className="parameters">
-        <Number
-          name="dimensions"
-          label="Dimensions"
-          min={2}
-          max={9}
-          step={1}
-          value={params.dimensions}
-          onChange={handleChange}
-        />
         <CoxeterMatrix
           dimensions={params.dimensions}
           coxeter={params.coxeter}
