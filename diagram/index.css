@@ -27,7 +27,7 @@ main {
 }
 .parameters {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
 }
 .coxeters {
   font-size: calc(min(1.5vw, 0.75em));
