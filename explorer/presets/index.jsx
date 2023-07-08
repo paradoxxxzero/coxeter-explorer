@@ -242,7 +242,8 @@ export const presets = [
       </>
     ),
     params: polytope([4, 3, 3], [1, 0, 0, 0], null, {
-      showVertices: false,
+      showVertices: true,
+      vertexThickness: 150,
       showFaces: true,
       curve: true,
       ambiance: 'neon',
@@ -303,7 +304,6 @@ export const presets = [
       ambiance: 'pure',
     }),
   },
-
   {
     name: (
       <>
@@ -312,6 +312,19 @@ export const presets = [
     ),
     params: honeycomb([5, 3, 4], [1, 0, 0, 0], null, {
       zoom: 1.5,
+    }),
+  },
+  {
+    name: (
+      <>
+        <Space type="hyperbolic" dimensions={4} /> 7-3-3 paracompact honeycomb
+      </>
+    ),
+    params: honeycomb([7, 3, 3], [1, 0, 0, 0], null, {
+      zoom: 1.5,
+      showFaces: true,
+      showVertices: true,
+      segments: 16,
     }),
   },
   {
