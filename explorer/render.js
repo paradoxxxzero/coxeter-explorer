@@ -750,8 +750,14 @@ export const changeAmbiance = rt => {
 }
 
 export const updateMaterials = rt => {
-  const { dimensions, curvature, projection, vertexThickness, edgeThickness } =
-    rt
+  const {
+    dimensions,
+    curvature,
+    projection,
+    easing,
+    vertexThickness,
+    edgeThickness,
+  } = rt
   const segments = rt.curve ? rt.segments : 1
 
   const it = hyperMaterials.values()
@@ -763,7 +769,8 @@ export const updateMaterials = rt => {
     material.uniforms.edgeThickness.value = edgeThickness
     material.needsUpdate =
       dimensions !== material._rt.dimensions ||
-      projection !== material._rt.projection
+      projection !== material._rt.projection ||
+      easing !== material._rt.easing
     material._rt = rt
     material.uniforms.segments.value = segments
     for (let i = 4; i <= dimensions; i++) {

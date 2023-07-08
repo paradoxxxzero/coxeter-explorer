@@ -126,6 +126,7 @@ export const useRender = (runtime, setRuntime) => {
     runtime.fov9,
     runtime.vertexThickness,
     runtime.edgeThickness,
+    runtime.easing,
     runtime.projection,
     runtime.curvature,
     runtime.dimensions,

@@ -1,4 +1,3 @@
-/**/
 /* BEGIN HEADER */
 uniform float curvature;
 uniform float vertexThickness;

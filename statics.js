@@ -32,7 +32,19 @@ export const projections = [
   'jemisphere',
   'upperhalf',
 ]
-
+export const easings = [
+  'linear',
+  'circular',
+  'quadratic',
+  'cubic',
+  'quartic',
+  'quintic',
+  'sine',
+  'exponential',
+  'back',
+  'elastic',
+  'bounce',
+]
 export const groupers = ['', 'knuthbendix', 'toddcoxeter', 'fundamental']
 
 const _color = new Color()
@@ -305,6 +317,7 @@ export const defaultParams = {
   order: 10,
   curve: true,
   segments: 32,
+  easing: 'linear',
   showVertices: false,
   vertexThickness: 75,
   showEdges: true,

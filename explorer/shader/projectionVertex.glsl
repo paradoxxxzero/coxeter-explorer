@@ -1,4 +1,3 @@
-/**/
 /* BEGIN INCLUDE */
 
 bool nan(in vec2 v) {

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { ambiances, groupers, projections } from '../../statics'
+import { ambiances, easings, groupers, projections } from '../../statics'
 import { diagonal, ident } from '../math/matrix'
 import Boolean from './Boolean'
 import CoxeterMatrix from './CoxeterMatrix'
@@ -203,6 +203,20 @@ export default function UI({
               togglerName="curve"
               onChange={handleChange}
             />
+            <label>
+              Easing
+              <select
+                name="easing"
+                value={params.easing}
+                onChange={handleRawChange}
+              >
+                {easings.map(p => (
+                  <option key={p} value={p}>
+                    {p.replace(/./, c => c.toUpperCase())}
+                  </option>
+                ))}
+              </select>
+            </label>
             <Number
               name="dimensions"
               label="Dimensions"

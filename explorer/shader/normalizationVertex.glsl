@@ -1,4 +1,3 @@
-/**/
 /* BEGIN INCLUDE */
 
 const float TAU = 6.28318530717958647692528676655900576;
@@ -44,12 +43,12 @@ void faceVertex(out vec3 transformed, out vec3 objectNormal) {
   iTarget = rotationMatrix * instanceTarget;
   iCentroid = rotationMatrix * instanceCentroid;
   #endif
+  vec2 t = ease(uv);
+  pos = trix(iCentroid, iPosition, iTarget, t);
+  next = trix(iCentroid, iPosition, iTarget, t + vec2(EPS, 0.));
+  other = trix(iCentroid, iPosition, iTarget, t + vec2(0., EPS));
 
-  pos = trix(iCentroid, iPosition, iTarget, uv);
-  next = trix(iCentroid, iPosition, iTarget, uv + vec2(EPS, 0.));
-  other = trix(iCentroid, iPosition, iTarget, uv + vec2(0., EPS));
-
-  if(length(uv) != 0. || segments > 1.) {
+  if(length(t) != 0. || segments > 1.) {
     pos = xnormalize(pos);
     next = xnormalize(next);
     other = xnormalize(other);
@@ -70,8 +69,9 @@ void edgeVertex(out vec3 transformed, out vec3 objectNormal) {
   iTarget = rotationMatrix * instanceTarget;
   #endif
 
-  pos = mix(iPosition, iTarget, uv.y);
-  next = mix(iPosition, iTarget, uv.y + EPS);
+  float t = ease(uv.y);
+  pos = mix(iPosition, iTarget, t);
+  next = mix(iPosition, iTarget, t + EPS);
   // Position segments on hypersurface
   pos = xnormalize(pos);
   next = xnormalize(next);

@@ -1,10 +1,9 @@
-import glsl from 'vite-plugin-glsl'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 
 export default {
   base: '',
-  plugins: [react(), glsl()],
+  plugins: [react()],
   build: {
     outDir: 'docs',
     rollupOptions: {

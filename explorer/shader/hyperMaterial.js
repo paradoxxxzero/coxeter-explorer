@@ -5,10 +5,11 @@ import {
   MeshNormalMaterial,
   MeshDistanceMaterial,
 } from 'three'
-import hyperVertexShader from './hyperVertex.glsl'
-import projectionVertexShader from './projectionVertex.glsl'
-import normalizationVertexShader from './normalizationVertex.glsl'
-import { projections } from '../../statics'
+import hyperVertexShader from './hyperVertex.glsl?raw'
+import projectionVertexShader from './projectionVertex.glsl?raw'
+import normalizationVertexShader from './normalizationVertex.glsl?raw'
+import easingsVertexShader from './easingsVertex.glsl?raw'
+import { easings, projections } from '../../statics'
 
 const header = hyperVertexShader.match(
   /\/\* BEGIN HEADER \*\/([\s\S]*?)\/\* END HEADER \*\//m
@@ -18,6 +19,10 @@ const main = hyperVertexShader.match(
 )[1]
 const include =
   projectionVertexShader.match(
+    /\/\* BEGIN INCLUDE \*\/([\s\S]*?)\/\* END INCLUDE \*\//m
+  )[1] +
+  '\n' +
+  easingsVertexShader.match(
     /\/\* BEGIN INCLUDE \*\/([\s\S]*?)\/\* END INCLUDE \*\//m
   )[1] +
   '\n' +
@@ -57,10 +62,11 @@ export const hyperMaterial = (material, rt, type = 'universal') => {
   }
 
   material.onBeforeCompile = shader => {
-    const { dimensions, projection } = material._rt
+    const { dimensions, projection, easing } = material._rt
     const defines = [
       `#define DIMENSIONS ${dimensions}`,
       `#define PROJECTION ${projections.indexOf(projection)}`,
+      `#define EASING ${easings.indexOf(easing)}`,
       `#define HYPERTYPE ${['vertex', 'edge', 'face', 'universal'].indexOf(
         material._type
       )}`,
@@ -95,7 +101,7 @@ export const hyperMaterial = (material, rt, type = 'universal') => {
     ].join('\n')
   }
   material.customProgramCacheKey = () => {
-    return `hypermath_${material._type}_${material.constructor.name}_${material._rt.dimensions}_${material._rt.projection}`
+    return `hypermath_${material._type}_${material.constructor.name}_${material._rt.dimensions}_${material._rt.projection}_${material._rt.easing}`
   }
   material.addEventListener('dispose', () => {
     hyperMaterials.delete(material)
