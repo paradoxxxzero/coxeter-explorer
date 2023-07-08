@@ -17,7 +17,9 @@ export default function UI({
   const [showUI, setShowUI] = useState('simple')
   const [presets, setPresets] = useState(false)
 
-  const closePresets = useCallback(() => setPresets(false), [])
+  const closePresets = useCallback(() => {
+    setPresets(false)
+  }, [])
 
   const handleRawChange = useCallback(
     e => {
@@ -74,9 +76,11 @@ export default function UI({
 
   return (
     <>
-      <div className={`presets ${presets ? 'shown' : 'hidden'}`}>
-        <Presets onPreset={handlePreset} closePresets={closePresets} />
-      </div>
+      <Presets
+        open={presets}
+        onPreset={handlePreset}
+        closePresets={closePresets}
+      />
       <div className={runtime.error ? 'error' : ''} title={runtime.error}>
         {runtime.currentOrder < runtime.order ? (
           <aside className="processing-counter">
@@ -138,7 +142,7 @@ export default function UI({
         <button
           className={`space-button button${
             runtime.processing ? ' processing' : ''
-          }`}
+          }${showUI === 'empty' ? ' empty' : ''}`}
           onClick={handleUI}
           title={`Space ${runtime.spaceType}`}
         >

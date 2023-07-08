@@ -96,6 +96,9 @@ select option {
 .space-button.processing {
   animation: processing 1s infinite;
 }
+.space-button.empty {
+  font-size: 1.5em;
+}
 
 @keyframes processing {
   0% {
@@ -299,6 +302,16 @@ select option {
   height: 75vh;
   background-color: rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.5);
+  z-index: 10;
+}
+.presets-overlay {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9;
+  background-color: rgba(0, 0, 0, 0.2);
 }
 .presets-modal {
   width: 100%;
@@ -306,12 +319,15 @@ select option {
   color: white;
   display: flex;
   flex-direction: column;
-  font-size: 1.25em;
+  font-size: calc(min(2vw, 1.5em));
 }
 .presets-header {
   display: flex;
   justify-content: space-between;
   align-items: top;
+}
+.presets-actions {
+  min-width: fit-content;
 }
 .presets-actions > * {
   font-size: 2em;
@@ -366,7 +382,8 @@ select option {
 .presets.shown {
   display: flex;
 }
-.presets.hidden {
+.presets.hidden,
+.presets-overlay.hidden {
   display: none;
 }
 .presets-list {

@@ -14,7 +14,7 @@ const getNodeText = node => {
     return getNodeText(node.props.children)
   }
 }
-export default function Presets({ onPreset, closePresets }) {
+export default function Presets({ open, onPreset, closePresets }) {
   const [search, setSearch] = useState('')
   const [rawSearch, setRawSearch] = useState('')
   const handleSearch = useCallback(e => {
@@ -23,53 +23,63 @@ export default function Presets({ onPreset, closePresets }) {
   }, [])
 
   return (
-    <div className="presets-modal">
-      <div className="presets-header">
-        <div className="presets-search">
-          <input
-            type="text"
-            placeholder="Search"
-            value={rawSearch}
-            onChange={handleSearch}
-          />
-          <button
-            className="presets-clear"
-            onClick={() => {
-              setSearch('')
-              setRawSearch('')
-            }}
-          >
-            ⌫
-          </button>
-        </div>
-        <div className="presets-actions">
-          <a className="presets-author" href="https://florian.mounier.dev/">
-            ❓
-          </a>
-          <button className="presets-close" onClick={closePresets}>
-            ✖️
-          </button>
-        </div>
-      </div>
-      <div className="presets-list">
-        {presets.map(({ type, content, name, params }, i) => (
-          <Fragment key={i}>
-            {type === 'title' ? (
-              <h2>{content}</h2>
-            ) : type === 'group' ? (
-              <h4>{content}</h4>
-            ) : !search ||
-              getNodeText(name).toLowerCase().includes(search.toLowerCase()) ? (
-              <Preset
-                name={name}
-                params={params}
-                search={search}
-                onPreset={onPreset}
+    <>
+      <div
+        className={`presets-overlay ${open ? 'shown' : 'hidden'}`}
+        onClick={closePresets}
+      />
+      <div className={`presets ${open ? 'shown' : 'hidden'}`}>
+        <div className="presets-modal">
+          <div className="presets-header">
+            <div className="presets-search">
+              <input
+                type="text"
+                placeholder="Search"
+                value={rawSearch}
+                onChange={handleSearch}
               />
-            ) : null}
-          </Fragment>
-        ))}
+              <button
+                className="presets-clear"
+                onClick={() => {
+                  setSearch('')
+                  setRawSearch('')
+                }}
+              >
+                ⌫
+              </button>
+            </div>
+            <div className="presets-actions">
+              <a className="presets-author" href="https://florian.mounier.dev/">
+                ❓
+              </a>
+              <button className="presets-close" onClick={closePresets}>
+                ✖️
+              </button>
+            </div>
+          </div>
+          <div className="presets-list">
+            {presets.map(({ type, content, name, params }, i) => (
+              <Fragment key={i}>
+                {type === 'title' ? (
+                  <h2>{content}</h2>
+                ) : type === 'group' ? (
+                  <h4>{content}</h4>
+                ) : !search ||
+                  getNodeText(name)
+                    .toLowerCase()
+                    .includes(search.toLowerCase()) ? (
+                  <Preset
+                    name={name}
+                    params={params}
+                    search={search}
+                    onPreset={onPreset}
+                  />
+                ) : null}
+              </Fragment>
+            ))}
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   )
 }
