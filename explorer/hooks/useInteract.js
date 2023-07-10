@@ -209,6 +209,20 @@ export const useInteract = (runtime, rotations, updateParams) => {
       return hypot(p1[0] - p2[0], p1[1] - p2[1])
     }
 
+    const onDown = e => {
+      if (e.button !== 0 || e.target.tagName !== 'CANVAS') {
+        return
+      }
+      if (rotations.auto) {
+        time = performance.now()
+        animation.current.pause.add(rotations.shift * 2)
+        animation.current.pause.add(rotations.shift * 2 + 1)
+        animation.current.speed[rotations.shift * 2] = 0
+        animation.current.speed[rotations.shift * 2 + 1] = 0
+      }
+      pointers.set(e.pointerId, [e.clientX, e.clientY])
+    }
+
     const onMove = e => {
       if (!pointers.has(e.pointerId)) {
         return
@@ -274,42 +288,35 @@ export const useInteract = (runtime, rotations, updateParams) => {
       updateMatrix(localMatrix.current)
     }
 
-    const onDown = e => {
-      if (e.button !== 0 || e.target.tagName !== 'CANVAS') {
+    const onUp = e => {
+      if (!pointers.has(e.pointerId)) {
         return
       }
       if (rotations.auto) {
-        time = performance.now()
-        animation.current.pause.add(rotations.shift * 2)
-        animation.current.pause.add(rotations.shift * 2 + 1)
-        animation.current.speed[rotations.shift * 2] = 0
-        animation.current.speed[rotations.shift * 2 + 1] = 0
-      }
-
-      pointers.set(e.pointerId, [e.clientX, e.clientY])
-      const onUp = e => {
-        if (rotations.auto) {
-          const newTime = performance.now()
-          const dt = newTime - time
-          if (dt > 100) {
-            animation.current.speed[rotations.shift * 2] = 0
-            animation.current.speed[rotations.shift * 2 + 1] = 0
-          } else if (rotations.auto === 'free') {
-            animation.current.speed[rotations.shift * 2] *= 0.5
-            animation.current.speed[rotations.shift * 2 + 1] *= 0.5
-          }
-          animation.current.pause.delete(rotations.shift * 2)
-          animation.current.pause.delete(rotations.shift * 2 + 1)
+        const newTime = performance.now()
+        const dt = newTime - time
+        if (dt > 100) {
+          animation.current.speed[rotations.shift * 2] = 0
+          animation.current.speed[rotations.shift * 2 + 1] = 0
+        } else if (rotations.auto === 'free') {
+          animation.current.speed[rotations.shift * 2] *= 0.5
+          animation.current.speed[rotations.shift * 2 + 1] *= 0.5
         }
-        distance = null
-        pointers.delete(e.pointerId)
-        document.removeEventListener('pointermove', onMove)
+        animation.current.pause.delete(rotations.shift * 2)
+        animation.current.pause.delete(rotations.shift * 2 + 1)
       }
-      document.addEventListener('pointermove', onMove)
-      document.addEventListener('pointerup', onUp, { once: true })
+      distance = null
+      pointers.delete(e.pointerId)
     }
+
     document.addEventListener('pointerdown', onDown)
-    return () => document.removeEventListener('pointerdown', onDown)
+    document.addEventListener('pointermove', onMove)
+    document.addEventListener('pointerup', onUp)
+    return () => {
+      document.removeEventListener('pointerdown', onDown)
+      document.removeEventListener('pointermove', onMove)
+      document.removeEventListener('pointerup', onUp)
+    }
   }, [
     rotations.auto,
     rotations.combinations,
