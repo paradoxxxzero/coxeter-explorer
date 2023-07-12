@@ -212,6 +212,20 @@ export const useProcess = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
+      if (runtime.easing === 'auto') {
+        return {
+          ...runtime,
+          easing: runtime.spaceType.startsWith('hyperbolic')
+            ? 'quintic'
+            : 'linear',
+        }
+      }
+      return runtime
+    })
+  }, [runtime.easing, runtime.spaceType, setRuntime])
+
+  useEffect(() => {
+    setRuntime(runtime => {
       let faces = 0
       for (let i = 0; i < runtime.faces.length; i++) {
         const vertices = runtime.faces[i].vertices.length

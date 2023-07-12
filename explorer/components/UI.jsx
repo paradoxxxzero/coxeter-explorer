@@ -40,7 +40,8 @@ export default function UI({
         showUI =>
           ({
             simple: 'advanced',
-            advanced: 'empty',
+            advanced: 'full',
+            full: 'empty',
             empty: 'simple',
           }[showUI])
       ),
@@ -87,7 +88,7 @@ export default function UI({
             {runtime.currentOrder}/{runtime.order}
           </aside>
         ) : null}
-        {['simple', 'advanced'].includes(showUI) ? (
+        {['simple', 'advanced', 'full'].includes(showUI) ? (
           <button
             className="preset-button button"
             onClick={() => setPresets(presets => !presets)}
@@ -96,7 +97,7 @@ export default function UI({
             ◭
           </button>
         ) : null}
-        {['simple', 'advanced'].includes(showUI) ? (
+        {['simple', 'advanced', 'full'].includes(showUI) ? (
           <aside className="controls">
             <button
               className="controls-button button"
@@ -148,10 +149,10 @@ export default function UI({
         >
           <Space type={runtime.spaceType} dimensions={runtime.dimensions} />
         </button>
-        {['advanced'].includes(showUI) && (
+        {['advanced', 'full'].includes(showUI) && (
           <aside className="parameters">
-            {(params.extended || params.grouper !== '') && (
-              <label>
+            {(showUI === 'full' || params.grouper !== '') && (
+              <label className="select-label">
                 Grouper
                 <select
                   name="grouper"
@@ -166,14 +167,14 @@ export default function UI({
                           : 'Auto'
                         : p
                             .replace(/_/g, ' ')
-                            .replace(/./, c => c.toUpperCase())}
+                            .replace(/\b./g, c => c.toUpperCase())}
                     </option>
                   ))}
                 </select>
               </label>
             )}
-            {(params.extended || params.grouper) && (
-              <label>
+            {(showUI === 'full' || params.grouper) && (
+              <label className="boolean-label">
                 inCentered
                 <Boolean
                   name="centered"
@@ -183,7 +184,7 @@ export default function UI({
                 />
               </label>
             )}
-            {(params.extended || runtime.curvature <= 0) && (
+            {(showUI === 'full' || runtime.curvature <= 0) && (
               <Number
                 name="order"
                 label="Precision"
@@ -203,7 +204,7 @@ export default function UI({
               togglerName="curve"
               onChange={handleChange}
             />
-            <label>
+            <label className="select-label">
               Easing
               <select
                 name="easing"
@@ -212,7 +213,7 @@ export default function UI({
               >
                 {easings.map(p => (
                   <option key={p} value={p}>
-                    {p.replace(/./, c => c.toUpperCase())}
+                    {p.replace(/_/g, ' ').replace(/\b./g, c => c.toUpperCase())}
                   </option>
                 ))}
               </select>
@@ -226,7 +227,7 @@ export default function UI({
               value={params.dimensions}
               onChange={handleChange}
             />
-            <label>
+            <label className="select-label">
               Projection
               <select
                 name="projection"
@@ -262,7 +263,7 @@ export default function UI({
             />
             {(runtime.grouper.replace(/^auto-/, '') === 'toddcoxeter' ||
               runtime.grouper === 'fundamental') && (
-              <label>
+              <label className="boolean-label">
                 Faces
                 <Boolean
                   name="showFaces"
@@ -271,14 +272,14 @@ export default function UI({
                 />
               </label>
             )}
-            <label>
+            <label className="select-label">
               Ambiance
               <select
                 name="ambiance"
                 value={params.ambiance}
                 onChange={handleRawChange}
               >
-                {(params.extended
+                {(showUI === 'full'
                   ? Object.keys(ambiances)
                   : Object.entries(ambiances)
                       .filter(([k, { extended }]) => !extended)
@@ -292,7 +293,7 @@ export default function UI({
             </label>
           </aside>
         )}
-        {showUI === 'advanced' && (
+        {['advanced', 'full'].includes(showUI) && (
           <aside className="view">
             <Number
               name="msaaSamples"
@@ -326,7 +327,7 @@ export default function UI({
               : null}
           </aside>
         )}
-        {['simple', 'advanced'].includes(showUI) && (
+        {['simple', 'advanced', 'full'].includes(showUI) && (
           <CoxeterMatrix
             dimensions={params.dimensions}
             coxeter={params.coxeter}

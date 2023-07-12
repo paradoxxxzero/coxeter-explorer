@@ -309,6 +309,21 @@ export const presets = [
   {
     name: (
       <>
+        <Space type="hyperbolic" dimensions={4} /> Horoball
+      </>
+    ),
+    params: tiling([6, 3, 4], [1, 0, 0, ''], null, {
+      showVertices: false,
+      showFaces: true,
+      curve: true,
+      order: 20,
+      centered: false,
+      ambiance: 'colorful',
+    }),
+  },
+  {
+    name: (
+      <>
         <Space type="hyperbolic" dimensions={4} /> 5-3-4 honeycomb
       </>
     ),
@@ -359,6 +374,7 @@ export const presets = [
       curve: true,
       ambiance: 'neon',
       zoom: 3,
+      edgeThickness: 5,
     }),
   },
 

@@ -33,17 +33,23 @@ export const projections = [
   'upperhalf',
 ]
 export const easings = [
+  'auto',
   'linear',
-  'circular',
+  'sine',
   'quadratic',
   'cubic',
   'quartic',
   'quintic',
-  'sine',
   'exponential',
+  'circular',
   'back',
   'elastic',
   'bounce',
+  'inverse_sine',
+  'inverse_quadratic',
+  'inverse_cubic',
+  'inverse_quartic',
+  'inverse_quintic',
 ]
 export const groupers = ['', 'knuthbendix', 'toddcoxeter', 'fundamental']
 
@@ -317,7 +323,7 @@ export const defaultParams = {
   order: 10,
   curve: true,
   segments: 32,
-  easing: 'linear',
+  easing: 'auto',
   showVertices: false,
   vertexThickness: 75,
   showEdges: true,

@@ -55,7 +55,25 @@ void faceVertex(out vec3 transformed, out vec3 objectNormal) {
   }
 
   transformed = xproject(pos);
-  objectNormal = cross(xproject(next) - transformed, xproject(other) - transformed);
+
+  vec3 nn = xproject(next) - transformed;
+  vec3 oo = xproject(other) - transformed;
+
+  // Refine if near collinearity
+  if(length(nn) < .0001 || length(oo) < .0001) {
+    next = trix(iCentroid, iPosition, iTarget, t + vec2(.1, 0.));
+    other = trix(iCentroid, iPosition, iTarget, t + vec2(0., .1));
+
+    if(length(t) != 0. || segments > 1.) {
+      next = xnormalize(next);
+      other = xnormalize(other);
+    }
+
+    nn = xproject(next) - transformed;
+    oo = xproject(other) - transformed;
+  }
+
+  objectNormal = cross(nn, oo);
 }
 #endif
 
@@ -101,7 +119,7 @@ void vertexVertex(out vec3 transformed, out vec3 objectNormal) {
   pos = xnormalize(iPosition);
   transformed = xproject(pos);
   objectNormal = normal;
-  transformed = inflate(transformed, pos, objectNormal, vertexThickness, .1);
+  transformed = inflate(transformed, pos, objectNormal, vertexThickness, .01);
 }
 #endif
 /* END INCLUDE */

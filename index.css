@@ -290,6 +290,13 @@ select option {
   outline: 2px solid red;
 }
 
+.boolean-label input {
+  margin-left: 0.5em;
+}
+
+.select-label select {
+  margin-left: 0.25em;
+}
 .presets {
   position: absolute;
   left: 50%;
