@@ -638,8 +638,8 @@ export const changeAmbiance = rt => {
           depthWrite: false,
         })
       )
-      ground.rotation.x = -Math.PI / 2
-      ground.position.y = -3
+      ground.rotation.y = (2 * Math.PI) / 3
+      ground.position.x = -4
     }
     ground.name = 'ground'
     ground.receiveShadow = true
@@ -678,7 +678,7 @@ export const changeAmbiance = rt => {
   composer.renderer.toneMapping = fxs.includes('bloom')
     ? ReinhardToneMapping
     : NoToneMapping
-  composer.renderer.toneMappingExposure = fxs.includes('bloom') ? 1 : 1
+  composer.renderer.toneMappingExposure = fxs.includes('bloom') ? 0.25 : 1
   composer.passes.slice(1).forEach(pass => {
     composer.removePass(pass)
     pass.dispose()
@@ -688,7 +688,6 @@ export const changeAmbiance = rt => {
       composer.addPass(composer.copyPass)
     } else if (fx === 'sao') {
       const saoPass = new SAOPass(scene, camera, false, true)
-      saoPass.depthMaterial = hyperMaterial(saoPass.depthMaterial, rt)
       saoPass.normalMaterial = hyperMaterial(saoPass.normalMaterial, rt)
 
       saoPass.params.output = SAOPass.OUTPUT.Default

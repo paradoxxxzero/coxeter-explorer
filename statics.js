@@ -6,6 +6,7 @@ import {
   DirectionalLight,
   DoubleSide,
   EquirectangularReflectionMapping,
+  Euler,
   HemisphereLight,
   MeshBasicMaterial,
   MeshLambertMaterial,
@@ -20,7 +21,7 @@ import {
   SRGBColorSpace,
   TextureLoader,
 } from 'three'
-import { atoi, itoa, min } from './explorer/math'
+import { atoi, itoa, min, PI } from './explorer/math'
 import { ident } from './explorer/math/matrix'
 import { mirrorChars } from './explorer/mirrors'
 
@@ -90,8 +91,8 @@ export const ambiances = {
     background: 0xffffff,
     shadow: false,
     material: new MeshPhongMaterial(),
-    lights: [new AmbientLight(0xffffff, 0.25)],
-    cameraLights: [new PointLight(0xffffff, 0.75)],
+    lights: [new AmbientLight(0xffffff, 0.75)],
+    cameraLights: [new PointLight(0xffffff, 2.5, 0, 0)],
     color: ({ word }, type, dimensions) => {
       return _color.setHSL((word.length * 0.03) % 1, 1, 0.8)
       // const i = word.match(dimensionsRegExps[dimensions - 1])?.length || 0
@@ -107,8 +108,8 @@ export const ambiances = {
     background: 0xffffff,
     shadow: false,
     material: new MeshToonMaterial(),
-    lights: [new AmbientLight(0xffffff, 0.25)],
-    cameraLights: [new PointLight(0xffffff, 0.75)],
+    lights: [new AmbientLight(0xffffff, 0.75)],
+    cameraLights: [new PointLight(0xffffff, 2.5, 0, 0)],
     color: ({ word }, type, dimensions) => {
       // const h = word.length ? atoi(word[0]) / dimensions : 0
 
@@ -137,7 +138,7 @@ export const ambiances = {
       blending: CustomBlending,
     }),
 
-    lights: [new PointLight()],
+    lights: [new PointLight(0xffffff, 4, 0, 0)],
     color: ({ word }) => {
       return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
     },
@@ -147,8 +148,8 @@ export const ambiances = {
     fx: ['sobel'],
     shadow: false,
     material: new MeshPhongMaterial(),
-    lights: [new AmbientLight(0xcccccc, 0.4)],
-    cameraLights: [new PointLight(0xffffff, 1)],
+    lights: [new AmbientLight(0xcccccc)],
+    cameraLights: [new PointLight(0xffffff, 3, 0, 0)],
     color: () => {
       return _color.set(0xffff00)
     },
@@ -158,8 +159,7 @@ export const ambiances = {
     fx: ['sao'],
     shadow: false,
     material: new MeshLambertMaterial(),
-    lights: [new AmbientLight(0x000000, 0.5)],
-    cameraLights: [new PointLight(0xffffff, 1)],
+    cameraLights: [new PointLight(0xffffff, 3)],
     color: ({ word }) => {
       return _color.setHSL((word.length * 0.03) % 1, 0.75, 0.7)
     },
@@ -203,29 +203,16 @@ export const ambiances = {
       normalMap: normalMap,
     }),
     lights: [
-      (() => {
-        const light = new SpotLight(0xffffff, 0.2)
-        light.position.set(0, 4, -6)
+      ...new Array(3).fill().map((_, i, a) => {
+        const angle = (2 * PI) / a.length
+        const r = 6
+        const light = new SpotLight(0xffffff, 60)
+        light.position.set(3, 0, r)
+        light.position.applyEuler(new Euler(angle * i, PI / 6, 0, 'YXZ'))
+        light.lookAt(0, 0, 0)
         return light
-      })(),
-      (() => {
-        const light = new SpotLight(0xffffff, 0.2)
-        light.position.set(8, 7, 0)
-        return light
-      })(),
-      (() => {
-        const light = new SpotLight(0xffffff, 0.2)
-        light.position.set(-4, 6, 2)
-        return light
-      })(),
-      new AmbientLight(0xffffff, 0.4),
-    ],
-    cameraLights: [
-      (() => {
-        const light = new PointLight(0xffffff, 2.5, 5, 5)
-        light.shadow = null
-        return light
-      })(),
+      }),
+      new AmbientLight(0xffffff, 1.25),
     ],
     color: () => {
       return _color.set(0xffffff)
@@ -237,22 +224,22 @@ export const ambiances = {
     fx: ['bokeh'],
     shadow: false,
     material: new MeshPhongMaterial(),
-    lights: [new AmbientLight(0xffffff, 0.5)],
-    cameraLights: [new PointLight(0xffffff, 1)],
+    lights: [new AmbientLight(0xffffff, 1.5)],
+    cameraLights: [new PointLight(0xffffff, 3)],
     color: ({ word }) => {
       return _color.setHSL((word.length * 0.17) % 1, 0.7, 0.5)
     },
   },
-  transcendent: {
-    extended: true,
-    background: 0xffffff,
-    fx: ['godray'],
-    shadow: false,
-    material: new MeshBasicMaterial(),
-    color: () => {
-      return _color.set(0x000000)
-    },
-  },
+  // transcendent: {
+  //   extended: true,
+  //   background: 0xffffff,
+  //   fx: ['godray'],
+  //   shadow: false,
+  //   material: new MeshBasicMaterial(),
+  //   color: () => {
+  //     return _color.set(0x000000)
+  //   },
+  // },
   plain: {
     extended: true,
     background: 0xffffff,
