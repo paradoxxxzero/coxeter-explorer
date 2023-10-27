@@ -326,18 +326,18 @@ select option {
   color: white;
   display: flex;
   flex-direction: column;
-  font-size: calc(min(2vw, 1.5em));
+  font-size: calc(min(2vw, 1.25em));
 }
 .presets-header {
   display: flex;
   justify-content: space-between;
-  align-items: top;
+  align-items: flex-start;
 }
 .presets-actions {
   min-width: fit-content;
 }
 .presets-actions > * {
-  font-size: 2em;
+  font-size: 1.5em;
   line-height: 1;
   padding: 0.75em;
 }

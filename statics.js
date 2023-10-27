@@ -91,7 +91,7 @@ export const ambiances = {
     background: 0xffffff,
     shadow: false,
     material: new MeshPhongMaterial(),
-    lights: [new AmbientLight(0xffffff, 0.75)],
+    lights: [new AmbientLight(0xffffff, 0.5)],
     cameraLights: [new PointLight(0xffffff, 2.5, 0, 0)],
     color: ({ word }, type, dimensions) => {
       return _color.setHSL((word.length * 0.03) % 1, 1, 0.8)

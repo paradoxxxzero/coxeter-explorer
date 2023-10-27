@@ -4,18 +4,17 @@ import {
   Color,
   CylinderGeometry,
   Float32BufferAttribute,
+  HalfFloatType,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
   Mesh,
   MeshDepthMaterial,
   MeshDistanceMaterial,
   MeshPhongMaterial,
-  NoToneMapping,
   PCFShadowMap,
   PCFSoftShadowMap,
   PerspectiveCamera,
   PlaneGeometry,
-  ReinhardToneMapping,
   RGBADepthPacking,
   Scene,
   SphereGeometry,
@@ -23,6 +22,7 @@ import {
   WebGLRenderer,
   WebGLRenderTarget,
 } from 'three'
+import Stats from 'three/examples/jsm/libs/stats.module.js'
 import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
@@ -33,7 +33,6 @@ import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
 import { LuminosityShader } from 'three/examples/jsm/shaders/LuminosityShader.js'
 import { SobelOperatorShader } from 'three/examples/jsm/shaders/SobelOperatorShader.js'
 import { degToRad } from 'three/src/math/MathUtils'
-import Stats from 'three/examples/jsm/libs/stats.module.js'
 import { ambiances } from '../statics'
 import { tan } from './math'
 import { columnMajor, multiplyVector } from './math/matrix'
@@ -555,6 +554,7 @@ export const resetComposerTarget = rt => {
   const size = composer.renderer.getDrawingBufferSize(new Vector2())
   const renderTarget = new WebGLRenderTarget(size.width, size.height, {
     samples: msaa ? msaaSamples : 0,
+    type: HalfFloatType,
   })
   composer.reset(renderTarget)
   composer.removePass(fxaa)
@@ -675,10 +675,11 @@ export const changeAmbiance = rt => {
     camera.add(light)
   })
   const fxs = ambiance.fx || ['copy']
-  composer.renderer.toneMapping = fxs.includes('bloom')
-    ? ReinhardToneMapping
-    : NoToneMapping
-  composer.renderer.toneMappingExposure = fxs.includes('bloom') ? 0.25 : 1
+  // composer.renderer.toneMapping = fxs.includes('bloom')
+  //   ? ReinhardToneMapping
+  //   : NoToneMapping
+  // // composer.renderer.outputColorSpace = SRGBColorSpace
+  // composer.renderer.toneMappingExposure = fxs.includes('bloom') ? 1 : 1
   composer.passes.slice(1).forEach(pass => {
     composer.removePass(pass)
     pass.dispose()
@@ -722,7 +723,7 @@ export const changeAmbiance = rt => {
     } else if (fx === 'bloom') {
       const bloomPass = new UnrealBloomPass(
         new Vector2(window.innerWidth, window.innerHeight),
-        1.5,
+        1,
         0,
         0
       )
@@ -743,7 +744,7 @@ export const changeAmbiance = rt => {
       1 / (window.innerHeight * pixelRatio)
     composer.addPass(fxaa)
   }
-
+  // composer.addPass(new OutputPass())
   updateMaterials(rt)
   composer.render()
 }

@@ -880,6 +880,10 @@ export const getFundamentalSimplexMirrors = (
       break
     }
   }
+  if (!mirrorsPlanes && !centered) {
+    return getFundamentalSimplexMirrors(gram, curvature, true)
+  }
+
   if (mirrorsPlanes && centered) {
     const omnipoint = getFundamentalVertex(
       new Array(dimensions).fill(1),
