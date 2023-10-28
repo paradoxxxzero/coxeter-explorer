@@ -8,6 +8,7 @@ import {
   EquirectangularReflectionMapping,
   Euler,
   HemisphereLight,
+  LinearSRGBColorSpace,
   MeshBasicMaterial,
   MeshLambertMaterial,
   MeshPhongMaterial,
@@ -15,6 +16,7 @@ import {
   MeshToonMaterial,
   OneMinusSrcAlphaFactor,
   PointLight,
+  ReinhardToneMapping,
   RepeatWrapping,
   SpotLight,
   SrcAlphaFactor,
@@ -79,7 +81,10 @@ const dimensionsRegExps = [...new Array(10).keys()].map(
 export const ambiances = {
   neon: {
     background: 0x000000,
-    fx: ['bloom'],
+    fx: ['bloom', 'output', 'fxaa'],
+    colorSpace: LinearSRGBColorSpace,
+    // toneMapping: ReinhardToneMapping,
+    exposure: 0.5,
     shadow: false,
     material: new MeshBasicMaterial(),
     lights: [],
@@ -90,6 +95,7 @@ export const ambiances = {
   colorful: {
     background: 0xffffff,
     shadow: false,
+    fx: ['output', 'fxaa'],
     material: new MeshPhongMaterial(),
     lights: [new AmbientLight(0xffffff, 0.5)],
     cameraLights: [new PointLight(0xffffff, 2.5, 0, 0)],
@@ -107,6 +113,7 @@ export const ambiances = {
   reflection: {
     background: 0xffffff,
     shadow: false,
+    fx: ['output', 'fxaa'],
     material: new MeshToonMaterial(),
     lights: [new AmbientLight(0xffffff, 0.75)],
     cameraLights: [new PointLight(0xffffff, 2.5, 0, 0)],
@@ -125,13 +132,14 @@ export const ambiances = {
       // const h = counts.indexOf(max) / dimensions
       const h = word.length ? atoi(word[word.length - 1]) / dimensions : 0
 
-      return _color.setHSL(h % 1, 1, 0.8)
+      return _color.setHSL(h % 1, 1, 0.6)
     },
   },
   projection: {
     background: 0xffffff,
     ground: 'sphere',
     shadow: true,
+    fx: ['output', 'fxaa'],
     material: new MeshPhongMaterial({
       transparent: true,
       opacity: 0.75,
@@ -145,18 +153,18 @@ export const ambiances = {
   },
   bw: {
     background: 0x000000,
-    fx: ['sobel'],
+    fx: ['sobel', 'output', 'fxaa'],
     shadow: false,
     material: new MeshPhongMaterial(),
     lights: [new AmbientLight(0xcccccc)],
-    cameraLights: [new PointLight(0xffffff, 3, 0, 0)],
+    cameraLights: [new PointLight(0xffffff, 2, 0, 0)],
     color: () => {
       return _color.set(0xffff00)
     },
   },
   pure: {
     background: 0,
-    fx: ['sao'],
+    fx: ['sao', 'output', 'fxaa'],
     shadow: false,
     material: new MeshLambertMaterial(),
     cameraLights: [new PointLight(0xffffff, 3)],
@@ -169,6 +177,7 @@ export const ambiances = {
   },
   glass: {
     extended: true,
+    fx: ['output', 'fxaa'],
     background: ocean,
     env: ocean,
     shadow: false,
@@ -185,12 +194,13 @@ export const ambiances = {
     }),
     lights: [new DirectionalLight(), new HemisphereLight()],
     color: () => {
-      return _color.set(0xeeeeee)
+      return _color.set(0xdddddd)
     },
   },
   museum: {
     extended: true,
     background: 0xbbbbbb,
+    fx: ['output', 'fxaa'],
     env: ocean,
     shadow: true,
     ground: 'plane',
@@ -221,7 +231,7 @@ export const ambiances = {
   bokeh: {
     extended: true,
     background: 0xffffff,
-    fx: ['bokeh'],
+    fx: ['bokeh', 'output', 'fxaa'],
     shadow: false,
     material: new MeshPhongMaterial(),
     lights: [new AmbientLight(0xffffff, 1.5)],

@@ -11,16 +11,20 @@ import {
   MeshDepthMaterial,
   MeshDistanceMaterial,
   MeshPhongMaterial,
+  NoToneMapping,
   PCFShadowMap,
   PCFSoftShadowMap,
   PerspectiveCamera,
   PlaneGeometry,
+  ReinhardToneMapping,
   RGBADepthPacking,
   Scene,
   SphereGeometry,
+  SRGBColorSpace,
   Vector2,
   WebGLRenderer,
   WebGLRenderTarget,
+  LinearSRGBColorSpace,
 } from 'three'
 import Stats from 'three/examples/jsm/libs/stats.module.js'
 import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass'
@@ -29,6 +33,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 import { SAOPass } from 'three/examples/jsm/postprocessing/SAOPass'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass'
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
 import { LuminosityShader } from 'three/examples/jsm/shaders/LuminosityShader.js'
 import { SobelOperatorShader } from 'three/examples/jsm/shaders/SobelOperatorShader.js'
@@ -557,16 +562,7 @@ export const resetComposerTarget = rt => {
     type: HalfFloatType,
   })
   composer.reset(renderTarget)
-  composer.removePass(fxaa)
-  if (!msaa) {
-    const pixelRatio = composer.renderer.getPixelRatio()
-    fxaa.material.uniforms['resolution'].value.x =
-      1 / (window.innerWidth * pixelRatio)
-    fxaa.material.uniforms['resolution'].value.y =
-      1 / (window.innerHeight * pixelRatio)
-    composer.addPass(fxaa)
-  }
-  rt.render()
+  changeAmbiance(rt)
 }
 
 export const changeAmbiance = rt => {
@@ -675,11 +671,10 @@ export const changeAmbiance = rt => {
     camera.add(light)
   })
   const fxs = ambiance.fx || ['copy']
-  // composer.renderer.toneMapping = fxs.includes('bloom')
-  //   ? ReinhardToneMapping
-  //   : NoToneMapping
-  // // composer.renderer.outputColorSpace = SRGBColorSpace
-  // composer.renderer.toneMappingExposure = fxs.includes('bloom') ? 1 : 1
+  composer.renderer.toneMapping = ambiance.toneMapping || NoToneMapping
+  composer.renderer.outputColorSpace = ambiance.colorSpace || SRGBColorSpace
+  composer.renderer.toneMappingExposure = ambiance.exposure || 1
+
   composer.passes.slice(1).forEach(pass => {
     composer.removePass(pass)
     pass.dispose()
@@ -723,7 +718,7 @@ export const changeAmbiance = rt => {
     } else if (fx === 'bloom') {
       const bloomPass = new UnrealBloomPass(
         new Vector2(window.innerWidth, window.innerHeight),
-        1,
+        0.75,
         0,
         0
       )
@@ -734,19 +729,20 @@ export const changeAmbiance = rt => {
       const godrayPass = new GodRayPass(scene, camera)
       godrayPass.materialDepth = hyperMaterial(godrayPass.materialDepth, rt)
       composer.addPass(godrayPass)
+    } else if (fx === 'fxaa' && !rt.msaa) {
+      const pixelRatio = composer.renderer.getPixelRatio()
+      fxaa.material.uniforms['resolution'].value.x =
+        1 / (window.innerWidth * pixelRatio)
+      fxaa.material.uniforms['resolution'].value.y =
+        1 / (window.innerHeight * pixelRatio)
+      composer.addPass(fxaa)
+    } else if (fx === 'output') {
+      composer.addPass(new OutputPass())
     }
   })
-  if (!rt.msaa) {
-    const pixelRatio = composer.renderer.getPixelRatio()
-    fxaa.material.uniforms['resolution'].value.x =
-      1 / (window.innerWidth * pixelRatio)
-    fxaa.material.uniforms['resolution'].value.y =
-      1 / (window.innerHeight * pixelRatio)
-    composer.addPass(fxaa)
-  }
-  // composer.addPass(new OutputPass())
+
   updateMaterials(rt)
-  composer.render()
+  rt.render()
 }
 
 export const updateMaterials = rt => {

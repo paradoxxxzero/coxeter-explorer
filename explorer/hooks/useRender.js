@@ -15,13 +15,6 @@ import {
 export const useRender = (runtime, setRuntime) => {
   useEffect(() => {
     setRuntime(runtime => {
-      resetComposerTarget(runtime)
-      return runtime
-    })
-  }, [runtime.msaa, runtime.msaaSamples, runtime.composer, setRuntime])
-
-  useEffect(() => {
-    setRuntime(runtime => {
       updateCameraFov(runtime)
       return runtime
     })
@@ -62,6 +55,13 @@ export const useRender = (runtime, setRuntime) => {
       return runtime
     })
   }, [runtime.ambiance, setRuntime])
+
+  useEffect(() => {
+    setRuntime(runtime => {
+      resetComposerTarget(runtime)
+      return runtime
+    })
+  }, [runtime.msaa, runtime.msaaSamples, runtime.composer, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => {
