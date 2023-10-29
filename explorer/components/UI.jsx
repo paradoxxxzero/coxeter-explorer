@@ -6,6 +6,7 @@ import CoxeterMatrix from './CoxeterMatrix'
 import Number from './Number'
 import Presets from './Presets'
 import Space from './Space'
+import { size } from '../event'
 
 export default function UI({
   runtime,
@@ -43,7 +44,7 @@ export default function UI({
             advanced: 'full',
             full: 'empty',
             empty: 'simple',
-          }[showUI])
+          })[showUI]
       ),
     []
   )
@@ -74,12 +75,37 @@ export default function UI({
     },
     [rotations.auto, updateRotations]
   )
+  const exportImage = useCallback(() => {
+    const res = window.prompt('Select image resolution', '5000x5000')
+    if (!res || !res.includes('x')) {
+      console.error('Invalid resolution')
+      return
+    }
+    const [width, height] = res.split('x').map(x => parseInt(x))
+    if (isNaN(width) || isNaN(height)) {
+      console.error('Invalid resolution')
+      return
+    }
+
+    size(runtime, width, height, 1)
+    runtime.composer.renderer.domElement.toBlob(blob => {
+      const a = document.createElement('a')
+      document.body.appendChild(a)
+      a.style.display = 'none'
+      const url = window.URL.createObjectURL(blob)
+      a.href = url
+      a.download = document.title
+      a.click()
+      size(runtime)
+    })
+  }, [runtime])
 
   return (
     <>
       <Presets
         open={presets}
         onPreset={handlePreset}
+        onExportImage={exportImage}
         closePresets={closePresets}
       />
       <div className={runtime.error ? 'error' : ''} title={runtime.error}>

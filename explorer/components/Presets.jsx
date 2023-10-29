@@ -14,7 +14,12 @@ const getNodeText = node => {
     return getNodeText(node.props.children)
   }
 }
-export default function Presets({ open, onPreset, closePresets }) {
+export default function Presets({
+  open,
+  onPreset,
+  onExportImage,
+  closePresets,
+}) {
   const [search, setSearch] = useState('')
   const [rawSearch, setRawSearch] = useState('')
   const handleSearch = useCallback(e => {
@@ -52,7 +57,10 @@ export default function Presets({ open, onPreset, closePresets }) {
               <a className="presets-author" href="https://florian.mounier.dev/">
                 ❓
               </a>
-              <button className="presets-close" onClick={closePresets}>
+              <button className="presets-action" onClick={onExportImage}>
+                📤
+              </button>
+              <button className="presets-action" onClick={closePresets}>
                 ✖️
               </button>
             </div>

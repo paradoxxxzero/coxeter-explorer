@@ -215,9 +215,11 @@ export const useProcess = (runtime, setRuntime) => {
       if (runtime.easing === 'auto') {
         return {
           ...runtime,
-          easing: runtime.spaceType.startsWith('hyperbolic')
-            ? 'quintic'
-            : 'linear',
+          easing:
+            runtime.spaceType.startsWith('hyperbolic') &&
+            runtime.projection !== 'inverted'
+              ? 'quintic'
+              : 'linear',
         }
       }
       return runtime

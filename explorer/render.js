@@ -53,8 +53,10 @@ export const initializeGl = () => {
     stats.dom.id = 'stats'
     document.body.appendChild(stats.dom)
   }
-  const renderer = new WebGLRenderer()
-  renderer.autoClear = false
+  const renderer = new WebGLRenderer({
+    stencil: false,
+    powerPreference: 'high-performance',
+  })
   renderer.setPixelRatio(window.devicePixelRatio)
   renderer.setSize(window.innerWidth, window.innerHeight)
 
@@ -64,7 +66,7 @@ export const initializeGl = () => {
     90,
     window.innerWidth / window.innerHeight,
     0.01,
-    10000
+    1000
   )
   camera.position.set(0, 0, -1)
   camera.up.set(1, 0, 0)
@@ -155,6 +157,8 @@ export const initVertex = rt => {
     vertexGeometry,
     hyperMaterial(ambiance.vertexMaterial, rt, 'vertex')
   )
+  instancedVertex.matrixAutoUpdate = false
+  instancedVertex.matrixWorldAutoUpdate = false
   vertexGeometry.attributes.instanceTarget.array.fill(NaN)
   vertexGeometry.attributes.instanceCentroid.array.fill(NaN)
   instancedVertex.geometry.instanceCount = 0
@@ -211,6 +215,8 @@ export const initEdge = rt => {
     edgeGeometry,
     hyperMaterial(ambiance.edgeMaterial, rt, 'edge')
   )
+  instancedEdge.matrixAutoUpdate = false
+  instancedEdge.matrixWorldAutoUpdate = false
   edgeGeometry.attributes.instanceCentroid.array.fill(NaN)
   instancedEdge.geometry.instanceCount = 0
   instancedEdge.frustumCulled = false
@@ -312,6 +318,8 @@ export const initFace = rt => {
     faceGeometry,
     hyperMaterial(ambiance.faceMaterial, rt, 'face')
   )
+  instancedFace.matrixAutoUpdate = false
+  instancedFace.matrixWorldAutoUpdate = false
   instancedFace.geometry.instanceCount = 0
   instancedFace.frustumCulled = false
   instancedFace.customDepthMaterial = hyperMaterial(

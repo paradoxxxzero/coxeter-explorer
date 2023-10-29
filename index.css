@@ -53,6 +53,7 @@ select option {
   bottom: 0;
   font-size: 1em;
   color: rgba(255, 255, 255, 0.75);
+  mix-blend-mode: difference;
 }
 
 .button {
@@ -337,7 +338,7 @@ select option {
   min-width: fit-content;
 }
 .presets-actions > * {
-  font-size: 1.5em;
+  font-size: 1.25em;
   line-height: 1;
   padding: 0.75em;
 }
@@ -349,7 +350,7 @@ select option {
   text-decoration: none;
 }
 
-.presets-close {
+.presets-action {
   color: rgba(255, 255, 255, 0.75);
   background: none;
   cursor: pointer;
@@ -377,7 +378,7 @@ select option {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  right: 1em;
+  right: 0.5em;
   font-size: 2em;
   line-height: 1;
   color: rgba(255, 255, 255);

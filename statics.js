@@ -294,6 +294,17 @@ export const ambiances = {
       return _color
     },
   },
+  plainblack: {
+    extended: true,
+    background: 0xffffff,
+    shadow: false,
+    material: new MeshBasicMaterial(),
+    color: () => {
+      _color.set(0x000000)
+      _color.convertSRGBToLinear()
+      return _color
+    },
+  },
   wireframe: {
     extended: true,
     background: 0x000000,

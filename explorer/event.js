@@ -1,11 +1,10 @@
 import { Vector2 } from 'three'
 
-export const size = rt => {
+export const size = (rt, width = null, height = null, pixelRatio = 1) => {
   const { camera, composer } = rt
-  const subsampling = 1
 
-  const width = window.innerWidth * subsampling
-  const height = window.innerHeight * subsampling
+  width = width || window.innerWidth
+  height = height || window.innerHeight
   const currentCanvas = composer.renderer.domElement
   if (currentCanvas.width !== width || currentCanvas.height !== height) {
     camera.aspect = width / height
@@ -13,7 +12,7 @@ export const size = rt => {
     camera.updateProjectionMatrix()
     composer.renderer.setSize(width, height)
     composer.setSize(width, height)
-    const pixelRatio = composer.renderer.getPixelRatio()
+    pixelRatio = pixelRatio || composer.renderer.getPixelRatio()
     composer.setPixelRatio(pixelRatio)
 
     const w = width * pixelRatio
@@ -34,7 +33,7 @@ export const size = rt => {
       }
     })
 
-    if (subsampling !== 1) {
+    if (width !== window.innerWidth || height !== window.innerHeight) {
       currentCanvas.style.width = null
       currentCanvas.style.height = null
     } else {
