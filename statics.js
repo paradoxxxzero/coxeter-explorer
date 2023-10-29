@@ -84,13 +84,26 @@ export const ambiances = {
     fx: ['bloom', 'output', 'fxaa'],
     colorSpace: LinearSRGBColorSpace,
     // toneMapping: ReinhardToneMapping,
-    exposure: 0.5,
+    exposure: 0.75,
     shadow: false,
     material: new MeshBasicMaterial(),
     lights: [],
     color: ({ word }) => {
-      return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
+      _color.setHSL((word.length * 0.17) % 1, 0.5, 0.6)
+      _color.convertSRGBToLinear()
+      return _color
     },
+    faceMaterial: new MeshBasicMaterial({
+      side: DoubleSide,
+      transparent: true,
+      opacity: 0.05,
+      blending: CustomBlending,
+      blendEquation: AddEquation,
+      blendSrc: SrcAlphaFactor,
+      blendDst: OneMinusSrcAlphaFactor,
+
+      depthWrite: false,
+    }),
   },
   colorful: {
     background: 0xffffff,
@@ -100,9 +113,13 @@ export const ambiances = {
     lights: [new AmbientLight(0xffffff, 0.5)],
     cameraLights: [new PointLight(0xffffff, 2.5, 0, 0)],
     color: ({ word }, type, dimensions) => {
-      return _color.setHSL((word.length * 0.03) % 1, 1, 0.8)
+      _color.setHSL((word.length * 0.03) % 1, 1, 0.8)
+      _color.convertSRGBToLinear()
+      return _color
       // const i = word.match(dimensionsRegExps[dimensions - 1])?.length || 0
-      // return _color.setHSL((i * 0.07) % 1, 0.5, 0.5)
+      // _color.setHSL((i * 0.07) % 1, 0.5, 0.5)
+      // _color.convertSRGBToLinear()
+      // return _color
     },
     faceMaterial: new MeshPhongMaterial({
       side: DoubleSide,
@@ -132,7 +149,9 @@ export const ambiances = {
       // const h = counts.indexOf(max) / dimensions
       const h = word.length ? atoi(word[word.length - 1]) / dimensions : 0
 
-      return _color.setHSL(h % 1, 1, 0.6)
+      _color.setHSL(h % 1, 1, 0.6)
+      _color.convertSRGBToLinear()
+      return _color
     },
   },
   projection: {
@@ -148,7 +167,9 @@ export const ambiances = {
 
     lights: [new PointLight(0xffffff, 4, 0, 0)],
     color: ({ word }) => {
-      return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
+      _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
+      _color.convertSRGBToLinear()
+      return _color
     },
   },
   bw: {
@@ -159,7 +180,9 @@ export const ambiances = {
     lights: [new AmbientLight(0xcccccc)],
     cameraLights: [new PointLight(0xffffff, 2, 0, 0)],
     color: () => {
-      return _color.set(0xffff00)
+      _color.set(0xffff00)
+      _color.convertSRGBToLinear()
+      return _color
     },
   },
   pure: {
@@ -169,7 +192,9 @@ export const ambiances = {
     material: new MeshLambertMaterial(),
     cameraLights: [new PointLight(0xffffff, 3)],
     color: ({ word }) => {
-      return _color.setHSL((word.length * 0.03) % 1, 0.75, 0.7)
+      _color.setHSL((word.length * 0.03) % 1, 0.75, 0.7)
+      _color.convertSRGBToLinear()
+      return _color
     },
     faceMaterial: new MeshLambertMaterial({
       side: DoubleSide,
@@ -194,7 +219,9 @@ export const ambiances = {
     }),
     lights: [new DirectionalLight(), new HemisphereLight()],
     color: () => {
-      return _color.set(0xdddddd)
+      _color.set(0xdddddd)
+      _color.convertSRGBToLinear()
+      return _color
     },
   },
   museum: {
@@ -225,7 +252,9 @@ export const ambiances = {
       new AmbientLight(0xffffff, 1.25),
     ],
     color: () => {
-      return _color.set(0xffffff)
+      _color.set(0xffffff)
+      _color.convertSRGBToLinear()
+      return _color
     },
   },
   bokeh: {
@@ -237,7 +266,9 @@ export const ambiances = {
     lights: [new AmbientLight(0xffffff, 1.5)],
     cameraLights: [new PointLight(0xffffff, 3)],
     color: ({ word }) => {
-      return _color.setHSL((word.length * 0.17) % 1, 0.7, 0.5)
+      _color.setHSL((word.length * 0.17) % 1, 0.7, 0.5)
+      _color.convertSRGBToLinear()
+      return _color
     },
   },
   // transcendent: {
@@ -247,7 +278,9 @@ export const ambiances = {
   //   shadow: false,
   //   material: new MeshBasicMaterial(),
   //   color: () => {
-  //     return _color.set(0x000000)
+  //     _color.set(0x000000)
+  //     _color.convertSRGBToLinear()
+  //     return _color
   //   },
   // },
   plain: {
@@ -256,7 +289,9 @@ export const ambiances = {
     shadow: false,
     material: new MeshBasicMaterial(),
     color: ({ word }) => {
-      return _color.setHSL((word.length * 0.06) % 1, 0.7, 0.5)
+      _color.setHSL((word.length * 0.06) % 1, 0.7, 0.5)
+      _color.convertSRGBToLinear()
+      return _color
     },
   },
   wireframe: {
@@ -268,7 +303,9 @@ export const ambiances = {
     }),
     lights: [],
     color: ({ word }) => {
-      return _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
+      _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
+      _color.convertSRGBToLinear()
+      return _color
     },
   },
 }

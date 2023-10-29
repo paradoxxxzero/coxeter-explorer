@@ -723,8 +723,6 @@ export const changeAmbiance = rt => {
         0
       )
       composer.addPass(bloomPass)
-      // Tweaks if face are shown
-      instancedFace.material.opacity = rt.dimensions === 3 ? 0.075 : 0.025
     } else if (fx === 'godray') {
       const godrayPass = new GodRayPass(scene, camera)
       godrayPass.materialDepth = hyperMaterial(godrayPass.materialDepth, rt)
