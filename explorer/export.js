@@ -1,4 +1,5 @@
 import { PNGRGBAWriter } from 'dekapng'
+import { Vector2 } from 'three'
 
 function wait() {
   return new Promise(resolve => {
@@ -17,10 +18,28 @@ export const renderChunk = (
 ) => {
   const { camera, composer } = runtime
   composer.renderer.setSize(chunkWidth, chunkHeight)
+  composer.renderer.setPixelRatio(1)
+  composer.setSize(chunkWidth, chunkHeight)
+  composer.setPixelRatio(1)
 
   camera.aspect = chunkWidth / chunkHeight
   camera.setViewOffset(width, height, chunkX, chunkY, chunkWidth, chunkHeight)
   camera.updateProjectionMatrix()
+  composer.passes.forEach(pass => {
+    if (pass.material?.uniforms?.['resolution']) {
+      let cw = chunkWidth
+      let ch = chunkHeight
+      if (pass.material.uniforms['resolution'].value.x <= 1) {
+        cw = 1 / cw
+        ch = 1 / ch
+      }
+      pass.material.uniforms['resolution'].value.x = cw
+      pass.material.uniforms['resolution'].value.y = ch
+    }
+    if (pass.resolution) {
+      pass.resolution = new Vector2(width, height)
+    }
+  })
 
   composer.render()
 

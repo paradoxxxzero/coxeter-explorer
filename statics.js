@@ -286,6 +286,7 @@ export const ambiances = {
   plain: {
     extended: true,
     background: 0xffffff,
+    fx: ['copy', 'fxaa'],
     shadow: false,
     material: new MeshBasicMaterial(),
     color: ({ word }) => {
@@ -297,6 +298,7 @@ export const ambiances = {
   plainblack: {
     extended: true,
     background: 0xffffff,
+    fx: ['copy', 'fxaa'],
     shadow: false,
     material: new MeshBasicMaterial(),
     color: () => {
