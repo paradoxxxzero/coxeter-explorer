@@ -1,6 +1,6 @@
 import { Vector2 } from 'three'
 
-export const size = (rt, width = null, height = null, pixelRatio = 1) => {
+export const size = (rt, width = null, height = null, pixelRatio = null) => {
   const { camera, composer } = rt
 
   width = width || window.innerWidth

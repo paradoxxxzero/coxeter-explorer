@@ -335,19 +335,16 @@ select option {
   align-items: flex-start;
 }
 .presets-actions {
+  display: flex;
   min-width: fit-content;
 }
 .presets-actions > * {
-  font-size: 1.25em;
+  font-size: 1.5em;
   line-height: 1;
-  padding: 0.75em;
+  padding: 0.5em 0.75em;
 }
 .presets-actions > *:hover {
   background-color: rgba(255, 255, 255, 0.1);
-}
-
-.presets-author {
-  text-decoration: none;
 }
 
 .presets-action {
@@ -355,6 +352,13 @@ select option {
   background: none;
   cursor: pointer;
   border: none;
+  text-decoration: none;
+  display: block;
+}
+.presets-action svg,
+.presets-clear svg {
+  height: 1em;
+  width: 1em;
 }
 
 .presets-search {
@@ -378,13 +382,14 @@ select option {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  right: 0.5em;
+  right: 0;
   font-size: 2em;
   line-height: 1;
   color: rgba(255, 255, 255);
   cursor: pointer;
   background: none;
   border: none;
+  padding: 0.25em 0.5em;
 }
 
 .presets.shown {
