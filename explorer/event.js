@@ -7,6 +7,7 @@ export const size = (rt, width = null, height = null, pixelRatio = null) => {
   height = height || window.innerHeight
   const currentCanvas = composer.renderer.domElement
   if (currentCanvas.width !== width || currentCanvas.height !== height) {
+    camera.clearViewOffset()
     camera.aspect = width / height
     camera.zoom = Math.min(1, width / height)
     camera.updateProjectionMatrix()

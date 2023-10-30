@@ -1992,6 +1992,11 @@ define-properties@^1.1.3, define-properties@^1.1.4, define-properties@^1.2.0, de
     has-property-descriptors "^1.0.0"
     object-keys "^1.1.1"
 
+dekapng@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/dekapng/-/dekapng-1.1.0.tgz#56d3f7e2b8d0d8ff1821ecc472c3ffe16d8c677e"
+  integrity sha512-XqVjX1zMlDXImWODBPly5fVA02G8JsBHmzSj7OOcyC4BkLvp4Eohi9IarB4seZUWMPgRbi03CixA7rA3z8Oy7w==
+
 dequal@^2.0.3:
   version "2.0.3"
   resolved "https://registry.yarnpkg.com/dequal/-/dequal-2.0.3.tgz#2644214f1997d39ed0ee0ece72335490a7ac67be"

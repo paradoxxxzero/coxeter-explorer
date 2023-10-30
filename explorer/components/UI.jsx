@@ -75,7 +75,8 @@ export default function UI({
     },
     [rotations.auto, updateRotations]
   )
-  const exportImage = useCallback(() => {
+
+  const exportImage = useCallback(async () => {
     const res = window.prompt('Select image resolution', '5000x5000')
     if (!res || !res.includes('x')) {
       console.error('Invalid resolution')
@@ -86,18 +87,19 @@ export default function UI({
       console.error('Invalid resolution')
       return
     }
+    const dekapng = await import('../export.js')
 
-    size(runtime, width, height, 1)
-    runtime.composer.renderer.domElement.toBlob(blob => {
+    const blob = await dekapng.makeBigPng(runtime, width, height)
+    if (blob) {
       const a = document.createElement('a')
       document.body.appendChild(a)
       a.style.display = 'none'
       const url = window.URL.createObjectURL(blob)
       a.href = url
-      a.download = document.title
+      a.download = `${document.title}-${width}x${height}`
       a.click()
-      size(runtime)
-    })
+    }
+    size(runtime)
   }, [runtime])
 
   return (
