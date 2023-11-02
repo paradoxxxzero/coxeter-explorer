@@ -65,7 +65,10 @@ export const getFacesCosetsParams = (
 
   const mirrorsPairs = combinations([...Array(dimensions).keys()])
   for (let i = 0; i < mirrorsPairs.length; i++) {
-    const pair = mirrorsPairs[i]
+    let pair = mirrorsPairs[i]
+    if ((pair[1] - pair[0]) % 2 === 0) {
+      pair = [pair[1], pair[0]]
+    }
     const multiplier = coxeter[pair[0]][pair[1]]
     const face = []
     // If both active
