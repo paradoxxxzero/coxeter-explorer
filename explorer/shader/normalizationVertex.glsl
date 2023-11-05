@@ -103,7 +103,7 @@ void edgeVertex(out vec3 transformed, out vec3 objectNormal) {
     // To rotate v around axis k by angle r:
   float r = (1. - uv.x) * TAU;
   vec3 v = normalize(cross(n, transformed));
-  objectNormal = normalize(objectNormal = v * cos(r) + cross(k, v) * sin(r)); // + k * dot(k, v) * (1. - cos(r));
+  objectNormal = normalize(v * cos(r) + cross(k, v) * sin(r)); // + k * dot(k, v) * (1. - cos(r));
   transformed = inflate(transformed, pos, objectNormal, edgeThickness, 0.);
 }
 #endif

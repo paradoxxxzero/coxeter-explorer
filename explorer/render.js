@@ -477,10 +477,10 @@ const plotFaces = (rt, range = null) => {
       if (face.word.length % 2 === (rt.curvature > 0 ? 0 : 1)) {
         ;[pos, target] = [target, pos]
       }
-      for (let j = 0; j < dimensions; j++) {
-        icentroid[idx * arity + j] = centroid[j]
-        ipos[idx * arity + j] = pos[j]
-        itarget[idx * arity + j] = target[j]
+      for (let k = 0; k < dimensions; k++) {
+        icentroid[idx * arity + k] = centroid[k]
+        ipos[idx * arity + k] = pos[k]
+        itarget[idx * arity + k] = target[k]
       }
       const icolor = instancedFace.geometry.attributes.instanceColor.array
       const c = ambiance.color(face, 'face', dimensions)
