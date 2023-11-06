@@ -1,7 +1,9 @@
+import { ambiances } from '../statics'
 import { storage, texture } from './helpers'
 
 export default function refreshTextures(rt) {
   const { gl } = rt
+  const ambiance = ambiances[rt.ambiance]
   storage(rt, rt.rb.depth, gl.DEPTH_COMPONENT24)
 
   // OPAQUE
@@ -57,11 +59,11 @@ export default function refreshTextures(rt) {
     }
   }
   rt.passes.kawase.textures = []
-  for (let i = 0; i < rt.passes.kawase.steps; i++) {
+  for (let i = 0; i < ambiance.glow.steps; i++) {
     rt.passes.kawase.textures[i] = texture(
       rt,
       gl.RGBA8,
-      rt.passes.kawase.pow ** -i
+      ambiance.glow.pow ** -i
     )
   }
   if (rt.passes.kawase.texture) {

@@ -1,7 +1,8 @@
-import { ambiances, easings, projections } from '../statics'
-import ease from './shaders/includes/vertex/ease.glsl?raw'
-import globals from './shaders/includes/vertex/globals.glsl?raw'
-import project from './shaders/includes/vertex/project.glsl?raw'
+import { ambiances, easings, lightings, projections } from '../statics'
+import ease from './shaders/includes/ease.glsl?raw'
+import globals from './shaders/includes/globals.glsl?raw'
+import project from './shaders/includes/project.glsl?raw'
+import lighting from './shaders/includes/lighting.glsl?raw'
 
 export const hueToRgb = (p, q, t) => {
   if (t < 0) t += 1
@@ -50,12 +51,13 @@ const includes = {
   globals,
   ease,
   project,
+  lighting,
 }
 export const augment = (rt, vertex, fragment) => {
   const ambiance = ambiances[rt.ambiance]
   let config = ''
   if (ambiance.lighting) {
-    config += '#define LIGHTING\n'
+    config += `#define LIGHTING ${lightings.indexOf(ambiance.lighting)}\n`
   }
   const easing =
     rt.easing === 'auto'

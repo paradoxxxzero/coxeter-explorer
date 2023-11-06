@@ -68,14 +68,14 @@ export const useRender = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
-      refreshTextures(runtime)
+      changeAmbiance(runtime)
       return runtime
     })
-  }, [runtime.msaa, runtime.msaaSamples, setRuntime])
+  }, [runtime.ambiance, runtime.msaa, runtime.msaaSamples, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => {
-      changeAmbiance(runtime)
+      refreshTextures(runtime)
       return runtime
     })
   }, [runtime.ambiance, runtime.msaa, runtime.msaaSamples, setRuntime])
@@ -116,6 +116,7 @@ export const useRender = (runtime, setRuntime) => {
       return runtime
     })
   }, [
+    runtime.ambiance,
     runtime.spaceType, // For easing auto
     runtime.easing,
     runtime.projection,
@@ -148,6 +149,7 @@ export const useRender = (runtime, setRuntime) => {
       return runtime
     })
   }, [
+    runtime.ambiance,
     runtime.spaceType,
     runtime.easing,
     runtime.projection,

@@ -16,18 +16,10 @@ float weight(float z, float a) {
   return clamp(pow(min(1.0f, a * 10.0f) + 0.01f, 3.0f) * 1e8f * pow(1.0f - z * 0.9f, 3.0f), 1e-2f, 3e3f);
 }
 
+#include lighting
+
 void main() {
-  vec4 baseColor = vec4(vColor, .2f);
-  #ifdef LIGHTING
-  vec3 eyeDirection = normalize(eye - vPosition);
-  vec3 reflectionDirection = reflect(-eyeDirection, vNormal);
-  float diffuse = abs(dot(eyeDirection, vNormal));
-  float ambient = 0.2f;
-  float specular = pow(abs(dot(reflectionDirection, eyeDirection)), 200.0f);
-  vec4 color = vec4((ambient + diffuse + specular) * baseColor.rgb, baseColor.a);
-  #else
-  vec4 color = baseColor;
-  #endif
+  vec4 color = light(vec4(vColor, .2f), .5f, 40.f);
 
   float w = weight(gl_FragCoord.z, color.a);
   accumColor = vec4(color.rgb * color.a * w, color.a);

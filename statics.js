@@ -31,11 +31,20 @@ export const easings = [
   'inverse_quintic',
 ]
 export const groupers = ['', 'knuthbendix', 'toddcoxeter', 'fundamental']
-
+export const lightings = ['lambert', 'phong', 'blinn-phong']
 export const ambiances = {
   neon: {
     background: [0, 0, 0, 1],
-    glow: true,
+    glow: {
+      exposure: 2,
+      strength: 1.5,
+      offset: {
+        up: 1,
+        down: 1,
+      },
+      steps: 4,
+      pow: 2,
+    },
     exposure: 0.75,
     lighting: false,
     color: ({ word }) => hsl((word.length * 0.17) % 1, 0.5, 0.6),
@@ -43,7 +52,7 @@ export const ambiances = {
   colorful: {
     background: [1, 1, 1, 1],
     glow: false,
-    lighting: true,
+    lighting: 'blinn-phong',
     color: ({ word }) => hsl((word.length * 0.03) % 1, 1, 0.8),
   },
   //   reflection: {

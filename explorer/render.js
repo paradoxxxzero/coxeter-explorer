@@ -86,25 +86,13 @@ export const initializeGl = rt => {
       mesh.uniforms.eye.update(eye)
     })
   }
-  const passes = {
-    glowParameters: {
-      exposure: 2,
-      strength: 1.5,
-    },
-  }
+  const passes = { kawase: {} }
   passes.oit = {
     attributes: {},
     uniforms: {},
     ...compileProgram(rt, 'oit', vertexOit, fragmentOit),
   }
-  passes.kawase = {
-    offset: {
-      up: 1,
-      down: 1,
-    },
-    steps: 4,
-    pow: 2,
-  }
+
   passes.kawase.down = {
     attributes: {},
     uniforms: {},
@@ -187,7 +175,6 @@ export const initializeGl = rt => {
     '1f'
   )
   passes.kawase.down.uniforms.screen.update(0)
-  passes.kawase.down.uniforms.offset.update(passes.kawase.offset.down)
 
   passes.kawase.up.uniforms.screen = uniform(
     rt,
@@ -202,7 +189,6 @@ export const initializeGl = rt => {
     '1f'
   )
   passes.kawase.up.uniforms.screen.update(0)
-  passes.kawase.up.uniforms.offset.update(passes.kawase.offset.up)
 
   gl.useProgram(passes.bloom.program)
   passes.bloom.uniforms.screen = uniform(
@@ -228,8 +214,6 @@ export const initializeGl = rt => {
 
   passes.bloom.uniforms.screen.update(0)
   passes.bloom.uniforms.bloom.update(1)
-  passes.bloom.uniforms.exposure.update(passes.glowParameters.exposure)
-  passes.bloom.uniforms.strength.update(passes.glowParameters.strength)
 
   passes.oit.uniforms.accum = uniform(
     rt,
@@ -483,6 +467,12 @@ export const updateCameraFov = rt => {
 export const changeAmbiance = rt => {
   const ambiance = ambiances[rt.ambiance]
   rt.gl.clearColor(...ambiance.background)
+  if (ambiance.glow) {
+    rt.passes.bloom.uniforms.exposure.update(ambiance.glow.exposure)
+    rt.passes.bloom.uniforms.strength.update(ambiance.glow.strength)
+    rt.passes.kawase.down.uniforms.offset.update(ambiance.glow.offset.down)
+    rt.passes.kawase.up.uniforms.offset.update(ambiance.glow.offset.up)
+  }
 }
 
 export const recompilePrograms = rt => {
@@ -592,7 +582,7 @@ export const render = rt => {
     gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.kawase)
 
     gl.useProgram(rt.passes.kawase.down.program)
-    for (let i = 0; i < rt.passes.kawase.steps; i++) {
+    for (let i = 0; i < ambiance.glow.steps; i++) {
       const inTexture =
         i === 0 ? rt.passes.bloom.texture : rt.passes.kawase.textures[i - 1]
       const outTexture = rt.passes.kawase.textures[i]
@@ -611,7 +601,7 @@ export const render = rt => {
     }
 
     gl.useProgram(rt.passes.kawase.up.program)
-    for (let i = rt.passes.kawase.steps - 1; i >= 0; i--) {
+    for (let i = ambiance.glow.steps - 1; i >= 0; i--) {
       const inTexture = rt.passes.kawase.textures[i]
       const outTexture =
         i === 0 ? rt.passes.kawase.texture : rt.passes.kawase.textures[i - 1]
