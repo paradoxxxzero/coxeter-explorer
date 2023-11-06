@@ -157,20 +157,46 @@ export const attribute = (
           name: this.name,
         }
       }
-      gl.enableVertexAttribArray(this.location)
+      const locSize = this.size > 4 ? 3 : 1
+      for (let i = 0; i < locSize; i++) {
+        gl.enableVertexAttribArray(this.location + i)
+      }
       gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer)
-      gl.vertexAttribPointer(this.location, this.size, this.type, false, 0, 0)
+      for (let i = 0; i < locSize; i++) {
+        gl.vertexAttribPointer(
+          this.location + i,
+          this.size / locSize,
+          this.type,
+          false,
+          this.size * 4,
+          (this.size / locSize) * i * 4
+        )
+      }
       if (this.instances) {
-        gl.vertexAttribDivisor(this.location, this.instances)
+        for (let i = 0; i < locSize; i++) {
+          gl.vertexAttribDivisor(this.location + i, this.instances)
+        }
       }
     },
     extend(size, newData, copy = false) {
       this.size = size
       gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer)
       if (this.location >= 0) {
-        gl.vertexAttribPointer(this.location, this.size, this.type, false, 0, 0)
+        const locSize = size > 4 ? 3 : 1
+        for (let i = 0; i < locSize; i++) {
+          gl.vertexAttribPointer(
+            this.location + i,
+            size / locSize,
+            this.type,
+            false,
+            size * 4,
+            (size / locSize) * i * 4
+          )
+        }
         if (this.instances) {
-          gl.vertexAttribDivisor(this.location, this.instances)
+          for (let i = 0; i < locSize; i++) {
+            gl.vertexAttribDivisor(this.location + i, this.instances)
+          }
         }
       }
       copy && newData.length >= this.data.length && newData.set(this.data)
@@ -314,8 +340,7 @@ export const mesh = (
     },
     extendAttributes(rt, maxSize) {
       gl.bindVertexArray(mesh.vao)
-      const arity = rt.dimensions
-
+      const arity = rt.dimensions > 4 ? 9 : rt.dimensions
       attributes.forEach(attr => {
         mesh.attributes[attr].extend(
           arity,

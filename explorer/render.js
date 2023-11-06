@@ -120,6 +120,7 @@ export const initializeGl = rt => {
   fb.bloom = gl.createFramebuffer()
   fb.kawase = gl.createFramebuffer()
 
+  const arity = rt.dimensions > 4 ? 9 : rt.dimensions
   const geometries = {
     vertex: () => sphere(),
     edge: segments => tube({ segments }),
@@ -133,7 +134,7 @@ export const initializeGl = rt => {
     fragmentVertex,
     geometries.vertex,
     rt.maxVertices,
-    rt.dimensions
+    arity
   )
   meshes.vertex.visible = rt.showVertices
 
@@ -144,7 +145,7 @@ export const initializeGl = rt => {
     fragmentEdge,
     geometries.edge,
     rt.maxEdges,
-    rt.dimensions,
+    arity,
     ['position', 'target']
   )
   meshes.edge.visible = rt.showEdges
@@ -156,7 +157,7 @@ export const initializeGl = rt => {
     fragmentFace,
     geometries.face,
     rt.maxFaces,
-    rt.dimensions,
+    arity,
     ['position', 'center', 'target']
   )
   meshes.face.visible = rt.showFaces
@@ -268,6 +269,7 @@ const plotVertices = (rt, range = null) => {
     icolor[i * 3 + 1] = c[1]
     icolor[i * 3 + 2] = c[2]
   }
+  // FIXME use update range
   rt.meshes.vertex.attributes.position.update()
   rt.meshes.vertex.attributes.color.update()
 }

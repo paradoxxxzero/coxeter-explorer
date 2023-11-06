@@ -86,6 +86,7 @@ export const useInteract = (runtime, rotations, updateParams) => {
   const quickUpdateMatrix = useCallback(() => {
     if (runtime.dimensions > 4) {
       plot({
+        gl: runtime.gl,
         currentOrder: runtime.currentOrder,
         dimensions: runtime.dimensions,
         curvature: runtime.curvature,
@@ -96,13 +97,14 @@ export const useInteract = (runtime, rotations, updateParams) => {
         edges: runtime.edges,
         faces: runtime.faces,
         ambiance: runtime.ambiance,
+        meshes: runtime.meshes,
       })
     } else {
       Object.values(runtime.meshes).forEach(mesh => {
         mesh.uniforms.matrix.update(columnMajor(localMatrix.current))
       })
-      render(runtime)
     }
+    render(runtime)
   }, [
     runtime.dimensions,
     runtime.curvature,
