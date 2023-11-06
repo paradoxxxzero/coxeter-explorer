@@ -1,5 +1,4 @@
-import { PNGRGBAWriter } from 'dekapng'
-import { Vector2 } from 'three'
+// import { PNGRGBAWriter } from 'dekapng'
 
 function wait() {
   return new Promise(resolve => {
@@ -16,53 +15,49 @@ export const renderChunk = (
   chunkWidth,
   chunkHeight
 ) => {
-  const { camera, composer } = runtime
-  composer.renderer.setSize(chunkWidth, chunkHeight)
-  composer.renderer.setPixelRatio(1)
-  composer.setSize(chunkWidth, chunkHeight)
-  composer.setPixelRatio(1)
-
-  camera.aspect = chunkWidth / chunkHeight
-  camera.setViewOffset(width, height, chunkX, chunkY, chunkWidth, chunkHeight)
-  camera.updateProjectionMatrix()
-  composer.passes.forEach(pass => {
-    if (pass.material?.uniforms?.['resolution']) {
-      let cw = chunkWidth
-      let ch = chunkHeight
-      if (pass.material.uniforms['resolution'].value.x <= 1) {
-        cw = 1 / cw
-        ch = 1 / ch
-      }
-      pass.material.uniforms['resolution'].value.x = cw
-      pass.material.uniforms['resolution'].value.y = ch
-    }
-    if (pass.resolution) {
-      pass.resolution = new Vector2(width, height)
-    }
-  })
-
-  composer.render()
-
-  const data = new Uint8Array(chunkWidth * chunkHeight * 4)
-  const gl = composer.renderer.getContext()
-  gl.readPixels(0, 0, chunkWidth, chunkHeight, gl.RGBA, gl.UNSIGNED_BYTE, data)
-
-  // swap lines (should probably just fix code in makeBigPng to read backward
-  const lineSize = chunkWidth * 4
-  const line = new Uint8Array(lineSize)
-  const numLines = (chunkHeight / 2) | 0
-  for (let i = 0; i < numLines; ++i) {
-    const topOffset = lineSize * i
-    const bottomOffset = lineSize * (chunkHeight - i - 1)
-    line.set(data.slice(topOffset, topOffset + lineSize), 0)
-    data.set(data.slice(bottomOffset, bottomOffset + lineSize), topOffset)
-    data.set(line, bottomOffset)
-  }
-  return {
-    width: chunkWidth,
-    height: chunkHeight,
-    data: data,
-  }
+  // const { camera, composer } = runtime
+  // composer.renderer.setSize(chunkWidth, chunkHeight)
+  // composer.renderer.setPixelRatio(1)
+  // composer.setSize(chunkWidth, chunkHeight)
+  // composer.setPixelRatio(1)
+  // camera.aspect = chunkWidth / chunkHeight
+  // camera.setViewOffset(width, height, chunkX, chunkY, chunkWidth, chunkHeight)
+  // camera.updateProjectionMatrix()
+  // composer.passes.forEach(pass => {
+  //   if (pass.material?.uniforms?.['resolution']) {
+  //     let cw = chunkWidth
+  //     let ch = chunkHeight
+  //     if (pass.material.uniforms['resolution'].value.x <= 1) {
+  //       cw = 1 / cw
+  //       ch = 1 / ch
+  //     }
+  //     pass.material.uniforms['resolution'].value.x = cw
+  //     pass.material.uniforms['resolution'].value.y = ch
+  //   }
+  //   if (pass.resolution) {
+  //     pass.resolution = new Vector2(width, height)
+  //   }
+  // })
+  // composer.render()
+  // const data = new Uint8Array(chunkWidth * chunkHeight * 4)
+  // const gl = composer.renderer.getContext()
+  // gl.readPixels(0, 0, chunkWidth, chunkHeight, gl.RGBA, gl.UNSIGNED_BYTE, data)
+  // // swap lines (should probably just fix code in makeBigPng to read backward
+  // const lineSize = chunkWidth * 4
+  // const line = new Uint8Array(lineSize)
+  // const numLines = (chunkHeight / 2) | 0
+  // for (let i = 0; i < numLines; ++i) {
+  //   const topOffset = lineSize * i
+  //   const bottomOffset = lineSize * (chunkHeight - i - 1)
+  //   line.set(data.slice(topOffset, topOffset + lineSize), 0)
+  //   data.set(data.slice(bottomOffset, bottomOffset + lineSize), topOffset)
+  //   data.set(line, bottomOffset)
+  // }
+  // return {
+  //   width: chunkWidth,
+  //   height: chunkHeight,
+  //   data: data,
+  // }
 }
 
 export async function makeBigPng(runtime, width, height) {

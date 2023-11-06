@@ -2,11 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './explorer/App.jsx'
 import './index.css'
-import { initializeGl } from './explorer/render.js'
 import { defaultParams, filterParams } from './statics.js'
-
-const gl = initializeGl()
-Object.assign(window, gl)
 
 const parse = s => {
   const replacer = (k, v) => {
@@ -96,7 +92,7 @@ const AppWithHistory = () => {
     }
   }, [popstate])
 
-  return <App gl={gl} params={params} updateParams={updateParams} />
+  return <App params={params} updateParams={updateParams} />
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(

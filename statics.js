@@ -1,28 +1,4 @@
-import {
-  AddEquation,
-  AmbientLight,
-  Color,
-  CustomBlending,
-  DirectionalLight,
-  DoubleSide,
-  EquirectangularReflectionMapping,
-  Euler,
-  HemisphereLight,
-  LinearSRGBColorSpace,
-  MeshBasicMaterial,
-  MeshLambertMaterial,
-  MeshPhongMaterial,
-  MeshPhysicalMaterial,
-  MeshToonMaterial,
-  OneMinusSrcAlphaFactor,
-  PointLight,
-  ReinhardToneMapping,
-  RepeatWrapping,
-  SpotLight,
-  SrcAlphaFactor,
-  SRGBColorSpace,
-  TextureLoader,
-} from 'three'
+import { hsl } from './explorer/helpers'
 import { atoi, itoa, min, PI } from './explorer/math'
 import { ident } from './explorer/math/matrix'
 import { mirrorChars } from './explorer/mirrors'
@@ -56,293 +32,236 @@ export const easings = [
 ]
 export const groupers = ['', 'knuthbendix', 'toddcoxeter', 'fundamental']
 
-const _color = new Color()
-const loader = new TextureLoader()
-
-const diffuse = loader.load('Carbon.png')
-diffuse.colorSpace = SRGBColorSpace
-diffuse.wrapS = RepeatWrapping
-diffuse.wrapT = RepeatWrapping
-diffuse.repeat.x = 10
-diffuse.repeat.y = 10
-
-const normalMap = loader.load('Carbon_Normal.png')
-normalMap.wrapS = RepeatWrapping
-normalMap.wrapT = RepeatWrapping
-
-const ocean = loader.load('ocean.jpg')
-ocean.colorSpace = SRGBColorSpace
-ocean.mapping = EquirectangularReflectionMapping
-
-const dimensionsRegExps = [...new Array(10).keys()].map(
-  i => new RegExp(itoa(i), 'g')
-)
-
 export const ambiances = {
   neon: {
-    background: 0x000000,
-    fx: ['bloom', 'output', 'fxaa'],
-    colorSpace: LinearSRGBColorSpace,
-    // toneMapping: ReinhardToneMapping,
+    background: [0, 0, 0, 1],
+    glow: true,
     exposure: 0.75,
-    shadow: false,
-    material: new MeshBasicMaterial(),
-    lights: [],
-    color: ({ word }) => {
-      _color.setHSL((word.length * 0.17) % 1, 0.5, 0.6)
-      _color.convertSRGBToLinear()
-      return _color
-    },
-    faceMaterial: new MeshBasicMaterial({
-      side: DoubleSide,
-      transparent: true,
-      opacity: 0.05,
-      blending: CustomBlending,
-      blendEquation: AddEquation,
-      blendSrc: SrcAlphaFactor,
-      blendDst: OneMinusSrcAlphaFactor,
-
-      depthWrite: false,
-    }),
+    lighting: false,
+    color: ({ word }) => hsl((word.length * 0.17) % 1, 0.5, 0.6),
   },
   colorful: {
-    background: 0xffffff,
-    shadow: false,
-    fx: ['output', 'fxaa'],
-    material: new MeshPhongMaterial(),
-    lights: [new AmbientLight(0xffffff, 0.5)],
-    cameraLights: [new PointLight(0xffffff, 2.5, 0, 0)],
-    color: ({ word }, type, dimensions) => {
-      _color.setHSL((word.length * 0.03) % 1, 1, 0.8)
-      _color.convertSRGBToLinear()
-      return _color
-      // const i = word.match(dimensionsRegExps[dimensions - 1])?.length || 0
-      // _color.setHSL((i * 0.07) % 1, 0.5, 0.5)
-      // _color.convertSRGBToLinear()
-      // return _color
-    },
-    faceMaterial: new MeshPhongMaterial({
-      side: DoubleSide,
-      transparent: true,
-      opacity: 0.75,
-    }),
+    background: [1, 1, 1, 1],
+    glow: false,
+    lighting: true,
+    color: ({ word }) => hsl((word.length * 0.03) % 1, 1, 0.8),
   },
-  reflection: {
-    background: 0xffffff,
-    shadow: false,
-    fx: ['output', 'fxaa'],
-    material: new MeshToonMaterial(),
-    lights: [new AmbientLight(0xffffff, 0.75)],
-    cameraLights: [new PointLight(0xffffff, 2.5, 0, 0)],
-    color: ({ word }, type, dimensions) => {
-      // const h = word.length ? atoi(word[0]) / dimensions : 0
+  //   reflection: {
+  //     background: 0xffffff,
+  //     shadow: false,
+  //     fx: ['output', 'fxaa'],
+  //     material: new MeshToonMaterial(),
+  //     lights: [new AmbientLight(0xffffff, 0.75)],
+  //     cameraLights: [new PointLight(0xffffff, 2.5, 0, 0)],
+  //     color: ({ word }, type, dimensions) => {
+  //       // const h = word.length ? atoi(word[0]) / dimensions : 0
 
-      // let h = 0
-      // for (let i = 0; i < dimensions; i++) {
-      //   const count = (word.match(dimensiosRegExps[i]) || []).length
-      //   h += ((count / 10) * i) / dimensions
-      // }
+  //       // let h = 0
+  //       // for (let i = 0; i < dimensions; i++) {
+  //       //   const count = (word.match(dimensiosRegExps[i]) || []).length
+  //       //   h += ((count / 10) * i) / dimensions
+  //       // }
 
-      // Get the character with the highest count
-      // const counts = dimensionsRegExps.map(r => (word.match(r) || []).length)
-      // const max = Math.max(...counts)
-      // const h = counts.indexOf(max) / dimensions
-      const h = word.length ? atoi(word[word.length - 1]) / dimensions : 0
+  //       // Get the character with the highest count
+  //       // const counts = dimensionsRegExps.map(r => (word.match(r) || []).length)
+  //       // const max = Math.max(...counts)
+  //       // const h = counts.indexOf(max) / dimensions
+  //       const h = word.length ? atoi(word[word.length - 1]) / dimensions : 0
 
-      _color.setHSL(h % 1, 1, 0.6)
-      _color.convertSRGBToLinear()
-      return _color
-    },
-  },
-  projection: {
-    background: 0xffffff,
-    ground: 'sphere',
-    shadow: true,
-    fx: ['output', 'fxaa'],
-    material: new MeshPhongMaterial({
-      transparent: true,
-      opacity: 0.75,
-      blending: CustomBlending,
-    }),
-
-    lights: [new PointLight(0xffffff, 4, 0, 0)],
-    color: ({ word }) => {
-      _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
-      _color.convertSRGBToLinear()
-      return _color
-    },
-  },
-  bw: {
-    background: 0x000000,
-    fx: ['sobel', 'output', 'fxaa'],
-    shadow: false,
-    material: new MeshPhongMaterial(),
-    lights: [new AmbientLight(0xcccccc)],
-    cameraLights: [new PointLight(0xffffff, 2, 0, 0)],
-    color: () => {
-      _color.set(0xffff00)
-      _color.convertSRGBToLinear()
-      return _color
-    },
-  },
-  pure: {
-    background: 0,
-    fx: ['sao', 'output', 'fxaa'],
-    shadow: false,
-    material: new MeshLambertMaterial(),
-    cameraLights: [new PointLight(0xffffff, 3)],
-    color: ({ word }) => {
-      _color.setHSL((word.length * 0.03) % 1, 0.75, 0.7)
-      _color.convertSRGBToLinear()
-      return _color
-    },
-    faceMaterial: new MeshLambertMaterial({
-      side: DoubleSide,
-    }),
-  },
-  glass: {
-    extended: true,
-    fx: ['output', 'fxaa'],
-    background: ocean,
-    env: ocean,
-    shadow: false,
-    material: new MeshPhysicalMaterial({
-      premultipliedAlpha: false,
-      reflectivity: 0,
-      metalness: 0,
-      roughness: 0,
-      transmission: 1,
-      clearcoat: 1,
-      clearcoatRoughness: 0.1,
-      thickness: 1,
-      ior: 1.5,
-    }),
-    lights: [new DirectionalLight(), new HemisphereLight()],
-    color: () => {
-      _color.set(0xdddddd)
-      _color.convertSRGBToLinear()
-      return _color
-    },
-  },
-  museum: {
-    extended: true,
-    background: 0xbbbbbb,
-    fx: ['output', 'fxaa'],
-    env: ocean,
-    shadow: true,
-    ground: 'plane',
-    material: new MeshPhysicalMaterial({
-      roughness: 0.5,
-      reflectivity: 0.25,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.1,
-      map: diffuse,
-      normalMap: normalMap,
-    }),
-    lights: [
-      ...new Array(3).fill().map((_, i, a) => {
-        const angle = (2 * PI) / a.length
-        const r = 6
-        const light = new SpotLight(0xffffff, 60)
-        light.position.set(3, 0, r)
-        light.position.applyEuler(new Euler(angle * i, PI / 6, 0, 'YXZ'))
-        light.lookAt(0, 0, 0)
-        return light
-      }),
-      new AmbientLight(0xffffff, 1.25),
-    ],
-    color: () => {
-      _color.set(0xffffff)
-      _color.convertSRGBToLinear()
-      return _color
-    },
-  },
-  bokeh: {
-    extended: true,
-    background: 0xffffff,
-    fx: ['bokeh', 'output', 'fxaa'],
-    shadow: false,
-    material: new MeshPhongMaterial(),
-    lights: [new AmbientLight(0xffffff, 1.5)],
-    cameraLights: [new PointLight(0xffffff, 3)],
-    color: ({ word }) => {
-      _color.setHSL((word.length * 0.17) % 1, 0.7, 0.5)
-      _color.convertSRGBToLinear()
-      return _color
-    },
-  },
-  // transcendent: {
-  //   extended: true,
-  //   background: 0xffffff,
-  //   fx: ['godray'],
-  //   shadow: false,
-  //   material: new MeshBasicMaterial(),
-  //   color: () => {
-  //     _color.set(0x000000)
-  //     _color.convertSRGBToLinear()
-  //     return _color
+  //       _color.setHSL(h % 1, 1, 0.6)
+  //       _color.convertSRGBToLinear()
+  //       return _color
+  //     },
   //   },
-  // },
-  plain: {
-    extended: true,
-    background: 0xffffff,
-    fx: ['copy', 'fxaa'],
-    shadow: false,
-    material: new MeshBasicMaterial(),
-    color: ({ word }) => {
-      _color.setHSL((word.length * 0.06) % 1, 0.7, 0.5)
-      _color.convertSRGBToLinear()
-      return _color
-    },
-  },
-  plainblack: {
-    extended: true,
-    background: 0xffffff,
-    fx: ['copy', 'fxaa'],
-    shadow: false,
-    material: new MeshBasicMaterial(),
-    color: () => {
-      _color.set(0x000000)
-      _color.convertSRGBToLinear()
-      return _color
-    },
-  },
-  wireframe: {
-    extended: true,
-    background: 0x000000,
-    shadow: false,
-    material: new MeshBasicMaterial({
-      wireframe: true,
-    }),
-    lights: [],
-    color: ({ word }) => {
-      _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
-      _color.convertSRGBToLinear()
-      return _color
-    },
-  },
-}
-Object.values(ambiances).forEach(ambiance => {
-  if (!ambiance.vertexMaterial) {
-    ambiance.vertexMaterial = ambiance.material
-  }
-  if (!ambiance.edgeMaterial) {
-    ambiance.edgeMaterial = ambiance.material
-  }
-  if (!ambiance.faceMaterial) {
-    ambiance.faceMaterial = ambiance.material.clone()
-    ambiance.faceMaterial.side = DoubleSide
-    ambiance.faceMaterial.transparent = true
-    ambiance.faceMaterial.opacity = 0.5
-    ambiance.faceMaterial.blending = CustomBlending
-    ambiance.faceMaterial.blendEquation = AddEquation
-    ambiance.faceMaterial.blendSrc = SrcAlphaFactor
-    ambiance.faceMaterial.blendDst = OneMinusSrcAlphaFactor
+  //   projection: {
+  //     background: 0xffffff,
+  //     ground: 'sphere',
+  //     shadow: true,
+  //     fx: ['output', 'fxaa'],
+  //     material: new MeshPhongMaterial({
+  //       transparent: true,
+  //       opacity: 0.75,
+  //       blending: CustomBlending,
+  //     }),
 
-    ambiance.faceMaterial.depthWrite = false
-    // ambiance.faceMaterial.depthTest = false
-  }
-})
+  //     lights: [new PointLight(0xffffff, 4, 0, 0)],
+  //     color: ({ word }) => {
+  //       _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
+  //       _color.convertSRGBToLinear()
+  //       return _color
+  //     },
+  //   },
+  //   bw: {
+  //     background: 0x000000,
+  //     fx: ['sobel', 'output', 'fxaa'],
+  //     shadow: false,
+  //     material: new MeshPhongMaterial(),
+  //     lights: [new AmbientLight(0xcccccc)],
+  //     cameraLights: [new PointLight(0xffffff, 2, 0, 0)],
+  //     color: () => {
+  //       _color.set(0xffff00)
+  //       _color.convertSRGBToLinear()
+  //       return _color
+  //     },
+  //   },
+  //   pure: {
+  //     background: 0,
+  //     fx: ['sao', 'output', 'fxaa'],
+  //     shadow: false,
+  //     material: new MeshLambertMaterial(),
+  //     cameraLights: [new PointLight(0xffffff, 3)],
+  //     color: ({ word }) => {
+  //       _color.setHSL((word.length * 0.03) % 1, 0.75, 0.7)
+  //       _color.convertSRGBToLinear()
+  //       return _color
+  //     },
+  //     faceMaterial: new MeshLambertMaterial({
+  //       side: DoubleSide,
+  //     }),
+  //   },
+  //   glass: {
+  //     extended: true,
+  //     fx: ['output', 'fxaa'],
+  //     background: ocean,
+  //     env: ocean,
+  //     shadow: false,
+  //     material: new MeshPhysicalMaterial({
+  //       premultipliedAlpha: false,
+  //       reflectivity: 0,
+  //       metalness: 0,
+  //       roughness: 0,
+  //       transmission: 1,
+  //       clearcoat: 1,
+  //       clearcoatRoughness: 0.1,
+  //       thickness: 1,
+  //       ior: 1.5,
+  //     }),
+  //     lights: [new DirectionalLight(), new HemisphereLight()],
+  //     color: () => {
+  //       _color.set(0xdddddd)
+  //       _color.convertSRGBToLinear()
+  //       return _color
+  //     },
+  //   },
+  //   museum: {
+  //     extended: true,
+  //     background: 0xbbbbbb,
+  //     fx: ['output', 'fxaa'],
+  //     env: ocean,
+  //     shadow: true,
+  //     ground: 'plane',
+  //     material: new MeshPhysicalMaterial({
+  //       roughness: 0.5,
+  //       reflectivity: 0.25,
+  //       clearcoat: 1.0,
+  //       clearcoatRoughness: 0.1,
+  //       map: diffuse,
+  //       normalMap: normalMap,
+  //     }),
+  //     lights: [
+  //       ...new Array(3).fill().map((_, i, a) => {
+  //         const angle = (2 * PI) / a.length
+  //         const r = 6
+  //         const light = new SpotLight(0xffffff, 60)
+  //         light.position.set(3, 0, r)
+  //         light.position.applyEuler(new Euler(angle * i, PI / 6, 0, 'YXZ'))
+  //         light.lookAt(0, 0, 0)
+  //         return light
+  //       }),
+  //       new AmbientLight(0xffffff, 1.25),
+  //     ],
+  //     color: () => {
+  //       _color.set(0xffffff)
+  //       _color.convertSRGBToLinear()
+  //       return _color
+  //     },
+  //   },
+  //   bokeh: {
+  //     extended: true,
+  //     background: 0xffffff,
+  //     fx: ['bokeh', 'output', 'fxaa'],
+  //     shadow: false,
+  //     material: new MeshPhongMaterial(),
+  //     lights: [new AmbientLight(0xffffff, 1.5)],
+  //     cameraLights: [new PointLight(0xffffff, 3)],
+  //     color: ({ word }) => {
+  //       _color.setHSL((word.length * 0.17) % 1, 0.7, 0.5)
+  //       _color.convertSRGBToLinear()
+  //       return _color
+  //     },
+  //   },
+  //   // transcendent: {
+  //   //   extended: true,
+  //   //   background: 0xffffff,
+  //   //   fx: ['godray'],
+  //   //   shadow: false,
+  //   //   material: new MeshBasicMaterial(),
+  //   //   color: () => {
+  //   //     _color.set(0x000000)
+  //   //     _color.convertSRGBToLinear()
+  //   //     return _color
+  //   //   },
+  //   // },
+  //   plain: {
+  //     extended: true,
+  //     background: 0xffffff,
+  //     fx: ['copy', 'fxaa'],
+  //     shadow: false,
+  //     material: new MeshBasicMaterial(),
+  //     color: ({ word }) => {
+  //       _color.setHSL((word.length * 0.06) % 1, 0.7, 0.5)
+  //       _color.convertSRGBToLinear()
+  //       return _color
+  //     },
+  //   },
+  //   plainblack: {
+  //     extended: true,
+  //     background: 0xffffff,
+  //     fx: ['copy', 'fxaa'],
+  //     shadow: false,
+  //     material: new MeshBasicMaterial(),
+  //     color: () => {
+  //       _color.set(0x000000)
+  //       _color.convertSRGBToLinear()
+  //       return _color
+  //     },
+  //   },
+  //   wireframe: {
+  //     extended: true,
+  //     background: 0x000000,
+  //     shadow: false,
+  //     material: new MeshBasicMaterial({
+  //       wireframe: true,
+  //     }),
+  //     lights: [],
+  //     color: ({ word }) => {
+  //       _color.setHSL((word.length * 0.17) % 1, 0.5, 0.5)
+  //       _color.convertSRGBToLinear()
+  //       return _color
+  //     },
+  //   },
+}
+// Object.values(ambiances).forEach(ambiance => {
+//   if (!ambiance.vertexMaterial) {
+//     ambiance.vertexMaterial = ambiance.material
+//   }
+//   if (!ambiance.edgeMaterial) {
+//     ambiance.edgeMaterial = ambiance.material
+//   }
+//   if (!ambiance.faceMaterial) {
+//     ambiance.faceMaterial = ambiance.material.clone()
+//     ambiance.faceMaterial.side = DoubleSide
+//     ambiance.faceMaterial.transparent = true
+//     ambiance.faceMaterial.opacity = 0.5
+//     ambiance.faceMaterial.blending = CustomBlending
+//     ambiance.faceMaterial.blendEquation = AddEquation
+//     ambiance.faceMaterial.blendSrc = SrcAlphaFactor
+//     ambiance.faceMaterial.blendDst = OneMinusSrcAlphaFactor
+
+//     ambiance.faceMaterial.depthWrite = false
+//     // ambiance.faceMaterial.depthTest = false
+//   }
+// })
 
 export const defaultParams = {
   dimensions: 4,

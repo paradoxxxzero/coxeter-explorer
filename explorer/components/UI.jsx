@@ -6,7 +6,6 @@ import CoxeterMatrix from './CoxeterMatrix'
 import Number from './Number'
 import Presets from './Presets'
 import Space from './Space'
-import { size } from '../event'
 
 export default function UI({
   runtime,
@@ -99,7 +98,6 @@ export default function UI({
       a.download = `${document.title}-${width}x${height}`
       a.click()
     }
-    size(runtime)
   }, [runtime])
 
   return (

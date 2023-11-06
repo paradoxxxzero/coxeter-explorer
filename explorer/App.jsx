@@ -4,13 +4,13 @@ import Runtime from './components/Runtime'
 import UI from './components/UI'
 import { binomial, ceil, combinations } from './math'
 import { sortRotations } from './math/hypermath'
+import { initializeGl } from './render'
 
-export default function App({ gl, params, updateParams }) {
+export default function App({ params, updateParams }) {
   window.p = params
   const [runtime, setRuntime] = useState(() => {
     return {
       ...params,
-      ...gl,
 
       currentOrder: 0,
       askedOrder: null,
@@ -30,6 +30,11 @@ export default function App({ gl, params, updateParams }) {
       renderError: null,
     }
   })
+
+  useEffect(() => {
+    setRuntime(runtime => initializeGl(runtime))
+  }, [])
+
   const [rotations, setRotations] = useState({
     shift: 0,
     maxShift: 0,
@@ -135,8 +140,7 @@ export default function App({ gl, params, updateParams }) {
     },
     [setRotations]
   )
-
-  return (
+  return runtime.gl ? (
     <div
       className={runtime.error || runtime.renderError ? 'error' : ''}
       title={runtime.error || runtime.renderError}
@@ -155,5 +159,5 @@ export default function App({ gl, params, updateParams }) {
         updateParams={updateParams}
       />
     </div>
-  )
+  ) : null
 }

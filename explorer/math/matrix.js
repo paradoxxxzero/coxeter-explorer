@@ -1,4 +1,4 @@
-import { PI, abs, atan, cos, sign, sin } from '.'
+import { PI, abs, atan, cos, sign, sin, sqrt, tan } from '.'
 
 export const transpose = m => {
   // Transpose matrix m (swap rows and columns)
@@ -243,4 +243,84 @@ export const columnMajor = m => {
     ]
   }
   throw new Error('Unsupported matrix size')
+}
+
+export const perspective = (fovy, aspect, near, far) => {
+  const f = 1.0 / tan(fovy / 2)
+  const nf = 1 / (near - far)
+  const out = ident(4)
+  out[0][0] = f / aspect
+  out[1][1] = f
+  out[2][2] = (far + near) * nf
+  out[3][2] = -1
+  out[2][3] = 2 * far * near * nf
+  out[3][3] = 0
+  return out
+}
+
+export const lookAt = (eye, center, up) => {
+  if (
+    abs(eye[0] - center[0]) < 0.0001 &&
+    abs(eye[1] - center[1]) < 0.0001 &&
+    abs(eye[2] - center[2]) < 0.0001
+  ) {
+    return ident(4)
+  }
+
+  let z0 = eye[0] - center[0]
+  let z1 = eye[1] - center[1]
+  let z2 = eye[2] - center[2]
+
+  let len = 1 / sqrt(z0 * z0 + z1 * z1 + z2 * z2)
+  z0 *= len
+  z1 *= len
+  z2 *= len
+
+  let x0 = up[1] * z2 - up[2] * z1
+  let x1 = up[2] * z0 - up[0] * z2
+  let x2 = up[0] * z1 - up[1] * z0
+  len = sqrt(x0 * x0 + x1 * x1 + x2 * x2)
+  if (!len) {
+    x0 = 0
+    x1 = 0
+    x2 = 0
+  } else {
+    len = 1 / len
+    x0 *= len
+    x1 *= len
+    x2 *= len
+  }
+
+  let y0 = z1 * x2 - z2 * x1
+  let y1 = z2 * x0 - z0 * x2
+  let y2 = z0 * x1 - z1 * x0
+
+  len = sqrt(y0 * y0 + y1 * y1 + y2 * y2)
+  if (!len) {
+    y0 = 0
+    y1 = 0
+    y2 = 0
+  } else {
+    len = 1 / len
+    y0 *= len
+    y1 *= len
+    y2 *= len
+  }
+
+  const out = ident(4)
+
+  out[0][0] = x0
+  out[1][0] = y0
+  out[2][0] = z0
+  out[0][1] = x1
+  out[1][1] = y1
+  out[2][1] = z1
+  out[0][2] = x2
+  out[1][2] = y2
+  out[2][2] = z2
+  out[0][3] = -(x0 * eye[0] + x1 * eye[1] + x2 * eye[2])
+  out[1][3] = -(y0 * eye[0] + y1 * eye[1] + y2 * eye[2])
+  out[2][3] = -(z0 * eye[0] + z1 * eye[1] + z2 * eye[2])
+
+  return out
 }

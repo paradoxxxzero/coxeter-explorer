@@ -1,357 +1,266 @@
-import {
-  BackSide,
-  BufferGeometry,
-  Color,
-  CylinderGeometry,
-  Float32BufferAttribute,
-  HalfFloatType,
-  InstancedBufferAttribute,
-  InstancedBufferGeometry,
-  Mesh,
-  MeshDepthMaterial,
-  MeshDistanceMaterial,
-  MeshPhongMaterial,
-  NoToneMapping,
-  PCFShadowMap,
-  PCFSoftShadowMap,
-  PerspectiveCamera,
-  PlaneGeometry,
-  ReinhardToneMapping,
-  RGBADepthPacking,
-  Scene,
-  SphereGeometry,
-  SRGBColorSpace,
-  Vector2,
-  WebGLRenderer,
-  WebGLRenderTarget,
-  LinearSRGBColorSpace,
-} from 'three'
-import Stats from 'three/examples/jsm/libs/stats.module.js'
-import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass'
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
-import { SAOPass } from 'three/examples/jsm/postprocessing/SAOPass'
-import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
-import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass'
-import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
-import { LuminosityShader } from 'three/examples/jsm/shaders/LuminosityShader.js'
-import { SobelOperatorShader } from 'three/examples/jsm/shaders/SobelOperatorShader.js'
-import { degToRad } from 'three/src/math/MathUtils'
+import Stats from 'stats.js'
+import fragmentBloom from './shaders/bloom/fragment.glsl?raw'
+import vertexBloom from './shaders/bloom/vertex.glsl?raw'
+import fragmentDown from './shaders/down/fragment.glsl?raw'
+import vertexDown from './shaders/down/vertex.glsl?raw'
+import fragmentEdge from './shaders/edge/fragment.glsl?raw'
+import vertexEdge from './shaders/edge/vertex.glsl?raw'
+import fragmentFace from './shaders/face/fragment.glsl?raw'
+import vertexFace from './shaders/face/vertex.glsl?raw'
+import fragmentOit from './shaders/oit/fragment.glsl?raw'
+import vertexOit from './shaders/oit/vertex.glsl?raw'
+import fragmentUp from './shaders/up/fragment.glsl?raw'
+import vertexUp from './shaders/up/vertex.glsl?raw'
+import fragmentVertex from './shaders/vertex/fragment.glsl?raw'
+import vertexVertex from './shaders/vertex/vertex.glsl?raw'
 import { ambiances } from '../statics'
-import { tan } from './math'
-import { columnMajor, multiplyVector } from './math/matrix'
-import { GodRayPass } from './shader/GodRayPass'
-import { hyperMaterial, hyperMaterials } from './shader/hyperMaterial'
+import { sphere, tri, tube } from './geometries'
+import {
+  compileProgram,
+  mesh,
+  renderMesh,
+  resizeCanvasToDisplaySize,
+  uniform,
+} from './helpers'
+import { PI } from './math'
+import {
+  columnMajor,
+  lookAt,
+  multiply,
+  multiplyVector,
+  perspective,
+} from './math/matrix'
+import refreshTextures from './textures'
 
 const showStats = window.location.search.includes('stats')
+let stats
+if (showStats) {
+  stats = new Stats()
+  stats.dom.id = 'stats'
+  document.body.appendChild(stats.dom)
+}
 
-export const initializeGl = () => {
-  let stats
-  if (showStats) {
-    stats = new Stats()
-    stats.dom.id = 'stats'
-    document.body.appendChild(stats.dom)
+export const initializeGl = rt => {
+  if (document.getElementById('webgl2')) {
+    // FIXME
+    console.error('WebGL already initialized')
+    return rt
   }
-  const renderer = new WebGLRenderer({
+  const canvas = document.createElement('canvas')
+  canvas.id = 'webgl2'
+  document.body.appendChild(canvas)
+
+  const gl = canvas.getContext('webgl2', {
+    // alpha: false,
+    antialias: false,
+    depth: true,
     stencil: false,
     powerPreference: 'high-performance',
+    preserveDrawingBuffer: false,
   })
-  renderer.setPixelRatio(window.devicePixelRatio)
-  renderer.setSize(window.innerWidth, window.innerHeight)
+  rt = { ...rt, gl }
+  if (!gl) {
+    console.error(
+      'Unable to initialize WebGL. Your browser may not support it.'
+    )
+    return
+  }
+  gl.getExtension('EXT_color_buffer_float')
 
-  document.body.appendChild(renderer.domElement)
+  gl.enable(gl.DEPTH_TEST)
+  // gl.clearColor(...state.background, 1.0) // FIXME
+  const camera = {
+    zoom: 1,
+    fov: PI / 3,
+    position: { z: 2 },
+  }
+  const meshes = {}
+  camera.update = () => {
+    const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight
+    const eye = [0, 0, camera.position.z * camera.zoom]
+    const viewMatrix = lookAt(eye, [0, 0, 0], [0, 1, 0])
+    const projectionMatrix = perspective(camera.fov, aspect, 0.001, 1000)
+    const viewProjection = columnMajor(multiply(projectionMatrix, viewMatrix))
+    Object.values(meshes).forEach(mesh => {
+      gl.useProgram(mesh.program)
+      gl.uniformMatrix4fv(
+        mesh.uniforms.viewProjection.location,
+        false,
+        viewProjection
+      )
+      gl.uniform3fv(mesh.uniforms.eye.location, eye)
+    })
+  }
+  const passes = {
+    glow: false,
+    glowParameters: {
+      exposure: 2,
+      strength: 1.5,
+    },
+  }
+  passes.oit = {
+    attributes: {},
+    uniforms: {},
+    program: compileProgram(rt, vertexOit, fragmentOit),
+  }
+  passes.kawase = {
+    offset: {
+      up: 1,
+      down: 1,
+    },
+    steps: 4,
+    pow: 2,
+  }
+  passes.kawase.down = {
+    attributes: {},
+    uniforms: {},
+    program: compileProgram(rt, vertexDown, fragmentDown),
+  }
+  passes.kawase.up = {
+    attributes: {},
+    uniforms: {},
+    program: compileProgram(rt, vertexUp, fragmentUp),
+  }
+  passes.bloom = {
+    attributes: {},
+    uniforms: {},
+    program: compileProgram(rt, vertexBloom, fragmentBloom),
+  }
 
-  const camera = new PerspectiveCamera(
-    90,
-    window.innerWidth / window.innerHeight,
-    0.01,
-    1000
+  const rb = {}
+  rb.opaque = gl.createRenderbuffer()
+  rb.transparent = gl.createRenderbuffer()
+  rb.depth = gl.createRenderbuffer()
+
+  const fb = {}
+  fb.transparent = gl.createFramebuffer()
+  fb.opaque = gl.createFramebuffer()
+  fb.bloom = gl.createFramebuffer()
+  fb.kawase = gl.createFramebuffer()
+
+  const geometries = {
+    vertex: sphere(),
+    edge: tube({ segments: rt.segments }),
+    face: tri({ segments: rt.segments }),
+  }
+
+  meshes.vertex = mesh(
+    rt,
+    compileProgram(rt, vertexVertex, fragmentVertex),
+    geometries.vertex,
+    rt.maxVertices * rt.dimensions,
+    rt.dimensions
   )
-  camera.position.set(0, 0, -1)
-  camera.up.set(1, 0, 0)
-  camera.lookAt(0, 0, 0)
-  camera.zoom = Math.min(1, window.innerWidth / window.innerHeight)
-  camera.updateProjectionMatrix()
+  gl.useProgram(meshes.vertex.program)
+  meshes.vertex.visible = rt.showVertices
 
-  const scene = new Scene()
+  meshes.edge = mesh(
+    rt,
+    compileProgram(rt, vertexEdge, fragmentEdge),
+    geometries.edge,
+    rt.maxEdges * rt.dimensions,
+    rt.dimensions,
+    ['position', 'target']
+  )
+  gl.useProgram(meshes.edge.program)
+  meshes.edge.visible = rt.showEdges
 
-  camera.updateProjectionMatrix()
-  scene.add(camera)
+  meshes.face = mesh(
+    rt,
+    compileProgram(rt, vertexFace, fragmentFace),
+    geometries.face,
+    rt.maxFaces * rt.dimensions,
+    rt.dimensions,
+    ['position', 'center', 'target']
+  )
+  gl.useProgram(meshes.face.program)
+  meshes.face.visible = rt.showFaces
+  gl.useProgram(passes.kawase.down.program)
+  passes.kawase.down.uniforms.screen = uniform(
+    rt,
+    passes.kawase.down.program,
+    'screen'
+  )
+  gl.uniform1i(passes.kawase.down.uniforms.screen.location, 0)
+  passes.kawase.down.uniforms.offset = uniform(
+    rt,
+    passes.kawase.down.program,
+    'offset'
+  )
+  gl.uniform1f(
+    passes.kawase.down.uniforms.offset.location,
+    passes.kawase.offset.down
+  )
 
-  // scene.add(
-  //   new Mesh(
-  //     new SphereGeometry(1, 32, 32),
-  //     new MeshPhongMaterial({
-  //       color: 0xff0000,
-  //       transparent: true,
-  //       opacity: 0.25,
-  //       side: DoubleSide,
-  //     })
-  //   )
-  // )
+  gl.useProgram(passes.kawase.up.program)
+  passes.kawase.up.uniforms.screen = uniform(
+    rt,
+    passes.kawase.up.program,
+    'screen'
+  )
+  gl.uniform1i(passes.kawase.up.uniforms.screen.location, 0)
+  passes.kawase.up.uniforms.offset = uniform(
+    rt,
+    passes.kawase.up.program,
+    'offset'
+  )
+  gl.uniform1f(
+    passes.kawase.up.uniforms.offset.location,
+    passes.kawase.offset.up
+  )
 
-  const composer = new EffectComposer(renderer)
-  composer.setPixelRatio(window.devicePixelRatio)
-  const renderPass = new RenderPass(scene, camera)
-  composer.addPass(renderPass)
+  gl.useProgram(passes.bloom.program)
+  passes.bloom.uniforms.screen = uniform(rt, passes.bloom.program, 'screen')
+  gl.uniform1i(passes.bloom.uniforms.screen.location, 0)
+  passes.bloom.uniforms.bloom = uniform(rt, passes.bloom.program, 'bloom')
+  gl.uniform1i(passes.bloom.uniforms.bloom.location, 1)
+  passes.bloom.uniforms.exposure = uniform(rt, passes.bloom.program, 'exposure')
+  gl.uniform1f(
+    passes.bloom.uniforms.exposure.location,
+    passes.glowParameters.exposure
+  )
+  passes.bloom.uniforms.strength = uniform(rt, passes.bloom.program, 'strength')
+  gl.uniform1f(
+    passes.bloom.uniforms.strength.location,
+    passes.glowParameters.strength
+  )
 
-  const render = showStats
-    ? () => {
-        stats.update()
-        composer.render()
-        // stats.end()
-      }
-    : () => composer.render()
+  // QUAD
+  gl.useProgram(passes.oit.program)
+  passes.oit.uniforms.accum = uniform(rt, passes.oit.program, 'accumTexture')
+  gl.uniform1i(passes.oit.uniforms.accum.location, 0)
+  passes.oit.uniforms.accumAlpha = uniform(
+    rt,
+    passes.oit.program,
+    'revealageTexture'
+  )
+  gl.uniform1i(passes.oit.uniforms.accumAlpha.location, 1)
+
+  camera.update()
 
   return {
-    composer,
+    ...rt,
+    gl,
     camera,
-    scene,
-    render,
+    meshes,
+    passes,
+    rb,
+    fb,
   }
-}
-
-export const initVertex = rt => {
-  let existingVertex = rt.scene.getObjectByName('instanced-vertex')
-  if (existingVertex) {
-    rt.scene.remove(existingVertex)
-    existingVertex.geometry.dispose()
-    existingVertex.material.dispose()
-    existingVertex.customDepthMaterial.dispose()
-    existingVertex.customDistanceMaterial.dispose()
-  }
-  const ambiance = ambiances[rt.ambiance]
-  const { dimensions } = rt
-
-  const vertex3dGeometry = new SphereGeometry(1, 32, 32)
-  const vertexGeometry = new InstancedBufferGeometry().copy(vertex3dGeometry)
-  const arity = dimensions > 4 ? 9 : dimensions
-  vertexGeometry.setAttribute(
-    'instancePosition',
-    new InstancedBufferAttribute(
-      new Float32Array(rt.maxVertices * arity),
-      arity
-    )
-  )
-  vertexGeometry.setAttribute(
-    'instanceTarget',
-    new InstancedBufferAttribute(
-      new Float32Array(rt.maxVertices * arity),
-      arity
-    )
-  )
-  vertexGeometry.setAttribute(
-    'instanceCentroid',
-    new InstancedBufferAttribute(
-      new Float32Array(rt.maxVertices * arity),
-      arity
-    )
-  )
-  vertexGeometry.setAttribute(
-    'instanceColor',
-    new InstancedBufferAttribute(new Float32Array(rt.maxVertices * 3), 3)
-  )
-
-  const instancedVertex = new Mesh(
-    vertexGeometry,
-    hyperMaterial(ambiance.vertexMaterial, rt, 'vertex')
-  )
-  instancedVertex.matrixAutoUpdate = false
-  instancedVertex.matrixWorldAutoUpdate = false
-  vertexGeometry.attributes.instanceTarget.array.fill(NaN)
-  vertexGeometry.attributes.instanceCentroid.array.fill(NaN)
-  instancedVertex.geometry.instanceCount = 0
-  instancedVertex.frustumCulled = false
-  instancedVertex.customDepthMaterial = hyperMaterial(
-    new MeshDepthMaterial({ depthPacking: RGBADepthPacking }),
-    rt,
-    'vertex'
-  )
-  instancedVertex.customDistanceMaterial = hyperMaterial(
-    new MeshDistanceMaterial(),
-    rt,
-    'vertex'
-  )
-  instancedVertex.castShadow = ambiance.shadow
-  instancedVertex.name = 'instanced-vertex'
-  instancedVertex.visible = rt.showVertices
-  rt.scene.add(instancedVertex)
-}
-
-export const initEdge = rt => {
-  let existingEdge = rt.scene.getObjectByName('instanced-edge')
-  if (existingEdge) {
-    rt.scene.remove(existingEdge)
-    existingEdge.geometry.dispose()
-    existingEdge.material.dispose()
-    existingEdge.customDepthMaterial.dispose()
-    existingEdge.customDistanceMaterial.dispose()
-  }
-  const ambiance = ambiances[rt.ambiance]
-  const { dimensions, curve, segments: rawSegments } = rt
-  const segments = curve ? rawSegments : 1
-  const edge3dGeometry = new CylinderGeometry(1, 1, 1, 8, segments, true)
-  const edgeGeometry = new InstancedBufferGeometry().copy(edge3dGeometry)
-  const arity = dimensions > 4 ? 9 : dimensions
-  edgeGeometry.setAttribute(
-    'instancePosition',
-    new InstancedBufferAttribute(new Float32Array(rt.maxEdges * arity), arity)
-  )
-  edgeGeometry.setAttribute(
-    'instanceTarget',
-    new InstancedBufferAttribute(new Float32Array(rt.maxEdges * arity), arity)
-  )
-  edgeGeometry.setAttribute(
-    'instanceCentroid',
-    new InstancedBufferAttribute(new Float32Array(rt.maxEdges * arity), arity)
-  )
-  edgeGeometry.setAttribute(
-    'instanceColor',
-    new InstancedBufferAttribute(new Float32Array(rt.maxEdges * 3), 3)
-  )
-
-  const instancedEdge = new Mesh(
-    edgeGeometry,
-    hyperMaterial(ambiance.edgeMaterial, rt, 'edge')
-  )
-  instancedEdge.matrixAutoUpdate = false
-  instancedEdge.matrixWorldAutoUpdate = false
-  edgeGeometry.attributes.instanceCentroid.array.fill(NaN)
-  instancedEdge.geometry.instanceCount = 0
-  instancedEdge.frustumCulled = false
-  instancedEdge.customDepthMaterial = hyperMaterial(
-    new MeshDepthMaterial({ depthPacking: RGBADepthPacking }),
-    rt,
-    'edge'
-  )
-  instancedEdge.customDistanceMaterial = hyperMaterial(
-    new MeshDistanceMaterial(),
-    rt,
-    'edge'
-  )
-  instancedEdge.castShadow = ambiance.shadow
-  instancedEdge.name = 'instanced-edge'
-  instancedEdge.visible = rt.showEdges
-  rt.scene.add(instancedEdge)
-}
-
-export const initFace = rt => {
-  let overridenOpacity = null
-  let existingFace = rt.scene.getObjectByName('instanced-face')
-  if (existingFace) {
-    overridenOpacity = existingFace.material.opacity
-    rt.scene.remove(existingFace)
-    existingFace.geometry.dispose()
-    existingFace.material.dispose()
-    existingFace.customDepthMaterial.dispose()
-    existingFace.customDistanceMaterial.dispose()
-  }
-  const ambiance = ambiances[rt.ambiance]
-  const { dimensions, curve, segments: rawSegments } = rt
-  const face3dGeometry = new BufferGeometry()
-  const indices = []
-  const vertices = []
-  const normals = []
-  const uvs = []
-
-  //       0
-  //       /\          ----> x
-  //    1 /__\ 2       |
-  //     /\  /\        |
-  //  3 /__\/__\ 5      v y
-  //   /\  /4  /\
-  //  /__\/__\/__\
-  // ...   segments
-
-  const segments = curve ? rawSegments : 1
-  const part = 1 / segments
-  for (let i = 0; i < segments + 1; i++) {
-    for (let j = 0; j < i + 1; j++) {
-      vertices.push(((2 * j - i) * part) / 2, i * part, 0)
-      normals.push(0, 0, 1)
-      uvs.push(part * j, 1 - part * i)
-    }
-  }
-  for (let i = 1; i < segments + 1; i++) {
-    for (let j = 0; j < i; j++) {
-      const k = (i * (i + 1)) / 2 + j
-
-      // Up triangle
-      const p = (i * (i - 1)) / 2 + j
-      indices.push(p, k, k + 1)
-      // Down triangle
-      if (i < segments) {
-        const n = ((i + 1) * (i + 2)) / 2 + j
-        indices.push(n + 1, k + 1, k)
-      }
-    }
-  }
-
-  face3dGeometry.setIndex(indices)
-  face3dGeometry.setAttribute(
-    'position',
-    new Float32BufferAttribute(vertices, 3)
-  )
-  face3dGeometry.setAttribute('normal', new Float32BufferAttribute(normals, 3))
-  face3dGeometry.setAttribute('uv', new Float32BufferAttribute(uvs, 2))
-
-  const faceGeometry = new InstancedBufferGeometry().copy(face3dGeometry)
-  const arity = dimensions > 4 ? 9 : dimensions
-  faceGeometry.setAttribute(
-    'instanceCentroid',
-    new InstancedBufferAttribute(new Float32Array(rt.maxFaces * arity), arity)
-  )
-  faceGeometry.setAttribute(
-    'instancePosition',
-    new InstancedBufferAttribute(new Float32Array(rt.maxFaces * arity), arity)
-  )
-  faceGeometry.setAttribute(
-    'instanceTarget',
-    new InstancedBufferAttribute(new Float32Array(rt.maxFaces * arity), arity)
-  )
-  faceGeometry.setAttribute(
-    'instanceColor',
-    new InstancedBufferAttribute(new Float32Array(rt.maxFaces * 3), 3)
-  )
-  const instancedFace = new Mesh(
-    faceGeometry,
-    hyperMaterial(ambiance.faceMaterial, rt, 'face')
-  )
-  instancedFace.matrixAutoUpdate = false
-  instancedFace.matrixWorldAutoUpdate = false
-  instancedFace.geometry.instanceCount = 0
-  instancedFace.frustumCulled = false
-  instancedFace.customDepthMaterial = hyperMaterial(
-    new MeshDepthMaterial({ depthPacking: RGBADepthPacking }),
-    rt,
-    'face'
-  )
-  instancedFace.customDistanceMaterial = hyperMaterial(
-    new MeshDistanceMaterial(),
-    rt,
-    'face'
-  )
-  // instancedFace.castShadow = ambiance.shadow
-  instancedFace.name = 'instanced-face'
-  instancedFace.visible = rt.showFaces
-  instancedFace.renderOrder = 1
-  if (overridenOpacity) {
-    instancedFace.material.opacity = overridenOpacity
-  }
-  rt.scene.add(instancedFace)
 }
 
 const plotVertices = (rt, range = null) => {
-  const ambiance = ambiances[rt.ambiance]
-  const instancedVertex = rt.scene.getObjectByName('instanced-vertex')
-  const ipos = instancedVertex.geometry.attributes.instancePosition.array
   const { dimensions } = rt
+  const ambiance = ambiances[rt.ambiance]
+  const ipos = rt.meshes.vertex.attributes.position.data
+  const icolor = rt.meshes.vertex.attributes.color.data
+
   let start = range ? range[0] : 0
   let stop = range ? range[1] : rt.vertices.length
 
   const arity = dimensions > 4 ? 9 : dimensions
-  instancedVertex.geometry.instanceCount = stop
+  rt.meshes.vertex.count = stop
+
   for (let i = start; i < stop; i++) {
     let vertex = rt.vertices[i].vertex
     if (dimensions > 4) {
@@ -360,28 +269,27 @@ const plotVertices = (rt, range = null) => {
     for (let j = 0; j < dimensions; j++) {
       ipos[i * arity + j] = vertex[j]
     }
-    const icolor = instancedVertex.geometry.attributes.instanceColor.array
     const c = ambiance.color(rt.vertices[i], 'vertex', dimensions)
-    icolor[i * 3 + 0] = c.r
-    icolor[i * 3 + 1] = c.g
-    icolor[i * 3 + 2] = c.b
+    icolor[i * 3 + 0] = c[0]
+    icolor[i * 3 + 1] = c[1]
+    icolor[i * 3 + 2] = c[2]
   }
-  instancedVertex.geometry.attributes.instancePosition.needsUpdate = true
-  instancedVertex.geometry.attributes.instanceColor.needsUpdate = true
+  rt.meshes.vertex.attributes.position.update()
+  rt.meshes.vertex.attributes.color.update()
 }
 
 const plotEdges = (rt, range = null) => {
   const ambiance = ambiances[rt.ambiance]
-  const instancedEdge = rt.scene.getObjectByName('instanced-edge')
-  const iposstart = instancedEdge.geometry.attributes.instancePosition.array
-  const iposend = instancedEdge.geometry.attributes.instanceTarget.array
+  const ipos = rt.meshes.edge.attributes.position.data
+  const itarget = rt.meshes.edge.attributes.target.data
+  const icolor = rt.meshes.edge.attributes.color.data
 
   const { dimensions } = rt
   let start = range ? range[0] : 0
   let stop = range ? range[1] : rt.edges.length
 
   const arity = dimensions > 4 ? 9 : dimensions
-  instancedEdge.geometry.instanceCount = stop
+  rt.meshes.edge.count = stop
   for (let i = start; i < stop; i++) {
     const edge = rt.edges[i]
 
@@ -393,28 +301,27 @@ const plotEdges = (rt, range = null) => {
       end = multiplyVector(rt.matrix, end)
     }
     for (let j = 0; j < dimensions; j++) {
-      iposstart[i * arity + j] = start[j]
-      iposend[i * arity + j] = end[j]
+      ipos[i * arity + j] = start[j]
+      itarget[i * arity + j] = end[j]
     }
 
-    const icolor = instancedEdge.geometry.attributes.instanceColor.array
     const c = ambiance.color(edge, 'edge', dimensions)
-    icolor[i * 3 + 0] = c.r
-    icolor[i * 3 + 1] = c.g
-    icolor[i * 3 + 2] = c.b
+    icolor[i * 3 + 0] = c[0]
+    icolor[i * 3 + 1] = c[1]
+    icolor[i * 3 + 2] = c[2]
   }
-
-  instancedEdge.geometry.attributes.instancePosition.needsUpdate = true
-  instancedEdge.geometry.attributes.instanceTarget.needsUpdate = true
-  instancedEdge.geometry.attributes.instanceColor.needsUpdate = true
+  rt.meshes.edge.attributes.position.update()
+  rt.meshes.edge.attributes.target.update()
+  rt.meshes.edge.attributes.color.update()
 }
 
 const plotFaces = (rt, range = null) => {
   const ambiance = ambiances[rt.ambiance]
-  const instancedFace = rt.scene.getObjectByName('instanced-face')
-  const icentroid = instancedFace.geometry.attributes.instanceCentroid.array
-  const ipos = instancedFace.geometry.attributes.instancePosition.array
-  const itarget = instancedFace.geometry.attributes.instanceTarget.array
+  const ipos = rt.meshes.face.attributes.position.data
+  const itarget = rt.meshes.face.attributes.target.data
+  const icenter = rt.meshes.face.attributes.center.data
+  const icolor = rt.meshes.face.attributes.color.data
+
   const { dimensions } = rt
   let start = range ? range[0] : 0
   let stop = range ? range[1] : rt.faces.length
@@ -478,28 +385,26 @@ const plotFaces = (rt, range = null) => {
         ;[pos, target] = [target, pos]
       }
       for (let k = 0; k < dimensions; k++) {
-        icentroid[idx * arity + k] = centroid[k]
+        icenter[idx * arity + k] = centroid[k]
         ipos[idx * arity + k] = pos[k]
         itarget[idx * arity + k] = target[k]
       }
-      const icolor = instancedFace.geometry.attributes.instanceColor.array
       const c = ambiance.color(face, 'face', dimensions)
-      icolor[idx * 3 + 0] = c.r
-      icolor[idx * 3 + 1] = c.g
-      icolor[idx * 3 + 2] = c.b
+      icolor[idx * 3 + 0] = c[0]
+      icolor[idx * 3 + 1] = c[1]
+      icolor[idx * 3 + 2] = c[2]
       idx++
     }
   }
-  instancedFace.geometry.instanceCount = idx
-  instancedFace.geometry.attributes.instancePosition.needsUpdate = true
-  instancedFace.geometry.attributes.instanceTarget.needsUpdate = true
-  instancedFace.geometry.attributes.instanceCentroid.needsUpdate = true
-  instancedFace.geometry.attributes.instanceColor.needsUpdate = true
+  rt.meshes.face.count = stop
+  rt.meshes.face.attributes.position.update()
+  rt.meshes.face.attributes.target.update()
+  rt.meshes.face.attributes.center.update()
+  rt.meshes.face.attributes.color.update()
 }
 
 export const show = (rt, name) => {
-  const obj = rt.scene.getObjectByName(`instanced-${name}`)
-  obj.visible =
+  rt.meshes[name].visible =
     rt[
       name === 'vertex'
         ? 'showVertices'
@@ -536,16 +441,22 @@ export const plot = (rt, order = null) => {
             rt.ranges[rt.currentOrder - 1].faces[1],
           ],
         }
-  if (rt.scene.getObjectByName('instanced-vertex').visible) {
+  if (rt.meshes.vertex.visible) {
+    rt.gl.useProgram(rt.meshes.vertex.program)
+    rt.gl.bindVertexArray(rt.meshes.vertex.vao)
     plotVertices(rt, range.vertices)
   }
-  if (rt.scene.getObjectByName('instanced-edge').visible) {
+  if (rt.meshes.edge.visible) {
+    rt.gl.useProgram(rt.meshes.edge.program)
+    rt.gl.bindVertexArray(rt.meshes.edge.vao)
     plotEdges(rt, range.edges)
   }
-  if (rt.scene.getObjectByName('instanced-face').visible) {
+  if (rt.meshes.face.visible) {
+    rt.gl.useProgram(rt.meshes.face.program)
+    rt.gl.bindVertexArray(rt.meshes.face.vao)
     plotFaces(rt, range.faces)
   }
-  rt.render()
+  render(rt)
   document.title = `Coxeter Explorer - ${
     rt.spaceType === 'finite' ? 'S' : rt.spaceType === 'affine' ? 'E' : 'H'
   }^${rt.dimensions} ${
@@ -557,198 +468,21 @@ export const plot = (rt, order = null) => {
 
 export const updateCameraFov = rt => {
   rt.camera.fov = rt.fov3
-  rt.camera.updateProjectionMatrix()
-  rt.render()
+  rt.camera.update()
+  render(rt)
 }
 
-const fxaa = new ShaderPass(FXAAShader)
 export const resetComposerTarget = rt => {
-  const { composer, msaa, msaaSamples } = rt
-  const size = composer.renderer.getDrawingBufferSize(new Vector2())
-  const renderTarget = new WebGLRenderTarget(size.width, size.height, {
-    samples: msaa ? msaaSamples : 0,
-    type: HalfFloatType,
-  })
-  composer.reset(renderTarget)
+  refreshTextures(rt)
   changeAmbiance(rt)
 }
 
 export const changeAmbiance = rt => {
   const ambiance = ambiances[rt.ambiance]
-  const { scene, composer, camera } = rt
-  const instancedVertex = rt.scene.getObjectByName('instanced-vertex')
-  const instancedEdge = rt.scene.getObjectByName('instanced-edge')
-  const instancedFace = rt.scene.getObjectByName('instanced-face')
-  instancedVertex.material.dispose()
-  instancedEdge.material.dispose()
-  instancedFace.material.dispose()
-
-  instancedVertex.material = hyperMaterial(
-    ambiance.vertexMaterial,
-    rt,
-    'vertex'
-  )
-  instancedEdge.material = hyperMaterial(ambiance.edgeMaterial, rt, 'edge')
-  instancedFace.material = hyperMaterial(ambiance.faceMaterial, rt, 'face')
-
-  if (ambiance.env) {
-    scene.environment = ambiance.env
-  } else {
-    scene.environment = null
-  }
-  if (typeof ambiance.background !== 'number') {
-    scene.background = ambiance.background
-  } else {
-    scene.background = null
-    composer.renderer.setClearColor(new Color(ambiance.background), 1)
-  }
-  // Remove all lights
-  const lightsToRemove = []
-  scene.traverse(child => {
-    if (child.isLight) {
-      lightsToRemove.push(child)
-    }
-  })
-  lightsToRemove.forEach(light => {
-    light.parent.remove(light)
-  })
-  let ground = scene.getObjectByName('ground')
-
-  if (ground) {
-    ground.geometry.dispose()
-    ground.material.dispose()
-    scene.remove(ground)
-  }
-
-  if (ambiance.shadow) {
-    composer.renderer.shadowMap.type = PCFShadowMap
-    if (ambiance.ground === 'sphere') {
-      ground = new Mesh(
-        new SphereGeometry(20, 32, 32),
-        new MeshPhongMaterial({
-          color: 0xffffff,
-          side: BackSide,
-          depthWrite: false,
-        })
-      )
-    } else if (ambiance.ground === 'plane') {
-      ground = new Mesh(
-        new PlaneGeometry(1000, 1000),
-        new MeshPhongMaterial({
-          color: 0xffffff,
-          transparent: true,
-          opacity: 0.5,
-          // blending: MultiplyBlending,
-          depthWrite: false,
-        })
-      )
-      ground.rotation.y = (2 * Math.PI) / 3
-      ground.position.x = -4
-    }
-    ground.name = 'ground'
-    ground.receiveShadow = true
-    scene.add(ground)
-  }
-
-  composer.renderer.shadowMap.enabled = ambiance.shadow
-  composer.renderer.shadowMap.type = PCFSoftShadowMap
-  instancedVertex.castShadow = ambiance.shadow
-  instancedEdge.castShadow = ambiance.shadow
-  // instancedFace.castShadow = ambiance.shadow
-  // Add new lights
-  const castShadow = ambiance.shadow
-    ? light => {
-        if (!light.shadow) {
-          return
-        }
-        light.castShadow = true
-        light.shadow.mapSize.width = 2048
-        light.shadow.mapSize.height = 2048
-        light.shadow.camera.near = camera.near
-        light.shadow.camera.far = camera.far
-        light.shadow.camera.fov = camera.fov
-      }
-    : () => {}
-
-  ;(ambiance.lights || []).forEach(light => {
-    castShadow(light)
-    scene.add(light)
-  })
-  ;(ambiance.cameraLights || []).forEach(light => {
-    castShadow(light)
-    camera.add(light)
-  })
-  const fxs = ambiance.fx || ['copy']
-  composer.renderer.toneMapping = ambiance.toneMapping || NoToneMapping
-  composer.renderer.outputColorSpace = ambiance.colorSpace || SRGBColorSpace
-  composer.renderer.toneMappingExposure = ambiance.exposure || 1
-
-  composer.passes.slice(1).forEach(pass => {
-    composer.removePass(pass)
-    pass.dispose()
-  })
-  fxs.forEach(fx => {
-    if (fx === 'copy') {
-      composer.addPass(composer.copyPass)
-    } else if (fx === 'sao') {
-      const saoPass = new SAOPass(scene, camera, false, true)
-      saoPass.normalMaterial = hyperMaterial(saoPass.normalMaterial, rt)
-
-      saoPass.params.output = SAOPass.OUTPUT.Default
-      saoPass.params.saoBias = 0.5
-      saoPass.params.saoIntensity = 0.000001
-      saoPass.params.saoScale = 10
-      saoPass.params.saoKernelRadius = 50
-      saoPass.params.saoMinResolution = 0
-      saoPass.params.saoBlur = true
-      saoPass.params.saoBlurRadius = 8
-      saoPass.params.saoBlurStdDev = 4
-      saoPass.params.saoBlurDepthCutoff = 0.01
-
-      composer.addPass(saoPass)
-    } else if (fx === 'bokeh') {
-      const bokehPass = new BokehPass(scene, camera, {
-        focus: 0.5,
-        aperture: 0.005,
-        maxblur: 0.005,
-      })
-      bokehPass.materialDepth = hyperMaterial(bokehPass.materialDepth, rt)
-      composer.addPass(bokehPass)
-    } else if (fx === 'sobel') {
-      const effectGrayScale = new ShaderPass(LuminosityShader)
-      composer.addPass(effectGrayScale)
-      const effectSobel = new ShaderPass(SobelOperatorShader)
-      effectSobel.uniforms['resolution'].value.x =
-        window.innerWidth * window.devicePixelRatio
-      effectSobel.uniforms['resolution'].value.y =
-        window.innerHeight * window.devicePixelRatio
-      composer.addPass(effectSobel)
-    } else if (fx === 'bloom') {
-      const bloomPass = new UnrealBloomPass(
-        new Vector2(window.innerWidth, window.innerHeight),
-        0.75,
-        0,
-        0
-      )
-      composer.addPass(bloomPass)
-    } else if (fx === 'godray') {
-      const godrayPass = new GodRayPass(scene, camera)
-      godrayPass.materialDepth = hyperMaterial(godrayPass.materialDepth, rt)
-      composer.addPass(godrayPass)
-    } else if (fx === 'fxaa' && !rt.msaa) {
-      const pixelRatio = composer.renderer.getPixelRatio()
-      fxaa.material.uniforms['resolution'].value.x =
-        1 / (window.innerWidth * pixelRatio)
-      fxaa.material.uniforms['resolution'].value.y =
-        1 / (window.innerHeight * pixelRatio)
-      composer.addPass(fxaa)
-    } else if (fx === 'output') {
-      composer.addPass(new OutputPass())
-    }
-  })
+  rt.gl.clearColor(...ambiance.background)
 
   updateMaterials(rt)
-  rt.render()
+  render(rt)
 }
 
 export const updateMaterials = rt => {
@@ -760,29 +494,151 @@ export const updateMaterials = rt => {
     vertexThickness,
     edgeThickness,
   } = rt
-  const segments = rt.curve ? rt.segments : 1
+  // const segments = rt.curve ? rt.segments : 1
 
-  const it = hyperMaterials.values()
-  for (let i = 0; i < hyperMaterials.size; i++) {
-    const material = it.next().value
+  Object.values(rt.meshes).forEach(mesh => {
+    rt.gl.useProgram(mesh.program)
+    rt.gl.uniform1f(mesh.uniforms.curvature.location, rt.curvature)
+    rt.gl.uniformMatrix4fv(
+      mesh.uniforms.matrix.location,
+      false,
+      columnMajor(rt.matrix)
+    )
+    // mesh.uniforms.vertexThickness.value = vertexThickness
+    // mesh.uniforms.edgeThickness.value = edgeThickness
+    // mesh.uniforms.segments.value = segments
+    // for (let i = 4; i <= dimensions; i++) {
+    //   if (!mesh.uniforms[`fov${i}`]) {
+    //     mesh.uniforms[`fov${i}`] = { value: 1 }
+    //   }
+    //   mesh.uniforms[`fov${i}`].value = tan((PI * rt[`fov${i}`] * 0.5) / 180)
+    // }
+    // if (rt.dimensions < 5) {
+    //   mesh.uniforms.rotationMatrix.value = columnMajor(rt.matrix)
+    // }
+  })
+}
 
-    material.uniforms.curvature.value = curvature
-    material.uniforms.vertexThickness.value = vertexThickness
-    material.uniforms.edgeThickness.value = edgeThickness
-    material.needsUpdate =
-      dimensions !== material._rt.dimensions ||
-      projection !== material._rt.projection ||
-      easing !== material._rt.easing
-    material._rt = rt
-    material.uniforms.segments.value = segments
-    for (let i = 4; i <= dimensions; i++) {
-      if (!material.uniforms[`fov${i}`]) {
-        material.uniforms[`fov${i}`] = { value: 1 }
-      }
-      material.uniforms[`fov${i}`].value = tan(degToRad(rt[`fov${i}`]) * 0.5)
+export const render = rt => {
+  if (showStats) {
+    stats.update()
+  }
+  const { gl } = rt
+  if (resizeCanvasToDisplaySize(gl.canvas)) {
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+    refreshTextures(rt)
+    rt.camera.update()
+  }
+
+  // OPAQUE
+  gl.disable(gl.BLEND)
+  gl.enable(gl.DEPTH_TEST)
+  gl.depthMask(true)
+  gl.depthFunc(gl.LESS)
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.opaque)
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+  rt.meshes.vertex.visible && renderMesh(rt, 'vertex')
+  rt.meshes.edge.visible && renderMesh(rt, 'edge')
+
+  // TRANSPARENT
+  if (rt.meshes.face.visible) {
+    gl.enable(gl.BLEND)
+    gl.depthMask(false)
+    gl.blendFuncSeparate(gl.ONE, gl.ONE, gl.ZERO, gl.ONE_MINUS_SRC_ALPHA)
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.transparent)
+    gl.clear(gl.COLOR_BUFFER_BIT)
+
+    renderMesh(rt, 'face')
+
+    // COMPOSITE
+
+    gl.depthMask(true)
+    gl.depthFunc(gl.ALWAYS)
+    gl.blendFunc(gl.ONE_MINUS_SRC_ALPHA, gl.SRC_ALPHA)
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.opaque)
+
+    gl.useProgram(rt.passes.oit.program)
+    gl.activeTexture(gl.TEXTURE0)
+    gl.bindTexture(gl.TEXTURE_2D, rt.passes.oit.accumTexture.texture)
+
+    gl.activeTexture(gl.TEXTURE1)
+    gl.bindTexture(gl.TEXTURE_2D, rt.passes.oit.revealTexture.texture)
+    gl.drawArrays(gl.TRIANGLES, 0, 3)
+  }
+
+  // FINAL
+  // Blit msaa to screen
+  gl.bindFramebuffer(gl.READ_FRAMEBUFFER, rt.fb.opaque)
+  gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, rt.passes.glow ? rt.fb.bloom : null)
+  gl.blitFramebuffer(
+    0,
+    0,
+    gl.drawingBufferWidth,
+    gl.drawingBufferHeight,
+    0,
+    0,
+    gl.drawingBufferWidth,
+    gl.drawingBufferHeight,
+    gl.COLOR_BUFFER_BIT,
+    gl.NEAREST
+  )
+
+  if (rt.passes.glow) {
+    gl.disable(gl.BLEND)
+    gl.enable(gl.DEPTH_TEST)
+    gl.depthMask(true)
+    gl.depthFunc(gl.LESS)
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.kawase)
+
+    gl.useProgram(rt.passes.kawase.down.program)
+    for (let i = 0; i < rt.passes.kawase.steps; i++) {
+      const inTexture =
+        i === 0 ? rt.bloom.texture : rt.passes.kawase.textures[i - 1]
+      const outTexture = rt.passes.kawase.textures[i]
+      gl.viewport(0, 0, outTexture.width, outTexture.height)
+
+      gl.activeTexture(gl.TEXTURE0)
+      gl.bindTexture(gl.TEXTURE_2D, inTexture.texture)
+      gl.framebufferTexture2D(
+        gl.FRAMEBUFFER,
+        gl.COLOR_ATTACHMENT0,
+        gl.TEXTURE_2D,
+        outTexture.texture,
+        0
+      )
+      gl.drawArrays(gl.TRIANGLES, 0, 3)
     }
-    if (rt.dimensions < 5) {
-      material.uniforms.rotationMatrix.value = columnMajor(rt.matrix)
+
+    gl.useProgram(rt.passes.kawase.up.program)
+    for (let i = rt.passes.kawase.steps - 1; i >= 0; i--) {
+      const inTexture = rt.passes.kawase.textures[i]
+      const outTexture =
+        i === 0 ? rt.passes.kawase.texture : rt.passes.kawase.textures[i - 1]
+      gl.viewport(0, 0, outTexture.width, outTexture.height)
+
+      gl.activeTexture(gl.TEXTURE0)
+      gl.bindTexture(gl.TEXTURE_2D, inTexture.texture)
+      gl.framebufferTexture2D(
+        gl.FRAMEBUFFER,
+        gl.COLOR_ATTACHMENT0,
+        gl.TEXTURE_2D,
+        outTexture.texture,
+        0
+      )
+      gl.drawArrays(gl.TRIANGLES, 0, 3)
     }
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+    gl.useProgram(rt.bloom.program)
+    gl.activeTexture(gl.TEXTURE0)
+    gl.bindTexture(gl.TEXTURE_2D, rt.bloom.texture.texture)
+    gl.activeTexture(gl.TEXTURE1)
+    gl.bindTexture(gl.TEXTURE_2D, rt.passes.kawase.texture.texture)
+    gl.drawArrays(gl.TRIANGLES, 0, 3)
   }
 }

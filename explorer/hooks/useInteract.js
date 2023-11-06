@@ -3,8 +3,8 @@ import { debounce } from '../../utils'
 import { PI, abs, hypot } from '../math'
 import { xtranslate } from '../math/hypermath'
 import { columnMajor, diagonal, multiply, set } from '../math/matrix'
-import { plot } from '../render'
-import { hyperMaterials } from '../shader/hyperMaterial'
+import { plot, render } from '../render'
+// import { hyperMaterials } from '../shader/hyperMaterial'
 
 const zoomSpeed = 0.95
 const autoSpeed = 25
@@ -92,7 +92,6 @@ export const useInteract = (runtime, rotations, updateParams) => {
         ranges: runtime.ranges,
         matrix: localMatrix.current,
         render: runtime.render,
-        scene: runtime.scene,
         spaceType: runtime.spaceType,
         vertices: runtime.vertices,
         edges: runtime.edges,
@@ -100,23 +99,23 @@ export const useInteract = (runtime, rotations, updateParams) => {
         ambiance: runtime.ambiance,
       })
     } else {
-      const it = hyperMaterials.values()
-      for (let i = 0; i < hyperMaterials.size; i++) {
-        const material = it.next().value
-        material.uniforms.rotationMatrix.value = columnMajor(
-          localMatrix.current
+      Object.values(runtime.meshes).forEach(mesh => {
+        runtime.gl.useProgram(mesh.program)
+        runtime.gl.uniformMatrix4fv(
+          mesh.uniforms.matrix.location,
+          false,
+          columnMajor(localMatrix.current)
         )
-      }
-      const render = runtime.render
-      render()
+      })
+      render(runtime)
     }
   }, [
     runtime.dimensions,
     runtime.render,
     runtime.curvature,
     runtime.ranges,
+    runtime.meshes,
     runtime.currentOrder,
-    runtime.scene,
     runtime.spaceType,
     runtime.vertices,
     runtime.edges,
@@ -371,7 +370,7 @@ export const useInteract = (runtime, rotations, updateParams) => {
         return
       }
       runtime.camera.position.z *= e.deltaY < 0 ? zoomSpeed : 1 / zoomSpeed
-      runtime.render()
+      render(runtime)
       updateZoom(-runtime.camera.position.z)
     }
     document.addEventListener('wheel', handleWheel)
@@ -389,7 +388,7 @@ export const useInteract = (runtime, rotations, updateParams) => {
       const newZoom = zoom < 0.5 ? 5 : zoom < 2 ? 0.25 : 1
 
       runtime.camera.position.z = -newZoom
-      runtime.render()
+      render(runtime)
       updateZoom(newZoom)
     }
 

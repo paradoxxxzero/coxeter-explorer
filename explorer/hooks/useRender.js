@@ -1,15 +1,12 @@
 import { useEffect } from 'react'
-import { size } from '../event'
 import {
   changeAmbiance,
-  initEdge,
-  initFace,
-  initVertex,
   plot,
   resetComposerTarget,
   show,
   updateCameraFov,
   updateMaterials,
+  render,
 } from '../render'
 
 export const useRender = (runtime, setRuntime) => {
@@ -20,34 +17,34 @@ export const useRender = (runtime, setRuntime) => {
     })
   }, [runtime.fov3, runtime.camera, runtime.composer, setRuntime])
 
-  useEffect(() => {
-    setRuntime(runtime => {
-      initVertex(runtime)
-      initEdge(runtime)
-      initFace(runtime)
-      return runtime
-    })
-  }, [runtime.dimensions, runtime.curve, runtime.segments, setRuntime])
+  // useEffect(() => {
+  //   setRuntime(runtime => {
+  //     initVertex(runtime)
+  //     initEdge(runtime)
+  //     initFace(runtime)
+  //     return runtime
+  //   })
+  // }, [runtime.dimensions, runtime.curve, runtime.segments, setRuntime])
 
-  useEffect(() => {
-    setRuntime(runtime => {
-      if (runtime.vertices.length) {
-        console.warn(`Extending vertex buffer to ${runtime.vertices.length}`)
-        initVertex(runtime)
-      }
-      return runtime
-    })
-  }, [runtime.maxVertices, setRuntime])
+  // useEffect(() => {
+  //   setRuntime(runtime => {
+  //     if (runtime.vertices.length) {
+  //       console.warn(`Extending vertex buffer to ${runtime.vertices.length}`)
+  //       initVertex(runtime)
+  //     }
+  //     return runtime
+  //   })
+  // }, [runtime.maxVertices, setRuntime])
 
-  useEffect(() => {
-    setRuntime(runtime => {
-      if (runtime.edges.length) {
-        console.warn(`Extending edge buffer to ${runtime.edges.length}`)
-        initEdge(runtime)
-      }
-      return runtime
-    })
-  }, [runtime.maxEdges, setRuntime])
+  // useEffect(() => {
+  //   setRuntime(runtime => {
+  //     if (runtime.edges.length) {
+  //       console.warn(`Extending edge buffer to ${runtime.edges.length}`)
+  //       initEdge(runtime)
+  //     }
+  //     return runtime
+  //   })
+  // }, [runtime.maxEdges, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => {
@@ -114,7 +111,7 @@ export const useRender = (runtime, setRuntime) => {
   useEffect(() => {
     setRuntime(runtime => {
       updateMaterials(runtime)
-      runtime.render()
+      render(runtime)
       return runtime
     })
   }, [
@@ -139,14 +136,9 @@ export const useRender = (runtime, setRuntime) => {
   ])
 
   useEffect(() => {
-    const onSize = () => {
-      size(runtime)
-    }
-    window.addEventListener('resize', onSize)
-    window.addEventListener('orientationchange', onSize)
-    return () => {
-      window.removeEventListener('resize', onSize)
-      window.removeEventListener('orientationchange', onSize)
-    }
+    const resizeObserver = new ResizeObserver(() => render(runtime))
+    resizeObserver.observe(runtime.gl.canvas, { box: 'content-box' })
+
+    return () => resizeObserver.disconnect()
   }, [runtime])
 }

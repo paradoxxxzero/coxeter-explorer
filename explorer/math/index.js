@@ -26,6 +26,8 @@ export const {
   PI,
 } = Math
 
+export const TAU = PI * 2
+
 const kBuf = new ArrayBuffer(8)
 const kBufAsF64 = new Float64Array(kBuf)
 const kBufAsI32 = new Int32Array(kBuf)
