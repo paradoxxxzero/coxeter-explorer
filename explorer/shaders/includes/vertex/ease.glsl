@@ -1,5 +1,3 @@
-/* BEGIN INCLUDE */
-
 #define PI 3.141592653589793
 #define HALF_PI 1.5707963267948966
 
@@ -67,4 +65,3 @@ float ease(float t) {
 vec2 ease(vec2 t) {
   return vec2(ease(t.x), ease(t.y));
 }
-/* END INCLUDE */

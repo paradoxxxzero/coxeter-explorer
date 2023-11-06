@@ -1,60 +1,138 @@
 #version 300 es
 precision highp float;
 
+#include config
+#include globals
+
 uniform float curvature;
 uniform mat4 viewProjection;
-uniform mat4 matrix;
+uniform float segments;
 
-in vec3 vertex;
+#if DIMENSIONS >= 4
+uniform float fov4;
+#endif
+#if DIMENSIONS >= 5
+uniform float fov5;
+#endif
+#if DIMENSIONS >= 6
+uniform float fov6;
+#endif
+#if DIMENSIONS >= 7
+uniform float fov7;
+#endif
+#if DIMENSIONS >= 8
+uniform float fov8;
+#endif
+#if DIMENSIONS >= 9
+uniform float fov9;
+#endif
+
+#if DIMENSIONS == 2
+uniform mat2 matrix;
+in vec2 position;
+in vec2 target;
+in vec2 center;
+#elif DIMENSIONS == 3
+uniform mat3 matrix;
+in vec3 position;
+in vec3 target;
+in vec3 center;
+#elif DIMENSIONS == 4
+uniform mat4 matrix;
+in vec4 position;
+in vec4 target;
+in vec4 center;
+#elif DIMENSIONS >= 5
+in mat3 position;
+in mat3 target;
+in mat3 center;
+
+struct vec5 {
+  vec4 v;
+  float u;
+};
+#endif
+#if DIMENSIONS >= 6
+struct vec6 {
+  vec4 v;
+  vec2 u;
+};
+#endif
+#if DIMENSIONS >= 7
+struct vec7 {
+  vec4 v;
+  vec3 u;
+};
+#endif
+#if DIMENSIONS >= 8
+struct vec8 {
+  vec4 v;
+  vec4 u;
+};
+#endif
+#if DIMENSIONS >= 9
+struct vec9 {
+  vec4 v;
+  vec4 u;
+  float t;
+};
+#endif
+
 in vec2 uv;
 in vec3 normal;
 
-in vec4 position;
-in vec4 center;
-in vec4 target;
 in vec3 color;
 
 out vec3 vPosition;
 out vec3 vNormal;
 flat out vec3 vColor;
-const float EPS = .001f;
 
-vec3 xproject(vec4 pos) {
-  return pos.xyz / (pos.w + 1.f);
-}
-vec4 trix(in vec4 c, in vec4 p, in vec4 t, in vec2 a) {
-  return a.x * p + a.y * t + c * (1.f - a.x - a.y);
-}
-float xdot(in vec4 v) {
-  return dot(v.xyz, v.xyz) + curvature * v.w * v.w;
-}
-vec4 xnormalize(in vec4 v) {
-  if(curvature == 0.0f) {
-    return v;
-  }
-  float n = sqrt(curvature * xdot(v));
-  return v / n;
-}
+#include ease
+#include project
 
 void main() {
-  vColor = color;
-  vec4 iPosition = matrix * position;
-  vec4 iTarget = matrix * target;
-  vec4 iCentroid = matrix * center;
+  #if DIMENSIONS > 4
+  vecN iPosition = fromMat(position);
+  vecN iTarget = fromMat(target);
+  vecN iCenter = fromMat(center);
+  #else
+  vecN iPosition = matrix * position;
+  vecN iTarget = matrix * target;
+  vecN iCenter = matrix * center;
+  #endif
 
-  vec4 pos = trix(iPosition, iCentroid, iTarget, uv);
-  vec4 next = trix(iPosition, iCentroid, iTarget, uv + vec2(EPS, 0.f));
-  vec4 other = trix(iPosition, iCentroid, iTarget, uv + vec2(0.f, EPS));
+  vec2 t = ease(uv);
+  vecN pos = trix(iPosition, iCenter, iTarget, t);
+  vecN next = trix(iPosition, iCenter, iTarget, t + vec2(EPS, 0.f));
+  vecN other = trix(iPosition, iCenter, iTarget, t + vec2(0.f, EPS));
 
-  pos = xnormalize(pos);
-  next = xnormalize(next);
-  other = xnormalize(other);
+  if(length(t) != 0.f || segments > 1.f) {
+    pos = xnormalize(pos);
+    next = xnormalize(next);
+    other = xnormalize(other);
+  }
 
   vec3 position = xproject(pos);
   vec3 nn = xproject(next) - position;
   vec3 oo = xproject(other) - position;
 
+  // Refine if near collinearity
+  //   if(length(nn) < .0001 || length(oo) < .0001) {
+  //     next = trix(iCenter, iPosition, iTarget, t + vec2(.1, 0.));
+  //     other = trix(iCenter, iPosition, iTarget, t + vec2(0., .1));
+
+  //     if(length(t) != 0. || segments > 1.) {
+  //       next = xnormalize(next);
+  //       other = xnormalize(other);
+  //     }
+
+  //     nn = xproject(next) - position;
+  //     oo = xproject(other) - position;
+  //   }
+
+  gl_Position = viewProjection * vec4(position, 1.f);
+
+  vColor = color;
   vPosition = position;
   vNormal = normalize(cross(nn, oo));
-  gl_Position = viewProjection * vec4(position, 1.f);
 }

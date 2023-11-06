@@ -1,6 +1,8 @@
 #version 300 es
 precision highp float;
 
+#include config
+
 uniform vec3 eye;
 
 in vec3 vNormal;

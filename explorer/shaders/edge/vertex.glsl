@@ -1,48 +1,105 @@
 #version 300 es
 precision highp float;
 
-uniform float curvature;
-uniform mat4 viewProjection;
-uniform mat4 matrix;
+#include config
+#include globals
 
-in vec3 vertex;
+uniform mat4 viewProjection;
+uniform float curvature;
+uniform float thickness;
+uniform float segments;
+
+#if DIMENSIONS >= 4
+uniform float fov4;
+#endif
+#if DIMENSIONS >= 5
+uniform float fov5;
+#endif
+#if DIMENSIONS >= 6
+uniform float fov6;
+#endif
+#if DIMENSIONS >= 7
+uniform float fov7;
+#endif
+#if DIMENSIONS >= 8
+uniform float fov8;
+#endif
+#if DIMENSIONS >= 9
+uniform float fov9;
+#endif
+
+#if DIMENSIONS == 2
+uniform mat2 matrix;
+in vec2 position;
+in vec2 target;
+#elif DIMENSIONS == 3
+uniform mat3 matrix;
+in vec3 position;
+in vec3 target;
+#elif DIMENSIONS == 4
+uniform mat4 matrix;
+in vec4 position;
+in vec4 target;
+#elif DIMENSIONS >= 5
+in mat3 position;
+in mat3 target;
+
+struct vec5 {
+  vec4 v;
+  float u;
+};
+#endif
+#if DIMENSIONS >= 6
+struct vec6 {
+  vec4 v;
+  vec2 u;
+};
+#endif
+#if DIMENSIONS >= 7
+struct vec7 {
+  vec4 v;
+  vec3 u;
+};
+#endif
+#if DIMENSIONS >= 8
+struct vec8 {
+  vec4 v;
+  vec4 u;
+};
+#endif
+#if DIMENSIONS >= 9
+struct vec9 {
+  vec4 v;
+  vec4 u;
+  float t;
+};
+#endif
 in vec2 uv;
 in vec3 normal;
 
-in vec4 position;
-in vec4 target;
 in vec3 color;
 
 out vec3 vPosition;
 out vec3 vNormal;
 flat out vec3 vColor;
 
-const float TAU = 6.28318530717958647692528676655900576f;
-const float EPS = .001f;
-const vec3 NOISE = vec3(.000003f, -.000002f, .000017f);
-
-vec3 xproject(vec4 pos) {
-  return pos.xyz / (pos.w + 1.f);
-}
-float xdot(in vec4 v) {
-  return dot(v.xyz, v.xyz) + curvature * v.w * v.w;
-}
-vec4 xnormalize(in vec4 v) {
-  if(curvature == 0.0f) {
-    return v;
-  }
-  float n = sqrt(curvature * xdot(v));
-  return v / n;
-}
+#include ease
+#include project
 
 void main() {
-  vColor = color;
-  vec4 iPosition = matrix * position;
-  vec4 iTarget = matrix * target;
+  #if DIMENSIONS > 4
+  vecN iPosition = fromMat(position);
+  vecN iTarget = fromMat(target);
+  #else
+  vecN iPosition = matrix * position;
+  vecN iTarget = matrix * target;
+  #endif
 
-  vec4 pos = mix(iPosition, iTarget, uv.y);
-  vec4 next = mix(iPosition, iTarget, uv.y + EPS);
+  float t = ease(uv.y);
+  vecN pos = mix(iPosition, iTarget, t);
+  vecN next = mix(iPosition, iTarget, t + EPS);
 
+  // Position segments on hypersurface
   pos = xnormalize(pos);
   next = xnormalize(next);
 
@@ -51,15 +108,17 @@ void main() {
   vec3 n = xproject(next) + NOISE; // Avoid collinearity
   vec3 k = normalize(position - n); // current segment direction
 
-    // Rodrigues' rotation formula
-    // To rotate v around axis k by angle r:
+  // Rodrigues' rotation formula
+  // To rotate v around axis k by angle r:
   float r = (1.f - uv.x) * TAU;
   vec3 v = normalize(cross(n, position));
-  vNormal = normalize(v * cos(r) + cross(k, v) * sin(r)); // + k * dot(k, v) * (1. - cos(r));
+  vec3 normal = normalize(v * cos(r) + cross(k, v) * sin(r)); // + k * dot(k, v) * (1. - cos(r));
 
-  float inv = max(0.f, 1.f / length(vec4(1.f, 1.f, pos.zw)));
-  position = .025f * vNormal * inv + position;
-  vPosition = position;
+  position = inflate(position, pos, normal, thickness, 0.f);
 
   gl_Position = viewProjection * vec4(position, 1.f);
+
+  vPosition = position;
+  vNormal = normal;
+  vColor = color;
 }

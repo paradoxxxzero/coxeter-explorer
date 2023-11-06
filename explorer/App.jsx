@@ -32,7 +32,17 @@ export default function App({ params, updateParams }) {
   })
 
   useEffect(() => {
-    setRuntime(runtime => initializeGl(runtime))
+    setRuntime(runtime => {
+      try {
+        return initializeGl(runtime)
+      } catch (e) {
+        console.error(e)
+        return {
+          ...runtime,
+          error: e.message,
+        }
+      }
+    })
   }, [])
 
   const [rotations, setRotations] = useState({

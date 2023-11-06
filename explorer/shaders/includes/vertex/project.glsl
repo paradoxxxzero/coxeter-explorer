@@ -1,5 +1,3 @@
-/* BEGIN INCLUDE */
-
 bool nan(in vec2 v) {
   return isnan(v.x) || isnan(v.y);
 }
@@ -424,7 +422,6 @@ vec9 fromMat(in mat3 m) {
   return vec9(vec4(m[0], m[1][0]), vec4(m[1][1], m[1][2], m[2][0], m[2][1]), m[2][2]);
 }
 #endif
-/* END INCLUDE */
 
 // mat4 findRotationMatrix(in vec4 u, in vec4 v) {
 //   vec4 w = u + v;
@@ -511,3 +508,19 @@ vec9 fromMat(in mat3 m) {
 //     v3.x * v1.y * v2.z +
 //     v3.x * v2.y * v1.z);
 // }
+
+vec3 inflate(in vec3 point, in vecN pos, in vec3 norm, in float size, in float min) {
+  // Removing 3d length in perspective computation
+  #if DIMENSIONS < 5
+  pos.xy = vec2(1.);
+  #if DIMENSIONS >= 3 && PROJECTION == 0
+  pos.z = 1.;
+  #endif
+  #else
+  pos.v.xyz = vec3(1.);
+  #endif
+
+  float inv = max(min, 1. / len(pos));
+
+  return size * SCALING * norm * inv + point;
+}

@@ -1,4 +1,21 @@
 import Stats from 'stats.js'
+import { ambiances } from '../statics'
+import { sphere, tri, tube } from './geometries'
+import {
+  compileProgram,
+  mesh,
+  renderMesh,
+  resizeCanvasToDisplaySize,
+  uniform,
+} from './helpers'
+import { PI, tan } from './math'
+import {
+  columnMajor,
+  lookAt,
+  multiply,
+  multiplyVector,
+  perspective,
+} from './math/matrix'
 import fragmentBloom from './shaders/bloom/fragment.glsl?raw'
 import vertexBloom from './shaders/bloom/vertex.glsl?raw'
 import fragmentDown from './shaders/down/fragment.glsl?raw'
@@ -13,23 +30,6 @@ import fragmentUp from './shaders/up/fragment.glsl?raw'
 import vertexUp from './shaders/up/vertex.glsl?raw'
 import fragmentVertex from './shaders/vertex/fragment.glsl?raw'
 import vertexVertex from './shaders/vertex/vertex.glsl?raw'
-import { ambiances } from '../statics'
-import { sphere, tri, tube } from './geometries'
-import {
-  compileProgram,
-  mesh,
-  renderMesh,
-  resizeCanvasToDisplaySize,
-  uniform,
-} from './helpers'
-import { PI } from './math'
-import {
-  columnMajor,
-  lookAt,
-  multiply,
-  multiplyVector,
-  perspective,
-} from './math/matrix'
 import refreshTextures from './textures'
 
 const showStats = window.location.search.includes('stats')
@@ -82,13 +82,8 @@ export const initializeGl = rt => {
     const projectionMatrix = perspective(camera.fov, aspect, 0.001, 1000)
     const viewProjection = columnMajor(multiply(projectionMatrix, viewMatrix))
     Object.values(meshes).forEach(mesh => {
-      gl.useProgram(mesh.program)
-      gl.uniformMatrix4fv(
-        mesh.uniforms.viewProjection.location,
-        false,
-        viewProjection
-      )
-      gl.uniform3fv(mesh.uniforms.eye.location, eye)
+      mesh.uniforms.viewProjection.update(viewProjection)
+      mesh.uniforms.eye.update(eye)
     })
   }
   const passes = {
@@ -100,7 +95,7 @@ export const initializeGl = rt => {
   passes.oit = {
     attributes: {},
     uniforms: {},
-    program: compileProgram(rt, vertexOit, fragmentOit),
+    ...compileProgram(rt, 'oit', vertexOit, fragmentOit),
   }
   passes.kawase = {
     offset: {
@@ -113,17 +108,17 @@ export const initializeGl = rt => {
   passes.kawase.down = {
     attributes: {},
     uniforms: {},
-    program: compileProgram(rt, vertexDown, fragmentDown),
+    ...compileProgram(rt, 'kawase/down', vertexDown, fragmentDown),
   }
   passes.kawase.up = {
     attributes: {},
     uniforms: {},
-    program: compileProgram(rt, vertexUp, fragmentUp),
+    ...compileProgram(rt, 'kawase/up', vertexUp, fragmentUp),
   }
   passes.bloom = {
     attributes: {},
     uniforms: {},
-    program: compileProgram(rt, vertexBloom, fragmentBloom),
+    ...compileProgram(rt, 'bloom', vertexBloom, fragmentBloom),
   }
 
   const rb = {}
@@ -138,101 +133,118 @@ export const initializeGl = rt => {
   fb.kawase = gl.createFramebuffer()
 
   const geometries = {
-    vertex: sphere(),
-    edge: tube({ segments: rt.segments }),
-    face: tri({ segments: rt.segments }),
+    vertex: () => sphere(),
+    edge: segments => tube({ segments }),
+    face: segments => tri({ segments }),
   }
 
   meshes.vertex = mesh(
     rt,
-    compileProgram(rt, vertexVertex, fragmentVertex),
+    'vertex',
+    vertexVertex,
+    fragmentVertex,
     geometries.vertex,
-    rt.maxVertices * rt.dimensions,
+    rt.maxVertices,
     rt.dimensions
   )
-  gl.useProgram(meshes.vertex.program)
   meshes.vertex.visible = rt.showVertices
 
   meshes.edge = mesh(
     rt,
-    compileProgram(rt, vertexEdge, fragmentEdge),
+    'edge',
+    vertexEdge,
+    fragmentEdge,
     geometries.edge,
-    rt.maxEdges * rt.dimensions,
+    rt.maxEdges,
     rt.dimensions,
     ['position', 'target']
   )
-  gl.useProgram(meshes.edge.program)
   meshes.edge.visible = rt.showEdges
 
   meshes.face = mesh(
     rt,
-    compileProgram(rt, vertexFace, fragmentFace),
+    'face',
+    vertexFace,
+    fragmentFace,
     geometries.face,
-    rt.maxFaces * rt.dimensions,
+    rt.maxFaces,
     rt.dimensions,
     ['position', 'center', 'target']
   )
-  gl.useProgram(meshes.face.program)
   meshes.face.visible = rt.showFaces
-  gl.useProgram(passes.kawase.down.program)
+
   passes.kawase.down.uniforms.screen = uniform(
     rt,
     passes.kawase.down.program,
-    'screen'
+    'screen',
+    '1i'
   )
-  gl.uniform1i(passes.kawase.down.uniforms.screen.location, 0)
+
   passes.kawase.down.uniforms.offset = uniform(
     rt,
     passes.kawase.down.program,
-    'offset'
+    'offset',
+    '1f'
   )
-  gl.uniform1f(
-    passes.kawase.down.uniforms.offset.location,
-    passes.kawase.offset.down
-  )
+  passes.kawase.down.uniforms.screen.update(0)
+  passes.kawase.down.uniforms.offset.update(passes.kawase.offset.down)
 
-  gl.useProgram(passes.kawase.up.program)
   passes.kawase.up.uniforms.screen = uniform(
     rt,
     passes.kawase.up.program,
-    'screen'
+    'screen',
+    '1i'
   )
-  gl.uniform1i(passes.kawase.up.uniforms.screen.location, 0)
   passes.kawase.up.uniforms.offset = uniform(
     rt,
     passes.kawase.up.program,
-    'offset'
+    'offset',
+    '1f'
   )
-  gl.uniform1f(
-    passes.kawase.up.uniforms.offset.location,
-    passes.kawase.offset.up
-  )
+  passes.kawase.up.uniforms.screen.update(0)
+  passes.kawase.up.uniforms.offset.update(passes.kawase.offset.up)
 
   gl.useProgram(passes.bloom.program)
-  passes.bloom.uniforms.screen = uniform(rt, passes.bloom.program, 'screen')
-  gl.uniform1i(passes.bloom.uniforms.screen.location, 0)
-  passes.bloom.uniforms.bloom = uniform(rt, passes.bloom.program, 'bloom')
-  gl.uniform1i(passes.bloom.uniforms.bloom.location, 1)
-  passes.bloom.uniforms.exposure = uniform(rt, passes.bloom.program, 'exposure')
-  gl.uniform1f(
-    passes.bloom.uniforms.exposure.location,
-    passes.glowParameters.exposure
+  passes.bloom.uniforms.screen = uniform(
+    rt,
+    passes.bloom.program,
+    'screen',
+    '1i'
   )
-  passes.bloom.uniforms.strength = uniform(rt, passes.bloom.program, 'strength')
-  gl.uniform1f(
-    passes.bloom.uniforms.strength.location,
-    passes.glowParameters.strength
+  passes.bloom.uniforms.bloom = uniform(rt, passes.bloom.program, 'bloom', '1i')
+  passes.bloom.uniforms.exposure = uniform(
+    rt,
+    passes.bloom.program,
+    'exposure',
+    '1f'
   )
 
-  gl.useProgram(passes.oit.program)
-  passes.oit.uniforms.accum = uniform(rt, passes.oit.program, 'accumTexture')
-  gl.uniform1i(passes.oit.uniforms.accum.location, 0)
+  passes.bloom.uniforms.strength = uniform(
+    rt,
+    passes.bloom.program,
+    'strength',
+    '1f'
+  )
+
+  passes.bloom.uniforms.screen.update(0)
+  passes.bloom.uniforms.bloom.update(1)
+  passes.bloom.uniforms.exposure.update(passes.glowParameters.exposure)
+  passes.bloom.uniforms.strength.update(passes.glowParameters.strength)
+
+  passes.oit.uniforms.accum = uniform(
+    rt,
+    passes.oit.program,
+    'accumTexture',
+    '1i'
+  )
   passes.oit.uniforms.accumAlpha = uniform(
     rt,
     passes.oit.program,
-    'revealageTexture'
+    'revealageTexture',
+    '1i'
   )
-  gl.uniform1i(passes.oit.uniforms.accumAlpha.location, 1)
+  passes.oit.uniforms.accum.update(0)
+  passes.oit.uniforms.accumAlpha.update(1)
 
   camera.update()
 
@@ -394,7 +406,7 @@ const plotFaces = (rt, range = null) => {
       idx++
     }
   }
-  rt.meshes.face.count = stop
+  rt.meshes.face.count = idx
   rt.meshes.face.attributes.position.update()
   rt.meshes.face.attributes.target.update()
   rt.meshes.face.attributes.center.update()
@@ -479,42 +491,38 @@ export const changeAmbiance = rt => {
   const ambiance = ambiances[rt.ambiance]
   rt.gl.clearColor(...ambiance.background)
 
-  updateMaterials(rt)
+  updateUniforms(rt)
   render(rt)
 }
 
-export const updateMaterials = rt => {
-  const {
-    dimensions,
-    curvature,
-    projection,
-    easing,
-    vertexThickness,
-    edgeThickness,
-  } = rt
-  // const segments = rt.curve ? rt.segments : 1
-
+export const recompilePrograms = rt => {
   Object.values(rt.meshes).forEach(mesh => {
-    rt.gl.useProgram(mesh.program)
-    rt.gl.uniform1f(mesh.uniforms.curvature.location, rt.curvature)
-    rt.gl.uniformMatrix4fv(
-      mesh.uniforms.matrix.location,
-      false,
-      columnMajor(rt.matrix)
-    )
-    // mesh.uniforms.vertexThickness.value = vertexThickness
-    // mesh.uniforms.edgeThickness.value = edgeThickness
-    // mesh.uniforms.segments.value = segments
-    // for (let i = 4; i <= dimensions; i++) {
-    //   if (!mesh.uniforms[`fov${i}`]) {
-    //     mesh.uniforms[`fov${i}`] = { value: 1 }
-    //   }
-    //   mesh.uniforms[`fov${i}`].value = tan((PI * rt[`fov${i}`] * 0.5) / 180)
-    // }
-    // if (rt.dimensions < 5) {
-    //   mesh.uniforms.rotationMatrix.value = columnMajor(rt.matrix)
-    // }
+    mesh.recompile(rt)
   })
+  updateUniforms(rt)
+}
+
+export const updateUniforms = rt => {
+  const segments = rt.curve ? rt.segments : 1
+
+  Object.entries(rt.meshes).forEach(([type, mesh]) => {
+    mesh.uniforms.curvature.update(rt.curvature)
+    if (rt.dimensions < 5) {
+      mesh.uniforms.matrix.update(columnMajor(rt.matrix))
+    }
+    for (let i = 4; i <= rt.dimensions; i++) {
+      mesh.uniforms[`fov${i}`].update(tan((PI * rt[`fov${i}`] * 0.5) / 180))
+    }
+    if (type === 'vertex') {
+      mesh.uniforms.thickness.update(rt.vertexThickness)
+    } else if (type === 'edge') {
+      mesh.uniforms.thickness.update(rt.edgeThickness)
+    }
+    if (['edge', 'face'].includes(type)) {
+      mesh.uniforms.segments.update(segments)
+    }
+  })
+  rt.camera.update()
 }
 
 export const render = rt => {

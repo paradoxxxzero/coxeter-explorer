@@ -27,7 +27,7 @@ class Worker {
 
   kill() {
     if (this.processing > 0) {
-      console.warn(`Killing worker ${this.name} (${this.processing})`)
+      console.debug(`Killing worker ${this.name} (${this.processing})`)
       this.worker.terminate()
       this.init()
     }

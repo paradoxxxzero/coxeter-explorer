@@ -13,20 +13,20 @@ const translate = (x, y, shift, rotations, matrix, dimensions, curvature) => {
   set(
     matrix,
     multiply(
-      xtranslate(x, shift * 2, rotations.combinations, dimensions, curvature),
+      xtranslate(
+        x,
+        shift * 2 + 1,
+        rotations.combinations,
+        dimensions,
+        curvature
+      ),
       matrix
     )
   )
   set(
     matrix,
     multiply(
-      xtranslate(
-        y,
-        shift * 2 + 1,
-        rotations.combinations,
-        dimensions,
-        curvature
-      ),
+      xtranslate(y, shift * 2, rotations.combinations, dimensions, curvature),
       matrix
     )
   )
@@ -100,12 +100,7 @@ export const useInteract = (runtime, rotations, updateParams) => {
       })
     } else {
       Object.values(runtime.meshes).forEach(mesh => {
-        runtime.gl.useProgram(mesh.program)
-        runtime.gl.uniformMatrix4fv(
-          mesh.uniforms.matrix.location,
-          false,
-          columnMajor(localMatrix.current)
-        )
+        mesh.uniforms.matrix.update(columnMajor(localMatrix.current))
       })
       render(runtime)
     }
@@ -228,7 +223,7 @@ export const useInteract = (runtime, rotations, updateParams) => {
       }
       let last = pointers.get(e.pointerId)
       const delta = [
-        (e.clientX - last[0]) / window.innerHeight, // height is intentional
+        -(e.clientX - last[0]) / window.innerHeight, // height is intentional
         -(e.clientY - last[1]) / window.innerHeight,
       ]
       if (rotations.auto) {
@@ -236,8 +231,8 @@ export const useInteract = (runtime, rotations, updateParams) => {
         const dt = newTime - time
         time = newTime
         const speed = [(autoSpeed * delta[0]) / dt, (autoSpeed * delta[1]) / dt]
-        animation.current.speed[rotations.shift * 2] = speed[0]
-        animation.current.speed[rotations.shift * 2 + 1] = speed[1]
+        animation.current.speed[rotations.shift * 2] = speed[1]
+        animation.current.speed[rotations.shift * 2 + 1] = speed[0]
       }
 
       pointers.set(e.pointerId, [e.clientX, e.clientY])

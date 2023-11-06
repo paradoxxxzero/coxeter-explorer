@@ -5,8 +5,9 @@ import {
   resetComposerTarget,
   show,
   updateCameraFov,
-  updateMaterials,
+  updateUniforms,
   render,
+  recompilePrograms,
 } from '../render'
 
 export const useRender = (runtime, setRuntime) => {
@@ -17,34 +18,53 @@ export const useRender = (runtime, setRuntime) => {
     })
   }, [runtime.fov3, runtime.camera, runtime.composer, setRuntime])
 
-  // useEffect(() => {
-  //   setRuntime(runtime => {
-  //     initVertex(runtime)
-  //     initEdge(runtime)
-  //     initFace(runtime)
-  //     return runtime
-  //   })
-  // }, [runtime.dimensions, runtime.curve, runtime.segments, setRuntime])
+  useEffect(() => {
+    setRuntime(runtime => {
+      Object.values(runtime.meshes).forEach(mesh => {
+        mesh.updateGeometry(runtime)
+      })
+      return runtime
+    })
+  }, [runtime.dimensions, runtime.curve, runtime.segments, setRuntime])
 
-  // useEffect(() => {
-  //   setRuntime(runtime => {
-  //     if (runtime.vertices.length) {
-  //       console.warn(`Extending vertex buffer to ${runtime.vertices.length}`)
-  //       initVertex(runtime)
-  //     }
-  //     return runtime
-  //   })
-  // }, [runtime.maxVertices, setRuntime])
+  useEffect(() => {
+    setRuntime(runtime => {
+      if (runtime.vertices.length) {
+        console.warn(`Extending vertex buffer to ${runtime.maxVertices}`)
+        runtime.meshes.vertex.extendAttributes(runtime, runtime.maxVertices)
+      }
+      return runtime
+    })
+  }, [runtime.maxVertices, setRuntime])
 
-  // useEffect(() => {
-  //   setRuntime(runtime => {
-  //     if (runtime.edges.length) {
-  //       console.warn(`Extending edge buffer to ${runtime.edges.length}`)
-  //       initEdge(runtime)
-  //     }
-  //     return runtime
-  //   })
-  // }, [runtime.maxEdges, setRuntime])
+  useEffect(() => {
+    setRuntime(runtime => {
+      if (runtime.edges.length) {
+        console.warn(`Extending edge buffer to ${runtime.maxEdges}`)
+        runtime.meshes.edge.extendAttributes(runtime, runtime.maxEdges)
+      }
+      return runtime
+    })
+  }, [runtime.maxEdges, setRuntime])
+
+  useEffect(() => {
+    setRuntime(runtime => {
+      if (runtime.faces.length) {
+        console.warn(`Extending edge buffer to ${runtime.maxFaces}`)
+        runtime.meshes.face.extendAttributes(runtime, runtime.maxFaces)
+      }
+      return runtime
+    })
+  }, [runtime.maxFaces, setRuntime])
+
+  useEffect(() => {
+    setRuntime(runtime => {
+      runtime.meshes.vertex.extendAttributes(runtime, runtime.maxVertices)
+      runtime.meshes.edge.extendAttributes(runtime, runtime.maxEdges)
+      runtime.meshes.face.extendAttributes(runtime, runtime.maxFaces)
+      return runtime
+    })
+  }, [runtime.dimensions, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => {
@@ -65,6 +85,7 @@ export const useRender = (runtime, setRuntime) => {
       show(runtime, 'vertex')
       show(runtime, 'edge')
       show(runtime, 'face')
+
       return runtime
     })
   }, [runtime.showVertices, runtime.showEdges, runtime.showFaces, setRuntime])
@@ -91,6 +112,20 @@ export const useRender = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
+      recompilePrograms(runtime)
+      render(runtime)
+      return runtime
+    })
+  }, [
+    runtime.spaceType, // For easing auto
+    runtime.easing,
+    runtime.projection,
+    runtime.dimensions,
+    setRuntime,
+  ])
+
+  useEffect(() => {
+    setRuntime(runtime => {
       // Full plot
       plot(runtime)
       return runtime
@@ -110,7 +145,7 @@ export const useRender = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
-      updateMaterials(runtime)
+      updateUniforms(runtime)
       render(runtime)
       return runtime
     })
@@ -123,10 +158,7 @@ export const useRender = (runtime, setRuntime) => {
     runtime.fov9,
     runtime.vertexThickness,
     runtime.edgeThickness,
-    runtime.easing,
-    runtime.projection,
     runtime.curvature,
-    runtime.dimensions,
     runtime.curve,
     runtime.segments,
     runtime.maxVertices,

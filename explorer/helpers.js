@@ -1,5 +1,8 @@
-import { ambiances } from '../statics'
-import { columnMajor } from './math/matrix'
+import { ambiances, easings, projections } from '../statics'
+import ease from './shaders/includes/vertex/ease.glsl?raw'
+import globals from './shaders/includes/vertex/globals.glsl?raw'
+import project from './shaders/includes/vertex/project.glsl?raw'
+
 export const hueToRgb = (p, q, t) => {
   if (t < 0) t += 1
   if (t > 1) t -= 1
@@ -43,63 +46,82 @@ export const resizeCanvasToDisplaySize = (canvas, multiplier) => {
   }
   return false
 }
-
-const augment = (rt, shader) => {
-  const config = ['']
+const includes = {
+  globals,
+  ease,
+  project,
+}
+export const augment = (rt, vertex, fragment) => {
   const ambiance = ambiances[rt.ambiance]
+  let config = ''
   if (ambiance.lighting) {
-    config.push('#define LIGHTING')
+    config += '#define LIGHTING\n'
   }
-  return shader.replace(
-    'precision highp float;',
-    'precision highp float;' + config.join('\n')
-  )
+  const easing =
+    rt.easing === 'auto'
+      ? rt.spaceType?.startsWith('hyperbolic') && rt.projection !== 'inverted'
+        ? 'quintic'
+        : 'linear'
+      : rt.easing
+  config += `#define DIMENSIONS ${rt.dimensions}\n`
+  config += `#define PROJECTION ${projections.indexOf(rt.projection)}\n`
+  config += `#define EASING ${easings.indexOf(easing)}\n`
+  Object.entries({ ...includes, config }).forEach(([key, value]) => {
+    vertex = vertex.replace(`#include ${key}`, value)
+    fragment = fragment.replace(`#include ${key}`, value)
+  })
+  vertex = vertex.replace(/\bvecN\b/g, `vec${rt.dimensions}`)
+  fragment = fragment.replace(/\bvecN\b/g, `vec${rt.dimensions}`)
+  return [vertex, fragment]
 }
 
-export const compileProgram = (rt, vertex, fragment) => {
+const compileShader = (rt, name, type, shaderSource, shader) => {
+  rt.gl.shaderSource(shader, shaderSource)
+  rt.gl.compileShader(shader)
+  const success = rt.gl.getShaderParameter(shader, rt.gl.COMPILE_STATUS)
+  if (!success) {
+    const error = rt.gl.getShaderInfoLog(shader)
+    console.error(
+      `An error occurred compiling the ${name}->${type} shader: ${error}`,
+      { shaderSource }
+    )
+    return error
+  }
+}
+
+const linkProgram = (rt, name, program) => {
   const { gl } = rt
-  const compileShader = (shaderSource, shader) => {
-    gl.shaderSource(shader, shaderSource)
-    gl.compileShader(shader)
-    const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS)
-    if (!success) {
-      const error = gl.getShaderInfoLog(shader)
-      console.error(`An error occurred compiling the shaders: ${error}`)
-      return error
-    }
-  }
+  gl.linkProgram(program)
 
-  const linkProgram = program => {
-    gl.linkProgram(program)
-
-    const success = gl.getProgramParameter(program, gl.LINK_STATUS)
-    if (!success) {
-      const error = gl.getProgramInfoLog(program)
-      console.error(`Unable to initialize the shader program: ${error}`)
-      return error
-    }
+  const success = gl.getProgramParameter(program, gl.LINK_STATUS)
+  if (!success) {
+    const error = gl.getProgramInfoLog(program)
+    console.error(`Unable to initialize the ${name} shader program: ${error}`)
+    return error
   }
+}
+
+export const compileProgram = (rt, name, vertex, fragment) => {
+  const { gl } = rt
+
   const program = gl.createProgram()
 
   const vertexShader = gl.createShader(gl.VERTEX_SHADER)
   const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER)
-  let error = null
-  if ((error = compileShader(augment(rt, vertex), vertexShader))) {
-    console.error('vertex shader error', error)
+  if (compileShader(rt, name, 'vertex', vertex, vertexShader)) {
     return
   }
-  if (compileShader(augment(rt, fragment), fragmentShader)) {
-    console.error('fragment shader error', error)
+  if (compileShader(rt, name, 'fragment', fragment, fragmentShader)) {
     return
   }
 
   gl.attachShader(program, vertexShader)
   gl.attachShader(program, fragmentShader)
 
-  if (linkProgram(program)) {
+  if (linkProgram(rt, name, program)) {
     return
   }
-  return program
+  return { program, vertexShader, fragmentShader }
 }
 
 export const attribute = (
@@ -109,40 +131,57 @@ export const attribute = (
   size,
   data,
   instances = null,
-  type = null,
-  normalize = false
+  type = null
 ) => {
   const { gl } = rt
   type = type || gl.FLOAT
-  const location = gl.getAttribLocation(program, name)
-  if (location === -1) {
-    return {
-      location,
-      buffer: null,
-      indices: null,
-      data: null,
-      len: 0,
-    }
-  }
-  const buffer = gl.createBuffer()
-  gl.enableVertexAttribArray(location)
-  gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
-  gl.vertexAttribPointer(location, size, type, normalize, 0, 0)
-  gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW)
-  if (instances) {
-    gl.vertexAttribDivisor(location, instances)
-  }
-  return {
-    location,
-    buffer,
+
+  const attr = {
+    name,
     indices,
+    instances,
     data,
-    len: data.length / size,
-    update: () => {
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
-      gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW)
+    size,
+    type,
+    update() {
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer)
+      gl.bufferData(gl.ARRAY_BUFFER, this.data, gl.STATIC_DRAW)
+    },
+    attach(program) {
+      this.location = gl.getAttribLocation(program, this.name)
+      if (this.location === -1) {
+        return {
+          location: this.location,
+          name: this.name,
+        }
+      }
+      gl.enableVertexAttribArray(this.location)
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer)
+      gl.vertexAttribPointer(this.location, this.size, this.type, false, 0, 0)
+      if (this.instances) {
+        gl.vertexAttribDivisor(this.location, this.instances)
+      }
+    },
+    extend(size, newData, copy = false) {
+      this.size = size
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer)
+      if (this.location >= 0) {
+        gl.vertexAttribPointer(this.location, this.size, this.type, false, 0, 0)
+        if (this.instances) {
+          gl.vertexAttribDivisor(this.location, this.instances)
+        }
+      }
+      copy && newData.length >= this.data.length && newData.set(this.data)
+      this.data = newData
+      this.update()
     },
   }
+
+  attr.buffer = gl.createBuffer()
+  attr.attach(program)
+  attr.update()
+
+  return attr
 }
 
 export const indices = (rt, indices) => {
@@ -152,14 +191,37 @@ export const indices = (rt, indices) => {
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW)
   return {
     buffer,
-    len: indices.length,
+    indices,
+    count: indices.length,
+    update(newIndices) {
+      this.indices = newIndices
+      this.count = newIndices.length
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffer)
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, newIndices, gl.STATIC_DRAW)
+    },
   }
 }
 
-export const uniform = (rt, program, name) => {
+export const uniform = (rt, program, name, type) => {
   const { gl } = rt
   const location = gl.getUniformLocation(program, name)
-  return { location }
+  const uniform = {
+    location,
+    program,
+    update(value) {
+      gl.useProgram(this.program)
+      if (type.startsWith('m')) {
+        gl[`uniformMatrix${type.slice(1)}`](this.location, false, value)
+      } else {
+        gl[`uniform${type}`](this.location, value)
+      }
+    },
+    get() {
+      gl.useProgram(this.program)
+      return gl.getUniform(this.program, this.location)
+    },
+  }
+  return uniform
 }
 
 export const texture = (rt, type, scale = null) => {
@@ -192,21 +254,88 @@ export const texture = (rt, type, scale = null) => {
 
 export const mesh = (
   rt,
-  program,
-  geometry,
+  type,
+  vertex,
+  fragment,
+  geometryFunc,
   size,
   arity,
   attributes = ['position']
 ) => {
   const { gl } = rt
+  const geometry = geometryFunc(rt.curve ? rt.segments : 1)
   const mesh = {
     attributes: {},
     uniforms: {},
-    program,
+    ...compileProgram(rt, type, ...augment(rt, vertex, fragment)),
+    bindUniforms(rt) {
+      this.uniforms.viewProjection = uniform(
+        rt,
+        this.program,
+        'viewProjection',
+        'm4fv'
+      )
+      this.uniforms.matrix = uniform(
+        rt,
+        this.program,
+        'matrix',
+        `m${rt.dimensions}fv`
+      )
+      this.uniforms.eye = uniform(rt, this.program, 'eye', '3fv')
+      this.uniforms.curvature = uniform(rt, this.program, 'curvature', '1f')
+      if (['vertex', 'edge'].includes(type)) {
+        this.uniforms.thickness = uniform(rt, this.program, 'thickness', '1f')
+      }
+      if (['edge', 'face'].includes(type)) {
+        this.uniforms.segments = uniform(rt, this.program, 'segments', '1f')
+      }
+      for (let i = 4; i <= rt.dimensions; i++) {
+        this.uniforms[`fov${i}`] = uniform(rt, this.program, `fov${i}`, '1f')
+      }
+    },
+    recompile(rt) {
+      const [newVertex, newFragment] = augment(rt, vertex, fragment)
+      if (compileShader(rt, type, 'vertex', newVertex, this.vertexShader)) {
+        return
+      }
+      if (
+        compileShader(rt, type, 'fragment', newFragment, this.fragmentShader)
+      ) {
+        return
+      }
+      if (linkProgram(rt, type, this.program)) {
+        return
+      }
+
+      gl.useProgram(this.program)
+      this.bindUniforms(rt)
+    },
+    extendAttributes(rt, maxSize) {
+      gl.bindVertexArray(mesh.vao)
+      const arity = rt.dimensions
+
+      attributes.forEach(attr => {
+        mesh.attributes[attr].extend(
+          arity,
+          new Float32Array(maxSize * arity),
+          true
+        )
+      })
+      mesh.attributes.color.extend(3, new Float32Array(maxSize * 3), true)
+    },
+    updateGeometry(rt) {
+      gl.bindVertexArray(mesh.vao)
+      const geometry = geometryFunc(rt.curve ? rt.segments : 1)
+      mesh.indices.update(new Uint16Array(geometry.indices))
+      mesh.attributes.vertex.extend(3, new Float32Array(geometry.vertices))
+      mesh.attributes.uv.extend(2, new Float32Array(geometry.uvs))
+      mesh.attributes.normal.extend(3, new Float32Array(geometry.normals))
+    },
   }
   mesh.visible = true
   mesh.vao = gl.createVertexArray()
   gl.bindVertexArray(mesh.vao)
+  mesh.bindUniforms(rt)
 
   mesh.attributes.vertex = attribute(
     rt,
@@ -236,7 +365,7 @@ export const mesh = (
       mesh.program,
       attr,
       arity,
-      new Float32Array(size),
+      new Float32Array(size * arity),
       1
     )
   })
@@ -245,14 +374,11 @@ export const mesh = (
     mesh.program,
     'color',
     3,
-    new Float32Array(size),
+    new Float32Array(size * 3),
     1
   )
-  mesh.count = 0 //size / arity
-  mesh.uniforms.viewProjection = uniform(rt, mesh.program, 'viewProjection')
-  mesh.uniforms.matrix = uniform(rt, mesh.program, 'matrix')
-  mesh.uniforms.eye = uniform(rt, mesh.program, 'eye')
-  mesh.uniforms.curvature = uniform(rt, mesh.program, 'curvature')
+
+  mesh.count = 0
   return mesh
 }
 
@@ -260,10 +386,9 @@ export const renderMesh = (rt, type) => {
   const { gl } = rt
   gl.useProgram(rt.meshes[type].program)
   gl.bindVertexArray(rt.meshes[type].vao)
-  gl.uniform1f(rt.meshes[type].uniforms.curvature.location, rt.curvature)
   gl.drawElementsInstanced(
     gl.TRIANGLES,
-    rt.meshes[type].indices.len,
+    rt.meshes[type].indices.count,
     gl.UNSIGNED_SHORT,
     0,
     rt.meshes[type].count
@@ -277,7 +402,7 @@ export const storage = (rt, rb, type) => {
   if (rt.msaa) {
     gl.renderbufferStorageMultisample(
       gl.RENDERBUFFER,
-      rt.msaa,
+      rt.msaaSamples,
       type,
       gl.drawingBufferWidth,
       gl.drawingBufferHeight
