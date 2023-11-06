@@ -91,7 +91,6 @@ export const useInteract = (runtime, rotations, updateParams) => {
         curvature: runtime.curvature,
         ranges: runtime.ranges,
         matrix: localMatrix.current,
-        render: runtime.render,
         spaceType: runtime.spaceType,
         vertices: runtime.vertices,
         edges: runtime.edges,
@@ -106,7 +105,6 @@ export const useInteract = (runtime, rotations, updateParams) => {
     }
   }, [
     runtime.dimensions,
-    runtime.render,
     runtime.curvature,
     runtime.ranges,
     runtime.meshes,
@@ -188,6 +186,7 @@ export const useInteract = (runtime, rotations, updateParams) => {
 
   useEffect(() => {
     runtime.camera.position.z = -runtime.zoom
+    runtime.camera.update()
   }, [runtime.camera, runtime.zoom])
 
   useEffect(() => {
@@ -244,9 +243,9 @@ export const useInteract = (runtime, rotations, updateParams) => {
         }
         const newDistance = getDistance()
         runtime.camera.position.z *= distance / newDistance
+        runtime.camera.update()
         distance = newDistance
-        const render = runtime.render
-        render()
+        render(runtime)
         updateZoom(-runtime.camera.position.z)
         return
       }
@@ -317,7 +316,6 @@ export const useInteract = (runtime, rotations, updateParams) => {
     rotations.shift,
     runtime.dimensions,
     runtime.curvature,
-    runtime.render,
     runtime.camera,
 
     quickUpdateMatrix,

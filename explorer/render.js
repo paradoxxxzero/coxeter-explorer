@@ -466,7 +466,6 @@ export const plot = (rt, order = null) => {
     rt.gl.bindVertexArray(rt.meshes.face.vao)
     plotFaces(rt, range.faces)
   }
-  render(rt)
   document.title = `Coxeter Explorer - ${
     rt.spaceType === 'finite' ? 'S' : rt.spaceType === 'affine' ? 'E' : 'H'
   }^${rt.dimensions} ${
@@ -479,27 +478,17 @@ export const plot = (rt, order = null) => {
 export const updateCameraFov = rt => {
   rt.camera.fov = (PI * rt.fov3) / 180
   rt.camera.update()
-  render(rt)
-}
-
-export const resetComposerTarget = rt => {
-  refreshTextures(rt)
-  changeAmbiance(rt)
 }
 
 export const changeAmbiance = rt => {
   const ambiance = ambiances[rt.ambiance]
   rt.gl.clearColor(...ambiance.background)
-
-  updateUniforms(rt)
-  render(rt)
 }
 
 export const recompilePrograms = rt => {
   Object.values(rt.meshes).forEach(mesh => {
     mesh.recompile(rt)
   })
-  updateUniforms(rt)
 }
 
 export const updateUniforms = rt => {

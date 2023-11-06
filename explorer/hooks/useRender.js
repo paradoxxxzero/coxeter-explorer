@@ -2,13 +2,13 @@ import { useEffect } from 'react'
 import {
   changeAmbiance,
   plot,
-  resetComposerTarget,
+  recompilePrograms,
+  render,
   show,
   updateCameraFov,
   updateUniforms,
-  render,
-  recompilePrograms,
 } from '../render'
+import refreshTextures from '../textures'
 
 export const useRender = (runtime, setRuntime) => {
   useEffect(() => {
@@ -16,7 +16,7 @@ export const useRender = (runtime, setRuntime) => {
       updateCameraFov(runtime)
       return runtime
     })
-  }, [runtime.fov3, runtime.camera, runtime.composer, setRuntime])
+  }, [runtime.fov3, runtime.camera, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => {
@@ -68,17 +68,17 @@ export const useRender = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
-      changeAmbiance(runtime)
+      refreshTextures(runtime)
       return runtime
     })
-  }, [runtime.ambiance, setRuntime])
+  }, [runtime.msaa, runtime.msaaSamples, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => {
-      resetComposerTarget(runtime)
+      changeAmbiance(runtime)
       return runtime
     })
-  }, [runtime.msaa, runtime.msaaSamples, runtime.composer, setRuntime])
+  }, [runtime.ambiance, runtime.msaa, runtime.msaaSamples, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => {
@@ -113,7 +113,6 @@ export const useRender = (runtime, setRuntime) => {
   useEffect(() => {
     setRuntime(runtime => {
       recompilePrograms(runtime)
-      render(runtime)
       return runtime
     })
   }, [
@@ -146,10 +145,14 @@ export const useRender = (runtime, setRuntime) => {
   useEffect(() => {
     setRuntime(runtime => {
       updateUniforms(runtime)
-      render(runtime)
       return runtime
     })
   }, [
+    runtime.spaceType,
+    runtime.easing,
+    runtime.projection,
+    runtime.dimensions,
+    runtime.ambiance,
     runtime.fov4,
     runtime.fov5,
     runtime.fov6,
@@ -166,6 +169,13 @@ export const useRender = (runtime, setRuntime) => {
     runtime.matrix,
     setRuntime,
   ])
+
+  useEffect(() => {
+    setRuntime(runtime => {
+      render(runtime)
+      return runtime
+    })
+  }, [runtime, setRuntime])
 
   useEffect(() => {
     const resizeObserver = new ResizeObserver(() => render(runtime))
