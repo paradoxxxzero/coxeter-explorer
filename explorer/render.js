@@ -512,7 +512,7 @@ export const render = rt => {
   }
   const { gl } = rt
   const ambiance = ambiances[rt.ambiance]
-  if (resizeCanvasToDisplaySize(gl.canvas)) {
+  if (resizeCanvasToDisplaySize(gl.canvas, window.devicePixelRatio)) {
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
     refreshTextures(rt)
     rt.camera.update()

@@ -3,6 +3,7 @@ import ease from './shaders/includes/ease.glsl?raw'
 import globals from './shaders/includes/globals.glsl?raw'
 import project from './shaders/includes/project.glsl?raw'
 import lighting from './shaders/includes/lighting.glsl?raw'
+import { min } from './math'
 
 export const hueToRgb = (p, q, t) => {
   if (t < 0) t += 1
@@ -429,7 +430,7 @@ export const storage = (rt, rb, type) => {
   if (rt.msaa) {
     gl.renderbufferStorageMultisample(
       gl.RENDERBUFFER,
-      rt.msaaSamples,
+      min(rt.msaaSamples, rt.gl.getParameter(rt.gl.MAX_SAMPLES)),
       type,
       gl.drawingBufferWidth,
       gl.drawingBufferHeight
