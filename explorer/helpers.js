@@ -165,8 +165,12 @@ export const uniform = (rt, program, name) => {
 export const texture = (rt, type, scale = null) => {
   const { gl } = rt
 
-  const width = scale ? scale * gl.drawingBufferWidth : gl.drawingBufferWidth
-  const height = scale ? scale * gl.drawingBufferHeight : gl.drawingBufferHeight
+  const width = scale
+    ? ~~(scale * gl.drawingBufferWidth)
+    : gl.drawingBufferWidth
+  const height = scale
+    ? ~~(scale * gl.drawingBufferHeight)
+    : gl.drawingBufferHeight
   const texture = gl.createTexture()
   gl.bindTexture(gl.TEXTURE_2D, texture)
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false)

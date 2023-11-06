@@ -370,6 +370,7 @@ export const useInteract = (runtime, rotations, updateParams) => {
         return
       }
       runtime.camera.position.z *= e.deltaY < 0 ? zoomSpeed : 1 / zoomSpeed
+      runtime.camera.update()
       render(runtime)
       updateZoom(-runtime.camera.position.z)
     }
@@ -388,6 +389,7 @@ export const useInteract = (runtime, rotations, updateParams) => {
       const newZoom = zoom < 0.5 ? 5 : zoom < 2 ? 0.25 : 1
 
       runtime.camera.position.z = -newZoom
+      runtime.camera.update()
       render(runtime)
       updateZoom(newZoom)
     }

@@ -92,7 +92,6 @@ export const initializeGl = rt => {
     })
   }
   const passes = {
-    glow: false,
     glowParameters: {
       exposure: 2,
       strength: 1.5,
@@ -225,7 +224,6 @@ export const initializeGl = rt => {
     passes.glowParameters.strength
   )
 
-  // QUAD
   gl.useProgram(passes.oit.program)
   passes.oit.uniforms.accum = uniform(rt, passes.oit.program, 'accumTexture')
   gl.uniform1i(passes.oit.uniforms.accum.location, 0)
@@ -467,7 +465,7 @@ export const plot = (rt, order = null) => {
 }
 
 export const updateCameraFov = rt => {
-  rt.camera.fov = rt.fov3
+  rt.camera.fov = (PI * rt.fov3) / 180
   rt.camera.update()
   render(rt)
 }
@@ -524,6 +522,7 @@ export const render = rt => {
     stats.update()
   }
   const { gl } = rt
+  const ambiance = ambiances[rt.ambiance]
   if (resizeCanvasToDisplaySize(gl.canvas)) {
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
     refreshTextures(rt)
@@ -573,7 +572,7 @@ export const render = rt => {
   // FINAL
   // Blit msaa to screen
   gl.bindFramebuffer(gl.READ_FRAMEBUFFER, rt.fb.opaque)
-  gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, rt.passes.glow ? rt.fb.bloom : null)
+  gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, ambiance.glow ? rt.fb.bloom : null)
   gl.blitFramebuffer(
     0,
     0,
@@ -587,7 +586,7 @@ export const render = rt => {
     gl.NEAREST
   )
 
-  if (rt.passes.glow) {
+  if (ambiance.glow) {
     gl.disable(gl.BLEND)
     gl.enable(gl.DEPTH_TEST)
     gl.depthMask(true)
@@ -598,7 +597,7 @@ export const render = rt => {
     gl.useProgram(rt.passes.kawase.down.program)
     for (let i = 0; i < rt.passes.kawase.steps; i++) {
       const inTexture =
-        i === 0 ? rt.bloom.texture : rt.passes.kawase.textures[i - 1]
+        i === 0 ? rt.passes.bloom.texture : rt.passes.kawase.textures[i - 1]
       const outTexture = rt.passes.kawase.textures[i]
       gl.viewport(0, 0, outTexture.width, outTexture.height)
 
@@ -634,9 +633,9 @@ export const render = rt => {
     }
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-    gl.useProgram(rt.bloom.program)
+    gl.useProgram(rt.passes.bloom.program)
     gl.activeTexture(gl.TEXTURE0)
-    gl.bindTexture(gl.TEXTURE_2D, rt.bloom.texture.texture)
+    gl.bindTexture(gl.TEXTURE_2D, rt.passes.bloom.texture.texture)
     gl.activeTexture(gl.TEXTURE1)
     gl.bindTexture(gl.TEXTURE_2D, rt.passes.kawase.texture.texture)
     gl.drawArrays(gl.TRIANGLES, 0, 3)
