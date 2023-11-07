@@ -183,6 +183,7 @@ export const attribute = (
 ) => {
   const { gl } = rt
   type = type || gl.FLOAT
+  const byteSize = type === gl.FLOAT ? 4 : 2
 
   const attr = {
     name,
@@ -192,9 +193,19 @@ export const attribute = (
     size,
     type,
     program,
-    update() {
+    update(start = null, end = null) {
       gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer)
-      gl.bufferData(gl.ARRAY_BUFFER, this.data, gl.STATIC_DRAW)
+      if (start === null && end === null) {
+        gl.bufferData(gl.ARRAY_BUFFER, this.data, gl.STATIC_DRAW)
+      } else {
+        gl.bufferSubData(
+          gl.ARRAY_BUFFER,
+          start * this.size * byteSize,
+          this.data,
+          start * this.size,
+          end * this.size
+        )
+      }
     },
     extend(size, newData, copy = false) {
       this.size = size
@@ -220,8 +231,8 @@ export const attribute = (
           size / locSize,
           this.type,
           false,
-          size * 4,
-          (size / locSize) * i * 4
+          size * byteSize,
+          (size / locSize) * i * byteSize
         )
       }
       if (this.instances) {

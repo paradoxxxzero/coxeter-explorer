@@ -269,9 +269,8 @@ const plotVertices = (rt, range = null) => {
     icolor[i * 3 + 1] = c[1]
     icolor[i * 3 + 2] = c[2]
   }
-  // FIXME use update range
-  rt.meshes.vertex.attributes.position.update()
-  rt.meshes.vertex.attributes.color.update()
+  rt.meshes.vertex.attributes.position.update(start, stop)
+  rt.meshes.vertex.attributes.color.update(start, stop)
 }
 
 const plotEdges = (rt, range = null) => {
@@ -302,9 +301,9 @@ const plotEdges = (rt, range = null) => {
     icolor[i * 3 + 1] = c[1]
     icolor[i * 3 + 2] = c[2]
   }
-  rt.meshes.edge.attributes.position.update()
-  rt.meshes.edge.attributes.target.update()
-  rt.meshes.edge.attributes.color.update()
+  rt.meshes.edge.attributes.position.update(start, stop)
+  rt.meshes.edge.attributes.target.update(start, stop)
+  rt.meshes.edge.attributes.color.update(start, stop)
 }
 
 const plotFaces = (rt, range = null) => {
@@ -322,6 +321,7 @@ const plotFaces = (rt, range = null) => {
     const vertices = rt.faces[i].vertices.length
     idx += vertices < 3 ? 0 : vertices === 3 ? 1 : vertices
   }
+  const startIdx = idx
   const arity = dimensions > 4 ? 9 : dimensions
   for (let i = start; i < stop; i++) {
     const face = rt.faces[i]
@@ -380,10 +380,10 @@ const plotFaces = (rt, range = null) => {
     }
   }
   rt.meshes.face.count = idx
-  rt.meshes.face.attributes.position.update()
-  rt.meshes.face.attributes.target.update()
-  rt.meshes.face.attributes.center.update()
-  rt.meshes.face.attributes.color.update()
+  rt.meshes.face.attributes.position.update(startIdx, idx)
+  rt.meshes.face.attributes.target.update(startIdx, idx)
+  rt.meshes.face.attributes.center.update(startIdx, idx)
+  rt.meshes.face.attributes.color.update(startIdx, idx)
 }
 
 export const show = (rt, name) => {
