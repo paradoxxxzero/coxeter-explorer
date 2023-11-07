@@ -38,11 +38,13 @@ export default function Runtime({
       <ErrorBoundary error={runtime.renderError} onError={handleError}>
         <Process runtime={runtime} setRuntime={setRuntime} />
         <Render runtime={runtime} setRuntime={setRuntime} />
-        <Interact
-          runtime={runtime}
-          rotations={rotations}
-          updateParams={updateParams}
-        />
+        {runtime.curvature !== null ? (
+          <Interact
+            runtime={runtime}
+            rotations={rotations}
+            updateParams={updateParams}
+          />
+        ) : null}
       </ErrorBoundary>
     </>
   )

@@ -9,6 +9,10 @@ uniform float segments;
 uniform mat4 viewProjection;
 uniform matN matrix;
 
+in vec2 uv;
+in vec3 normal;
+in vec3 color;
+
 #if DIMENSIONS == 2
 in vec2 position;
 in vec2 target;
@@ -26,11 +30,6 @@ in mat3 position;
 in mat3 target;
 in mat3 center;
 #endif
-
-in vec2 uv;
-in vec3 normal;
-
-in vec3 color;
 
 out vec3 vPosition;
 out vec3 vNormal;

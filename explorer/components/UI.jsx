@@ -1,5 +1,11 @@
 import { useCallback, useState } from 'react'
-import { ambiances, easings, groupers, projections } from '../../statics'
+import {
+  ambiances,
+  defaultParams,
+  easings,
+  groupers,
+  projections,
+} from '../../statics'
 import { diagonal, ident } from '../math/matrix'
 import Boolean from './Boolean'
 import CoxeterMatrix from './CoxeterMatrix'
@@ -317,11 +323,22 @@ export default function UI({
               label="MSAA"
               min={0}
               step={1}
+              max={defaultParams.msaaSamples}
               value={params.msaaSamples}
               toggler={params.msaa}
               togglerName="msaa"
               onChange={handleChange}
             />
+            {showUI === 'full' && (
+              <Number
+                name="subsampling"
+                label="subsampling"
+                min={0.1}
+                step={0.1}
+                value={params.subsampling}
+                onChange={handleChange}
+              />
+            )}
             <Number
               name="fov3"
               label="FOV3"

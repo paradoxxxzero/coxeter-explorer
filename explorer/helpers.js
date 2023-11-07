@@ -4,6 +4,8 @@ import globals from './shaders/includes/globals.glsl?raw'
 import project from './shaders/includes/project.glsl?raw'
 import lighting from './shaders/includes/lighting.glsl?raw'
 import { min } from './math'
+import { range } from '../utils'
+import { columnMajor, ident } from './math/matrix'
 
 export const hueToRgb = (p, q, t) => {
   if (t < 0) t += 1
@@ -110,7 +112,13 @@ const linkProgram = (rt, name, program) => {
   }
 }
 
-export const compileProgram = (rt, name, vertex, fragment) => {
+export const compileProgram = (
+  rt,
+  name,
+  vertex,
+  fragment,
+  uniformsDef = []
+) => {
   const { gl } = rt
 
   const program = gl.createProgram()
@@ -130,7 +138,38 @@ export const compileProgram = (rt, name, vertex, fragment) => {
   if (linkProgram(rt, name, program)) {
     return
   }
-  return { program, vertexShader, fragmentShader }
+  const rv = {
+    program,
+    vertexShader,
+    fragmentShader,
+    uniformsDef,
+    recompile(rt, newVertex, newFragment, uniforms = null) {
+      if (compileShader(rt, name, 'vertex', newVertex, this.vertexShader)) {
+        return
+      }
+      if (
+        compileShader(rt, name, 'fragment', newFragment, this.fragmentShader)
+      ) {
+        return
+      }
+      if (linkProgram(rt, name, this.program)) {
+        return
+      }
+      if (uniforms) {
+        this.uniformsDef = uniforms
+      }
+      this.bindUniforms(rt)
+    },
+    bindUniforms(rt) {
+      this.uniforms = {}
+      this.uniformsDef.forEach(({ name, type, value }) => {
+        this.uniforms[name] = uniform(rt, this.program, name, type)
+        this.uniforms[name].update(value)
+      })
+    },
+  }
+  rv.bindUniforms(rt)
+  return rv
 }
 
 export const attribute = (
@@ -152,31 +191,37 @@ export const attribute = (
     data,
     size,
     type,
+    program,
     update() {
       gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer)
       gl.bufferData(gl.ARRAY_BUFFER, this.data, gl.STATIC_DRAW)
     },
-    attach(program) {
-      this.location = gl.getAttribLocation(program, this.name)
+    extend(size, newData, copy = false) {
+      this.size = size
+      this.location = gl.getAttribLocation(this.program, this.name)
       if (this.location === -1) {
-        return {
-          location: this.location,
-          name: this.name,
-        }
+        return
       }
-      const locSize = this.size > 4 ? 3 : 1
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer)
+      const locSize = size > 4 ? 3 : 1
+      // Force location on target and center to account for attrib size change
+      if (this.name === 'target') {
+        this.location = size > 4 ? 6 : 4
+      }
+      if (this.name === 'center') {
+        this.location = size > 4 ? 9 : 5
+      }
       for (let i = 0; i < locSize; i++) {
         gl.enableVertexAttribArray(this.location + i)
       }
-      gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer)
       for (let i = 0; i < locSize; i++) {
         gl.vertexAttribPointer(
           this.location + i,
-          this.size / locSize,
+          size / locSize,
           this.type,
           false,
-          this.size * 4,
-          (this.size / locSize) * i * 4
+          size * 4,
+          (size / locSize) * i * 4
         )
       }
       if (this.instances) {
@@ -184,37 +229,16 @@ export const attribute = (
           gl.vertexAttribDivisor(this.location + i, this.instances)
         }
       }
-    },
-    extend(size, newData, copy = false) {
-      this.size = size
-      gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer)
-      if (this.location >= 0) {
-        const locSize = size > 4 ? 3 : 1
-        for (let i = 0; i < locSize; i++) {
-          gl.vertexAttribPointer(
-            this.location + i,
-            size / locSize,
-            this.type,
-            false,
-            size * 4,
-            (size / locSize) * i * 4
-          )
-        }
-        if (this.instances) {
-          for (let i = 0; i < locSize; i++) {
-            gl.vertexAttribDivisor(this.location + i, this.instances)
-          }
-        }
+      if (newData) {
+        copy && newData.length >= this.data.length && newData.set(this.data)
+        this.data = newData
       }
-      copy && newData.length >= this.data.length && newData.set(this.data)
-      this.data = newData
       this.update()
     },
   }
 
   attr.buffer = gl.createBuffer()
-  attr.attach(program)
-  attr.update()
+  attr.extend(size)
 
   return attr
 }
@@ -239,9 +263,7 @@ export const indices = (rt, indices) => {
 
 export const uniform = (rt, program, name, type) => {
   const { gl } = rt
-  const location = gl.getUniformLocation(program, name)
   const uniform = {
-    location,
     program,
     update(value) {
       gl.useProgram(this.program)
@@ -250,37 +272,41 @@ export const uniform = (rt, program, name, type) => {
         if (n > 4) {
           for (let i = 0; i < n; i++) {
             gl.uniform4fv(
-              gl.getUniformLocation(program, name + `.c${i + 1}.v`),
+              gl.getUniformLocation(this.program, name + `.c${i + 1}.v`),
               value[i][0]
             )
             if (n - 4 === 1) {
               gl.uniform1f(
-                gl.getUniformLocation(program, name + `.c${i + 1}.u`),
+                gl.getUniformLocation(this.program, name + `.c${i + 1}.u`),
                 value[i][1]
               )
             } else if (n - 4 > 1) {
               gl[`uniform${min(n - 4, 4)}fv`](
-                gl.getUniformLocation(program, name + `.c${i + 1}.u`),
+                gl.getUniformLocation(this.program, name + `.c${i + 1}.u`),
                 value[i][1]
               )
               if (n - 8 === 1) {
                 gl.uniform1f(
-                  gl.getUniformLocation(program, name + `.c${i + 1}.t`),
+                  gl.getUniformLocation(this.program, name + `.c${i + 1}.t`),
                   value[i][2]
                 )
               }
             }
           }
         } else {
-          gl[`uniformMatrix${type.slice(1)}`](this.location, false, value)
+          gl[`uniformMatrix${type.slice(1)}`](
+            gl.getUniformLocation(program, name),
+            false,
+            value
+          )
         }
       } else {
-        gl[`uniform${type}`](this.location, value)
+        gl[`uniform${type}`](gl.getUniformLocation(program, name), value)
       }
     },
     get() {
       gl.useProgram(this.program)
-      return gl.getUniform(this.program, this.location)
+      return gl.getUniform(this.program, gl.getUniformLocation(program, name))
     },
   }
   return uniform
@@ -326,66 +352,76 @@ export const mesh = (
 ) => {
   const { gl } = rt
   const geometry = geometryFunc(rt.curve ? rt.segments : 1)
+  const uniforms = rt => [
+    {
+      name: 'viewProjection',
+      type: 'm4fv',
+      value: columnMajor(ident(4)),
+    },
+    {
+      name: 'matrix',
+      type: `m${rt.dimensions}fv`,
+      value: columnMajor(rt.matrix),
+    },
+    ...(ambiances[rt.ambiance].lighting
+      ? [
+          {
+            name: 'eye',
+            type: `3fv`,
+            value: [0, 0, 0],
+          },
+        ]
+      : []),
+    {
+      name: 'curvature',
+      type: '1f',
+      value: 0,
+    },
+    ...(['vertex', 'edge'].includes(type)
+      ? [
+          {
+            name: 'thickness',
+            type: '1f',
+            value: 0,
+          },
+        ]
+      : [
+          {
+            name: 'segments',
+            type: '1f',
+            value: rt.segments,
+          },
+          {
+            name: 'opacity',
+            type: '1f',
+            value: 0,
+          },
+        ]),
+    ...range(4, rt.dimensions + 1, 1, true).map(i => ({
+      name: `fov${i}`,
+      type: '1f',
+      value: rt[`fov${i}`],
+    })),
+  ]
+
   const mesh = {
     attributes: {},
-    uniforms: {},
-    ...compileProgram(rt, type, ...augment(rt, vertex, fragment)),
-    bindUniforms(rt) {
-      this.uniforms.viewProjection = uniform(
-        rt,
-        this.program,
-        'viewProjection',
-        'm4fv'
-      )
-      this.uniforms.matrix = uniform(
-        rt,
-        this.program,
-        'matrix',
-        `m${rt.dimensions}fv`
-      )
-      if (ambiances[rt.ambiance].lighting) {
-        this.uniforms.eye = uniform(rt, this.program, 'eye', '3fv')
-      }
-      this.uniforms.curvature = uniform(rt, this.program, 'curvature', '1f')
-      if (['vertex', 'edge'].includes(type)) {
-        this.uniforms.thickness = uniform(rt, this.program, 'thickness', '1f')
-      } else {
-        this.uniforms.segments = uniform(rt, this.program, 'segments', '1f')
-        this.uniforms.opacity = uniform(rt, this.program, 'opacity', '1f')
-      }
-
-      for (let i = 4; i <= rt.dimensions; i++) {
-        this.uniforms[`fov${i}`] = uniform(rt, this.program, `fov${i}`, '1f')
-      }
-    },
-    recompile(rt) {
+    ...compileProgram(rt, type, ...augment(rt, vertex, fragment), uniforms(rt)),
+    recompileProgram(rt) {
       const [newVertex, newFragment] = augment(rt, vertex, fragment)
-      if (compileShader(rt, type, 'vertex', newVertex, this.vertexShader)) {
-        return
-      }
-      if (
-        compileShader(rt, type, 'fragment', newFragment, this.fragmentShader)
-      ) {
-        return
-      }
-      if (linkProgram(rt, type, this.program)) {
-        return
-      }
-
-      gl.useProgram(this.program)
-      this.bindUniforms(rt)
+      this.recompile(rt, newVertex, newFragment, uniforms(rt))
     },
-    extendAttributes(rt, maxSize) {
+    extendAttributes(rt, maxSize, copy = true) {
       gl.bindVertexArray(mesh.vao)
       const arity = rt.dimensions > 4 ? 9 : rt.dimensions
       attributes.forEach(attr => {
         mesh.attributes[attr].extend(
           arity,
           new Float32Array(maxSize * arity),
-          true
+          copy
         )
       })
-      mesh.attributes.color.extend(3, new Float32Array(maxSize * 3), true)
+      mesh.attributes.color.extend(3, new Float32Array(maxSize * 3), copy)
     },
     updateGeometry(rt) {
       gl.bindVertexArray(mesh.vao)
@@ -399,7 +435,7 @@ export const mesh = (
   mesh.visible = true
   mesh.vao = gl.createVertexArray()
   gl.bindVertexArray(mesh.vao)
-  mesh.bindUniforms(rt)
+  mesh.indices = indices(rt, new Uint16Array(geometry.indices))
 
   mesh.attributes.vertex = attribute(
     rt,
@@ -422,7 +458,14 @@ export const mesh = (
     3,
     new Float32Array(geometry.normals)
   )
-  mesh.indices = indices(rt, new Uint16Array(geometry.indices))
+  mesh.attributes.color = attribute(
+    rt,
+    mesh.program,
+    'color',
+    3,
+    new Float32Array(size * 3),
+    1
+  )
   attributes.forEach(attr => {
     mesh.attributes[attr] = attribute(
       rt,
@@ -433,14 +476,6 @@ export const mesh = (
       1
     )
   })
-  mesh.attributes.color = attribute(
-    rt,
-    mesh.program,
-    'color',
-    3,
-    new Float32Array(size * 3),
-    1
-  )
 
   mesh.count = 0
   return mesh

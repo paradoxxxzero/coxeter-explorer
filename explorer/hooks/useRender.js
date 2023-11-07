@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import {
   changeAmbiance,
   plot,
@@ -11,8 +11,6 @@ import {
 import refreshTextures from '../textures'
 
 export const useRender = (runtime, setRuntime) => {
-  const firstRender = useRef(true)
-
   useEffect(() => {
     setRuntime(runtime => {
       updateCameraFov(runtime)
@@ -61,9 +59,13 @@ export const useRender = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
-      runtime.meshes.vertex.extendAttributes(runtime, runtime.maxVertices)
-      runtime.meshes.edge.extendAttributes(runtime, runtime.maxEdges)
-      runtime.meshes.face.extendAttributes(runtime, runtime.maxFaces)
+      runtime.meshes.vertex.extendAttributes(
+        runtime,
+        runtime.maxVertices,
+        false
+      )
+      runtime.meshes.edge.extendAttributes(runtime, runtime.maxEdges, false)
+      runtime.meshes.face.extendAttributes(runtime, runtime.maxFaces, false)
       return runtime
     })
   }, [runtime.dimensions, setRuntime])
@@ -174,20 +176,67 @@ export const useRender = (runtime, setRuntime) => {
   ])
 
   useEffect(() => {
-    setRuntime(runtime => {
+    // Resize observer calls render on setup
+    const resizeObserver = new ResizeObserver(() => {
       render(runtime)
-      firstRender.current = false
-      return runtime
     })
-  }, [runtime, setRuntime])
-
-  useEffect(() => {
-    if (firstRender.current) {
-      return
-    }
-    const resizeObserver = new ResizeObserver(() => render(runtime))
     resizeObserver.observe(runtime.gl.canvas, { box: 'content-box' })
 
     return () => resizeObserver.disconnect()
-  }, [runtime])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    runtime.ambiance,
+    // runtime.askedOrder,
+    runtime.camera,
+    runtime.centered,
+    // runtime.controls,
+    runtime.coxeter,
+    runtime.currentOrder,
+    runtime.curvature,
+    runtime.curve,
+    runtime.dimensions,
+    runtime.easing,
+    runtime.edges,
+    runtime.edgeThickness,
+    runtime.error,
+    // runtime.extended,
+    runtime.faces,
+    // runtime.fb,
+    runtime.fov3,
+    runtime.fov4,
+    runtime.fov5,
+    runtime.fov6,
+    runtime.fov7,
+    runtime.fov8,
+    runtime.fov9,
+    // runtime.gl,
+    runtime.grouper,
+    runtime.matrix,
+    runtime.maxEdges,
+    runtime.maxFaces,
+    runtime.maxVertices,
+    // runtime.meshes,
+    // runtime.mirrors,
+    // runtime.mirrorsPlanes,
+    runtime.msaa,
+    runtime.msaaSamples,
+    // runtime.order,
+    // runtime.passes,
+    // runtime.processing,
+    runtime.projection,
+    runtime.ranges,
+    // runtime.rb,
+    runtime.renderError,
+    // runtime.rootVertex,
+    runtime.segments,
+    runtime.showEdges,
+    runtime.showFaces,
+    runtime.showVertices,
+    runtime.spaceType,
+    runtime.stellation,
+    runtime.subsampling,
+    runtime.vertexThickness,
+    runtime.vertices,
+    runtime.zoom,
+  ])
 }

@@ -3,7 +3,7 @@ import { debounce } from '../../utils'
 import { PI, abs, hypot } from '../math'
 import { xtranslate } from '../math/hypermath'
 import { columnMajor, diagonal, multiply, set } from '../math/matrix'
-import { plot, render } from '../render'
+import { render, updateUniforms } from '../render'
 // import { hyperMaterials } from '../shader/hyperMaterial'
 
 const zoomSpeed = 0.95
@@ -89,16 +89,59 @@ export const useInteract = (runtime, rotations, updateParams) => {
     })
     render(runtime)
   }, [
-    runtime.dimensions,
-    runtime.curvature,
-    runtime.ranges,
-    runtime.meshes,
-    runtime.currentOrder,
-    runtime.spaceType,
-    runtime.vertices,
-    runtime.edges,
-    runtime.faces,
     runtime.ambiance,
+    // runtime.askedOrder,
+    runtime.camera,
+    runtime.centered,
+    // runtime.controls,
+    runtime.coxeter,
+    runtime.currentOrder,
+    runtime.curvature,
+    runtime.curve,
+    runtime.dimensions,
+    runtime.easing,
+    runtime.edges,
+    runtime.edgeThickness,
+    runtime.error,
+    // runtime.extended,
+    runtime.faces,
+    // runtime.fb,
+    runtime.fov3,
+    runtime.fov4,
+    runtime.fov5,
+    runtime.fov6,
+    runtime.fov7,
+    runtime.fov8,
+    runtime.fov9,
+    // runtime.gl,
+    runtime.grouper,
+    // runtime.matrix,
+    runtime.maxEdges,
+    runtime.maxFaces,
+    runtime.maxVertices,
+    // runtime.meshes,
+    // runtime.mirrors,
+    // runtime.mirrorsPlanes,
+    runtime.msaa,
+    runtime.msaaSamples,
+    // runtime.order,
+    // runtime.passes,
+    // runtime.processing,
+    runtime.projection,
+    runtime.ranges,
+    // runtime.rb,
+    runtime.renderError,
+    // runtime.rootVertex,
+    runtime.segments,
+    runtime.showEdges,
+    runtime.showFaces,
+    runtime.showVertices,
+    runtime.spaceType,
+    runtime.stellation,
+    runtime.subsampling,
+    runtime.vertexThickness,
+    runtime.vertices,
+    runtime.zoom,
   ])
 
   useEffect(() => {
@@ -170,7 +213,7 @@ export const useInteract = (runtime, rotations, updateParams) => {
   ])
 
   useEffect(() => {
-    runtime.camera.position.z = -runtime.zoom
+    runtime.camera.position[2] = -runtime.zoom
     runtime.camera.update()
   }, [runtime.camera, runtime.zoom])
 
@@ -227,11 +270,12 @@ export const useInteract = (runtime, rotations, updateParams) => {
           return
         }
         const newDistance = getDistance()
-        runtime.camera.position.z *= distance / newDistance
+        runtime.camera.position[2] *= distance / newDistance
         runtime.camera.update()
+        updateUniforms(runtime, true)
         distance = newDistance
         render(runtime)
-        updateZoom(-runtime.camera.position.z)
+        updateZoom(-runtime.camera.position[2])
         return
       }
 
@@ -347,10 +391,11 @@ export const useInteract = (runtime, rotations, updateParams) => {
       if (e.target.tagName !== 'CANVAS') {
         return
       }
-      runtime.camera.position.z *= e.deltaY < 0 ? zoomSpeed : 1 / zoomSpeed
+      runtime.camera.position[2] *= e.deltaY < 0 ? zoomSpeed : 1 / zoomSpeed
       runtime.camera.update()
+      updateUniforms(runtime, true)
       render(runtime)
-      updateZoom(-runtime.camera.position.z)
+      updateZoom(-runtime.camera.position[2])
     }
     document.addEventListener('wheel', handleWheel)
     return () => {
@@ -363,11 +408,12 @@ export const useInteract = (runtime, rotations, updateParams) => {
       if (e.button !== 0 || e.target.tagName !== 'CANVAS') {
         return
       }
-      const zoom = -runtime.camera.position.z
+      const zoom = -runtime.camera.position[2]
       const newZoom = zoom < 0.5 ? 5 : zoom < 2 ? 0.25 : 1
 
-      runtime.camera.position.z = -newZoom
+      runtime.camera.position[2] = -newZoom
       runtime.camera.update()
+      updateUniforms(runtime, true)
       render(runtime)
       updateZoom(newZoom)
     }

@@ -1,17 +1,18 @@
 import Stats from 'stats.js'
-import { ambiances } from '../statics'
+import { ambiances, defaultParams } from '../statics'
 import { sphere, tri, tube } from './geometries'
 import {
   compileProgram,
   mesh,
   renderMesh,
   resizeCanvasToDisplaySize,
-  uniform,
 } from './helpers'
-import { PI, tan } from './math'
+import { PI, min, tan } from './math'
 import { columnMajor, lookAt, multiply, perspective } from './math/matrix'
 import fragmentBloom from './shaders/bloom/fragment.glsl?raw'
 import vertexBloom from './shaders/bloom/vertex.glsl?raw'
+import fragmentAfterimage from './shaders/afterimage/fragment.glsl?raw'
+import vertexAfterimage from './shaders/afterimage/vertex.glsl?raw'
 import fragmentDown from './shaders/down/fragment.glsl?raw'
 import vertexDown from './shaders/down/vertex.glsl?raw'
 import fragmentEdge from './shaders/edge/fragment.glsl?raw'
@@ -36,9 +37,11 @@ if (showStats) {
 
 export const initializeGl = rt => {
   if (document.getElementById('webgl2')) {
-    // FIXME
-    console.error('WebGL already initialized')
-    window.location.reload()
+    console.warn('WebGL already initialized')
+    recompilePrograms(rt)
+    changeAmbiance(rt)
+    updateUniforms(rt)
+    render(rt)
     return rt
   }
   const canvas = document.createElement('canvas')
@@ -54,6 +57,7 @@ export const initializeGl = rt => {
     preserveDrawingBuffer: false,
   })
   rt = { ...rt, gl }
+
   if (!gl) {
     console.error(
       'Unable to initialize WebGL. Your browser may not support it.'
@@ -61,61 +65,133 @@ export const initializeGl = rt => {
     return
   }
   gl.getExtension('EXT_color_buffer_float')
-
   gl.enable(gl.DEPTH_TEST)
-  // gl.clearColor(...state.background, 1.0) // FIXME
+
   const camera = {
     zoom: 1,
     fov: PI / 3,
-    position: { z: 2 },
+    position: [0, 0, 2],
+    update() {
+      const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight
+      this.zoom = min(gl.canvas.clientWidth / gl.canvas.clientHeight, 1)
+      this.eye = [0, 0, this.position[2] / this.zoom]
+      const viewMatrix = lookAt(this.eye, [0, 0, 0], [0, 1, 0])
+      const projectionMatrix = perspective(this.fov, aspect, 0.001, 1000)
+      this.viewProjection = columnMajor(multiply(projectionMatrix, viewMatrix))
+    },
   }
-  const meshes = {}
-  camera.update = () => {
-    const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight
-    const eye = [0, 0, camera.position.z * camera.zoom]
-    const viewMatrix = lookAt(eye, [0, 0, 0], [0, 1, 0])
-    const projectionMatrix = perspective(camera.fov, aspect, 0.001, 1000)
-    const viewProjection = columnMajor(multiply(projectionMatrix, viewMatrix))
-    Object.values(meshes).forEach(mesh => {
-      mesh.uniforms.viewProjection.update(viewProjection)
-      if (mesh.uniforms.eye) {
-        mesh.uniforms.eye.update(eye)
-      }
-    })
-  }
-  const passes = { kawase: {} }
-  passes.oit = {
-    attributes: {},
-    uniforms: {},
-    ...compileProgram(rt, 'oit', vertexOit, fragmentOit),
+  camera.update()
+
+  const passes = {
+    oit: {
+      attributes: {},
+      ...compileProgram(rt, 'oit', vertexOit, fragmentOit, [
+        {
+          name: 'accumTexture',
+          type: '1i',
+          value: 0,
+        },
+        {
+          name: 'revealageTexture',
+          type: '1i',
+          value: 1,
+        },
+      ]),
+    },
+    kawase: {
+      down: {
+        attributes: {},
+        ...compileProgram(rt, 'kawase/down', vertexDown, fragmentDown, [
+          {
+            name: 'screen',
+            type: '1i',
+            value: 0,
+          },
+          {
+            name: 'offset',
+            type: '1f',
+            value: 0,
+          },
+        ]),
+      },
+
+      up: {
+        attributes: {},
+        ...compileProgram(rt, 'kawase/up', vertexUp, fragmentUp, [
+          {
+            name: 'screen',
+            type: '1i',
+            value: 0,
+          },
+          {
+            name: 'offset',
+            type: '1f',
+            value: 0,
+          },
+        ]),
+      },
+    },
+    afterimage: {
+      attributes: {},
+      ...compileProgram(
+        rt,
+        'afterimage',
+        vertexAfterimage,
+        fragmentAfterimage,
+        [
+          {
+            name: 'screen',
+            type: '1i',
+            value: 0,
+          },
+          {
+            name: 'afterImage',
+            type: '1i',
+            value: 1,
+          },
+          {
+            name: 'strength',
+            type: '1f',
+            value: 1,
+          },
+        ]
+      ),
+    },
+    bloom: {
+      attributes: {},
+      ...compileProgram(rt, 'bloom', vertexBloom, fragmentBloom, [
+        {
+          name: 'screen',
+          type: '1i',
+          value: 0,
+        },
+        {
+          name: 'bloom',
+          type: '1i',
+          value: 1,
+        },
+        {
+          name: 'exposure',
+          type: '1f',
+          value: 1,
+        },
+        {
+          name: 'strength',
+          type: '1f',
+          value: 1,
+        },
+      ]),
+    },
   }
 
-  passes.kawase.down = {
-    attributes: {},
-    uniforms: {},
-    ...compileProgram(rt, 'kawase/down', vertexDown, fragmentDown),
-  }
-  passes.kawase.up = {
-    attributes: {},
-    uniforms: {},
-    ...compileProgram(rt, 'kawase/up', vertexUp, fragmentUp),
-  }
-  passes.bloom = {
-    attributes: {},
-    uniforms: {},
-    ...compileProgram(rt, 'bloom', vertexBloom, fragmentBloom),
+  const rb = {
+    base: gl.createRenderbuffer(),
+    depth: gl.createRenderbuffer(),
   }
 
-  const rb = {}
-  rb.opaque = gl.createRenderbuffer()
-  rb.transparent = gl.createRenderbuffer()
-  rb.depth = gl.createRenderbuffer()
-
-  const fb = {}
-  fb.transparent = gl.createFramebuffer()
-  fb.opaque = gl.createFramebuffer()
-  fb.bloom = gl.createFramebuffer()
-  fb.kawase = gl.createFramebuffer()
+  const fb = {
+    base: gl.createFramebuffer(),
+  }
 
   const arity = rt.dimensions > 4 ? 9 : rt.dimensions
   const geometries = {
@@ -124,111 +200,41 @@ export const initializeGl = rt => {
     face: segments => tri({ segments }),
   }
 
-  meshes.vertex = mesh(
-    rt,
-    'vertex',
-    vertexVertex,
-    fragmentVertex,
-    geometries.vertex,
-    rt.maxVertices,
-    arity
-  )
-  meshes.vertex.visible = rt.showVertices
+  const meshes = {
+    vertex: mesh(
+      rt,
+      'vertex',
+      vertexVertex,
+      fragmentVertex,
+      geometries.vertex,
+      rt.maxVertices,
+      arity
+    ),
+    edge: mesh(
+      rt,
+      'edge',
+      vertexEdge,
+      fragmentEdge,
+      geometries.edge,
+      rt.maxEdges,
+      arity,
+      ['position', 'target']
+    ),
+    face: mesh(
+      rt,
+      'face',
+      vertexFace,
+      fragmentFace,
+      geometries.face,
+      rt.maxFaces,
+      arity,
+      ['position', 'target', 'center']
+    ),
+  }
 
-  meshes.edge = mesh(
-    rt,
-    'edge',
-    vertexEdge,
-    fragmentEdge,
-    geometries.edge,
-    rt.maxEdges,
-    arity,
-    ['position', 'target']
-  )
   meshes.edge.visible = rt.showEdges
-
-  meshes.face = mesh(
-    rt,
-    'face',
-    vertexFace,
-    fragmentFace,
-    geometries.face,
-    rt.maxFaces,
-    arity,
-    ['position', 'center', 'target']
-  )
+  meshes.vertex.visible = rt.showVertices
   meshes.face.visible = rt.showFaces
-
-  passes.kawase.down.uniforms.screen = uniform(
-    rt,
-    passes.kawase.down.program,
-    'screen',
-    '1i'
-  )
-
-  passes.kawase.down.uniforms.offset = uniform(
-    rt,
-    passes.kawase.down.program,
-    'offset',
-    '1f'
-  )
-  passes.kawase.down.uniforms.screen.update(0)
-
-  passes.kawase.up.uniforms.screen = uniform(
-    rt,
-    passes.kawase.up.program,
-    'screen',
-    '1i'
-  )
-  passes.kawase.up.uniforms.offset = uniform(
-    rt,
-    passes.kawase.up.program,
-    'offset',
-    '1f'
-  )
-  passes.kawase.up.uniforms.screen.update(0)
-
-  gl.useProgram(passes.bloom.program)
-  passes.bloom.uniforms.screen = uniform(
-    rt,
-    passes.bloom.program,
-    'screen',
-    '1i'
-  )
-  passes.bloom.uniforms.bloom = uniform(rt, passes.bloom.program, 'bloom', '1i')
-  passes.bloom.uniforms.exposure = uniform(
-    rt,
-    passes.bloom.program,
-    'exposure',
-    '1f'
-  )
-
-  passes.bloom.uniforms.strength = uniform(
-    rt,
-    passes.bloom.program,
-    'strength',
-    '1f'
-  )
-
-  passes.bloom.uniforms.screen.update(0)
-  passes.bloom.uniforms.bloom.update(1)
-
-  passes.oit.uniforms.accum = uniform(
-    rt,
-    passes.oit.program,
-    'accumTexture',
-    '1i'
-  )
-  passes.oit.uniforms.accumAlpha = uniform(
-    rt,
-    passes.oit.program,
-    'revealageTexture',
-    '1i'
-  )
-  passes.oit.uniforms.accum.update(0)
-  passes.oit.uniforms.accumAlpha.update(1)
-
-  camera.update()
 
   return {
     ...rt,
@@ -456,31 +462,39 @@ export const changeAmbiance = rt => {
     rt.passes.kawase.down.uniforms.offset.update(ambiance.glow.offset.down)
     rt.passes.kawase.up.uniforms.offset.update(ambiance.glow.offset.up)
   }
+  if (ambiance.afterImage) {
+    rt.passes.afterimage.uniforms.strength.update(ambiance.afterImage)
+  }
 }
 
 export const recompilePrograms = rt => {
   Object.values(rt.meshes).forEach(mesh => {
-    mesh.recompile(rt)
+    mesh.recompileProgram(rt)
   })
 }
 
-export const updateUniforms = rt => {
+export const updateUniforms = (rt, quick = false) => {
   Object.entries(rt.meshes).forEach(([type, mesh]) => {
-    mesh.uniforms.curvature.update(rt.curvature)
-    mesh.uniforms.matrix.update(columnMajor(rt.matrix))
-    for (let i = 4; i <= rt.dimensions; i++) {
-      mesh.uniforms[`fov${i}`].update(tan((PI * rt[`fov${i}`] * 0.5) / 180))
+    if (!quick) {
+      mesh.uniforms.curvature.update(rt.curvature)
+      mesh.uniforms.matrix.update(columnMajor(rt.matrix))
+      for (let i = 4; i <= rt.dimensions; i++) {
+        mesh.uniforms[`fov${i}`].update(tan((PI * rt[`fov${i}`] * 0.5) / 180))
+      }
+      if (type === 'vertex') {
+        mesh.uniforms.thickness.update(rt.vertexThickness)
+      } else if (type === 'edge') {
+        mesh.uniforms.thickness.update(rt.edgeThickness)
+      } else {
+        mesh.uniforms.segments.update(rt.curve ? rt.segments : 1)
+        mesh.uniforms.opacity.update(ambiances[rt.ambiance].opacity)
+      }
     }
-    if (type === 'vertex') {
-      mesh.uniforms.thickness.update(rt.vertexThickness)
-    } else if (type === 'edge') {
-      mesh.uniforms.thickness.update(rt.edgeThickness)
-    } else {
-      mesh.uniforms.segments.update(rt.curve ? rt.segments : 1)
-      mesh.uniforms.opacity.update(ambiances[rt.ambiance].opacity)
+    mesh.uniforms.viewProjection.update(rt.camera.viewProjection)
+    if (mesh.uniforms.eye) {
+      mesh.uniforms.eye.update(rt.camera.eye)
     }
   })
-  rt.camera.update()
 }
 
 export const render = rt => {
@@ -490,10 +504,12 @@ export const render = rt => {
 
   const { gl } = rt
   const ambiance = ambiances[rt.ambiance]
-  if (resizeCanvasToDisplaySize(gl.canvas, window.devicePixelRatio)) {
+  if (resizeCanvasToDisplaySize(gl.canvas, rt.subsampling)) {
+    console.log(rt.subsampling)
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
     refreshTextures(rt)
     rt.camera.update()
+    updateUniforms(rt, true)
   }
 
   // OPAQUE
@@ -502,7 +518,7 @@ export const render = rt => {
   gl.depthMask(true)
   gl.depthFunc(gl.LESS)
 
-  gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.opaque)
+  gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.base)
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
   renderMesh(rt, 'vertex')
@@ -518,7 +534,7 @@ export const render = rt => {
     gl.depthMask(false)
     gl.blendFuncSeparate(gl.ONE, gl.ONE, gl.ZERO, gl.ONE_MINUS_SRC_ALPHA)
 
-    gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.transparent)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.oit)
     gl.clear(gl.COLOR_BUFFER_BIT)
 
     renderMesh(rt, 'face')
@@ -529,7 +545,7 @@ export const render = rt => {
     gl.depthFunc(gl.ALWAYS)
     gl.blendFunc(gl.ONE_MINUS_SRC_ALPHA, gl.SRC_ALPHA)
 
-    gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.opaque)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.base)
 
     gl.useProgram(rt.passes.oit.program)
     gl.activeTexture(gl.TEXTURE0)
@@ -547,10 +563,24 @@ export const render = rt => {
     renderMesh(rt, 'face')
   }
 
+  const out = ambiance.afterImage
+    ? rt.fb.afterimage
+    : ambiance.glow
+    ? rt.fb.bloom
+    : null
   // FINAL
   // Blit msaa to screen
-  gl.bindFramebuffer(gl.READ_FRAMEBUFFER, rt.fb.opaque)
-  gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, ambiance.glow ? rt.fb.bloom : null)
+  gl.bindFramebuffer(gl.READ_FRAMEBUFFER, rt.fb.base)
+  gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, out)
+  if (ambiance.afterImage) {
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT0,
+      gl.TEXTURE_2D,
+      rt.passes.afterimage.screen.texture,
+      0
+    )
+  }
   gl.blitFramebuffer(
     0,
     0,
@@ -564,6 +594,54 @@ export const render = rt => {
     gl.NEAREST
   )
 
+  let bloomIn = rt.passes.bloom.screen
+
+  if (ambiance.afterImage) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.afterimage)
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT0,
+      gl.TEXTURE_2D,
+      rt.passes.afterimage.outScreen.texture,
+      0
+    )
+    gl.useProgram(rt.passes.afterimage.program)
+    gl.activeTexture(gl.TEXTURE0)
+    gl.bindTexture(gl.TEXTURE_2D, rt.passes.afterimage.screen.texture)
+    gl.activeTexture(gl.TEXTURE1)
+    gl.bindTexture(gl.TEXTURE_2D, rt.passes.afterimage.lastScreen.texture)
+    gl.drawArrays(gl.TRIANGLES, 0, 3)
+    if (ambiance.glow) {
+      bloomIn = rt.passes.afterimage.outScreen
+    } else {
+      gl.bindFramebuffer(gl.READ_FRAMEBUFFER, rt.fb.afterimage)
+      gl.framebufferTexture2D(
+        gl.FRAMEBUFFER,
+        gl.COLOR_ATTACHMENT0,
+        gl.TEXTURE_2D,
+        rt.passes.afterimage.outScreen.texture,
+        0
+      )
+      gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null)
+      gl.blitFramebuffer(
+        0,
+        0,
+        gl.drawingBufferWidth,
+        gl.drawingBufferHeight,
+        0,
+        0,
+        gl.drawingBufferWidth,
+        gl.drawingBufferHeight,
+        gl.COLOR_BUFFER_BIT,
+        gl.NEAREST
+      )
+    }
+    ;[rt.passes.afterimage.outScreen, rt.passes.afterimage.lastScreen] = [
+      rt.passes.afterimage.lastScreen,
+      rt.passes.afterimage.outScreen,
+    ]
+  }
+
   if (ambiance.glow) {
     gl.disable(gl.BLEND)
     gl.enable(gl.DEPTH_TEST)
@@ -574,8 +652,7 @@ export const render = rt => {
 
     gl.useProgram(rt.passes.kawase.down.program)
     for (let i = 0; i < ambiance.glow.steps; i++) {
-      const inTexture =
-        i === 0 ? rt.passes.bloom.texture : rt.passes.kawase.textures[i - 1]
+      const inTexture = i === 0 ? bloomIn : rt.passes.kawase.textures[i - 1]
       const outTexture = rt.passes.kawase.textures[i]
       gl.viewport(0, 0, outTexture.width, outTexture.height)
 
@@ -595,7 +672,7 @@ export const render = rt => {
     for (let i = ambiance.glow.steps - 1; i >= 0; i--) {
       const inTexture = rt.passes.kawase.textures[i]
       const outTexture =
-        i === 0 ? rt.passes.kawase.texture : rt.passes.kawase.textures[i - 1]
+        i === 0 ? rt.passes.kawase.blur : rt.passes.kawase.textures[i - 1]
       gl.viewport(0, 0, outTexture.width, outTexture.height)
 
       gl.activeTexture(gl.TEXTURE0)
@@ -613,9 +690,9 @@ export const render = rt => {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
     gl.useProgram(rt.passes.bloom.program)
     gl.activeTexture(gl.TEXTURE0)
-    gl.bindTexture(gl.TEXTURE_2D, rt.passes.bloom.texture.texture)
+    gl.bindTexture(gl.TEXTURE_2D, bloomIn.texture)
     gl.activeTexture(gl.TEXTURE1)
-    gl.bindTexture(gl.TEXTURE_2D, rt.passes.kawase.texture.texture)
+    gl.bindTexture(gl.TEXTURE_2D, rt.passes.kawase.blur.texture)
     gl.drawArrays(gl.TRIANGLES, 0, 3)
   }
 }

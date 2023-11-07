@@ -66,6 +66,7 @@ export default function App({ params, updateParams }) {
         projection: params.projection,
         msaa: params.msaa,
         msaaSamples: params.msaaSamples,
+        subsampling: params.subsampling,
         matrix: params.matrix,
         fov3: params.fov3,
         fov4: params.fov4,
@@ -111,6 +112,7 @@ export default function App({ params, updateParams }) {
     params.showFaces,
     params.showVertices,
     params.stellation,
+    params.subsampling,
     params.vertexThickness,
     params.zoom,
   ])

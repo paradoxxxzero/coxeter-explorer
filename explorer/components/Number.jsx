@@ -36,7 +36,7 @@ export const parse = (raw, min, max, step, allowInfinity) => {
       isNaN(value) ||
       value < min ||
       value > max ||
-      value % step !== 0
+      (step % 1 === 0 && value % step !== 0)
     )
   }
 
@@ -109,7 +109,12 @@ export default function Number({
     } else if (raw.includes('/')) {
       update((+raw.split('/')[0] - step).toString())
     } else {
-      update((+raw - step).toString())
+      const val = +raw - step
+      if (step > 0 && step < 1) {
+        update(val.toFixed(step.toString().split('.')[1].length))
+      } else {
+        update(val.toString())
+      }
     }
   }, [allowInfinity, min, raw, step, update, valid])
 
@@ -118,12 +123,19 @@ export default function Number({
       update(`${min}`)
       return
     }
-    if (raw === '∞') {
+    if (raw === `${max}`) {
+      // pass
+    } else if (raw === '∞') {
       allowInfinity && update(`${min}`)
     } else if (raw.includes('/')) {
       update((+raw.split('/')[0] + step).toString())
     } else {
-      update((+raw + step).toString())
+      const val = +raw + step
+      if (step > 0 && step < 1) {
+        update(val.toFixed(step.toString().split('.')[1].length))
+      } else {
+        update(val.toString())
+      }
     }
   }, [allowInfinity, min, raw, step, update, valid])
 

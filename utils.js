@@ -7,3 +7,23 @@ export const debounce = (fn, delay) => {
     return () => clearTimeout(timeout)
   }
 }
+
+export const range = (start, end = null, step = 1, emptyIfReversed = false) => {
+  if (end === null) {
+    end = start
+    start = 0
+  }
+  if (step === 0) {
+    throw new Error('Step cannot be zero.')
+  }
+  if ((end < start && step > 0) || (end > start && step < 0)) {
+    if (emptyIfReversed) {
+      return []
+    }
+    step = -step
+  }
+
+  return new Array(Math.ceil((end - start) / step)).fill().map((_, i) => {
+    return start + i * step
+  })
+}

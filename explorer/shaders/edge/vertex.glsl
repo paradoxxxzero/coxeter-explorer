@@ -9,6 +9,10 @@ uniform float curvature;
 uniform float thickness;
 uniform matN matrix;
 
+in vec2 uv;
+in vec3 normal;
+in vec3 color;
+
 #if DIMENSIONS == 2
 in vec2 position;
 in vec2 target;
@@ -22,11 +26,6 @@ in vec4 target;
 in mat3 position;
 in mat3 target;
 #endif
-
-in vec2 uv;
-in vec3 normal;
-
-in vec3 color;
 
 out vec3 vPosition;
 out vec3 vNormal;
