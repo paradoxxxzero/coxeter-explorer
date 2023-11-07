@@ -88,7 +88,18 @@ export const useInteract = (runtime, rotations, updateParams) => {
       mesh.uniforms.matrix.update(columnMajor(localMatrix.current))
     })
     render(runtime)
-  }, [runtime])
+  }, [
+    runtime.dimensions,
+    runtime.curvature,
+    runtime.ranges,
+    runtime.meshes,
+    runtime.currentOrder,
+    runtime.spaceType,
+    runtime.vertices,
+    runtime.edges,
+    runtime.faces,
+    runtime.ambiance,
+  ])
 
   useEffect(() => {
     animation.current.speed = new Array(rotations.combinations.length).fill(0)
@@ -288,7 +299,9 @@ export const useInteract = (runtime, rotations, updateParams) => {
     rotations.auto,
     rotations.combinations,
     rotations.shift,
-    runtime,
+    runtime.dimensions,
+    runtime.curvature,
+    runtime.camera,
 
     quickUpdateMatrix,
     updateMatrix,

@@ -509,7 +509,11 @@ export const render = rt => {
   renderMesh(rt, 'edge')
 
   // TRANSPARENT
-  if (rt.meshes.face.visible && ambiance.opacity < 1) {
+  if (
+    rt.meshes.face.visible &&
+    ambiance.opacity < 1 &&
+    ambiance.transparency === 'oit'
+  ) {
     gl.enable(gl.BLEND)
     gl.depthMask(false)
     gl.blendFuncSeparate(gl.ONE, gl.ONE, gl.ZERO, gl.ONE_MINUS_SRC_ALPHA)
@@ -535,6 +539,11 @@ export const render = rt => {
     gl.bindTexture(gl.TEXTURE_2D, rt.passes.oit.revealTexture.texture)
     gl.drawArrays(gl.TRIANGLES, 0, 3)
   } else {
+    if (ambiance.opacity < 1 && ambiance.transparency === 'blend') {
+      gl.enable(gl.BLEND)
+      gl.depthMask(false)
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+    }
     renderMesh(rt, 'face')
   }
 

@@ -54,7 +54,16 @@ export const ambiances = {
     background: [1, 1, 1, 1],
     glow: false,
     lighting: 'blinn-phong',
-    opacity: 0.4,
+    opacity: 0.3,
+    transparency: 'blend',
+    color: ({ word }) => hsl((word.length * 0.03) % 1, 1, 0.8),
+  },
+  oit: {
+    background: [1, 1, 1, 1],
+    glow: false,
+    lighting: 'blinn-phong',
+    opacity: 0.3,
+    transparency: 'oit',
     color: ({ word }) => hsl((word.length * 0.03) % 1, 1, 0.8),
   },
   //   reflection: {

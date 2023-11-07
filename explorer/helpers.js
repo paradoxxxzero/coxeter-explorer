@@ -74,7 +74,7 @@ export const augment = (rt, vertex, fragment) => {
   config += `#define DIMENSIONS ${rt.dimensions}\n`
   config += `#define PROJECTION ${projections.indexOf(rt.projection)}\n`
   config += `#define EASING ${easings.indexOf(easing)}\n`
-  if (ambiance.opacity < 1) {
+  if (ambiance.opacity < 1 && ambiance.transparency === 'oit') {
     config += `#define OIT\n`
   }
   Object.entries({ ...includes, config }).forEach(([key, value]) => {
