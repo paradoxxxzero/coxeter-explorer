@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && touch docs/.nojekyll",
+    "build": "mv docs/three . && vite build && mv three docs && touch docs/.nojekyll",
     "preview": "vite preview"
   },
   "devDependencies": {
