@@ -5,39 +5,19 @@ precision highp float;
 #include globals
 
 uniform float curvature;
+uniform float segments;
 uniform mat4 viewProjection;
-
-#if DIMENSIONS >= 4
-uniform float fov4;
-#endif
-#if DIMENSIONS >= 5
-uniform float fov5;
-#endif
-#if DIMENSIONS >= 6
-uniform float fov6;
-#endif
-#if DIMENSIONS >= 7
-uniform float fov7;
-#endif
-#if DIMENSIONS >= 8
-uniform float fov8;
-#endif
-#if DIMENSIONS >= 9
-uniform float fov9;
-#endif
+uniform matN matrix;
 
 #if DIMENSIONS == 2
-uniform mat2 matrix;
 in vec2 position;
 in vec2 target;
 in vec2 center;
 #elif DIMENSIONS == 3
-uniform mat3 matrix;
 in vec3 position;
 in vec3 target;
 in vec3 center;
 #elif DIMENSIONS == 4
-uniform mat4 matrix;
 in vec4 position;
 in vec4 target;
 in vec4 center;
@@ -45,36 +25,6 @@ in vec4 center;
 in mat3 position;
 in mat3 target;
 in mat3 center;
-
-struct vec5 {
-  vec4 v;
-  float u;
-};
-#endif
-#if DIMENSIONS >= 6
-struct vec6 {
-  vec4 v;
-  vec2 u;
-};
-#endif
-#if DIMENSIONS >= 7
-struct vec7 {
-  vec4 v;
-  vec3 u;
-};
-#endif
-#if DIMENSIONS >= 8
-struct vec8 {
-  vec4 v;
-  vec4 u;
-};
-#endif
-#if DIMENSIONS >= 9
-struct vec9 {
-  vec4 v;
-  vec4 u;
-  float t;
-};
 #endif
 
 in vec2 uv;
@@ -91,9 +41,9 @@ flat out vec3 vColor;
 
 void main() {
   #if DIMENSIONS > 4
-  vecN iPosition = fromMat(position);
-  vecN iTarget = fromMat(target);
-  vecN iCenter = fromMat(center);
+  vecN iPosition = multiplyMatrix(matrix, fromMat(position));
+  vecN iTarget = multiplyMatrix(matrix, fromMat(target));
+  vecN iCenter = multiplyMatrix(matrix, fromMat(center));
   #else
   vecN iPosition = matrix * position;
   vecN iTarget = matrix * target;
@@ -105,9 +55,11 @@ void main() {
   vecN next = trix(iPosition, iCenter, iTarget, t + vec2(EPS, 0.f));
   vecN other = trix(iPosition, iCenter, iTarget, t + vec2(0.f, EPS));
 
-  pos = xnormalize(pos);
-  next = xnormalize(next);
-  other = xnormalize(other);
+  if(segments > 1.f) {
+    pos = xnormalize(pos);
+    next = xnormalize(next);
+    other = xnormalize(other);
+  }
 
   vec3 position = xproject(pos);
   vec3 nn = xproject(next) - position;

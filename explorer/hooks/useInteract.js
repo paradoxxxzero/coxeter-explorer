@@ -84,39 +84,11 @@ export const useInteract = (runtime, rotations, updateParams) => {
   }, [runtime.matrix])
 
   const quickUpdateMatrix = useCallback(() => {
-    if (runtime.dimensions > 4) {
-      plot({
-        gl: runtime.gl,
-        currentOrder: runtime.currentOrder,
-        dimensions: runtime.dimensions,
-        curvature: runtime.curvature,
-        ranges: runtime.ranges,
-        matrix: localMatrix.current,
-        spaceType: runtime.spaceType,
-        vertices: runtime.vertices,
-        edges: runtime.edges,
-        faces: runtime.faces,
-        ambiance: runtime.ambiance,
-        meshes: runtime.meshes,
-      })
-    } else {
-      Object.values(runtime.meshes).forEach(mesh => {
-        mesh.uniforms.matrix.update(columnMajor(localMatrix.current))
-      })
-    }
+    Object.values(runtime.meshes).forEach(mesh => {
+      mesh.uniforms.matrix.update(columnMajor(localMatrix.current))
+    })
     render(runtime)
-  }, [
-    runtime.dimensions,
-    runtime.curvature,
-    runtime.ranges,
-    runtime.meshes,
-    runtime.currentOrder,
-    runtime.spaceType,
-    runtime.vertices,
-    runtime.edges,
-    runtime.faces,
-    runtime.ambiance,
-  ])
+  }, [runtime])
 
   useEffect(() => {
     animation.current.speed = new Array(rotations.combinations.length).fill(0)
@@ -316,9 +288,7 @@ export const useInteract = (runtime, rotations, updateParams) => {
     rotations.auto,
     rotations.combinations,
     rotations.shift,
-    runtime.dimensions,
-    runtime.curvature,
-    runtime.camera,
+    runtime,
 
     quickUpdateMatrix,
     updateMatrix,

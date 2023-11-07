@@ -7,72 +7,22 @@ precision highp float;
 uniform mat4 viewProjection;
 uniform float curvature;
 uniform float thickness;
-
-#if DIMENSIONS >= 4
-uniform float fov4;
-#endif
-#if DIMENSIONS >= 5
-uniform float fov5;
-#endif
-#if DIMENSIONS >= 6
-uniform float fov6;
-#endif
-#if DIMENSIONS >= 7
-uniform float fov7;
-#endif
-#if DIMENSIONS >= 8
-uniform float fov8;
-#endif
-#if DIMENSIONS >= 9
-uniform float fov9;
-#endif
+uniform matN matrix;
 
 #if DIMENSIONS == 2
-uniform mat2 matrix;
 in vec2 position;
 in vec2 target;
 #elif DIMENSIONS == 3
-uniform mat3 matrix;
 in vec3 position;
 in vec3 target;
 #elif DIMENSIONS == 4
-uniform mat4 matrix;
 in vec4 position;
 in vec4 target;
 #elif DIMENSIONS >= 5
 in mat3 position;
 in mat3 target;
+#endif
 
-struct vec5 {
-  vec4 v;
-  float u;
-};
-#endif
-#if DIMENSIONS >= 6
-struct vec6 {
-  vec4 v;
-  vec2 u;
-};
-#endif
-#if DIMENSIONS >= 7
-struct vec7 {
-  vec4 v;
-  vec3 u;
-};
-#endif
-#if DIMENSIONS >= 8
-struct vec8 {
-  vec4 v;
-  vec4 u;
-};
-#endif
-#if DIMENSIONS >= 9
-struct vec9 {
-  vec4 v;
-  vec4 u;
-  float t;
-};
-#endif
 in vec2 uv;
 in vec3 normal;
 
@@ -87,8 +37,8 @@ flat out vec3 vColor;
 
 void main() {
   #if DIMENSIONS > 4
-  vecN iPosition = fromMat(position);
-  vecN iTarget = fromMat(target);
+  vecN iPosition = multiplyMatrix(matrix, fromMat(position));
+  vecN iTarget = multiplyMatrix(matrix, fromMat(target));
   #else
   vecN iPosition = matrix * position;
   vecN iTarget = matrix * target;

@@ -103,12 +103,12 @@ export const useRender = (runtime, setRuntime) => {
     })
   }, [
     runtime.currentOrder,
-    runtime.vertices,
     runtime.edges,
     runtime.ranges,
-    runtime.showVertices,
     runtime.showEdges,
     runtime.showFaces,
+    runtime.showVertices,
+    runtime.vertices,
     setRuntime,
   ])
 
@@ -119,10 +119,10 @@ export const useRender = (runtime, setRuntime) => {
     })
   }, [
     runtime.ambiance,
-    runtime.spaceType, // For easing auto
+    runtime.dimensions,
     runtime.easing,
     runtime.projection,
-    runtime.dimensions,
+    runtime.spaceType, // For easing auto
     setRuntime,
   ])
 
@@ -134,14 +134,13 @@ export const useRender = (runtime, setRuntime) => {
     })
   }, [
     runtime.ambiance,
-    runtime.showVertices,
+    runtime.curve,
+    runtime.maxEdges,
+    runtime.maxVertices,
+    runtime.segments,
     runtime.showEdges,
     runtime.showFaces,
-    runtime.maxVertices,
-    runtime.maxEdges,
-    runtime.curve,
-    runtime.segments,
-    runtime.matrix,
+    runtime.showVertices,
     setRuntime,
   ])
 
@@ -152,25 +151,25 @@ export const useRender = (runtime, setRuntime) => {
     })
   }, [
     runtime.ambiance,
-    runtime.spaceType,
-    runtime.easing,
-    runtime.projection,
-    runtime.dimensions,
     runtime.ambiance,
+    runtime.curvature,
+    runtime.curve,
+    runtime.dimensions,
+    runtime.easing,
+    runtime.edgeThickness,
     runtime.fov4,
     runtime.fov5,
     runtime.fov6,
     runtime.fov7,
     runtime.fov8,
     runtime.fov9,
-    runtime.vertexThickness,
-    runtime.edgeThickness,
-    runtime.curvature,
-    runtime.curve,
-    runtime.segments,
-    runtime.maxVertices,
-    runtime.maxEdges,
     runtime.matrix,
+    runtime.maxEdges,
+    runtime.maxVertices,
+    runtime.projection,
+    runtime.segments,
+    runtime.spaceType,
+    runtime.vertexThickness,
     setRuntime,
   ])
 

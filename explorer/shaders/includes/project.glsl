@@ -158,12 +158,34 @@ float xdot(in vec9 v) {
 }
 #endif
 
+#if DIMENSIONS == 5
+float ndot(in vec5 v, in vec5 w) {
+  return dot(v.v, w.v) + v.u * w.u;
+}
+#elif DIMENSIONS == 6
+float ndot(in vec6 v, in vec6 w) {
+  return dot(v.v, w.v) + dot(v.u, w.u);
+}
+#elif DIMENSIONS == 7
+float ndot(in vec7 v, in vec7 w) {
+  return dot(v.v, w.v) + dot(v.u, w.u);
+}
+#elif DIMENSIONS == 8
+float ndot(in vec8 v, in vec8 w) {
+  return dot(v.v, w.v) + dot(v.u, w.u);
+}
+#elif DIMENSIONS == 9
+float ndot(in vec9 v, in vec9 w) {
+  return dot(v.v, w.v) + dot(v.u, w.u) + v.t * w.t;
+}
+#endif
+
 vec2 xnormalize(in vec2 v) {
   if(curvature == 0.0) {
     return v;
   }
   // Unalias?
-  v.y *= .999999;
+  // v.y *= .999999;
   float n = sqrt(curvature * xdot(v));
   return v / n;
 }
@@ -173,7 +195,7 @@ vec3 xnormalize(in vec3 v) {
     return v;
   }
   // Unalias?
-  v.z *= .999999;
+  // v.z *= .999999;
   float n = sqrt(curvature * xdot(v));
   return v / n;
 }
@@ -183,7 +205,7 @@ vec4 xnormalize(in vec4 v) {
     return v;
   }
   // Unalias?
-  v.w *= .999999;
+  // v.w *= .999999;
   // float d = curvature * xdot(v);
   // if(d < 0.) {
   //   v.w = 0.;
@@ -200,7 +222,7 @@ vec5 xnormalize(in vec5 v) {
     return v;
   }
   // Unalias?
-  v.u *= .999999;
+  // v.u *= .999999;
   float n = sqrt(curvature * xdot(v));
   return vec5(v.v / n, v.u / n);
 }
@@ -210,7 +232,7 @@ vec6 xnormalize(in vec6 v) {
     return v;
   }
   // Unalias?
-  v.u.x *= .999999;
+  // v.u.x *= .999999;
   float n = sqrt(curvature * xdot(v));
   return vec6(v.v / n, v.u / n);
 }
@@ -220,7 +242,7 @@ vec7 xnormalize(in vec7 v) {
     return v;
   }
   // Unalias?
-  v.u.y *= .999999;
+  // v.u.y *= .999999;
   float n = sqrt(curvature * xdot(v));
   return vec7(v.v / n, v.u / n);
 }
@@ -230,7 +252,7 @@ vec8 xnormalize(in vec8 v) {
     return v;
   }
   // Unalias?
-  v.u.z *= .999999;
+  // v.u.z *= .999999;
   float n = sqrt(curvature * xdot(v));
   return vec8(v.v / n, v.u / n);
 }
@@ -240,7 +262,7 @@ vec9 xnormalize(in vec9 v) {
     return v;
   }
   // Unalias?
-  v.t *= .999999;
+  // v.t *= .999999;
   float n = sqrt(curvature * xdot(v));
   return vec9(v.v / n, v.u / n, v.t / n);
 }
@@ -422,7 +444,27 @@ vec9 fromMat(in mat3 m) {
   return vec9(vec4(m[0], m[1][0]), vec4(m[1][1], m[1][2], m[2][0], m[2][1]), m[2][2]);
 }
 #endif
-
+#if DIMENSIONS == 5
+vec5 multiplyMatrix(mat5 m, vec5 v) {
+  return vec5(vec4(ndot(m.c1, v), ndot(m.c2, v), ndot(m.c3, v), ndot(m.c4, v)), ndot(m.c5, v));
+}
+#elif DIMENSIONS == 6
+vec6 multiplyMatrix(mat6 m, vec6 v) {
+  return vec6(vec4(ndot(m.c1, v), ndot(m.c2, v), ndot(m.c3, v), ndot(m.c4, v)), vec2(ndot(m.c5, v), ndot(m.c6, v)));
+}
+#elif DIMENSIONS == 7
+vec7 multiplyMatrix(mat7 m, vec7 v) {
+  return vec7(vec4(ndot(m.c1, v), ndot(m.c2, v), ndot(m.c3, v), ndot(m.c4, v)), vec3(ndot(m.c5, v), ndot(m.c6, v), ndot(m.c7, v)));
+}
+#elif DIMENSIONS == 8
+vec8 multiplyMatrix(mat8 m, vec8 v) {
+  return vec8(vec4(ndot(m.c1, v), ndot(m.c2, v), ndot(m.c3, v), ndot(m.c4, v)), vec4(ndot(m.c5, v), ndot(m.c6, v), ndot(m.c7, v), ndot(m.c8, v)));
+}
+#elif DIMENSIONS == 9
+vec9 multiplyMatrix(mat9 m, vec9 v) {
+  return vec9(vec4(ndot(m.c1, v), ndot(m.c2, v), ndot(m.c3, v), ndot(m.c4, v)), vec4(ndot(m.c5, v), ndot(m.c6, v), ndot(m.c7, v), ndot(m.c8, v)), ndot(m.c9, v));
+}
+#endif
 // mat4 findRotationMatrix(in vec4 u, in vec4 v) {
 //   vec4 w = u + v;
 //   if(length(w) < 0.0001) {

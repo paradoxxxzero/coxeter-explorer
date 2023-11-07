@@ -47,12 +47,14 @@ export const ambiances = {
     },
     exposure: 0.75,
     lighting: false,
+    opacity: 0.05,
     color: ({ word }) => hsl((word.length * 0.17) % 1, 0.5, 0.6),
   },
   colorful: {
     background: [1, 1, 1, 1],
     glow: false,
     lighting: 'blinn-phong',
+    opacity: 0.4,
     color: ({ word }) => hsl((word.length * 0.03) % 1, 1, 0.8),
   },
   //   reflection: {
@@ -113,21 +115,13 @@ export const ambiances = {
   //       return _color
   //     },
   //   },
-  //   pure: {
-  //     background: 0,
-  //     fx: ['sao', 'output', 'fxaa'],
-  //     shadow: false,
-  //     material: new MeshLambertMaterial(),
-  //     cameraLights: [new PointLight(0xffffff, 3)],
-  //     color: ({ word }) => {
-  //       _color.setHSL((word.length * 0.03) % 1, 0.75, 0.7)
-  //       _color.convertSRGBToLinear()
-  //       return _color
-  //     },
-  //     faceMaterial: new MeshLambertMaterial({
-  //       side: DoubleSide,
-  //     }),
-  //   },
+  pure: {
+    background: [0, 0, 0, 1],
+    glow: false,
+    lighting: 'blinn-phong',
+    opacity: 1,
+    color: ({ word }) => hsl((word.length * 0.03) % 1, 0.75, 0.7),
+  },
   //   glass: {
   //     extended: true,
   //     fx: ['output', 'fxaa'],

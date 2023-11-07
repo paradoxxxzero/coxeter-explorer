@@ -54,6 +54,11 @@ const includes = {
   project,
   lighting,
 }
+const preprocess = (source, dimensions) =>
+  source
+    .replace(/\bvecN\b/g, `vec${dimensions}`)
+    .replace(/\bmatN\b/g, `mat${dimensions}`)
+
 export const augment = (rt, vertex, fragment) => {
   const ambiance = ambiances[rt.ambiance]
   let config = ''
@@ -69,13 +74,14 @@ export const augment = (rt, vertex, fragment) => {
   config += `#define DIMENSIONS ${rt.dimensions}\n`
   config += `#define PROJECTION ${projections.indexOf(rt.projection)}\n`
   config += `#define EASING ${easings.indexOf(easing)}\n`
+  if (ambiance.opacity < 1) {
+    config += `#define OIT\n`
+  }
   Object.entries({ ...includes, config }).forEach(([key, value]) => {
     vertex = vertex.replace(`#include ${key}`, value)
     fragment = fragment.replace(`#include ${key}`, value)
   })
-  vertex = vertex.replace(/\bvecN\b/g, `vec${rt.dimensions}`)
-  fragment = fragment.replace(/\bvecN\b/g, `vec${rt.dimensions}`)
-  return [vertex, fragment]
+  return [vertex, fragment].map(source => preprocess(source, rt.dimensions))
 }
 
 const compileShader = (rt, name, type, shaderSource, shader) => {
@@ -240,7 +246,34 @@ export const uniform = (rt, program, name, type) => {
     update(value) {
       gl.useProgram(this.program)
       if (type.startsWith('m')) {
-        gl[`uniformMatrix${type.slice(1)}`](this.location, false, value)
+        const n = parseInt(type.slice(1, 2))
+        if (n > 4) {
+          for (let i = 0; i < n; i++) {
+            gl.uniform4fv(
+              gl.getUniformLocation(program, name + `.c${i + 1}.v`),
+              value[i][0]
+            )
+            if (n - 4 === 1) {
+              gl.uniform1f(
+                gl.getUniformLocation(program, name + `.c${i + 1}.u`),
+                value[i][1]
+              )
+            } else if (n - 4 > 1) {
+              gl[`uniform${min(n - 4, 4)}fv`](
+                gl.getUniformLocation(program, name + `.c${i + 1}.u`),
+                value[i][1]
+              )
+              if (n - 8 === 1) {
+                gl.uniform1f(
+                  gl.getUniformLocation(program, name + `.c${i + 1}.t`),
+                  value[i][2]
+                )
+              }
+            }
+          }
+        } else {
+          gl[`uniformMatrix${type.slice(1)}`](this.location, false, value)
+        }
       } else {
         gl[`uniform${type}`](this.location, value)
       }
@@ -316,7 +349,11 @@ export const mesh = (
       this.uniforms.curvature = uniform(rt, this.program, 'curvature', '1f')
       if (['vertex', 'edge'].includes(type)) {
         this.uniforms.thickness = uniform(rt, this.program, 'thickness', '1f')
+      } else {
+        this.uniforms.segments = uniform(rt, this.program, 'segments', '1f')
+        this.uniforms.opacity = uniform(rt, this.program, 'opacity', '1f')
       }
+
       for (let i = 4; i <= rt.dimensions; i++) {
         this.uniforms[`fov${i}`] = uniform(rt, this.program, `fov${i}`, '1f')
       }
@@ -411,7 +448,7 @@ export const mesh = (
 
 export const renderMesh = (rt, type) => {
   const { gl } = rt
-  if (!rt.meshes[type].count) {
+  if (!rt.meshes[type].count || !rt.meshes[type].visible) {
     return
   }
   gl.useProgram(rt.meshes[type].program)

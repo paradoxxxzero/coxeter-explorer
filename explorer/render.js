@@ -9,13 +9,7 @@ import {
   uniform,
 } from './helpers'
 import { PI, tan } from './math'
-import {
-  columnMajor,
-  lookAt,
-  multiply,
-  multiplyVector,
-  perspective,
-} from './math/matrix'
+import { columnMajor, lookAt, multiply, perspective } from './math/matrix'
 import fragmentBloom from './shaders/bloom/fragment.glsl?raw'
 import vertexBloom from './shaders/bloom/vertex.glsl?raw'
 import fragmentDown from './shaders/down/fragment.glsl?raw'
@@ -44,6 +38,7 @@ export const initializeGl = rt => {
   if (document.getElementById('webgl2')) {
     // FIXME
     console.error('WebGL already initialized')
+    window.location.reload()
     return rt
   }
   const canvas = document.createElement('canvas')
@@ -260,9 +255,6 @@ const plotVertices = (rt, range = null) => {
 
   for (let i = start; i < stop; i++) {
     let vertex = rt.vertices[i].vertex
-    if (dimensions > 4) {
-      vertex = multiplyVector(rt.matrix, vertex)
-    }
     for (let j = 0; j < dimensions; j++) {
       ipos[i * arity + j] = vertex[j]
     }
@@ -294,10 +286,6 @@ const plotEdges = (rt, range = null) => {
     let start = rt.vertices[edge.start].vertex
     let end = rt.vertices[edge.end].vertex
 
-    if (dimensions > 4) {
-      start = multiplyVector(rt.matrix, start)
-      end = multiplyVector(rt.matrix, end)
-    }
     for (let j = 0; j < dimensions; j++) {
       ipos[i * arity + j] = start[j]
       itarget[i * arity + j] = end[j]
@@ -343,19 +331,10 @@ const plotFaces = (rt, range = null) => {
           rt.vertices[face.vertices[2]].vertex,
         ],
       ]
-      if (dimensions > 4) {
-        vertices[0][0] = multiplyVector(rt.matrix, vertices[0][0])
-        vertices[0][1] = multiplyVector(rt.matrix, vertices[0][1])
-        vertices[0][2] = multiplyVector(rt.matrix, vertices[0][2])
-      }
     } else {
       const faceVertices = new Array(face.vertices.length)
       for (let j = 0; j < face.vertices.length; j++) {
         faceVertices[j] = rt.vertices[face.vertices[j]].vertex
-
-        if (dimensions > 4) {
-          faceVertices[j] = multiplyVector(rt.matrix, faceVertices[j])
-        }
       }
       const centroid = new Array(dimensions).fill(0)
       for (let j = 0; j < faceVertices.length; j++) {
@@ -488,9 +467,7 @@ export const recompilePrograms = rt => {
 export const updateUniforms = rt => {
   Object.entries(rt.meshes).forEach(([type, mesh]) => {
     mesh.uniforms.curvature.update(rt.curvature)
-    if (rt.dimensions < 5) {
-      mesh.uniforms.matrix.update(columnMajor(rt.matrix))
-    }
+    mesh.uniforms.matrix.update(columnMajor(rt.matrix))
     for (let i = 4; i <= rt.dimensions; i++) {
       mesh.uniforms[`fov${i}`].update(tan((PI * rt[`fov${i}`] * 0.5) / 180))
     }
@@ -498,6 +475,9 @@ export const updateUniforms = rt => {
       mesh.uniforms.thickness.update(rt.vertexThickness)
     } else if (type === 'edge') {
       mesh.uniforms.thickness.update(rt.edgeThickness)
+    } else {
+      mesh.uniforms.segments.update(rt.curve ? rt.segments : 1)
+      mesh.uniforms.opacity.update(ambiances[rt.ambiance].opacity)
     }
   })
   rt.camera.update()
@@ -525,11 +505,11 @@ export const render = rt => {
   gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.opaque)
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-  rt.meshes.vertex.visible && renderMesh(rt, 'vertex')
-  rt.meshes.edge.visible && renderMesh(rt, 'edge')
+  renderMesh(rt, 'vertex')
+  renderMesh(rt, 'edge')
 
   // TRANSPARENT
-  if (rt.meshes.face.visible) {
+  if (rt.meshes.face.visible && ambiance.opacity < 1) {
     gl.enable(gl.BLEND)
     gl.depthMask(false)
     gl.blendFuncSeparate(gl.ONE, gl.ONE, gl.ZERO, gl.ONE_MINUS_SRC_ALPHA)
@@ -554,6 +534,8 @@ export const render = rt => {
     gl.activeTexture(gl.TEXTURE1)
     gl.bindTexture(gl.TEXTURE_2D, rt.passes.oit.revealTexture.texture)
     gl.drawArrays(gl.TRIANGLES, 0, 3)
+  } else {
+    renderMesh(rt, 'face')
   }
 
   // FINAL
