@@ -310,13 +310,12 @@ export const mesh = (
         'matrix',
         `m${rt.dimensions}fv`
       )
-      this.uniforms.eye = uniform(rt, this.program, 'eye', '3fv')
+      if (ambiances[rt.ambiance].lighting) {
+        this.uniforms.eye = uniform(rt, this.program, 'eye', '3fv')
+      }
       this.uniforms.curvature = uniform(rt, this.program, 'curvature', '1f')
       if (['vertex', 'edge'].includes(type)) {
         this.uniforms.thickness = uniform(rt, this.program, 'thickness', '1f')
-      }
-      if (['edge', 'face'].includes(type)) {
-        this.uniforms.segments = uniform(rt, this.program, 'segments', '1f')
       }
       for (let i = 4; i <= rt.dimensions; i++) {
         this.uniforms[`fov${i}`] = uniform(rt, this.program, `fov${i}`, '1f')
@@ -412,6 +411,9 @@ export const mesh = (
 
 export const renderMesh = (rt, type) => {
   const { gl } = rt
+  if (!rt.meshes[type].count) {
+    return
+  }
   gl.useProgram(rt.meshes[type].program)
   gl.bindVertexArray(rt.meshes[type].vao)
   gl.drawElementsInstanced(

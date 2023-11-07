@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import {
   changeAmbiance,
   plot,
@@ -11,6 +11,8 @@ import {
 import refreshTextures from '../textures'
 
 export const useRender = (runtime, setRuntime) => {
+  const firstRender = useRef(true)
+
   useEffect(() => {
     setRuntime(runtime => {
       updateCameraFov(runtime)
@@ -175,11 +177,15 @@ export const useRender = (runtime, setRuntime) => {
   useEffect(() => {
     setRuntime(runtime => {
       render(runtime)
+      firstRender.current = false
       return runtime
     })
   }, [runtime, setRuntime])
 
   useEffect(() => {
+    if (firstRender.current) {
+      return
+    }
     const resizeObserver = new ResizeObserver(() => render(runtime))
     resizeObserver.observe(runtime.gl.canvas, { box: 'content-box' })
 

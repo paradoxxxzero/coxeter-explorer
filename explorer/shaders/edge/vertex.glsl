@@ -7,7 +7,6 @@ precision highp float;
 uniform mat4 viewProjection;
 uniform float curvature;
 uniform float thickness;
-uniform float segments;
 
 #if DIMENSIONS >= 4
 uniform float fov4;

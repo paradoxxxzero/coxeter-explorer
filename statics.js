@@ -39,10 +39,10 @@ export const ambiances = {
       exposure: 2,
       strength: 1.5,
       offset: {
-        up: 1,
-        down: 1,
+        up: 2,
+        down: 2,
       },
-      steps: 4,
+      steps: 3,
       pow: 2,
     },
     exposure: 0.75,

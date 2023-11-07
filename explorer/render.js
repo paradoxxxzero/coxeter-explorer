@@ -83,7 +83,9 @@ export const initializeGl = rt => {
     const viewProjection = columnMajor(multiply(projectionMatrix, viewMatrix))
     Object.values(meshes).forEach(mesh => {
       mesh.uniforms.viewProjection.update(viewProjection)
-      mesh.uniforms.eye.update(eye)
+      if (mesh.uniforms.eye) {
+        mesh.uniforms.eye.update(eye)
+      }
     })
   }
   const passes = { kawase: {} }
@@ -484,8 +486,6 @@ export const recompilePrograms = rt => {
 }
 
 export const updateUniforms = rt => {
-  const segments = rt.curve ? rt.segments : 1
-
   Object.entries(rt.meshes).forEach(([type, mesh]) => {
     mesh.uniforms.curvature.update(rt.curvature)
     if (rt.dimensions < 5) {
@@ -499,9 +499,6 @@ export const updateUniforms = rt => {
     } else if (type === 'edge') {
       mesh.uniforms.thickness.update(rt.edgeThickness)
     }
-    if (['edge', 'face'].includes(type)) {
-      mesh.uniforms.segments.update(segments)
-    }
   })
   rt.camera.update()
 }
@@ -510,6 +507,7 @@ export const render = rt => {
   if (showStats) {
     stats.update()
   }
+
   const { gl } = rt
   const ambiance = ambiances[rt.ambiance]
   if (resizeCanvasToDisplaySize(gl.canvas, window.devicePixelRatio)) {

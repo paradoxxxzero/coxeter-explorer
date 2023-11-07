@@ -6,7 +6,6 @@ precision highp float;
 
 uniform float curvature;
 uniform mat4 viewProjection;
-uniform float segments;
 
 #if DIMENSIONS >= 4
 uniform float fov4;
@@ -106,11 +105,9 @@ void main() {
   vecN next = trix(iPosition, iCenter, iTarget, t + vec2(EPS, 0.f));
   vecN other = trix(iPosition, iCenter, iTarget, t + vec2(0.f, EPS));
 
-  if(length(t) != 0.f || segments > 1.f) {
-    pos = xnormalize(pos);
-    next = xnormalize(next);
-    other = xnormalize(other);
-  }
+  pos = xnormalize(pos);
+  next = xnormalize(next);
+  other = xnormalize(other);
 
   vec3 position = xproject(pos);
   vec3 nn = xproject(next) - position;

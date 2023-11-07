@@ -244,15 +244,6 @@ export default function UI({
                 ))}
               </select>
             </label>
-            <Number
-              name="dimensions"
-              label="Dimensions"
-              min={2}
-              max={9}
-              step={1}
-              value={params.dimensions}
-              onChange={handleChange}
-            />
             <label className="select-label">
               Projection
               <select
