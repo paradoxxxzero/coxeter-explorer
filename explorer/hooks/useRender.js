@@ -1,13 +1,5 @@
 import { useEffect } from 'react'
-import {
-  changeAmbiance,
-  plot,
-  recompilePrograms,
-  render,
-  show,
-  updateCameraFov,
-  updateUniforms,
-} from '../render'
+import { changeAmbiance, plot, render, show, updateCameraFov } from '../render'
 import refreshTextures from '../textures'
 
 export const useRender = (runtime, setRuntime) => {
@@ -20,52 +12,9 @@ export const useRender = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
-      Object.values(runtime.meshes).forEach(mesh => {
-        mesh.updateGeometry(runtime)
-      })
-      return runtime
-    })
-  }, [runtime.dimensions, runtime.curve, runtime.segments, setRuntime])
-
-  useEffect(() => {
-    setRuntime(runtime => {
-      if (runtime.vertices.length) {
-        console.warn(`Extending vertex buffer to ${runtime.maxVertices}`)
-        runtime.meshes.vertex.extendAttributes(runtime, runtime.maxVertices)
-      }
-      return runtime
-    })
-  }, [runtime.maxVertices, setRuntime])
-
-  useEffect(() => {
-    setRuntime(runtime => {
-      if (runtime.edges.length) {
-        console.warn(`Extending edge buffer to ${runtime.maxEdges}`)
-        runtime.meshes.edge.extendAttributes(runtime, runtime.maxEdges)
-      }
-      return runtime
-    })
-  }, [runtime.maxEdges, setRuntime])
-
-  useEffect(() => {
-    setRuntime(runtime => {
-      if (runtime.faces.length) {
-        console.warn(`Extending edge buffer to ${runtime.maxFaces}`)
-        runtime.meshes.face.extendAttributes(runtime, runtime.maxFaces)
-      }
-      return runtime
-    })
-  }, [runtime.maxFaces, setRuntime])
-
-  useEffect(() => {
-    setRuntime(runtime => {
-      runtime.meshes.vertex.extendAttributes(
-        runtime,
-        runtime.maxVertices,
-        false
+      runtime.meshes.changeArity(
+        runtime.dimensions > 4 ? 9 : runtime.dimensions
       )
-      runtime.meshes.edge.extendAttributes(runtime, runtime.maxEdges, false)
-      runtime.meshes.face.extendAttributes(runtime, runtime.maxFaces, false)
       return runtime
     })
   }, [runtime.dimensions, setRuntime])
@@ -105,25 +54,32 @@ export const useRender = (runtime, setRuntime) => {
     })
   }, [
     runtime.currentOrder,
-    runtime.edges,
+    runtime.edge,
+    runtime.face,
     runtime.ranges,
     runtime.showEdges,
     runtime.showFaces,
     runtime.showVertices,
-    runtime.vertices,
+    runtime.vertex,
     setRuntime,
   ])
 
   useEffect(() => {
     setRuntime(runtime => {
-      recompilePrograms(runtime)
+      runtime.meshes.recompilePrograms(runtime)
       return runtime
     })
   }, [
     runtime.ambiance,
     runtime.dimensions,
     runtime.easing,
-    runtime.projection,
+    runtime.projection3,
+    runtime.projection4,
+    runtime.projection5,
+    runtime.projection6,
+    runtime.projection7,
+    runtime.projection8,
+    runtime.projection9,
     runtime.spaceType, // For easing auto
     setRuntime,
   ])
@@ -137,8 +93,6 @@ export const useRender = (runtime, setRuntime) => {
   }, [
     runtime.ambiance,
     runtime.curve,
-    runtime.maxEdges,
-    runtime.maxVertices,
     runtime.segments,
     runtime.showEdges,
     runtime.showFaces,
@@ -148,7 +102,7 @@ export const useRender = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
-      updateUniforms(runtime)
+      runtime.meshes.updateUniforms(runtime)
       return runtime
     })
   }, [
@@ -166,9 +120,13 @@ export const useRender = (runtime, setRuntime) => {
     runtime.fov8,
     runtime.fov9,
     runtime.matrix,
-    runtime.maxEdges,
-    runtime.maxVertices,
-    runtime.projection,
+    runtime.projection3,
+    runtime.projection4,
+    runtime.projection5,
+    runtime.projection6,
+    runtime.projection7,
+    runtime.projection8,
+    runtime.projection9,
     runtime.segments,
     runtime.spaceType,
     runtime.vertexThickness,
@@ -196,11 +154,11 @@ export const useRender = (runtime, setRuntime) => {
     runtime.curve,
     runtime.dimensions,
     runtime.easing,
-    runtime.edges,
+    runtime.edge,
     runtime.edgeThickness,
     runtime.error,
     // runtime.extended,
-    runtime.faces,
+    runtime.face,
     // runtime.fb,
     runtime.fov3,
     runtime.fov4,
@@ -212,9 +170,6 @@ export const useRender = (runtime, setRuntime) => {
     // runtime.gl,
     runtime.grouper,
     runtime.matrix,
-    runtime.maxEdges,
-    runtime.maxFaces,
-    runtime.maxVertices,
     // runtime.meshes,
     // runtime.mirrors,
     // runtime.mirrorsPlanes,
@@ -223,7 +178,13 @@ export const useRender = (runtime, setRuntime) => {
     // runtime.order,
     // runtime.passes,
     // runtime.processing,
-    runtime.projection,
+    runtime.projection3,
+    runtime.projection4,
+    runtime.projection5,
+    runtime.projection6,
+    runtime.projection7,
+    runtime.projection8,
+    runtime.projection9,
     runtime.ranges,
     // runtime.rb,
     runtime.renderError,
@@ -236,7 +197,7 @@ export const useRender = (runtime, setRuntime) => {
     runtime.stellation,
     runtime.subsampling,
     runtime.vertexThickness,
-    runtime.vertices,
+    runtime.vertex,
     runtime.zoom,
   ])
 }

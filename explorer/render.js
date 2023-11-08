@@ -37,10 +37,13 @@ if (showStats) {
 
 export const initializeGl = rt => {
   if (document.getElementById('webgl2')) {
+    // Fast refresh
     console.warn('WebGL already initialized')
-    recompilePrograms(rt)
+    updateCameraFov(rt)
+    rt.meshes.updateGeometries(rt)
+    rt.meshes.recompilePrograms(rt)
     changeAmbiance(rt)
-    updateUniforms(rt)
+    rt.meshes.updateUniforms(rt, true)
     render(rt)
     return rt
   }
@@ -207,7 +210,7 @@ export const initializeGl = rt => {
       vertexVertex,
       fragmentVertex,
       geometries.vertex,
-      rt.maxVertices,
+      100,
       arity
     ),
     edge: mesh(
@@ -216,7 +219,7 @@ export const initializeGl = rt => {
       vertexEdge,
       fragmentEdge,
       geometries.edge,
-      rt.maxEdges,
+      100,
       arity,
       ['position', 'target']
     ),
@@ -226,10 +229,181 @@ export const initializeGl = rt => {
       vertexFace,
       fragmentFace,
       geometries.face,
-      rt.maxFaces,
+      100,
       arity,
       ['position', 'target', 'center']
     ),
+    changeArity(arity) {
+      const meshes = ['vertex', 'edge', 'face']
+      for (let i = 0; i < meshes.length; i++) {
+        this[meshes[i]].changeArity(arity)
+      }
+    },
+    updateGeometries(rt) {
+      const meshes = ['vertex', 'edge', 'face']
+      for (let i = 0; i < meshes.length; i++) {
+        this[meshes[i]].updateGeometry(rt)
+      }
+    },
+    recompilePrograms(rt) {
+      const meshes = ['vertex', 'edge', 'face']
+      for (let i = 0; i < meshes.length; i++) {
+        this[meshes[i]].recompileProgram(rt)
+      }
+    },
+    updateUniforms(rt, quick = false) {
+      const meshes = ['vertex', 'edge', 'face']
+      for (let i = 0; i < meshes.length; i++) {
+        const type = meshes[i]
+        const mesh = this[type]
+        if (!quick) {
+          mesh.uniforms.curvature.update(rt.curvature)
+          mesh.uniforms.matrix.update(columnMajor(rt.matrix))
+          for (let i = 4; i <= rt.dimensions; i++) {
+            mesh.uniforms[`fov${i}`].update(
+              tan((PI * rt[`fov${i}`] * 0.5) / 180)
+            )
+          }
+          if (type === 'vertex') {
+            mesh.uniforms.thickness.update(rt.vertexThickness)
+          } else if (type === 'edge') {
+            mesh.uniforms.thickness.update(rt.edgeThickness)
+          } else {
+            mesh.uniforms.segments.update(rt.curve ? rt.segments : 1)
+            mesh.uniforms.opacity.update(ambiances[rt.ambiance].opacity)
+          }
+        }
+        mesh.uniforms.viewProjection.update(rt.camera.viewProjection)
+        if (mesh.uniforms.eye) {
+          mesh.uniforms.eye.update(rt.camera.eye)
+        }
+      }
+    },
+    plotType(rt, type, range) {
+      const mesh = this[type]
+      const objects = rt[type]
+      const { dimensions } = rt
+      const ambiance = ambiances[rt.ambiance]
+
+      let start = range ? range[0] : 0
+      let stop = range ? range[1] : objects.length
+      if (start === stop) {
+        return
+      }
+      let startIdx = start
+      let stopIdx = stop
+      if (type === 'face') {
+        let idx = 0
+        for (let i = 0; i < start; i++) {
+          const vertices = objects[i].vertices.length
+          idx += vertices < 3 ? 0 : vertices === 3 ? 1 : vertices
+        }
+        startIdx = idx
+        for (let i = start; i < stop; i++) {
+          const vertices = objects[i].vertices.length
+          idx += vertices < 3 ? 0 : vertices === 3 ? 1 : vertices
+        }
+        stopIdx = idx
+      }
+
+      if (mesh.instances < stopIdx * 3) {
+        mesh.extendAttributes(stopIdx)
+      }
+      mesh.count = stopIdx
+      const arity = dimensions > 4 ? 9 : dimensions
+
+      let idx = startIdx
+      for (let i = start; i < stop; i++) {
+        let vertices = []
+        const object = objects[i]
+        if (type === 'vertex') {
+          vertices.push({
+            ...object,
+            position: object.vertex,
+            type,
+          })
+        } else if (type === 'edge') {
+          vertices.push({
+            ...object,
+            position: rt.vertex[object.start].vertex,
+            target: rt.vertex[object.end].vertex,
+            type,
+          })
+        } else {
+          if (object.vertices.length < 3) {
+            continue
+          }
+          if (object.vertices.length === 3) {
+            vertices.push({
+              ...object,
+              position: rt.vertex[object.vertices[0]].vertex,
+              target: rt.vertex[object.vertices[1]].vertex,
+              center: rt.vertex[object.vertices[2]].vertex,
+            })
+          } else {
+            const faceVertices = new Array(object.vertices.length)
+            for (let j = 0; j < object.vertices.length; j++) {
+              faceVertices[j] = rt.vertex[object.vertices[j]].vertex
+            }
+            const center = new Array(dimensions).fill(0)
+            for (let j = 0; j < faceVertices.length; j++) {
+              const vertices = faceVertices[j]
+              for (let k = 0; k < dimensions; k++) {
+                center[k] += vertices[k]
+              }
+            }
+            for (let j = 0; j < dimensions; j++) {
+              center[j] /= faceVertices.length
+            }
+            for (let j = 0; j < faceVertices.length; j++) {
+              const vertex = {
+                ...object,
+                position: faceVertices[j],
+                target: faceVertices[(j + 1) % faceVertices.length],
+                center,
+              }
+              if (object.word.length % 2 === (rt.curvature > 0 ? 0 : 1)) {
+                ;[vertex.position, vertex.target] = [
+                  vertex.target,
+                  vertex.position,
+                ]
+              }
+              vertices.push(vertex)
+            }
+          }
+        }
+
+        for (let j = 0; j < vertices.length; j++) {
+          const vertex = vertices[j]
+          for (let k = 0; k < dimensions; k++) {
+            for (let l = 0; l < mesh.varying.length; l++) {
+              const attr = mesh.varying[l]
+              mesh.attributes[attr].data[idx * arity + k] = vertex[attr][k]
+            }
+          }
+          const c = ambiance.color(vertex, type, rt)
+          mesh.attributes.color.data[idx * 3 + 0] = c[0]
+          mesh.attributes.color.data[idx * 3 + 1] = c[1]
+          mesh.attributes.color.data[idx * 3 + 2] = c[2]
+          idx++
+        }
+        for (let l = 0; l < mesh.varying.length; l++) {
+          const attr = mesh.varying[l]
+          mesh.attributes[attr].update(startIdx, stopIdx)
+        }
+        mesh.attributes.color.update(startIdx, stopIdx)
+      }
+    },
+    plot(rt, ranges) {
+      const meshes = ['vertex', 'edge', 'face']
+      for (let i = 0; i < meshes.length; i++) {
+        const type = meshes[i]
+        const mesh = this[type]
+        if (mesh.visible) {
+          this.plotType(rt, type, ranges[type])
+        }
+      }
+    },
   }
 
   meshes.edge.visible = rt.showEdges
@@ -245,145 +419,6 @@ export const initializeGl = rt => {
     rb,
     fb,
   }
-}
-
-const plotVertices = (rt, range = null) => {
-  const { dimensions } = rt
-  const ambiance = ambiances[rt.ambiance]
-  const ipos = rt.meshes.vertex.attributes.position.data
-  const icolor = rt.meshes.vertex.attributes.color.data
-
-  let start = range ? range[0] : 0
-  let stop = range ? range[1] : rt.vertices.length
-
-  const arity = dimensions > 4 ? 9 : dimensions
-  rt.meshes.vertex.count = stop
-
-  for (let i = start; i < stop; i++) {
-    let vertex = rt.vertices[i].vertex
-    for (let j = 0; j < dimensions; j++) {
-      ipos[i * arity + j] = vertex[j]
-    }
-    const c = ambiance.color(rt.vertices[i], 'vertex', dimensions)
-    icolor[i * 3 + 0] = c[0]
-    icolor[i * 3 + 1] = c[1]
-    icolor[i * 3 + 2] = c[2]
-  }
-  rt.meshes.vertex.attributes.position.update(start, stop)
-  rt.meshes.vertex.attributes.color.update(start, stop)
-}
-
-const plotEdges = (rt, range = null) => {
-  const ambiance = ambiances[rt.ambiance]
-  const ipos = rt.meshes.edge.attributes.position.data
-  const itarget = rt.meshes.edge.attributes.target.data
-  const icolor = rt.meshes.edge.attributes.color.data
-
-  const { dimensions } = rt
-  let start = range ? range[0] : 0
-  let stop = range ? range[1] : rt.edges.length
-
-  const arity = dimensions > 4 ? 9 : dimensions
-  rt.meshes.edge.count = stop
-  for (let i = start; i < stop; i++) {
-    const edge = rt.edges[i]
-
-    let start = rt.vertices[edge.start].vertex
-    let end = rt.vertices[edge.end].vertex
-
-    for (let j = 0; j < dimensions; j++) {
-      ipos[i * arity + j] = start[j]
-      itarget[i * arity + j] = end[j]
-    }
-
-    const c = ambiance.color(edge, 'edge', dimensions)
-    icolor[i * 3 + 0] = c[0]
-    icolor[i * 3 + 1] = c[1]
-    icolor[i * 3 + 2] = c[2]
-  }
-  rt.meshes.edge.attributes.position.update(start, stop)
-  rt.meshes.edge.attributes.target.update(start, stop)
-  rt.meshes.edge.attributes.color.update(start, stop)
-}
-
-const plotFaces = (rt, range = null) => {
-  const ambiance = ambiances[rt.ambiance]
-  const ipos = rt.meshes.face.attributes.position.data
-  const itarget = rt.meshes.face.attributes.target.data
-  const icenter = rt.meshes.face.attributes.center.data
-  const icolor = rt.meshes.face.attributes.color.data
-
-  const { dimensions } = rt
-  let start = range ? range[0] : 0
-  let stop = range ? range[1] : rt.faces.length
-  let idx = 0
-  for (let i = 0; i < start; i++) {
-    const vertices = rt.faces[i].vertices.length
-    idx += vertices < 3 ? 0 : vertices === 3 ? 1 : vertices
-  }
-  const startIdx = idx
-  const arity = dimensions > 4 ? 9 : dimensions
-  for (let i = start; i < stop; i++) {
-    const face = rt.faces[i]
-    if (face.vertices.length < 3) {
-      continue
-    }
-    let vertices
-    if (face.vertices.length === 3) {
-      vertices = [
-        [
-          rt.vertices[face.vertices[0]].vertex,
-          rt.vertices[face.vertices[1]].vertex,
-          rt.vertices[face.vertices[2]].vertex,
-        ],
-      ]
-    } else {
-      const faceVertices = new Array(face.vertices.length)
-      for (let j = 0; j < face.vertices.length; j++) {
-        faceVertices[j] = rt.vertices[face.vertices[j]].vertex
-      }
-      const centroid = new Array(dimensions).fill(0)
-      for (let j = 0; j < faceVertices.length; j++) {
-        const vertex = faceVertices[j]
-        for (let k = 0; k < dimensions; k++) {
-          centroid[k] += vertex[k]
-        }
-      }
-      for (let j = 0; j < dimensions; j++) {
-        centroid[j] /= faceVertices.length
-      }
-      vertices = new Array(faceVertices.length)
-      for (let j = 0; j < faceVertices.length; j++) {
-        vertices[j] = [
-          centroid,
-          faceVertices[j],
-          faceVertices[(j + 1) % faceVertices.length],
-        ]
-      }
-    }
-
-    for (let j = 0; j < vertices.length; j++) {
-      let [centroid, pos, target] = vertices[j]
-      if (face.word.length % 2 === (rt.curvature > 0 ? 0 : 1)) {
-        ;[pos, target] = [target, pos]
-      }
-      for (let k = 0; k < dimensions; k++) {
-        icenter[idx * arity + k] = centroid[k]
-        ipos[idx * arity + k] = pos[k]
-        itarget[idx * arity + k] = target[k]
-      }
-      const c = ambiance.color(face, 'face', dimensions)
-      icolor[idx * 3 + 0] = c[0]
-      icolor[idx * 3 + 1] = c[1]
-      icolor[idx * 3 + 2] = c[2]
-      idx++
-    }
-  }
-  rt.meshes.face.count = idx
-  rt.meshes.face.attributes.position.update(startIdx, idx)
-  rt.meshes.face.attributes.target.update(startIdx, idx)
-  rt.meshes.face.attributes.center.update(startIdx, idx)
-  rt.meshes.face.attributes.color.update(startIdx, idx)
 }
 
 export const show = (rt, name) => {
@@ -407,50 +442,33 @@ export const plot = (rt, order = null) => {
   ) {
     return
   }
-  const range =
+  const ranges =
     order !== null
       ? rt.ranges[order]
       : {
-          vertices: [
-            rt.ranges[0].vertices[0],
-            rt.ranges[rt.currentOrder - 1].vertices[1],
+          vertex: [
+            rt.ranges[0].vertex[0],
+            rt.ranges[rt.currentOrder - 1].vertex[1],
           ],
-          edges: [
-            rt.ranges[0].edges[0],
-            rt.ranges[rt.currentOrder - 1].edges[1],
-          ],
-          faces: [
-            rt.ranges[0].faces[0],
-            rt.ranges[rt.currentOrder - 1].faces[1],
-          ],
+          edge: [rt.ranges[0].edge[0], rt.ranges[rt.currentOrder - 1].edge[1]],
+          face: [rt.ranges[0].face[0], rt.ranges[rt.currentOrder - 1].face[1]],
         }
-  if (rt.meshes.vertex.visible) {
-    rt.gl.useProgram(rt.meshes.vertex.program)
-    rt.gl.bindVertexArray(rt.meshes.vertex.vao)
-    plotVertices(rt, range.vertices)
-  }
-  if (rt.meshes.edge.visible) {
-    rt.gl.useProgram(rt.meshes.edge.program)
-    rt.gl.bindVertexArray(rt.meshes.edge.vao)
-    plotEdges(rt, range.edges)
-  }
-  if (rt.meshes.face.visible) {
-    rt.gl.useProgram(rt.meshes.face.program)
-    rt.gl.bindVertexArray(rt.meshes.face.vao)
-    plotFaces(rt, range.faces)
-  }
+
+  rt.meshes.plot(rt, ranges)
+
   document.title = `Coxeter Explorer - ${
     rt.spaceType === 'finite' ? 'S' : rt.spaceType === 'affine' ? 'E' : 'H'
   }^${rt.dimensions} ${
     rt.currentOrder < rt.order ? `(${rt.currentOrder}/${rt.order})…` : ''
-  }- ${rt.vertices.length} vertices, ${rt.edges.length} edges, ${
-    rt.faces.length
+  }- ${rt.vertex.length} vertices, ${rt.edge.length} edges, ${
+    rt.face.length
   } faces`
 }
 
 export const updateCameraFov = rt => {
   rt.camera.fov = (PI * rt.fov3) / 180
   rt.camera.update()
+  rt.meshes.updateUniforms(rt, true)
 }
 
 export const changeAmbiance = rt => {
@@ -467,36 +485,6 @@ export const changeAmbiance = rt => {
   }
 }
 
-export const recompilePrograms = rt => {
-  Object.values(rt.meshes).forEach(mesh => {
-    mesh.recompileProgram(rt)
-  })
-}
-
-export const updateUniforms = (rt, quick = false) => {
-  Object.entries(rt.meshes).forEach(([type, mesh]) => {
-    if (!quick) {
-      mesh.uniforms.curvature.update(rt.curvature)
-      mesh.uniforms.matrix.update(columnMajor(rt.matrix))
-      for (let i = 4; i <= rt.dimensions; i++) {
-        mesh.uniforms[`fov${i}`].update(tan((PI * rt[`fov${i}`] * 0.5) / 180))
-      }
-      if (type === 'vertex') {
-        mesh.uniforms.thickness.update(rt.vertexThickness)
-      } else if (type === 'edge') {
-        mesh.uniforms.thickness.update(rt.edgeThickness)
-      } else {
-        mesh.uniforms.segments.update(rt.curve ? rt.segments : 1)
-        mesh.uniforms.opacity.update(ambiances[rt.ambiance].opacity)
-      }
-    }
-    mesh.uniforms.viewProjection.update(rt.camera.viewProjection)
-    if (mesh.uniforms.eye) {
-      mesh.uniforms.eye.update(rt.camera.eye)
-    }
-  })
-}
-
 export const render = rt => {
   if (showStats) {
     stats.update()
@@ -505,11 +493,10 @@ export const render = rt => {
   const { gl } = rt
   const ambiance = ambiances[rt.ambiance]
   if (resizeCanvasToDisplaySize(gl.canvas, rt.subsampling)) {
-    console.log(rt.subsampling)
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
     refreshTextures(rt)
     rt.camera.update()
-    updateUniforms(rt, true)
+    rt.meshes.updateUniforms(rt, true)
   }
 
   // OPAQUE

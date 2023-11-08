@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { Fragment, useCallback, useState } from 'react'
 import {
   ambiances,
   defaultParams,
@@ -12,6 +12,7 @@ import CoxeterMatrix from './CoxeterMatrix'
 import Number from './Number'
 import Presets from './Presets'
 import Space from './Space'
+import { range } from '../../utils.js'
 
 export default function UI({
   runtime,
@@ -250,20 +251,6 @@ export default function UI({
                 ))}
               </select>
             </label>
-            <label className="select-label">
-              Projection
-              <select
-                name="projection"
-                value={params.projection}
-                onChange={handleRawChange}
-              >
-                {projections.map(p => (
-                  <option key={p} value={p}>
-                    {p.replace(/_/g, ' ').replace(/./, c => c.toUpperCase())}
-                  </option>
-                ))}
-              </select>
-            </label>
             <Number
               name="vertexThickness"
               label="Vertices"
@@ -305,7 +292,10 @@ export default function UI({
                 {(showUI === 'full'
                   ? Object.keys(ambiances)
                   : Object.entries(ambiances)
-                      .filter(([k, { extended }]) => !extended)
+                      .filter(
+                        ([k, { extended }]) =>
+                          !extended || k === params.ambiance
+                      )
                       .map(([k]) => k)
                 ).map(a => (
                   <option key={a} value={a}>
@@ -339,24 +329,33 @@ export default function UI({
                 onChange={handleChange}
               />
             )}
-            <Number
-              name="fov3"
-              label="FOV3"
-              min={0}
-              step={1}
-              value={params.fov3}
-              onChange={handleChange}
-            />
-            {params.dimensions > 3
-              ? [...Array(params.dimensions - 3).keys()].map(i => (
-                  <Number
-                    key={i}
-                    label={`FOV${i + 4}`}
-                    name={`fov${i + 4}`}
-                    step={1}
-                    value={params[`fov${i + 4}`]}
-                    onChange={handleChange}
-                  />
+            {params.dimensions >= 3
+              ? range(3, params.dimensions + 1).map(i => (
+                  <Fragment key={i}>
+                    <Number
+                      label={`FOV${i}`}
+                      name={`fov${i}`}
+                      step={1}
+                      value={params[`fov${i}`]}
+                      onChange={handleChange}
+                    />
+
+                    <label className="select-label">
+                      <select
+                        name={`projection${i}`}
+                        value={params[`projection${i}`]}
+                        onChange={handleRawChange}
+                      >
+                        {projections.map(p => (
+                          <option key={p} value={p}>
+                            {p
+                              .replace(/_/g, ' ')
+                              .replace(/./, c => c.toUpperCase())}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </Fragment>
                 ))
               : null}
           </aside>

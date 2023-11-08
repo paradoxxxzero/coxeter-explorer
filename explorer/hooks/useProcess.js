@@ -37,9 +37,9 @@ const asyncProcess = async (runtime, running, setRuntime) => {
         return {
           ...runtime,
           currentOrder: 0,
-          vertices: [],
-          edges: [],
-          faces: [],
+          vertex: [],
+          edge: [],
+          face: [],
           ranges: [],
           renderError: null,
           processing: true,
@@ -51,17 +51,17 @@ const asyncProcess = async (runtime, running, setRuntime) => {
         ranges: [
           ...runtime.ranges,
           {
-            vertices: [
-              runtime.vertices.length,
-              runtime.vertices.length + vertices.length,
+            vertex: [
+              runtime.vertex.length,
+              runtime.vertex.length + vertices.length,
             ],
-            edges: [runtime.edges.length, runtime.edges.length + edges.length],
-            faces: [runtime.faces.length, runtime.faces.length + faces.length],
+            edge: [runtime.edge.length, runtime.edge.length + edges.length],
+            face: [runtime.face.length, runtime.face.length + faces.length],
           },
         ],
-        vertices: runtime.vertices.concat(vertices),
-        edges: runtime.edges.concat(edges),
-        faces: runtime.faces.concat(faces),
+        vertex: runtime.vertex.concat(vertices),
+        edge: runtime.edge.concat(edges),
+        face: runtime.face.concat(faces),
         currentOrder: order + 1,
         processing: false,
         error: null,
@@ -137,9 +137,9 @@ export const useProcess = (runtime, setRuntime) => {
         ...runtime,
         currentOrder: 0,
         grouper,
-        vertices: [],
-        edges: [],
-        faces: [],
+        vertex: [],
+        edge: [],
+        face: [],
         ranges: [],
         spaceType,
         curvature,
@@ -185,45 +185,4 @@ export const useProcess = (runtime, setRuntime) => {
     // Can't have ranges here
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setRuntime, runtime.order, runtime.currentOrder])
-
-  useEffect(() => {
-    setRuntime(runtime => {
-      if (runtime.vertices.length > runtime.maxVertices) {
-        return {
-          ...runtime,
-          maxVertices: runtime.vertices.length,
-        }
-      }
-      return runtime
-    })
-  }, [runtime.vertices, setRuntime])
-
-  useEffect(() => {
-    setRuntime(runtime => {
-      if (runtime.edges.length > runtime.maxEdges) {
-        return {
-          ...runtime,
-          maxEdges: runtime.edges.length,
-        }
-      }
-      return runtime
-    })
-  }, [runtime.edges, setRuntime])
-
-  useEffect(() => {
-    setRuntime(runtime => {
-      let faces = 0
-      for (let i = 0; i < runtime.faces.length; i++) {
-        const vertices = runtime.faces[i].vertices.length
-        faces += vertices === 3 ? 1 : vertices
-      }
-      if (faces > runtime.maxFaces) {
-        return {
-          ...runtime,
-          maxFaces: faces,
-        }
-      }
-      return runtime
-    })
-  }, [runtime.faces, setRuntime])
 }

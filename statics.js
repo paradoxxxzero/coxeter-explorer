@@ -97,9 +97,9 @@ export const ambiances = {
     lighting: 'toon',
     opacity: 0.6,
     transparency: 'blend',
-    color: ({ word }, type, dimensions) => {
+    color: ({ word }, type, { dimensions, showFaces }) => {
       const h = word.length ? atoi(word[word.length - 1]) / dimensions : 0
-      return hsl(h % 1, 1, type === 'face' ? 0.6 : 0.2)
+      return hsl(h % 1, 1, type === 'face' ? 0.6 : showFaces ? 0.05 : 0.8)
     },
   },
   pure: {
@@ -110,7 +110,7 @@ export const ambiances = {
     color: ({ word }) => hsl((word.length * 0.03) % 1, 0.75, 0.7),
   },
   plain: {
-    // extended: true,
+    extended: true,
     background: [1, 1, 1, 1],
     glow: false,
     lighting: false,
@@ -118,7 +118,7 @@ export const ambiances = {
     color: ({ word }) => hsl((word.length * 0.06) % 1, 0.7, 0.5),
   },
   plainblack: {
-    //   extended: true,
+    extended: true,
     background: [1, 1, 1, 1],
     glow: false,
     lighting: false,
@@ -164,14 +164,15 @@ export const defaultParams = {
   showFaces: false,
 
   grouper: '',
-  projection: 'stereographic',
   controls: 'space',
   ambiance: 'neon',
   centered: null,
 
   zoom: 1.5,
   fov3: 90,
+  projection3: 'stereographic',
   fov4: 90,
+  projection4: 'stereographic',
 
   msaa: window.devicePixelRatio <= 1,
   msaaSamples: MSAA_MAX,
@@ -278,8 +279,18 @@ export const filterParams = maybeBadParams => {
     ) {
       params[`fov${i}`] = i === 4 ? 90 : 45
     }
+    if (
+      i <= params.dimensions &&
+      !params[`projection${i}`] &&
+      !badParams.includes(`projection${i}`)
+    ) {
+      params[`projection${i}`] = 'stereographic'
+    }
     if (i > params.dimensions && params[`fov${i}`]) {
       delete params[`fov${i}`]
+    }
+    if (i > params.dimensions && params[`projection${i}`]) {
+      delete params[`projection${i}`]
     }
   }
   return { params, badParams }

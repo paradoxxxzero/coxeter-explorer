@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './explorer/App.jsx'
 import './index.css'
 import { defaultParams, filterParams } from './statics.js'
-// import 'https://greggman.github.io/webgl-lint/webgl-lint.js'
+import 'https://greggman.github.io/webgl-lint/webgl-lint.js'
 
 const parse = s => {
   const replacer = (k, v) => {

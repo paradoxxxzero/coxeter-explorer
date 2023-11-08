@@ -3,7 +3,7 @@ import { debounce } from '../../utils'
 import { PI, abs, hypot } from '../math'
 import { xtranslate } from '../math/hypermath'
 import { columnMajor, diagonal, multiply, set } from '../math/matrix'
-import { render, updateUniforms } from '../render'
+import { render } from '../render'
 // import { hyperMaterials } from '../shader/hyperMaterial'
 
 const zoomSpeed = 0.95
@@ -84,9 +84,13 @@ export const useInteract = (runtime, rotations, updateParams) => {
   }, [runtime.matrix])
 
   const quickUpdateMatrix = useCallback(() => {
-    Object.values(runtime.meshes).forEach(mesh => {
-      mesh.uniforms.matrix.update(columnMajor(localMatrix.current))
-    })
+    const meshes = ['vertex', 'edge', 'face']
+    for (let i = 0; i < meshes.length; i++) {
+      runtime.meshes[meshes[i]].uniforms.matrix.update(
+        columnMajor(localMatrix.current)
+      )
+    }
+
     render(runtime)
   }, [
     runtime.ambiance,
@@ -100,11 +104,11 @@ export const useInteract = (runtime, rotations, updateParams) => {
     runtime.curve,
     runtime.dimensions,
     runtime.easing,
-    runtime.edges,
+    runtime.edge,
     runtime.edgeThickness,
     runtime.error,
     // runtime.extended,
-    runtime.faces,
+    runtime.face,
     // runtime.fb,
     runtime.fov3,
     runtime.fov4,
@@ -116,9 +120,6 @@ export const useInteract = (runtime, rotations, updateParams) => {
     // runtime.gl,
     runtime.grouper,
     // runtime.matrix,
-    runtime.maxEdges,
-    runtime.maxFaces,
-    runtime.maxVertices,
     // runtime.meshes,
     // runtime.mirrors,
     // runtime.mirrorsPlanes,
@@ -140,7 +141,7 @@ export const useInteract = (runtime, rotations, updateParams) => {
     runtime.stellation,
     runtime.subsampling,
     runtime.vertexThickness,
-    runtime.vertices,
+    runtime.vertex,
     runtime.zoom,
   ])
 
@@ -272,7 +273,7 @@ export const useInteract = (runtime, rotations, updateParams) => {
         const newDistance = getDistance()
         runtime.camera.position[2] *= distance / newDistance
         runtime.camera.update()
-        updateUniforms(runtime, true)
+        runtime.meshes.updateUniforms(runtime, true)
         distance = newDistance
         render(runtime)
         updateZoom(-runtime.camera.position[2])
@@ -393,7 +394,7 @@ export const useInteract = (runtime, rotations, updateParams) => {
       }
       runtime.camera.position[2] *= e.deltaY < 0 ? zoomSpeed : 1 / zoomSpeed
       runtime.camera.update()
-      updateUniforms(runtime, true)
+      runtime.meshes.updateUniforms(runtime, true)
       render(runtime)
       updateZoom(-runtime.camera.position[2])
     }
@@ -413,7 +414,7 @@ export const useInteract = (runtime, rotations, updateParams) => {
 
       runtime.camera.position[2] = -newZoom
       runtime.camera.update()
-      updateUniforms(runtime, true)
+      runtime.meshes.updateUniforms(runtime, true)
       render(runtime)
       updateZoom(newZoom)
     }

@@ -68,13 +68,17 @@ export const augment = (rt, vertex, fragment) => {
     config += `#define LIGHTING ${lightings.indexOf(ambiance.lighting)}\n`
   }
   const easing =
-    rt.easing === 'auto'
-      ? rt.spaceType?.startsWith('hyperbolic') && rt.projection !== 'inverted'
+    rt.easing === 'auto' //FIXME
+      ? rt.spaceType?.startsWith('hyperbolic') && rt.projection4 !== 'inverted'
         ? 'quintic'
         : 'linear'
       : rt.easing
   config += `#define DIMENSIONS ${rt.dimensions}\n`
-  config += `#define PROJECTION ${projections.indexOf(rt.projection)}\n`
+  for (let i = 3; i <= rt.dimensions; i++) {
+    config += `#define PROJECTION${i} ${projections.indexOf(
+      rt[`projection${i}`]
+    )}\n`
+  }
   config += `#define EASING ${easings.indexOf(easing)}\n`
   if (ambiance.opacity < 1 && ambiance.transparency === 'oit') {
     config += `#define OIT\n`
@@ -174,7 +178,7 @@ export const compileProgram = (
 
 export const attribute = (
   rt,
-  program,
+  mesh,
   name,
   size,
   data,
@@ -187,13 +191,14 @@ export const attribute = (
 
   const attr = {
     name,
+    mesh,
     indices,
     instances,
     data,
     size,
     type,
-    program,
     update(start = null, end = null) {
+      gl.bindVertexArray(this.mesh.vao)
       gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer)
       if (start === null && end === null) {
         gl.bufferData(gl.ARRAY_BUFFER, this.data, gl.STATIC_DRAW)
@@ -203,13 +208,14 @@ export const attribute = (
           start * this.size * byteSize,
           this.data,
           start * this.size,
-          end * this.size
+          (end - start) * this.size
         )
       }
     },
     extend(size, newData, copy = false) {
+      gl.bindVertexArray(this.mesh.vao)
       this.size = size
-      this.location = gl.getAttribLocation(this.program, this.name)
+      this.location = gl.getAttribLocation(this.mesh.program, this.name)
       if (this.location === -1) {
         return
       }
@@ -245,6 +251,13 @@ export const attribute = (
         this.data = newData
       }
       this.update()
+    },
+    get() {
+      gl.bindVertexArray(this.mesh.vao)
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer)
+      const rv = new Float32Array(this.data.length)
+      gl.getBufferSubData(gl.ARRAY_BUFFER, 0, rv)
+      return rv
     },
   }
 
@@ -359,7 +372,7 @@ export const mesh = (
   geometryFunc,
   size,
   arity,
-  attributes = ['position']
+  varying = ['position']
 ) => {
   const { gl } = rt
   const geometry = geometryFunc(rt.curve ? rt.segments : 1)
@@ -417,30 +430,42 @@ export const mesh = (
 
   const mesh = {
     attributes: {},
+    varying,
     ...compileProgram(rt, type, ...augment(rt, vertex, fragment), uniforms(rt)),
     recompileProgram(rt) {
       const [newVertex, newFragment] = augment(rt, vertex, fragment)
       this.recompile(rt, newVertex, newFragment, uniforms(rt))
     },
-    extendAttributes(rt, maxSize, copy = true) {
-      gl.bindVertexArray(mesh.vao)
-      const arity = rt.dimensions > 4 ? 9 : rt.dimensions
-      attributes.forEach(attr => {
-        mesh.attributes[attr].extend(
+    changeArity(arity) {
+      if (this.arity === arity) {
+        return
+      }
+      this.arity = arity
+      varying.forEach(attr => {
+        this.attributes[attr].extend(
           arity,
-          new Float32Array(maxSize * arity),
-          copy
+          new Float32Array(this.instances * arity),
+          false
         )
       })
-      mesh.attributes.color.extend(3, new Float32Array(maxSize * 3), copy)
+    },
+    extendAttributes(maxSize) {
+      this.instances = maxSize
+      varying.forEach(attr => {
+        this.attributes[attr].extend(
+          this.arity,
+          new Float32Array(maxSize * this.arity),
+          true
+        )
+      })
+      this.attributes.color.extend(3, new Float32Array(maxSize * 3), true)
     },
     updateGeometry(rt) {
-      gl.bindVertexArray(mesh.vao)
       const geometry = geometryFunc(rt.curve ? rt.segments : 1)
-      mesh.indices.update(new Uint16Array(geometry.indices))
-      mesh.attributes.vertex.extend(3, new Float32Array(geometry.vertices))
-      mesh.attributes.uv.extend(2, new Float32Array(geometry.uvs))
-      mesh.attributes.normal.extend(3, new Float32Array(geometry.normals))
+      this.indices.update(new Uint16Array(geometry.indices))
+      this.attributes.vertex.extend(3, new Float32Array(geometry.vertices))
+      this.attributes.uv.extend(2, new Float32Array(geometry.uvs))
+      this.attributes.normal.extend(3, new Float32Array(geometry.normals))
     },
   }
   mesh.visible = true
@@ -450,44 +475,45 @@ export const mesh = (
 
   mesh.attributes.vertex = attribute(
     rt,
-    mesh.program,
+    mesh,
     'vertex',
     3,
     new Float32Array(geometry.vertices)
   )
   mesh.attributes.uv = attribute(
     rt,
-    mesh.program,
+    mesh,
     'uv',
     2,
     new Float32Array(geometry.uvs)
   )
   mesh.attributes.normal = attribute(
     rt,
-    mesh.program,
+    mesh,
     'normal',
     3,
     new Float32Array(geometry.normals)
   )
   mesh.attributes.color = attribute(
     rt,
-    mesh.program,
+    mesh,
     'color',
     3,
     new Float32Array(size * 3),
     1
   )
-  attributes.forEach(attr => {
+  varying.forEach(attr => {
     mesh.attributes[attr] = attribute(
       rt,
-      mesh.program,
+      mesh,
       attr,
       arity,
       new Float32Array(size * arity),
       1
     )
   })
-
+  mesh.arity = arity
+  mesh.instances = size
   mesh.count = 0
   return mesh
 }
