@@ -331,16 +331,17 @@ export default function UI({
             )}
             {params.dimensions >= 3
               ? range(3, params.dimensions + 1).map(i => (
-                  <Fragment key={i}>
+                  <div key={i} className="projection">
                     <Number
-                      label={`FOV${i}`}
+                      label={`${i}D FOV`}
                       name={`fov${i}`}
                       step={1}
                       value={params[`fov${i}`]}
                       onChange={handleChange}
                     />
 
-                    <label className="select-label">
+                    <label className="number">
+                      <span className="number-label">{i}D Projection</span>
                       <select
                         name={`projection${i}`}
                         value={params[`projection${i}`]}
@@ -355,7 +356,7 @@ export default function UI({
                         ))}
                       </select>
                     </label>
-                  </Fragment>
+                  </div>
                 ))
               : null}
           </aside>

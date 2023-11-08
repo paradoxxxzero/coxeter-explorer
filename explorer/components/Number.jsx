@@ -137,7 +137,7 @@ export default function Number({
         update(val.toString())
       }
     }
-  }, [allowInfinity, min, raw, step, update, valid])
+  }, [allowInfinity, max, min, raw, step, update, valid])
 
   const handleChange = event => {
     const raw = event.target.value

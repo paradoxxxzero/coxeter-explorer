@@ -1,5 +1,5 @@
 import Stats from 'stats.js'
-import { ambiances, defaultParams } from '../statics'
+import { ambiances } from '../statics'
 import { sphere, tri, tube } from './geometries'
 import {
   compileProgram,
@@ -9,10 +9,10 @@ import {
 } from './helpers'
 import { PI, min, tan } from './math'
 import { columnMajor, lookAt, multiply, perspective } from './math/matrix'
-import fragmentBloom from './shaders/bloom/fragment.glsl?raw'
-import vertexBloom from './shaders/bloom/vertex.glsl?raw'
 import fragmentAfterimage from './shaders/afterimage/fragment.glsl?raw'
 import vertexAfterimage from './shaders/afterimage/vertex.glsl?raw'
+import fragmentBloom from './shaders/bloom/fragment.glsl?raw'
+import vertexBloom from './shaders/bloom/vertex.glsl?raw'
 import fragmentDown from './shaders/down/fragment.glsl?raw'
 import vertexDown from './shaders/down/vertex.glsl?raw'
 import fragmentEdge from './shaders/edge/fragment.glsl?raw'
@@ -40,7 +40,6 @@ export const initializeGl = rt => {
     // Fast refresh
     console.warn('WebGL already initialized')
     updateCameraFov(rt)
-    rt.meshes.updateGeometries(rt)
     rt.meshes.recompilePrograms(rt)
     changeAmbiance(rt)
     rt.meshes.updateUniforms(rt, true)
@@ -52,7 +51,7 @@ export const initializeGl = rt => {
   document.body.appendChild(canvas)
 
   const gl = canvas.getContext('webgl2', {
-    // alpha: false,
+    alpha: true,
     antialias: false,
     depth: true,
     stencil: false,
@@ -73,7 +72,7 @@ export const initializeGl = rt => {
   const camera = {
     zoom: 1,
     fov: PI / 3,
-    position: [0, 0, 2],
+    position: [0, 0, -rt.zoom],
     update() {
       const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight
       this.zoom = min(gl.canvas.clientWidth / gl.canvas.clientHeight, 1)
@@ -210,7 +209,7 @@ export const initializeGl = rt => {
       vertexVertex,
       fragmentVertex,
       geometries.vertex,
-      100,
+      10000,
       arity
     ),
     edge: mesh(
@@ -219,7 +218,7 @@ export const initializeGl = rt => {
       vertexEdge,
       fragmentEdge,
       geometries.edge,
-      100,
+      10000,
       arity,
       ['position', 'target']
     ),
@@ -229,7 +228,7 @@ export const initializeGl = rt => {
       vertexFace,
       fragmentFace,
       geometries.face,
-      100,
+      10000,
       arity,
       ['position', 'target', 'center']
     ),
@@ -306,7 +305,7 @@ export const initializeGl = rt => {
         stopIdx = idx
       }
 
-      if (mesh.instances < stopIdx * 3) {
+      if (mesh.instances < stopIdx) {
         mesh.extendAttributes(stopIdx)
       }
       mesh.count = stopIdx
@@ -491,6 +490,10 @@ export const render = rt => {
   }
 
   const { gl } = rt
+  const msaa = rt.msaa
+    ? min(rt.msaaSamples, rt.gl.getParameter(rt.gl.MAX_SAMPLES))
+    : 0
+
   const ambiance = ambiances[rt.ambiance]
   if (resizeCanvasToDisplaySize(gl.canvas, rt.subsampling)) {
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
@@ -517,10 +520,26 @@ export const render = rt => {
     ambiance.opacity < 1 &&
     ambiance.transparency === 'oit'
   ) {
+    if (msaa) {
+      gl.bindFramebuffer(gl.READ_FRAMEBUFFER, rt.fb.base)
+      gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, rt.fb.oit)
+      gl.blitFramebuffer(
+        0,
+        0,
+        gl.drawingBufferWidth,
+        gl.drawingBufferHeight,
+        0,
+        0,
+        gl.drawingBufferWidth,
+        gl.drawingBufferHeight,
+        gl.DEPTH_BUFFER_BIT,
+        gl.NEAREST
+      )
+    }
+
     gl.enable(gl.BLEND)
     gl.depthMask(false)
     gl.blendFuncSeparate(gl.ONE, gl.ONE, gl.ZERO, gl.ONE_MINUS_SRC_ALPHA)
-
     gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.oit)
     gl.clear(gl.COLOR_BUFFER_BIT)
 

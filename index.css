@@ -193,7 +193,6 @@ select option {
   margin-right: 4.5rem;
   display: flex;
   justify-content: center;
-  align-items: center;
   font-size: calc(min(1.5vw, 0.75em));
   mix-blend-mode: difference;
 }
@@ -202,6 +201,16 @@ select option {
   color: rgba(255, 255, 255, 0.65);
 }
 
+.projection {
+  display: flex;
+  align-items: last baseline;
+}
+.projection label {
+  margin: 0;
+}
+.projection label select {
+  display: block;
+}
 .coxeters {
   position: absolute;
   top: 0;

@@ -39,11 +39,19 @@ void main() {
   pos = xnormalize(pos);
 
   vec3 position = xproject(pos);
-  position = inflate(position, pos, normal, thickness, .01f);
+  if(len(position) > BOUNDS) {
+    gl_Position = OOB;
+    vColor = vec3(0.f);
+    vPosition = vec3(0.f);
+    vNormal = vec3(0.f);
+  } else {
 
-  gl_Position = viewProjection * vec4(position, 1.f);
+    position = inflate(position, pos, normal, thickness, .01f);
 
-  vPosition = position;
-  vColor = color;
-  vNormal = normal;
+    gl_Position = viewProjection * vec4(position, 1.f);
+
+    vColor = color;
+    vPosition = position;
+    vNormal = normal;
+  }
 }

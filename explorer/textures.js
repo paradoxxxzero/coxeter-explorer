@@ -1,13 +1,17 @@
 import { ambiances } from '../statics'
 import { storage, texture } from './helpers'
+import { min } from './math'
 
 export default function refreshTextures(rt) {
   const { gl } = rt
   const ambiance = ambiances[rt.ambiance]
+  const msaa = rt.msaa
+    ? min(rt.msaaSamples, rt.gl.getParameter(rt.gl.MAX_SAMPLES))
+    : 0
 
   // BASE FBO
   gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.base)
-  storage(rt, rt.rb.base, gl.RGBA8)
+  storage(rt, rt.rb.base, gl.RGBA8, msaa)
   gl.framebufferRenderbuffer(
     gl.FRAMEBUFFER,
     gl.COLOR_ATTACHMENT0,
@@ -15,7 +19,7 @@ export default function refreshTextures(rt) {
     rt.rb.base
   )
 
-  storage(rt, rt.rb.depth, gl.DEPTH_COMPONENT24)
+  storage(rt, rt.rb.depth, gl.DEPTH_COMPONENT24, msaa)
   gl.framebufferRenderbuffer(
     gl.FRAMEBUFFER,
     gl.DEPTH_ATTACHMENT,
@@ -36,6 +40,9 @@ export default function refreshTextures(rt) {
     gl.deleteTexture(rt.passes.oit.revealTexture.texture)
     rt.passes.oit.revealTexture = null
   }
+  if (rt.rb.depth_copy) {
+    gl.deleteRenderbuffer(rt.rb.depth_copy)
+  }
   if (
     rt.meshes.face.visible &&
     ambiance.opacity < 1 &&
@@ -43,6 +50,25 @@ export default function refreshTextures(rt) {
   ) {
     rt.fb.oit = gl.createFramebuffer()
     gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.oit)
+
+    if (msaa) {
+      // Create a normal sized depth buffer
+      rt.rb.depth_copy = gl.createRenderbuffer()
+      storage(rt, rt.rb.depth_copy, gl.DEPTH_COMPONENT24)
+      gl.framebufferRenderbuffer(
+        gl.FRAMEBUFFER,
+        gl.DEPTH_ATTACHMENT,
+        gl.RENDERBUFFER,
+        rt.rb.depth_copy
+      )
+    } else {
+      gl.framebufferRenderbuffer(
+        gl.FRAMEBUFFER,
+        gl.DEPTH_ATTACHMENT,
+        gl.RENDERBUFFER,
+        rt.rb.depth
+      )
+    }
 
     gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1])
 

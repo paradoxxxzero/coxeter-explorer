@@ -291,7 +291,7 @@ vec3 xproject(in vec3 v) {
   v.yz *= 2. / (1. + v.x);
   v.x = 1.;
   v.z -= 2.;
-  return v.zyx;
+  return v.yzx;
   #endif
 
   return v.xyz;
@@ -317,8 +317,8 @@ vec3 xproject(in vec4 v) {
   v.w = 1. / v.w;
 
   v.yzw *= 2. / (1. + v.x);
-  v.w -= 1.;
-  return xproject(v.wyx);
+  v.w -= 2.;
+  return xproject(v.ywx);
   #endif
 }
 #endif

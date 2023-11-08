@@ -52,21 +52,28 @@ void main() {
   next = xnormalize(next);
 
   vec3 position = xproject(pos);
+  if(len(position) > BOUNDS) {
+    gl_Position = OOB;
+    vColor = vec3(0.f);
+    vPosition = vec3(0.f);
+    vNormal = vec3(0.f);
+  } else {
 
-  vec3 n = xproject(next) + NOISE; // Avoid collinearity
-  vec3 k = normalize(position - n); // current segment direction
+    vec3 n = xproject(next) + NOISE; // Avoid collinearity
+    vec3 k = normalize(position - n); // current segment direction
 
   // Rodrigues' rotation formula
   // To rotate v around axis k by angle r:
-  float r = (1.f - uv.x) * TAU;
-  vec3 v = normalize(cross(n, position));
-  vec3 normal = normalize(v * cos(r) + cross(k, v) * sin(r)); // + k * dot(k, v) * (1. - cos(r));
+    float r = (1.f - uv.x) * TAU;
+    vec3 v = normalize(cross(n, position));
+    vec3 normal = normalize(v * cos(r) + cross(k, v) * sin(r)); // + k * dot(k, v) * (1. - cos(r));
 
-  position = inflate(position, pos, normal, thickness, 0.f);
+    position = inflate(position, pos, normal, thickness, 0.f);
 
-  gl_Position = viewProjection * vec4(position, 1.f);
+    gl_Position = viewProjection * vec4(position, 1.f);
 
-  vPosition = position;
-  vNormal = normal;
-  vColor = color;
+    vColor = color;
+    vPosition = position;
+    vNormal = normal;
+  }
 }

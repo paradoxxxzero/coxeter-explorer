@@ -247,7 +247,11 @@ export const attribute = (
         }
       }
       if (newData) {
-        copy && newData.length >= this.data.length && newData.set(this.data)
+        if (copy) {
+          if (newData.length >= this.data.length) {
+            newData.set(this.data)
+          }
+        }
         this.data = newData
       }
       this.update()
@@ -413,7 +417,7 @@ export const mesh = (
           {
             name: 'segments',
             type: '1f',
-            value: rt.segments,
+            value: rt.curve ? rt.segments : 1,
           },
           {
             name: 'opacity',
@@ -534,14 +538,14 @@ export const renderMesh = (rt, type) => {
   )
 }
 
-export const storage = (rt, rb, type) => {
+export const storage = (rt, rb, type, msaa) => {
   const { gl } = rt
   gl.bindRenderbuffer(gl.RENDERBUFFER, rb)
 
-  if (rt.msaa) {
+  if (msaa) {
     gl.renderbufferStorageMultisample(
       gl.RENDERBUFFER,
-      min(rt.msaaSamples, rt.gl.getParameter(rt.gl.MAX_SAMPLES)),
+      msaa,
       type,
       gl.drawingBufferWidth,
       gl.drawingBufferHeight
