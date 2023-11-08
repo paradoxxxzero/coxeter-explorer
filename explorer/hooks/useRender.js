@@ -12,6 +12,13 @@ export const useRender = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
+      runtime.meshes.updateGeometries(runtime)
+      return runtime
+    })
+  }, [runtime.curve, runtime.segments, setRuntime])
+
+  useEffect(() => {
+    setRuntime(runtime => {
       runtime.meshes.changeArity(
         runtime.dimensions > 4 ? 9 : runtime.dimensions
       )

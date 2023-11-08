@@ -170,7 +170,7 @@ export const defaultParams = {
 
   zoom: 1.5,
   fov3: 90,
-  projection3: 'stereographic',
+  projection3: 'native',
   fov4: 90,
   projection4: 'stereographic',
 

@@ -275,7 +275,7 @@ vec3 xproject(in vec2 v) {
 #if DIMENSIONS >= 3
 vec3 xproject(in vec3 v) {
   #if PROJECTION3 == 0 // STEREOGRAPHIC
-  return v;
+  return vec3(v.xy / (v.z + 1.), 0); // TODO FIXME v.z+1 should be positive
   #elif PROJECTION3 == 1 // ORTHOGRAPHIC
   return vec3(v.xy, 0.);
   #elif PROJECTION3 == 2 // KLEIN
@@ -294,7 +294,7 @@ vec3 xproject(in vec3 v) {
   return v.yzx;
   #endif
 
-  return v.xyz;
+  return v;
 }
 #endif
 
@@ -557,7 +557,7 @@ vec3 inflate(in vec3 point, in vecN pos, in vec3 norm, in float size, in float m
   // Removing 3d length in perspective computation
   #if DIMENSIONS < 5
   pos.xy = vec2(1.);
-  #if DIMENSIONS >= 3 && PROJECTION3 == 0
+  #if DIMENSIONS >= 3 && PROJECTION3 == -1
   pos.z = 1.;
   #endif
   #else

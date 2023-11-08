@@ -41,6 +41,7 @@ export const initializeGl = rt => {
     console.warn('WebGL already initialized')
     updateCameraFov(rt)
     rt.meshes.recompilePrograms(rt)
+    rt.meshes.updateGeometries(rt)
     changeAmbiance(rt)
     rt.meshes.updateUniforms(rt, true)
     render(rt)

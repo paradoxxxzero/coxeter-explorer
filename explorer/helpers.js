@@ -271,16 +271,19 @@ export const attribute = (
   return attr
 }
 
-export const indices = (rt, indices) => {
+export const indices = (rt, vao, indices) => {
   const { gl } = rt
+  gl.bindVertexArray(vao)
   const buffer = gl.createBuffer()
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer)
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW)
   return {
     buffer,
+    vao,
     indices,
     count: indices.length,
     update(newIndices) {
+      gl.bindVertexArray(this.vao)
       this.indices = newIndices
       this.count = newIndices.length
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffer)
@@ -474,8 +477,7 @@ export const mesh = (
   }
   mesh.visible = true
   mesh.vao = gl.createVertexArray()
-  gl.bindVertexArray(mesh.vao)
-  mesh.indices = indices(rt, new Uint16Array(geometry.indices))
+  mesh.indices = indices(rt, mesh.vao, new Uint16Array(geometry.indices))
 
   mesh.attributes.vertex = attribute(
     rt,

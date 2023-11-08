@@ -347,13 +347,15 @@ export default function UI({
                         value={params[`projection${i}`]}
                         onChange={handleRawChange}
                       >
-                        {projections.map(p => (
-                          <option key={p} value={p}>
-                            {p
-                              .replace(/_/g, ' ')
-                              .replace(/./, c => c.toUpperCase())}
-                          </option>
-                        ))}
+                        {[...(i === 3 ? ['native'] : []), ...projections].map(
+                          p => (
+                            <option key={p} value={p}>
+                              {p
+                                .replace(/_/g, ' ')
+                                .replace(/./, c => c.toUpperCase())}
+                            </option>
+                          )
+                        )}
                       </select>
                     </label>
                   </div>
