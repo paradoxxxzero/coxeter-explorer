@@ -1,6 +1,7 @@
 import { ambiances, easings, lightings, projections } from '../statics'
 import ease from './shaders/includes/ease.glsl?raw'
 import globals from './shaders/includes/globals.glsl?raw'
+import helpers from './shaders/includes/helpers.glsl?raw'
 import project from './shaders/includes/project.glsl?raw'
 import lighting from './shaders/includes/lighting.glsl?raw'
 import { min } from './math'
@@ -53,6 +54,7 @@ export const resizeCanvasToDisplaySize = (canvas, multiplier) => {
 }
 export const includes = {
   globals,
+  helpers,
   ease,
   project,
   lighting,
@@ -623,6 +625,10 @@ if (import.meta.hot) {
   import.meta.hot.accept(
     './shaders/includes/project.glsl?raw',
     updateIncludeShader('project')
+  )
+  import.meta.hot.accept(
+    './shaders/includes/helpers.glsl?raw',
+    updateIncludeShader('helpers')
   )
   import.meta.hot.accept(
     './shaders/includes/lighting.glsl?raw',

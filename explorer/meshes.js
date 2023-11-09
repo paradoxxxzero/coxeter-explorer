@@ -1,15 +1,16 @@
-import { render } from 'react-dom'
 import { ambiances } from '../statics'
 import { sphere, tri, tube } from './geometries'
 import { mesh } from './helpers'
 import { PI, tan } from './math'
 import { columnMajor } from './math/matrix'
+import { render } from './render'
 import fragmentEdge from './shaders/edge/fragment.glsl?raw'
 import vertexEdge from './shaders/edge/vertex.glsl?raw'
 import fragmentFace from './shaders/face/fragment.glsl?raw'
 import vertexFace from './shaders/face/vertex.glsl?raw'
 import fragmentVertex from './shaders/vertex/fragment.glsl?raw'
 import vertexVertex from './shaders/vertex/vertex.glsl?raw'
+
 const geometries = {
   vertex: () => sphere(),
   edge: segments => tube({ segments }),
@@ -88,7 +89,7 @@ export default function getMeshes(rt) {
           }
         }
         mesh.uniforms.viewProjection.update(rt.camera.viewProjection)
-        if (mesh.uniforms.eye) {
+        if (ambiances[rt.ambiance].lighting) {
           mesh.uniforms.eye.update(rt.camera.eye)
         }
       }

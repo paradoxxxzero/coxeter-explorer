@@ -27,6 +27,7 @@ out vec3 vPosition;
 out vec3 vNormal;
 flat out vec3 vColor;
 
+#include helpers
 #include ease
 #include project
 
@@ -39,19 +40,11 @@ void main() {
   pos = xnormalize(pos);
 
   vec3 position = xproject(pos);
-  if(len(position) > BOUNDS) {
-    gl_Position = OOB;
-    vColor = vec3(0.f);
-    vPosition = vec3(0.f);
-    vNormal = vec3(0.f);
-  } else {
+  position = inflate(position, pos, normal, thickness, .01f);
 
-    position = inflate(position, pos, normal, thickness, .01f);
+  gl_Position = viewProjection * vec4(position, 1.f);
 
-    gl_Position = viewProjection * vec4(position, 1.f);
-
-    vColor = color;
-    vPosition = position;
-    vNormal = normal;
-  }
+  vColor = color;
+  vPosition = position;
+  vNormal = normal;
 }

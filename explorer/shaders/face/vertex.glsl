@@ -35,6 +35,7 @@ out vec3 vPosition;
 out vec3 vNormal;
 flat out vec3 vColor;
 
+#include helpers
 #include ease
 #include project
 
@@ -61,15 +62,9 @@ void main() {
   }
 
   vec3 position = xproject(pos);
-  if(len(position) > BOUNDS) {
-    gl_Position = OOB;
-    vColor = vec3(0.f);
-    vPosition = vec3(0.f);
-    vNormal = vec3(0.f);
-  } else {
 
-    vec3 nn = xproject(next) - position;
-    vec3 oo = xproject(other) - position;
+  vec3 nn = xproject(next) - position;
+  vec3 oo = xproject(other) - position;
 
   // Refine if near collinearity
   //   if(length(nn) < .0001 || length(oo) < .0001) {
@@ -85,10 +80,9 @@ void main() {
   //     oo = xproject(other) - position;
   //   }
 
-    gl_Position = viewProjection * vec4(position, 1.f);
+  gl_Position = viewProjection * vec4(position, 1.f);
 
-    vColor = color;
-    vPosition = position;
-    vNormal = normalize(cross(nn, oo));
-  }
+  vColor = color;
+  vPosition = position;
+  vNormal = normalize(cross(nn, oo));
 }

@@ -78,10 +78,13 @@ const AppWithHistory = () => {
       ) {
         return params
       }
-      const { params: finalParams, badParams } = filterParams({
-        ...params,
-        ...newParams,
-      })
+      const { params: finalParams, badParams } = filterParams(
+        {
+          ...params,
+          ...newParams,
+        },
+        Object.keys(newParams)
+      )
       if (!badParams.length) {
         syncParams(finalParams)
       }

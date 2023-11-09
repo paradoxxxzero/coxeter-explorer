@@ -9,6 +9,7 @@ export default function Runtime({
   runtime,
   setRuntime,
   rotations,
+  updateRotations,
   updateParams,
 }) {
   window.rt = runtime
@@ -42,6 +43,7 @@ export default function Runtime({
           <Interact
             runtime={runtime}
             rotations={rotations}
+            updateRotations={updateRotations}
             updateParams={updateParams}
           />
         ) : null}

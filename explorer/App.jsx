@@ -178,6 +178,7 @@ export default function App({ params, updateParams }) {
         runtime={runtime}
         rotations={rotations}
         setRuntime={setRuntime}
+        updateRotations={updateRotations}
         updateParams={updateParams}
       />
     </div>

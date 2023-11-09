@@ -12,8 +12,12 @@ export const projections = [
   'orthographic',
   'klein',
   'inverted',
-  'jemisphere',
+  'joukowsky',
   'upperhalf',
+  'band',
+  'heart',
+  'teardrop',
+  'square',
 ]
 export const easings = [
   'auto',
@@ -227,7 +231,7 @@ export const normalizeCoxeter = params => {
   return params
 }
 
-export const filterParams = maybeBadParams => {
+export const filterParams = (maybeBadParams, changed = []) => {
   const params = {
     ...maybeBadParams,
   }
@@ -271,20 +275,26 @@ export const filterParams = maybeBadParams => {
   ) {
     params.matrix = ident(params.dimensions)
   }
+  if (changed.includes('dimensions') && params.dimensions >= 4) {
+    params[`projection3`] = 'native'
+  }
   for (let i = 4; i <= 9; i++) {
     if (
       i <= params.dimensions &&
       !params[`fov${i}`] &&
       !badParams.includes(`fov${i}`)
     ) {
-      params[`fov${i}`] = i === 4 ? 90 : 45
+      params[`fov${i}`] = 90
     }
     if (
       i <= params.dimensions &&
-      !params[`projection${i}`] &&
+      (!params[`projection${i}`] || changed.includes('dimensions')) &&
       !badParams.includes(`projection${i}`)
     ) {
-      params[`projection${i}`] = 'stereographic'
+      params[`projection${i}`] =
+        i === params.dimensions
+          ? params[`projection${i + 1}`] || 'stereographic'
+          : 'orthographic'
     }
     if (i > params.dimensions && params[`fov${i}`]) {
       delete params[`fov${i}`]

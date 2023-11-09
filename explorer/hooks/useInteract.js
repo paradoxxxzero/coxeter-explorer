@@ -32,7 +32,14 @@ const translate = (x, y, shift, rotations, matrix, dimensions, curvature) => {
   )
 }
 
-export const keydown = (e, rotations, matrix, dimensions, curvature) => {
+export const keydown = (
+  e,
+  rotations,
+  matrix,
+  dimensions,
+  curvature,
+  updateRotations
+) => {
   const { code } = e
   const step = 0.01
   if (code === 'ArrowLeft' || code === 'KeyA') {
@@ -55,13 +62,20 @@ export const keydown = (e, rotations, matrix, dimensions, curvature) => {
     translate(-step, 0, 3, rotations, matrix, dimensions, curvature)
   } else if (code === 'KeyC') {
     translate(step, 0, 3, rotations, matrix, dimensions, curvature)
+  } else if (code === 'ControlLeft') {
+    updateRotations('shift', (rotations.shift + 1) % rotations.maxShift)
   } else {
     return
   }
   return true
 }
 
-export const useInteract = (runtime, rotations, updateParams) => {
+export const useInteract = (
+  runtime,
+  rotations,
+  updateRotations,
+  updateParams
+) => {
   const updateMatrix = useCallback(
     debounce(matrix => updateParams({ matrix }), 100),
     []
@@ -361,14 +375,11 @@ export const useInteract = (runtime, rotations, updateParams) => {
       if (
         keydown(
           e,
-          {
-            combinations: rotations.combinations,
-            auto: rotations.auto,
-            shift: rotations.shift,
-          },
+          rotations,
           localMatrix.current,
           runtime.dimensions,
-          runtime.curvature
+          runtime.curvature,
+          updateRotations
         )
       ) {
         quickUpdateMatrix()
@@ -379,11 +390,10 @@ export const useInteract = (runtime, rotations, updateParams) => {
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [
     quickUpdateMatrix,
-    rotations.auto,
-    rotations.combinations,
-    rotations.shift,
+    rotations,
     runtime.curvature,
     runtime.dimensions,
+    updateRotations,
     updateMatrix,
   ])
 
