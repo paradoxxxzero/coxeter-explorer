@@ -1,30 +1,10 @@
 import Stats from 'stats.js'
 import { ambiances } from '../statics'
-import { sphere, tri, tube } from './geometries'
-import {
-  compileProgram,
-  mesh,
-  renderMesh,
-  resizeCanvasToDisplaySize,
-} from './helpers'
-import { PI, min, tan } from './math'
+import { resizeCanvasToDisplaySize } from './helpers'
+import { PI, min } from './math'
 import { columnMajor, lookAt, multiply, perspective } from './math/matrix'
-import fragmentAfterimage from './shaders/afterimage/fragment.glsl?raw'
-import vertexAfterimage from './shaders/afterimage/vertex.glsl?raw'
-import fragmentBloom from './shaders/bloom/fragment.glsl?raw'
-import vertexBloom from './shaders/bloom/vertex.glsl?raw'
-import fragmentDown from './shaders/down/fragment.glsl?raw'
-import vertexDown from './shaders/down/vertex.glsl?raw'
-import fragmentEdge from './shaders/edge/fragment.glsl?raw'
-import vertexEdge from './shaders/edge/vertex.glsl?raw'
-import fragmentFace from './shaders/face/fragment.glsl?raw'
-import vertexFace from './shaders/face/vertex.glsl?raw'
-import fragmentOit from './shaders/oit/fragment.glsl?raw'
-import vertexOit from './shaders/oit/vertex.glsl?raw'
-import fragmentUp from './shaders/up/fragment.glsl?raw'
-import vertexUp from './shaders/up/vertex.glsl?raw'
-import fragmentVertex from './shaders/vertex/fragment.glsl?raw'
-import vertexVertex from './shaders/vertex/vertex.glsl?raw'
+import getMeshes from './meshes'
+import getPasses from './passes'
 import refreshTextures from './textures'
 
 const showStats = window.location.search.includes('stats')
@@ -36,17 +16,6 @@ if (showStats) {
 }
 
 export const initializeGl = rt => {
-  if (document.getElementById('webgl2')) {
-    // Fast refresh
-    console.warn('WebGL already initialized')
-    updateCameraFov(rt)
-    rt.meshes.recompilePrograms(rt)
-    rt.meshes.updateGeometries(rt)
-    changeAmbiance(rt)
-    rt.meshes.updateUniforms(rt, true)
-    render(rt)
-    return rt
-  }
   const canvas = document.createElement('canvas')
   canvas.id = 'webgl2'
   document.body.appendChild(canvas)
@@ -85,107 +54,8 @@ export const initializeGl = rt => {
   }
   camera.update()
 
-  const passes = {
-    oit: {
-      attributes: {},
-      ...compileProgram(rt, 'oit', vertexOit, fragmentOit, [
-        {
-          name: 'accumTexture',
-          type: '1i',
-          value: 0,
-        },
-        {
-          name: 'revealageTexture',
-          type: '1i',
-          value: 1,
-        },
-      ]),
-    },
-    kawase: {
-      down: {
-        attributes: {},
-        ...compileProgram(rt, 'kawase/down', vertexDown, fragmentDown, [
-          {
-            name: 'screen',
-            type: '1i',
-            value: 0,
-          },
-          {
-            name: 'offset',
-            type: '1f',
-            value: 0,
-          },
-        ]),
-      },
-
-      up: {
-        attributes: {},
-        ...compileProgram(rt, 'kawase/up', vertexUp, fragmentUp, [
-          {
-            name: 'screen',
-            type: '1i',
-            value: 0,
-          },
-          {
-            name: 'offset',
-            type: '1f',
-            value: 0,
-          },
-        ]),
-      },
-    },
-    afterimage: {
-      attributes: {},
-      ...compileProgram(
-        rt,
-        'afterimage',
-        vertexAfterimage,
-        fragmentAfterimage,
-        [
-          {
-            name: 'screen',
-            type: '1i',
-            value: 0,
-          },
-          {
-            name: 'afterImage',
-            type: '1i',
-            value: 1,
-          },
-          {
-            name: 'strength',
-            type: '1f',
-            value: 1,
-          },
-        ]
-      ),
-    },
-    bloom: {
-      attributes: {},
-      ...compileProgram(rt, 'bloom', vertexBloom, fragmentBloom, [
-        {
-          name: 'screen',
-          type: '1i',
-          value: 0,
-        },
-        {
-          name: 'bloom',
-          type: '1i',
-          value: 1,
-        },
-        {
-          name: 'exposure',
-          type: '1f',
-          value: 1,
-        },
-        {
-          name: 'strength',
-          type: '1f',
-          value: 1,
-        },
-      ]),
-    },
-  }
+  const passes = getPasses(rt)
+  const meshes = getMeshes(rt)
 
   const rb = {
     base: gl.createRenderbuffer(),
@@ -196,219 +66,7 @@ export const initializeGl = rt => {
     base: gl.createFramebuffer(),
   }
 
-  const arity = rt.dimensions > 4 ? 9 : rt.dimensions
-  const geometries = {
-    vertex: () => sphere(),
-    edge: segments => tube({ segments }),
-    face: segments => tri({ segments }),
-  }
-
-  const meshes = {
-    vertex: mesh(
-      rt,
-      'vertex',
-      vertexVertex,
-      fragmentVertex,
-      geometries.vertex,
-      10000,
-      arity
-    ),
-    edge: mesh(
-      rt,
-      'edge',
-      vertexEdge,
-      fragmentEdge,
-      geometries.edge,
-      10000,
-      arity,
-      ['position', 'target']
-    ),
-    face: mesh(
-      rt,
-      'face',
-      vertexFace,
-      fragmentFace,
-      geometries.face,
-      10000,
-      arity,
-      ['position', 'target', 'center']
-    ),
-    changeArity(arity) {
-      const meshes = ['vertex', 'edge', 'face']
-      for (let i = 0; i < meshes.length; i++) {
-        this[meshes[i]].changeArity(arity)
-      }
-    },
-    updateGeometries(rt) {
-      const meshes = ['vertex', 'edge', 'face']
-      for (let i = 0; i < meshes.length; i++) {
-        this[meshes[i]].updateGeometry(rt)
-      }
-    },
-    recompilePrograms(rt) {
-      const meshes = ['vertex', 'edge', 'face']
-      for (let i = 0; i < meshes.length; i++) {
-        this[meshes[i]].recompileProgram(rt)
-      }
-    },
-    updateUniforms(rt, quick = false) {
-      const meshes = ['vertex', 'edge', 'face']
-      for (let i = 0; i < meshes.length; i++) {
-        const type = meshes[i]
-        const mesh = this[type]
-        if (!quick) {
-          mesh.uniforms.curvature.update(rt.curvature)
-          mesh.uniforms.matrix.update(columnMajor(rt.matrix))
-          for (let i = 4; i <= rt.dimensions; i++) {
-            mesh.uniforms[`fov${i}`].update(
-              tan((PI * rt[`fov${i}`] * 0.5) / 180)
-            )
-          }
-          if (type === 'vertex') {
-            mesh.uniforms.thickness.update(rt.vertexThickness)
-          } else if (type === 'edge') {
-            mesh.uniforms.thickness.update(rt.edgeThickness)
-          } else {
-            mesh.uniforms.segments.update(rt.curve ? rt.segments : 1)
-            mesh.uniforms.opacity.update(ambiances[rt.ambiance].opacity)
-          }
-        }
-        mesh.uniforms.viewProjection.update(rt.camera.viewProjection)
-        if (mesh.uniforms.eye) {
-          mesh.uniforms.eye.update(rt.camera.eye)
-        }
-      }
-    },
-    plotType(rt, type, range) {
-      const mesh = this[type]
-      const objects = rt[type]
-      const { dimensions } = rt
-      const ambiance = ambiances[rt.ambiance]
-
-      let start = range ? range[0] : 0
-      let stop = range ? range[1] : objects.length
-      if (start === stop) {
-        return
-      }
-      let startIdx = start
-      let stopIdx = stop
-      if (type === 'face') {
-        let idx = 0
-        for (let i = 0; i < start; i++) {
-          const vertices = objects[i].vertices.length
-          idx += vertices < 3 ? 0 : vertices === 3 ? 1 : vertices
-        }
-        startIdx = idx
-        for (let i = start; i < stop; i++) {
-          const vertices = objects[i].vertices.length
-          idx += vertices < 3 ? 0 : vertices === 3 ? 1 : vertices
-        }
-        stopIdx = idx
-      }
-
-      if (mesh.instances < stopIdx) {
-        mesh.extendAttributes(stopIdx)
-      }
-      mesh.count = stopIdx
-      const arity = dimensions > 4 ? 9 : dimensions
-
-      let idx = startIdx
-      for (let i = start; i < stop; i++) {
-        let vertices = []
-        const object = objects[i]
-        if (type === 'vertex') {
-          vertices.push({
-            ...object,
-            position: object.vertex,
-            type,
-          })
-        } else if (type === 'edge') {
-          vertices.push({
-            ...object,
-            position: rt.vertex[object.start].vertex,
-            target: rt.vertex[object.end].vertex,
-            type,
-          })
-        } else {
-          if (object.vertices.length < 3) {
-            continue
-          }
-          if (object.vertices.length === 3) {
-            vertices.push({
-              ...object,
-              position: rt.vertex[object.vertices[0]].vertex,
-              target: rt.vertex[object.vertices[1]].vertex,
-              center: rt.vertex[object.vertices[2]].vertex,
-            })
-          } else {
-            const faceVertices = new Array(object.vertices.length)
-            for (let j = 0; j < object.vertices.length; j++) {
-              faceVertices[j] = rt.vertex[object.vertices[j]].vertex
-            }
-            const center = new Array(dimensions).fill(0)
-            for (let j = 0; j < faceVertices.length; j++) {
-              const vertices = faceVertices[j]
-              for (let k = 0; k < dimensions; k++) {
-                center[k] += vertices[k]
-              }
-            }
-            for (let j = 0; j < dimensions; j++) {
-              center[j] /= faceVertices.length
-            }
-            for (let j = 0; j < faceVertices.length; j++) {
-              const vertex = {
-                ...object,
-                position: faceVertices[j],
-                target: faceVertices[(j + 1) % faceVertices.length],
-                center,
-              }
-              if (object.word.length % 2 === (rt.curvature > 0 ? 0 : 1)) {
-                ;[vertex.position, vertex.target] = [
-                  vertex.target,
-                  vertex.position,
-                ]
-              }
-              vertices.push(vertex)
-            }
-          }
-        }
-
-        for (let j = 0; j < vertices.length; j++) {
-          const vertex = vertices[j]
-          for (let k = 0; k < dimensions; k++) {
-            for (let l = 0; l < mesh.varying.length; l++) {
-              const attr = mesh.varying[l]
-              mesh.attributes[attr].data[idx * arity + k] = vertex[attr][k]
-            }
-          }
-          const c = ambiance.color(vertex, type, rt)
-          mesh.attributes.color.data[idx * 3 + 0] = c[0]
-          mesh.attributes.color.data[idx * 3 + 1] = c[1]
-          mesh.attributes.color.data[idx * 3 + 2] = c[2]
-          idx++
-        }
-        for (let l = 0; l < mesh.varying.length; l++) {
-          const attr = mesh.varying[l]
-          mesh.attributes[attr].update(startIdx, stopIdx)
-        }
-        mesh.attributes.color.update(startIdx, stopIdx)
-      }
-    },
-    plot(rt, ranges) {
-      const meshes = ['vertex', 'edge', 'face']
-      for (let i = 0; i < meshes.length; i++) {
-        const type = meshes[i]
-        const mesh = this[type]
-        if (mesh.visible) {
-          this.plotType(rt, type, ranges[type])
-        }
-      }
-    },
-  }
-
-  meshes.edge.visible = rt.showEdges
-  meshes.vertex.visible = rt.showVertices
-  meshes.face.visible = rt.showFaces
+  const textures = {}
 
   return {
     ...rt,
@@ -418,6 +76,7 @@ export const initializeGl = rt => {
     passes,
     rb,
     fb,
+    textures,
   }
 }
 
@@ -477,11 +136,11 @@ export const changeAmbiance = rt => {
   if (ambiance.glow) {
     rt.passes.bloom.uniforms.exposure.update(ambiance.glow.exposure)
     rt.passes.bloom.uniforms.strength.update(ambiance.glow.strength)
-    rt.passes.kawase.down.uniforms.offset.update(ambiance.glow.offset.down)
-    rt.passes.kawase.up.uniforms.offset.update(ambiance.glow.offset.up)
+    rt.passes.down.uniforms.offset.update(ambiance.glow.offset.down)
+    rt.passes.up.uniforms.offset.update(ambiance.glow.offset.up)
   }
   if (ambiance.afterImage) {
-    rt.passes.afterimage.uniforms.strength.update(ambiance.afterImage)
+    rt.passes.afterImage.uniforms.strength.update(ambiance.afterImage)
   }
 }
 
@@ -512,8 +171,8 @@ export const render = rt => {
   gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.base)
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-  renderMesh(rt, 'vertex')
-  renderMesh(rt, 'edge')
+  rt.meshes.vertex.render(rt)
+  rt.meshes.edge.render(rt)
 
   // TRANSPARENT
   if (
@@ -544,7 +203,7 @@ export const render = rt => {
     gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.oit)
     gl.clear(gl.COLOR_BUFFER_BIT)
 
-    renderMesh(rt, 'face')
+    rt.meshes.face.render(rt)
 
     // COMPOSITE
 
@@ -556,10 +215,10 @@ export const render = rt => {
 
     gl.useProgram(rt.passes.oit.program)
     gl.activeTexture(gl.TEXTURE0)
-    gl.bindTexture(gl.TEXTURE_2D, rt.passes.oit.accumTexture.texture)
+    gl.bindTexture(gl.TEXTURE_2D, rt.textures.oitAccum.texture)
 
     gl.activeTexture(gl.TEXTURE1)
-    gl.bindTexture(gl.TEXTURE_2D, rt.passes.oit.revealTexture.texture)
+    gl.bindTexture(gl.TEXTURE_2D, rt.textures.oitReveal.texture)
     gl.drawArrays(gl.TRIANGLES, 0, 3)
   } else {
     if (ambiance.opacity < 1 && ambiance.transparency === 'blend') {
@@ -567,11 +226,11 @@ export const render = rt => {
       gl.depthMask(false)
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
     }
-    renderMesh(rt, 'face')
+    rt.meshes.face.render(rt)
   }
 
   const out = ambiance.afterImage
-    ? rt.fb.afterimage
+    ? rt.fb.afterImage
     : ambiance.glow
     ? rt.fb.bloom
     : null
@@ -584,7 +243,7 @@ export const render = rt => {
       gl.FRAMEBUFFER,
       gl.COLOR_ATTACHMENT0,
       gl.TEXTURE_2D,
-      rt.passes.afterimage.screen.texture,
+      rt.textures.afterImageScreen.texture,
       0
     )
   }
@@ -601,32 +260,32 @@ export const render = rt => {
     gl.NEAREST
   )
 
-  let bloomIn = rt.passes.bloom.screen
+  let bloomIn = rt.textures.bloom
 
   if (ambiance.afterImage) {
-    gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.afterimage)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.afterImage)
     gl.framebufferTexture2D(
       gl.FRAMEBUFFER,
       gl.COLOR_ATTACHMENT0,
       gl.TEXTURE_2D,
-      rt.passes.afterimage.outScreen.texture,
+      rt.textures.afterImageOutScreen.texture,
       0
     )
-    gl.useProgram(rt.passes.afterimage.program)
+    gl.useProgram(rt.passes.afterImage.program)
     gl.activeTexture(gl.TEXTURE0)
-    gl.bindTexture(gl.TEXTURE_2D, rt.passes.afterimage.screen.texture)
+    gl.bindTexture(gl.TEXTURE_2D, rt.textures.afterImageScreen.texture)
     gl.activeTexture(gl.TEXTURE1)
-    gl.bindTexture(gl.TEXTURE_2D, rt.passes.afterimage.lastScreen.texture)
+    gl.bindTexture(gl.TEXTURE_2D, rt.textures.afterImageLastScreen.texture)
     gl.drawArrays(gl.TRIANGLES, 0, 3)
     if (ambiance.glow) {
-      bloomIn = rt.passes.afterimage.outScreen
+      bloomIn = rt.textures.afterImageOutScreen
     } else {
-      gl.bindFramebuffer(gl.READ_FRAMEBUFFER, rt.fb.afterimage)
+      gl.bindFramebuffer(gl.READ_FRAMEBUFFER, rt.fb.afterImage)
       gl.framebufferTexture2D(
         gl.FRAMEBUFFER,
         gl.COLOR_ATTACHMENT0,
         gl.TEXTURE_2D,
-        rt.passes.afterimage.outScreen.texture,
+        rt.textures.afterImageOutScreen.texture,
         0
       )
       gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null)
@@ -643,9 +302,9 @@ export const render = rt => {
         gl.NEAREST
       )
     }
-    ;[rt.passes.afterimage.outScreen, rt.passes.afterimage.lastScreen] = [
-      rt.passes.afterimage.lastScreen,
-      rt.passes.afterimage.outScreen,
+    ;[rt.textures.afterImageOutScreen, rt.textures.afterImageLastScreen] = [
+      rt.textures.afterImageLastScreen,
+      rt.textures.afterImageOutScreen,
     ]
   }
 
@@ -657,10 +316,10 @@ export const render = rt => {
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.kawase)
 
-    gl.useProgram(rt.passes.kawase.down.program)
+    gl.useProgram(rt.passes.down.program)
     for (let i = 0; i < ambiance.glow.steps; i++) {
-      const inTexture = i === 0 ? bloomIn : rt.passes.kawase.textures[i - 1]
-      const outTexture = rt.passes.kawase.textures[i]
+      const inTexture = i === 0 ? bloomIn : rt.textures.kawase[i - 1]
+      const outTexture = rt.textures.kawase[i]
       gl.viewport(0, 0, outTexture.width, outTexture.height)
 
       gl.activeTexture(gl.TEXTURE0)
@@ -675,11 +334,10 @@ export const render = rt => {
       gl.drawArrays(gl.TRIANGLES, 0, 3)
     }
 
-    gl.useProgram(rt.passes.kawase.up.program)
+    gl.useProgram(rt.passes.up.program)
     for (let i = ambiance.glow.steps - 1; i >= 0; i--) {
-      const inTexture = rt.passes.kawase.textures[i]
-      const outTexture =
-        i === 0 ? rt.passes.kawase.blur : rt.passes.kawase.textures[i - 1]
+      const inTexture = rt.textures.kawase[i]
+      const outTexture = i === 0 ? rt.textures.blur : rt.textures.kawase[i - 1]
       gl.viewport(0, 0, outTexture.width, outTexture.height)
 
       gl.activeTexture(gl.TEXTURE0)
@@ -699,7 +357,46 @@ export const render = rt => {
     gl.activeTexture(gl.TEXTURE0)
     gl.bindTexture(gl.TEXTURE_2D, bloomIn.texture)
     gl.activeTexture(gl.TEXTURE1)
-    gl.bindTexture(gl.TEXTURE_2D, rt.passes.kawase.blur.texture)
+    gl.bindTexture(gl.TEXTURE_2D, rt.textures.blur.texture)
     gl.drawArrays(gl.TRIANGLES, 0, 3)
   }
+}
+
+window.render = render
+
+if (import.meta.hot) {
+  const updateMeshShader = (mesh, type) => module => {
+    const rt = window.rt
+    console.debug('Accepting the new shader!')
+    rt.meshes[mesh][type] = module.default
+    rt.meshes.recompilePrograms(rt)
+    rt.meshes.updateUniforms(rt)
+
+    render(rt)
+  }
+
+  import.meta.hot.accept(
+    './shaders/edge/fragment.glsl?raw',
+    updateMeshShader('edge', 'fragment')
+  )
+  import.meta.hot.accept(
+    './shaders/edge/vertex.glsl?raw',
+    updateMeshShader('edge', 'vertex')
+  )
+  import.meta.hot.accept(
+    './shaders/face/fragment.glsl?raw',
+    updateMeshShader('face', 'fragment')
+  )
+  import.meta.hot.accept(
+    './shaders/face/vertex.glsl?raw',
+    updateMeshShader('face', 'vertex')
+  )
+  import.meta.hot.accept(
+    './shaders/vertex/fragment.glsl?raw',
+    updateMeshShader('vertex', 'fragment')
+  )
+  import.meta.hot.accept(
+    './shaders/vertex/vertex.glsl?raw',
+    updateMeshShader('vertex', 'vertex')
+  )
 }

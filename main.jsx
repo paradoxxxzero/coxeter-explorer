@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './explorer/App.jsx'
 import './index.css'
 import { defaultParams, filterParams } from './statics.js'
-// import 'https://greggman.github.io/webgl-lint/webgl-lint.js'
+import 'https://greggman.github.io/webgl-lint/webgl-lint.js'
 
 const parse = s => {
   const replacer = (k, v) => {
@@ -47,20 +47,23 @@ const arrayEquals = (a, b) => {
 
 const AppWithHistory = () => {
   const [params, setParams] = useState(parseParams(defaultParams))
-  const popstate = useCallback(() => {
-    const newParams = parseParams()
-    if (newParams) {
-      Object.entries(newParams).forEach(([k, v]) => {
-        if (Array.isArray(v)) {
-          if (arrayEquals(v, params[k])) {
-            newParams[k] = params[k]
+  const popstate = useCallback(
+    e => {
+      const newParams = parseParams()
+      if (newParams) {
+        Object.entries(newParams).forEach(([k, v]) => {
+          if (Array.isArray(v)) {
+            if (arrayEquals(v, params[k])) {
+              newParams[k] = params[k]
+            }
           }
-        }
-      })
+        })
 
-      setParams(newParams)
-    }
-  }, [params])
+        setParams(newParams)
+      }
+    },
+    [params]
+  )
 
   const updateParams = useCallback(newParams => {
     setParams(params => {
@@ -101,9 +104,3 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <AppWithHistory />
   // </React.StrictMode>
 )
-
-if (import.meta.hot) {
-  import.meta.hot.accept('./explorer/render.js', module => {
-    console.debug('Accepting the updated render module!')
-  })
-}

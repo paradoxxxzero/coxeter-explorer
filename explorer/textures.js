@@ -32,13 +32,13 @@ export default function refreshTextures(rt) {
     gl.deleteFramebuffer(rt.fb.oit)
     rt.fb.oit = null
   }
-  if (rt.passes.oit.accumTexture) {
-    gl.deleteTexture(rt.passes.oit.accumTexture.texture)
-    rt.passes.oit.accumTexture = null
+  if (rt.textures.oitAccum) {
+    gl.deleteTexture(rt.textures.oitAccum.texture)
+    rt.textures.oitAccum = null
   }
-  if (rt.passes.oit.revealTexture) {
-    gl.deleteTexture(rt.passes.oit.revealTexture.texture)
-    rt.passes.oit.revealTexture = null
+  if (rt.textures.oitReveal) {
+    gl.deleteTexture(rt.textures.oitReveal.texture)
+    rt.textures.oitReveal = null
   }
   if (rt.rb.depth_copy) {
     gl.deleteRenderbuffer(rt.rb.depth_copy)
@@ -72,48 +72,48 @@ export default function refreshTextures(rt) {
 
     gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1])
 
-    rt.passes.oit.accumTexture = texture(rt, gl.RGBA16F)
+    rt.textures.oitAccum = texture(rt, gl.RGBA16F)
     gl.framebufferTexture2D(
       gl.FRAMEBUFFER,
       gl.COLOR_ATTACHMENT0,
       gl.TEXTURE_2D,
-      rt.passes.oit.accumTexture.texture,
+      rt.textures.oitAccum.texture,
       0
     )
 
-    rt.passes.oit.revealTexture = texture(rt, gl.R16F)
+    rt.textures.oitReveal = texture(rt, gl.R16F)
     gl.framebufferTexture2D(
       gl.FRAMEBUFFER,
       gl.COLOR_ATTACHMENT1,
       gl.TEXTURE_2D,
-      rt.passes.oit.revealTexture.texture,
+      rt.textures.oitReveal.texture,
       0
     )
   }
 
   // AFTERIMAGE
-  if (rt.fb.afterimage) {
-    gl.deleteFramebuffer(rt.fb.afterimage)
-    rt.fb.afterimage = null
+  if (rt.fb.afterImage) {
+    gl.deleteFramebuffer(rt.fb.afterImage)
+    rt.fb.afterImage = null
   }
-  if (rt.passes.afterimage.lastScreen) {
-    gl.deleteTexture(rt.passes.afterimage.lastScreen.texture)
-    rt.passes.afterimage.lastScreen = null
+  if (rt.textures.afterImageLastScreen) {
+    gl.deleteTexture(rt.textures.afterImageLastScreen.texture)
+    rt.textures.afterImageLastScreen = null
   }
-  if (rt.passes.afterimage.screen) {
-    gl.deleteTexture(rt.passes.afterimage.screen.texture)
-    rt.passes.afterimage.screen = null
+  if (rt.textures.afterImageScreen) {
+    gl.deleteTexture(rt.textures.afterImageScreen.texture)
+    rt.textures.afterImageScreen = null
   }
-  if (rt.passes.afterimage.outScreen) {
-    gl.deleteTexture(rt.passes.afterimage.outScreen.texture)
-    rt.passes.afterimage.outScreen = null
+  if (rt.textures.afterImageOutScreen) {
+    gl.deleteTexture(rt.textures.afterImageOutScreen.texture)
+    rt.textures.afterImageOutScreen = null
   }
   if (ambiance.afterImage) {
-    rt.fb.afterimage = gl.createFramebuffer()
-    gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.afterimage)
-    rt.passes.afterimage.lastScreen = texture(rt, gl.RGBA8)
-    rt.passes.afterimage.screen = texture(rt, gl.RGBA8)
-    rt.passes.afterimage.outScreen = texture(rt, gl.RGBA8)
+    rt.fb.afterImage = gl.createFramebuffer()
+    gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.afterImage)
+    rt.textures.afterImageLastScreen = texture(rt, gl.RGBA8)
+    rt.textures.afterImageScreen = texture(rt, gl.RGBA8)
+    rt.textures.afterImageOutScreen = texture(rt, gl.RGBA8)
   }
 
   // BLOOM
@@ -125,49 +125,45 @@ export default function refreshTextures(rt) {
     gl.deleteFramebuffer(rt.fb.bloom)
     rt.fb.bloom = null
   }
-  if (rt.passes.kawase.textures) {
-    for (let i = 0; i < rt.passes.kawase.textures.length; i++) {
-      gl.deleteTexture(rt.passes.kawase.textures[i].texture)
+  if (rt.textures.kawase) {
+    for (let i = 0; i < rt.textures.kawase.length; i++) {
+      gl.deleteTexture(rt.textures.kawase[i].texture)
     }
-    rt.passes.kawase.textures = null
+    rt.textures.kawase = null
   }
-  if (rt.passes.kawase.blur) {
-    gl.deleteTexture(rt.passes.kawase.blur.texture)
-    rt.passes.kawase.blur = null
+  if (rt.textures.blur) {
+    gl.deleteTexture(rt.textures.blur.texture)
+    rt.textures.blur = null
   }
-  if (rt.passes.bloom.screen) {
-    gl.deleteTexture(rt.passes.bloom.screen.texture)
-    rt.passes.bloom.screen = null
+  if (rt.textures.bloom) {
+    gl.deleteTexture(rt.textures.bloom.texture)
+    rt.textures.bloom = null
   }
 
   if (ambiance.glow) {
     rt.fb.kawase = gl.createFramebuffer()
     rt.fb.bloom = gl.createFramebuffer()
     gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.kawase)
-    rt.passes.kawase.textures = []
+    rt.textures.kawase = []
     for (let i = 0; i < ambiance.glow.steps; i++) {
-      rt.passes.kawase.textures[i] = texture(
-        rt,
-        gl.RGBA8,
-        ambiance.glow.pow ** -i
-      )
+      rt.textures.kawase[i] = texture(rt, gl.RGBA8, ambiance.glow.pow ** -i)
     }
-    rt.passes.kawase.blur = texture(rt, gl.RGBA8)
+    rt.textures.blur = texture(rt, gl.RGBA8)
     gl.framebufferTexture2D(
       gl.FRAMEBUFFER,
       gl.COLOR_ATTACHMENT0,
       gl.TEXTURE_2D,
-      rt.passes.kawase.blur.texture,
+      rt.textures.blur.texture,
       0
     )
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.bloom)
-    rt.passes.bloom.screen = texture(rt, gl.RGBA8)
+    rt.textures.bloom = texture(rt, gl.RGBA8)
     gl.framebufferTexture2D(
       gl.FRAMEBUFFER,
       gl.COLOR_ATTACHMENT0,
       gl.TEXTURE_2D,
-      rt.passes.bloom.screen.texture,
+      rt.textures.bloom.texture,
       0
     )
   }

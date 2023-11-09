@@ -7,40 +7,40 @@ import { sortRotations } from './math/hypermath'
 import { initializeGl } from './render'
 
 export default function App({ params, updateParams }) {
-  window.p = params
-  const [runtime, setRuntime] = useState(() => {
-    return {
-      ...params,
+  const [runtime, setRuntime] = useState({
+    ...params,
 
-      currentOrder: 0,
-      askedOrder: null,
-      spaceType: null,
-      curvature: null,
-      mirrorsPlanes: null,
-      rootVertex: null,
-      vertex: [],
-      edge: [],
-      ranges: [],
-      face: [],
-      processing: true,
-      error: null,
-      renderError: null,
-    }
+    currentOrder: 0,
+    askedOrder: null,
+    spaceType: null,
+    curvature: null,
+    mirrorsPlanes: null,
+    rootVertex: null,
+    vertex: [],
+    edge: [],
+    ranges: [],
+    face: [],
+    processing: true,
+    error: null,
+    renderError: null,
   })
 
   useEffect(() => {
-    setRuntime(runtime => {
+    setRuntime(rt => {
       try {
-        return initializeGl(runtime)
+        if (!rt.gl) {
+          return initializeGl(rt)
+        }
+        return rt
       } catch (e) {
         console.error(e)
         return {
-          ...runtime,
+          ...rt,
           error: e.message,
         }
       }
     })
-  }, [])
+  }, [runtime.gl])
 
   const [rotations, setRotations] = useState({
     shift: 0,
@@ -50,8 +50,8 @@ export default function App({ params, updateParams }) {
   })
 
   useEffect(() => {
-    setRuntime(runtime => ({
-      ...runtime,
+    setRuntime(rt => ({
+      ...rt,
       ...filterParams({
         order: params.order,
         ambiance: params.ambiance,
@@ -141,12 +141,12 @@ export default function App({ params, updateParams }) {
   }, [params.dimensions])
 
   useEffect(() => {
-    setRuntime(runtime => {
-      if (params.grouper === '' && runtime.grouper.startsWith('auto-')) {
-        return runtime
+    setRuntime(rt => {
+      if (params.grouper === '' && rt.grouper.startsWith('auto-')) {
+        return rt
       }
       return {
-        ...runtime,
+        ...rt,
         grouper: params.grouper,
       }
     })
@@ -161,6 +161,7 @@ export default function App({ params, updateParams }) {
     },
     [setRotations]
   )
+
   return runtime.gl ? (
     <div
       className={runtime.error || runtime.renderError ? 'error' : ''}
@@ -181,4 +182,8 @@ export default function App({ params, updateParams }) {
       />
     </div>
   ) : null
+}
+
+if (import.meta.hot) {
+  import.meta.hot.accept('./render.js', module => {})
 }

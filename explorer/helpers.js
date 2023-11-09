@@ -6,6 +6,7 @@ import lighting from './shaders/includes/lighting.glsl?raw'
 import { min } from './math'
 import { range } from '../utils'
 import { columnMajor, ident } from './math/matrix'
+import { render } from './render'
 
 export const hueToRgb = (p, q, t) => {
   if (t < 0) t += 1
@@ -50,7 +51,7 @@ export const resizeCanvasToDisplaySize = (canvas, multiplier) => {
   }
   return false
 }
-const includes = {
+export const includes = {
   globals,
   ease,
   project,
@@ -171,6 +172,11 @@ export const compileProgram = (
         this.uniforms[name].update(value)
       })
     },
+    // resetUniforms() {
+    //   this.uniformsDef.forEach(({ name, type, value }) => {
+    //     this.uniforms[name].update(value)
+    //   })
+    // },
   }
   rv.bindUniforms(rt)
   return rv
@@ -302,42 +308,59 @@ export const uniform = (rt, program, name, type) => {
         const n = parseInt(type.slice(1, 2))
         if (n > 4) {
           for (let i = 0; i < n; i++) {
-            gl.uniform4fv(
-              gl.getUniformLocation(this.program, name + `.c${i + 1}.v`),
-              value[i][0]
+            const location = gl.getUniformLocation(
+              program,
+              `${name}.c${i + 1}.v`
             )
+            if (location !== null) {
+              gl.uniform4fv(location, value[i][0])
+            }
             if (n - 4 === 1) {
-              gl.uniform1f(
-                gl.getUniformLocation(this.program, name + `.c${i + 1}.u`),
-                value[i][1]
+              const location = gl.getUniformLocation(
+                program,
+                `${name}.c${i + 1}.u`
               )
+              if (location !== null) {
+                gl.uniform1f(location, value[i][1])
+              }
             } else if (n - 4 > 1) {
-              gl[`uniform${min(n - 4, 4)}fv`](
-                gl.getUniformLocation(this.program, name + `.c${i + 1}.u`),
-                value[i][1]
+              const location = gl.getUniformLocation(
+                program,
+                `${name}.c${i + 1}.u`
               )
+              if (location !== null) {
+                gl[`uniform${min(n - 4, 4)}fv`](location, value[i][1])
+              }
               if (n - 8 === 1) {
-                gl.uniform1f(
-                  gl.getUniformLocation(this.program, name + `.c${i + 1}.t`),
-                  value[i][2]
+                const location = gl.getUniformLocation(
+                  program,
+                  `${name}.c${i + 1}.t`
                 )
+                if (location !== null) {
+                  gl.uniform1f(location, value[i][2])
+                }
               }
             }
           }
         } else {
-          gl[`uniformMatrix${type.slice(1)}`](
-            gl.getUniformLocation(program, name),
-            false,
-            value
-          )
+          const location = gl.getUniformLocation(program, name)
+          if (location !== null) {
+            gl[`uniformMatrix${type.slice(1)}`](location, false, value)
+          }
         }
       } else {
-        gl[`uniform${type}`](gl.getUniformLocation(program, name), value)
+        const location = gl.getUniformLocation(program, name)
+        if (location !== null) {
+          gl[`uniform${type}`](location, value)
+        }
       }
     },
     get() {
       gl.useProgram(this.program)
-      return gl.getUniform(this.program, gl.getUniformLocation(program, name))
+      const location = gl.getUniformLocation(program, name)
+      if (location !== null) {
+        return gl.getUniform(this.program, location)
+      }
     },
   }
   return uniform
@@ -371,6 +394,18 @@ export const texture = (rt, type, scale = null) => {
   return { texture, width, height }
 }
 
+export const pass = (rt, name, vertex, fragment, uniforms = []) => {
+  const pass = {
+    name,
+    vertex,
+    fragment,
+    ...compileProgram(rt, name, vertex, fragment, uniforms),
+    recompileProgram(rt) {
+      this.recompile(rt, this.vertex, this.fragment, uniforms)
+    },
+  }
+  return { [name]: pass }
+}
 export const mesh = (
   rt,
   type,
@@ -379,6 +414,7 @@ export const mesh = (
   geometryFunc,
   size,
   arity,
+  visible = true,
   varying = ['position']
 ) => {
   const { gl } = rt
@@ -435,15 +471,19 @@ export const mesh = (
     })),
   ]
 
+  arity = arity > 4 ? 9 : arity
   const mesh = {
     attributes: {},
     varying,
+    vertex,
+    fragment,
     ...compileProgram(rt, type, ...augment(rt, vertex, fragment), uniforms(rt)),
     recompileProgram(rt) {
-      const [newVertex, newFragment] = augment(rt, vertex, fragment)
+      const [newVertex, newFragment] = augment(rt, this.vertex, this.fragment)
       this.recompile(rt, newVertex, newFragment, uniforms(rt))
     },
     changeArity(arity) {
+      arity = arity > 4 ? 9 : arity
       if (this.arity === arity) {
         return
       }
@@ -474,8 +514,22 @@ export const mesh = (
       this.attributes.uv.extend(2, new Float32Array(geometry.uvs))
       this.attributes.normal.extend(3, new Float32Array(geometry.normals))
     },
+    render(rt) {
+      if (!this.count || !this.visible) {
+        return
+      }
+      gl.useProgram(this.program)
+      gl.bindVertexArray(this.vao)
+      gl.drawElementsInstanced(
+        gl.TRIANGLES,
+        this.indices.count,
+        gl.UNSIGNED_SHORT,
+        0,
+        this.count
+      )
+    },
   }
-  mesh.visible = true
+  mesh.visible = visible
   mesh.vao = gl.createVertexArray()
   mesh.indices = indices(rt, mesh.vao, new Uint16Array(geometry.indices))
 
@@ -521,23 +575,7 @@ export const mesh = (
   mesh.arity = arity
   mesh.instances = size
   mesh.count = 0
-  return mesh
-}
-
-export const renderMesh = (rt, type) => {
-  const { gl } = rt
-  if (!rt.meshes[type].count || !rt.meshes[type].visible) {
-    return
-  }
-  gl.useProgram(rt.meshes[type].program)
-  gl.bindVertexArray(rt.meshes[type].vao)
-  gl.drawElementsInstanced(
-    gl.TRIANGLES,
-    rt.meshes[type].indices.count,
-    gl.UNSIGNED_SHORT,
-    0,
-    rt.meshes[type].count
-  )
+  return { [type]: mesh }
 }
 
 export const storage = (rt, rb, type, msaa) => {
@@ -561,4 +599,33 @@ export const storage = (rt, rb, type, msaa) => {
     )
   }
   gl.bindRenderbuffer(gl.RENDERBUFFER, null)
+}
+
+if (import.meta.hot) {
+  const updateIncludeShader = name => module => {
+    const rt = window.rt
+    console.debug('Accepting the new include shader')
+    includes[name] = module.default
+    rt.meshes.recompilePrograms(rt)
+    rt.meshes.updateUniforms(rt)
+
+    render(rt)
+  }
+
+  import.meta.hot.accept(
+    './shaders/includes/ease.glsl?raw',
+    updateIncludeShader('ease')
+  )
+  import.meta.hot.accept(
+    './shaders/includes/globals.glsl?raw',
+    updateIncludeShader('globals')
+  )
+  import.meta.hot.accept(
+    './shaders/includes/project.glsl?raw',
+    updateIncludeShader('project')
+  )
+  import.meta.hot.accept(
+    './shaders/includes/lighting.glsl?raw',
+    updateIncludeShader('lighting')
+  )
 }

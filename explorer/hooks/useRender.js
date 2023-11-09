@@ -19,9 +19,7 @@ export const useRender = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
-      runtime.meshes.changeArity(
-        runtime.dimensions > 4 ? 9 : runtime.dimensions
-      )
+      runtime.meshes.changeArity(runtime.dimensions)
       return runtime
     })
   }, [runtime.dimensions, setRuntime])
