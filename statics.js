@@ -44,8 +44,8 @@ export const ambiances = {
   neon: {
     background: [0, 0, 0, 1],
     glow: {
-      exposure: 2,
-      strength: 1.5,
+      exposure: 1.75,
+      strength: 2,
       offset: {
         up: 2,
         down: 2,
@@ -62,8 +62,8 @@ export const ambiances = {
   synthwave: {
     background: [...hsl(0.77, 0.6, 0.04), 1],
     glow: {
-      exposure: 2,
-      strength: 1.75,
+      exposure: 1.5,
+      strength: 3,
       offset: {
         up: 3,
         down: 3,
