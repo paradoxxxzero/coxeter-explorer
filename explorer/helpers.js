@@ -449,6 +449,11 @@ export const mesh = (
       type: '1f',
       value: 0,
     },
+    {
+      name: 'zoom',
+      type: '1f',
+      value: 1,
+    },
     ...(['vertex', 'edge'].includes(type)
       ? [
           {

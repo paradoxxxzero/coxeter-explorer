@@ -296,7 +296,7 @@ export const filterParams = (maybeBadParams, changed = []) => {
       params[`projection${i}`] =
         i === params.dimensions
           ? params[`projection${i + 1}`] || 'stereographic'
-          : 'orthographic'
+          : 'stererographic'
     }
     if (i > params.dimensions && params[`fov${i}`]) {
       delete params[`fov${i}`]

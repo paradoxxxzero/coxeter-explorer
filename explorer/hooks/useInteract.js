@@ -231,6 +231,7 @@ export const useInteract = (
   useEffect(() => {
     runtime.camera.position[2] = -runtime.zoom
     runtime.camera.update()
+    runtime.meshes.updateUniforms(runtime, true)
   }, [runtime.camera, runtime.zoom])
 
   useEffect(() => {

@@ -76,7 +76,7 @@ export default function getMeshes(rt) {
           mesh.uniforms.matrix.update(columnMajor(rt.matrix))
           for (let i = 4; i <= rt.dimensions; i++) {
             mesh.uniforms[`fov${i}`].update(
-              tan((PI * rt[`fov${i}`] * 0.5) / 180)
+              1 / tan((PI * rt[`fov${i}`] * 0.5) / 180)
             )
           }
           if (type === 'vertex') {
@@ -89,6 +89,7 @@ export default function getMeshes(rt) {
           }
         }
         mesh.uniforms.viewProjection.update(rt.camera.viewProjection)
+        mesh.uniforms.zoom.update(-rt.camera.position[2])
         if (ambiances[rt.ambiance].lighting) {
           mesh.uniforms.eye.update(rt.camera.eye)
         }

@@ -100,7 +100,7 @@ vec3 xproject(in vec2 v) {
 #if DIMENSIONS >= 3
 vec3 xproject(in vec3 v) {
   #if PROJECTION3 == 0 // STEREOGRAPHIC
-  return project(v, 1.);
+  return project(v, zoom);
   #elif PROJECTION3 == 1 // ORTHOGRAPHIC
   return vec3(v.xy, 0.);
   #elif PROJECTION3 == 2 // KLEIN
@@ -108,7 +108,7 @@ vec3 xproject(in vec3 v) {
   #elif PROJECTION3 == 3 // INVERTED
   return project(v, -1.);
   #elif PROJECTION3 == 4 // JOUKOWSKY
-  vec2 z = project(v, 1.).xy;
+  vec2 z = project(v, zoom).xy;
   float nr = 1. / dot(z, z);
   return vec3(z * vec2(1. + nr, 1. - nr), 0.);
   #elif PROJECTION3 == 5 // UPPERHALF
@@ -118,24 +118,24 @@ vec3 xproject(in vec3 v) {
   v.z -= 1.;
   return vec3(v.yz, 0.);
   #elif PROJECTION3 == 6 // BAND
-  vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
+  vec2 z = curvature < 0. ? project(v, zoom).xy : v.xy;
   return vec3((2. / PI) * ((clog(cone + z)) - clog(cone - z)), 0.);
   #elif PROJECTION3 == 7 // CROSS
-  vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
+  vec2 z = curvature < 0. ? project(v, zoom).xy : v.xy;
   // Sum of angles
   // float o = -.5 * PI;
   // vec2 a = vec2(cos(o), sin(o));
   return vec3((2. / PI) * .5 * (clog(cone + z) - clog(cone - z) + cmul(ci, clog(cone - cmul(ci, z))) + cmul(-ci, clog(cone - cmul(-ci, z)))), 0.);
   #elif PROJECTION3 == 8 // HEART
-  vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
+  vec2 z = curvature < 0. ? project(v, zoom).xy : v.xy;
   return vec3(z.x * z.y + z.y, -.5 * (z.x * z.x - z.y * z.y + 2. * z.x - 0.75), 0.);
   #elif PROJECTION3 == 9 // TEARDROP
-  vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
+  vec2 z = curvature < 0. ? project(v, zoom).xy : v.xy;
   return vec3(sign(z.y) *
     sqrt((sqrt((1. + z.x) * (1. + z.x) + z.y * z.y) - (1. + z.x)) / 2.), -(sqrt((sqrt((1. + z.x) * (1. + z.x) + z.y * z.y) + (1. + z.x)) / 2.) - 0.75), 0.);
   #elif PROJECTION3 == 10 // SQUARE
   float Ke = 1.854;
-  vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
+  vec2 z = curvature < 0. ? project(v, zoom).xy : v.xy;
   z = cmul(conei / sqrt(2.), z);
   z = cacos(z);
   vec2 w = ellipticFi(z, .5);
@@ -145,7 +145,7 @@ vec3 xproject(in vec3 v) {
   w = cmul(vec2(1., -1.) / -Ke, w) + vec2(1., -1.);
   return vec3(w, 0.);
   #elif PROJECTION3 == 11 // RING
-  vec2 z = project(v, 1.).xy;
+  vec2 z = project(v, zoom).xy;
   z = (2. / PI) * ((clog(cone + z)) - clog(cone - z));
   float k = 4.;
   float P = 1.1393;
@@ -162,15 +162,15 @@ vec3 xproject(in vec3 v) {
 #if DIMENSIONS >= 4
 vec3 xproject(in vec4 v) {
   #if PROJECTION4 == 0 // STEREOGRAPHIC
-  return xproject(project(v, 1.));
+  return xproject(project(v, zoom));
   #elif PROJECTION4 == 1 // ORTHOGRAPHIC
   return xproject(v.xyz);
   #elif PROJECTION4 == 2 // KLEIN
   return xproject(project(v, 0.));
   #elif PROJECTION4 == 3 // INVERTED
-  return xproject(project(v, -1.));
+  return xproject(project(v, -zoom));
   #elif PROJECTION4 == 4 // JOUKOWSKY
-  vec3 z = project(v, 1.);
+  vec3 z = project(v, zoom);
   float nr = 1. / dot(z, z);
   return xproject(vec3(z * vec3(1. + nr, 1. - nr, 1. + nr)));
   #elif PROJECTION4 == 5 // UPPERHALF
@@ -188,15 +188,15 @@ vec3 xproject(in vec4 v) {
 #if DIMENSIONS >= 5
 vec3 xproject(in vec5 v) {
   #if PROJECTION5 == 0 // STEREOGRAPHIC
-  return xproject(project(v, 1.));
+  return xproject(project(v, zoom));
   #elif PROJECTION5 == 1 // ORTHOGRAPHIC
   return xproject(v.v);
   #elif PROJECTION5 == 2 // KLEIN
   return xproject(project(v, 0.));
   #elif PROJECTION5 == 3 // INVERTED
-  return xproject(project(v, -1.));
+  return xproject(project(v, -zoom));
   #elif PROJECTION5 == 4 // JOUKOWSKY
-  vec4 z = project(v, 1.);
+  vec4 z = project(v, zoom);
   float nr = 1. / dot(z, z);
   return xproject(vec4(z * vec4(1. + nr, 1. - nr, 1. + nr, 1. - nr)));
   #elif PROJECTION5 == 5 // UPPERHALF
@@ -215,15 +215,15 @@ vec3 xproject(in vec5 v) {
 #if DIMENSIONS >= 6
 vec3 xproject(in vec6 v) {
   #if PROJECTION6 == 0 // STEREOGRAPHIC
-  return xproject(project(v, 1.));
+  return xproject(project(v, zoom));
   #elif PROJECTION6 == 1 // ORTHOGRAPHIC
   return xproject(vec5(v.v, v.u.x));
   #elif PROJECTION6 == 2 // KLEIN
   return xproject(project(v, 0.));
   #elif PROJECTION6 == 3 // INVERTED
-  return xproject(project(v, -1.));
+  return xproject(project(v, -zoom));
   #elif PROJECTION6 == 4 // JOUKOWSKY
-  vec5 z = project(v, 1.);
+  vec5 z = project(v, zoom);
   float nr = 1. / ndot(z, z);
   return xproject(vec5(z.v * vec4(1. + nr, 1. - nr, 1. + nr, 1. - nr), z.u * (1. + nr)));
   #elif PROJECTION6 == 5 // UPPERHALF
@@ -244,15 +244,15 @@ vec3 xproject(in vec6 v) {
 #if DIMENSIONS >= 7
 vec3 xproject(in vec7 v) {
   #if PROJECTION7 == 0 // STEREOGRAPHIC
-  return xproject(project(v, 1.));
+  return xproject(project(v, zoom));
   #elif PROJECTION7 == 1 // ORTHOGRAPHIC
   return xproject(vec6(v.v, v.u.xy));
   #elif PROJECTION7 == 2 // KLEIN
   return xproject(project(v, 0.));
   #elif PROJECTION7 == 3 // INVERTED
-  return xproject(project(v, -1.));
+  return xproject(project(v, -zoom));
   #elif PROJECTION7 == 4 // JOUKOWSKY
-  vec6 z = project(v, 1.);
+  vec6 z = project(v, zoom);
   float nr = 1. / ndot(z, z);
   return xproject(vec6(z.v * vec4(1. + nr, 1. - nr, 1. + nr, 1. - nr), z.u.xy * vec2(1. + nr, 1. - nr)));
   #elif PROJECTION7 == 5 // UPPERHALF
@@ -273,15 +273,15 @@ vec3 xproject(in vec7 v) {
 #if DIMENSIONS >= 8
 vec3 xproject(in vec8 v) {
   #if PROJECTION8 == 0 // STEREOGRAPHIC
-  return xproject(project(v, 1.));
+  return xproject(project(v, zoom));
   #elif PROJECTION8 == 1 // ORTHOGRAPHIC
   return xproject(vec7(v.v, v.u.xyz));
   #elif PROJECTION8 == 2 // KLEIN
   return xproject(project(v, 0.));
   #elif PROJECTION8 == 3 // INVERTED
-  return xproject(project(v, -1.));
+  return xproject(project(v, -zoom));
   #elif PROJECTION8 == 4 // JOUKOWSKY
-  vec7 z = project(v, 1.);
+  vec7 z = project(v, zoom);
   float nr = 1. / ndot(z, z);
   return xproject(vec7(z.v * vec4(1. + nr, 1. - nr, 1. + nr, 1. - nr), z.u.xyz * vec3(1. + nr, 1. - nr, 1. + nr)));
   #elif PROJECTION8 == 5 // UPPERHALF
@@ -302,15 +302,15 @@ vec3 xproject(in vec8 v) {
 #if DIMENSIONS >= 9
 vec3 xproject(in vec9 v) {
   #if PROJECTION9 == 0 // STEREOGRAPHIC
-  return xproject(project(v, 1.));
+  return xproject(project(v, zoom));
   #elif PROJECTION9 == 1 // ORTHOGRAPHIC
   return xproject(vec8(v.v, v.u));
   #elif PROJECTION9 == 2 // KLEIN
   return xproject(project(v, 0.));
   #elif PROJECTION9 == 3 // INVERTED
-  return xproject(project(v, -1.));
+  return xproject(project(v, -zoom));
   #elif PROJECTION9 == 4 // JOUKOWSKY
-  vec8 z = project(v, 1.);
+  vec8 z = project(v, zoom);
   float nr = 1. / ndot(z, z);
   return xproject(vec8(z.v * vec4(1. + nr, 1. - nr, 1. + nr, 1. - nr), z.u * vec4(1. + nr, 1. - nr, 1. + nr, 1. - nr)));
   #elif PROJECTION9 == 5 // UPPERHALF

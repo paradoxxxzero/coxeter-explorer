@@ -25,6 +25,7 @@ uniform float fov8;
 #if DIMENSIONS >= 9
 uniform float fov9;
 #endif
+uniform float zoom;
 
 #if DIMENSIONS >= 5
 struct vec5 {
