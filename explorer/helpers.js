@@ -3,11 +3,21 @@ import ease from './shaders/includes/ease.glsl?raw'
 import globals from './shaders/includes/globals.glsl?raw'
 import helpers from './shaders/includes/helpers.glsl?raw'
 import project from './shaders/includes/project.glsl?raw'
+import complex from './shaders/includes/complex.glsl?raw'
 import lighting from './shaders/includes/lighting.glsl?raw'
 import { min } from './math'
 import { range } from '../utils'
 import { columnMajor, ident } from './math/matrix'
 import { render } from './render'
+
+export const includes = {
+  globals,
+  project,
+  helpers,
+  complex,
+  ease,
+  lighting,
+}
 
 export const hueToRgb = (p, q, t) => {
   if (t < 0) t += 1
@@ -51,13 +61,6 @@ export const resizeCanvasToDisplaySize = (canvas, multiplier) => {
     return true
   }
   return false
-}
-export const includes = {
-  globals,
-  helpers,
-  ease,
-  project,
-  lighting,
 }
 const preprocess = (source, dimensions) =>
   source
@@ -633,5 +636,9 @@ if (import.meta.hot) {
   import.meta.hot.accept(
     './shaders/includes/lighting.glsl?raw',
     updateIncludeShader('lighting')
+  )
+  import.meta.hot.accept(
+    './shaders/includes/complex.glsl?raw',
+    updateIncludeShader('complex')
   )
 }

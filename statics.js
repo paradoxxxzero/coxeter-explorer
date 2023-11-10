@@ -15,9 +15,11 @@ export const projections = [
   'joukowsky',
   'upperhalf',
   'band',
+  'cross',
   'heart',
   'teardrop',
   'square',
+  'ring',
 ]
 export const easings = [
   'auto',

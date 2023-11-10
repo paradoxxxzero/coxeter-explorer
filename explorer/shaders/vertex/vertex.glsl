@@ -1,7 +1,6 @@
 #version 300 es
 precision highp float;
 
-#include config
 #include globals
 
 uniform float curvature;
@@ -27,8 +26,6 @@ out vec3 vPosition;
 out vec3 vNormal;
 flat out vec3 vColor;
 
-#include helpers
-#include ease
 #include project
 
 void main() {

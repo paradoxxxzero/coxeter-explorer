@@ -200,81 +200,81 @@ vec3 inflate(in vec3 point, in vecN pos, in vec3 norm, in float size, in float m
   return size * SCALING * norm * inv + point;
 }
 
+float p(in float v) {
+  return mix(0., v, curvature < 0. || v > 0.);
+}
+
+#if DIMENSIONS >= 3
+vec3 project(in vec3 v, in float k) {
+  float nr = p(v.z + k);
+  return vec3(v.xy / nr, 0);
+}
+#endif
+#if DIMENSIONS >= 4
+vec3 project(in vec4 v, in float k) {
+  float nr = p(v.w * fov4 + k);
+  return v.xyz / nr;
+}
+#endif
+#if DIMENSIONS >= 5
+vec4 project(in vec5 v, in float k) {
+  float nr = p(v.u * fov5 + k);
+  return v.v / nr;
+}
+#endif
+#if DIMENSIONS >= 6
+vec5 project(in vec6 v, in float k) {
+  float nr = p(v.u.y * fov6 + k);
+  return vec5(v.v / nr, v.u.x / nr);
+}
+#endif
+#if DIMENSIONS >= 7
+vec6 project(in vec7 v, in float k) {
+  float nr = p(v.u.z * fov7 + k);
+  return vec6(v.v / nr, v.u.xy / nr);
+}
+#endif
+#if DIMENSIONS >= 8
+vec7 project(in vec8 v, in float k) {
+  float nr = p(v.u.w * fov8 + k);
+  return vec7(v.v / nr, v.u.xyz / nr);
+}
+#endif
+#if DIMENSIONS >= 9
+vec8 project(in vec9 v, in float k) {
+  float nr = p(v.t * fov9 + k);
+  return vec8(v.v / nr, v.u / nr);
+}
+#endif
+
 #if PROJECTION3 == 9
-float ellipticF(in float phi, in float m) {
-  if(m == 0.) {
-    return phi;
-  }
-  if(m == 1.) {
-    return log(tan(phi / 2. + PI / 4.));
-  }
 
-  float a = 1.;
-  float b = sqrt(1. - m);
-  float c = sqrt(m);
-  int i = 0;
-  for(; abs(c) > 1e-6; i++) {
-    if(mod(phi, PI) != 0.) {
-      float dPhi = atan((b * tan(phi)), a);
-      if(dPhi < 0.) {
-        dPhi += PI;
-      }
-      phi += dPhi + floor(phi / PI) * PI;
-    } else {
-      phi += phi;
-    }
-    c = (a + b) / 2.;
-    b = sqrt(a * b);
-    a = c;
-    c = (a - b) / 2.;
-  }
-  return phi / (pow(2., float(i)) * a);
-}
+// vec3 square(vec2 proj) {
+//   float Ke = 1.854;
+//   float iKe = -1. / Ke;
 
-// Calculate F(phi+iPsi|m).
-// See Abramowitz and Stegun, 17.4.11.
-vec2 ellipticFi(in float phi, in float psi, in float m) {
-  float r = abs(phi);
-  float i = abs(psi);
-  float sinhPsi = sinh(i);
-  if(r != 0.) {
-    float cscPhi = 1. / sin(r);
-    float cotPhi2 = 1. / (tan(r) * tan(r));
-    float b = -(cotPhi2 + m * (sinhPsi * sinhPsi * cscPhi * cscPhi) - 1. + m);
-    float c = (m - 1.) * cotPhi2;
-    float cotLambda2 = (-b + sqrt(b * b - 4. * c)) / 2.;
-    return vec2(ellipticF(atan(1. / sqrt(cotLambda2)), m) * sign(phi), //
-    ellipticF(atan(sqrt((cotLambda2 / cotPhi2 - 1.) / m)), 1. - m) * sign(psi));//
-  }
-  return vec2(0., ellipticF(atan(sinhPsi), 1. - m) * sign(psi));
-}
+//   vec2 a = vec2(proj.x - proj.y, proj.x + proj.y) / sqrt(2.);
+//   vec2 sqf = vec2(a.x * a.x - a.y * a.y - 1., 2. * a.x * a.y);
 
-vec3 square(vec2 proj) {
-  float Ke = 1.854;
-  float iKe = -1. / Ke;
+//   float k = sqrt(sqf.x * sqf.x + sqf.y * sqf.y);
+//   vec2 sq = vec2(sqrt((k + sqf.x) / 2.), sign(sqf.y) * sqrt((k - sqf.x) / 2.));
 
-  vec2 a = vec2(proj.x - proj.y, proj.x + proj.y) / sqrt(2.);
-  vec2 sqf = vec2(a.x * a.x - a.y * a.y - 1., 2. * a.x * a.y);
+//   vec2 la = a + sq;
 
-  float k = sqrt(sqf.x * sqf.x + sqf.y * sqf.y);
-  vec2 sq = vec2(sqrt((k + sqf.x) / 2.), sign(sqf.y) * sqrt((k - sqf.x) / 2.));
+//   vec2 ac = -vec2(atan(la.y, la.x), log(sqrt(la.x * la.x + la.y * la.y)));
 
-  vec2 la = a + sq;
+//   vec2 e = ellipticFi(ac, .5);
 
-  vec2 ac = -vec2(atan(la.y, la.x), log(sqrt(la.x * la.x + la.y * la.y)));
+//   vec2 R = vec2(iKe * (e.x + e.y), iKe * (e.y - e.x));
 
-  vec2 e = ellipticFi(ac.x, ac.y, .5);
-
-  vec2 R = vec2(iKe * (e.x + e.y), iKe * (e.y - e.x));
-
-  vec2 r = R;
-  if(R.x < R.y) {
-    r *= -1.;
-  }
-  vec2 cr = vec2(r.x - 1., r.y + 1.);
-  if(R.x <= -R.y) {
-    return vec3(cr.yx, 0.);
-  }
-  return vec3(cr, 0.);
-}
+//   vec2 r = R;
+//   if(R.x < R.y) {
+//     r *= -1.;
+//   }
+//   vec2 cr = vec2(r.x - 1., r.y + 1.);
+//   if(R.x <= -R.y) {
+//     return vec3(cr.yx, 0.);
+//   }
+//   return vec3(cr, 0.);
+// }
 #endif

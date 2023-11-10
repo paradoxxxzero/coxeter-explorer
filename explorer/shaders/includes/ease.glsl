@@ -1,6 +1,3 @@
-#define PI 3.141592653589793
-#define HALF_PI 1.5707963267948966
-
 float ease(float t) {
   #if EASING == 1  // linear
   return t;
@@ -24,7 +21,7 @@ float ease(float t) {
   const float c2 = c1 * 1.525;
   return .5 * (t < 0.5 ? (pow(2. * t, 2.) * ((c2 + 1.) * 2. * t - c2)) : (pow(2. * t - 2., 2.) * ((c2 + 1.) * (t * 2. - 2.) + c2) + 2.));
   #elif EASING == 10 // elastic
-  const float c5 = (2. * PI) / 4.5;
+  const float c5 = (TAU) / 4.5;
   return t == 0. ? 0. : t == 1. ? 1. : t < 0.5 ? -(pow(2., 20. * t - 10.) * sin((20. * t - 11.125) * c5)) / 2. : (pow(2., -20. * t + 10.) * sin((20. * t - 11.125) * c5)) / 2. + 1.;
   #elif EASING == 11 // bounce
   float s = 7.5625;
