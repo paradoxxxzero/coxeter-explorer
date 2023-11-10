@@ -104,8 +104,6 @@ export const useInteract = (
         columnMajor(localMatrix.current)
       )
     }
-
-    render(runtime)
   }, [
     runtime.ambiance,
     // runtime.askedOrder,
@@ -113,7 +111,7 @@ export const useInteract = (
     runtime.centered,
     // runtime.controls,
     runtime.coxeter,
-    runtime.currentOrder,
+    // runtime.currentOrder,
     runtime.curvature,
     runtime.curve,
     runtime.dimensions,
@@ -174,7 +172,7 @@ export const useInteract = (
       const { pause, speed } = animation.current
       let changed = false
       for (let i = 0; i < speed.length; i++) {
-        if (speed[i] === 0 || (rotations.auto === 'damp' && pause.has(i))) {
+        if (speed[i] === 0) {
           continue
         }
         changed = true
@@ -186,22 +184,25 @@ export const useInteract = (
             updateMatrix(localMatrix.current)
           }
         }
-        set(
-          localMatrix.current,
-          multiply(
-            xtranslate(
-              speed[i],
-              i,
-              rotations.combinations,
-              runtime.dimensions,
-              runtime.curvature
-            ),
-            localMatrix.current
+        if (rotations.auto !== 'damp' || !pause.has(i)) {
+          set(
+            localMatrix.current,
+            multiply(
+              xtranslate(
+                speed[i],
+                i,
+                rotations.combinations,
+                runtime.dimensions,
+                runtime.curvature
+              ),
+              localMatrix.current
+            )
           )
-        )
+        }
       }
       if (changed) {
         quickUpdateMatrix()
+        render(runtime)
       }
       if (loop.current !== null) {
         loop.current = requestAnimationFrame(animate)

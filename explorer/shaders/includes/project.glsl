@@ -118,27 +118,26 @@ vec3 xproject(in vec3 v) {
   v.z -= 1.;
   return vec3(v.yz, 0.);
   #elif PROJECTION3 == 6 // BAND
-  vec2 z = project(v, 1.).xy;
+  vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
   return vec3((2. / PI) * ((clog(cone + z)) - clog(cone - z)), 0.);
   #elif PROJECTION3 == 7 // CROSS
-  vec2 z = project(v, 1.).xy;
+  vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
   // Sum of angles
   // float o = -.5 * PI;
   // vec2 a = vec2(cos(o), sin(o));
   return vec3((2. / PI) * .5 * (clog(cone + z) - clog(cone - z) + cmul(ci, clog(cone - cmul(ci, z))) + cmul(-ci, clog(cone - cmul(-ci, z)))), 0.);
   #elif PROJECTION3 == 8 // HEART
-  vec2 z = project(v, 1.).xy;
+  vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
   return vec3(z.x * z.y + z.y, -.5 * (z.x * z.x - z.y * z.y + 2. * z.x - 0.75), 0.);
   #elif PROJECTION3 == 9 // TEARDROP
-  vec2 z = project(v, 1.).xy;
+  vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
   return vec3(sign(z.y) *
     sqrt((sqrt((1. + z.x) * (1. + z.x) + z.y * z.y) - (1. + z.x)) / 2.), -(sqrt((sqrt((1. + z.x) * (1. + z.x) + z.y * z.y) + (1. + z.x)) / 2.) - 0.75), 0.);
   #elif PROJECTION3 == 10 // SQUARE
   float Ke = 1.854;
-  vec2 z = project(v, 1.).xy;
+  vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
   z = cmul(conei / sqrt(2.), z);
   z = cacos(z);
-  // return vec3(z, 0.);
   vec2 w = ellipticFi(z, .5);
   if(z.x > PI / 2.) {
     w.x = 2. * Ke - w.x;
