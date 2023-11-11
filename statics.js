@@ -8,6 +8,7 @@ const tempGL = canvas.getContext('webgl2')
 const MSAA_MAX = tempGL.getParameter(tempGL.MAX_SAMPLES)
 
 export const projections = [
+  'perspective',
   'stereographic',
   'orthographic',
   'klein',
@@ -176,7 +177,7 @@ export const defaultParams = {
 
   zoom: 1.5,
   fov3: 90,
-  projection3: 'native',
+  projection3: 'perspective',
   fov4: 90,
   projection4: 'stereographic',
 
@@ -296,7 +297,7 @@ export const filterParams = (maybeBadParams, changed = []) => {
       params[`projection${i}`] =
         i === params.dimensions
           ? params[`projection${i + 1}`] || 'stereographic'
-          : 'stererographic'
+          : 'perspective'
     }
     if (i > params.dimensions && params[`fov${i}`]) {
       delete params[`fov${i}`]

@@ -81,9 +81,9 @@ export const augment = (rt, vertex, fragment) => {
       : rt.easing
   config += `#define DIMENSIONS ${rt.dimensions}\n`
   for (let i = 3; i <= rt.dimensions; i++) {
-    config += `#define PROJECTION${i} ${projections.indexOf(
-      rt[`projection${i}`]
-    )}\n`
+    config += `#define PROJECTION${i} ${
+      projections.indexOf(rt[`projection${i}`]) - 1
+    }\n`
   }
   config += `#define EASING ${easings.indexOf(easing)}\n`
   if (ambiance.opacity < 1 && ambiance.transparency === 'oit') {

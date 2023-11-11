@@ -348,7 +348,6 @@ export default function UI({
                         onChange={handleRawChange}
                       >
                         {[
-                          ...(i === 3 ? ['native'] : []),
                           ...projections.filter(
                             (projection, n) => i === 3 || n < 6
                           ),

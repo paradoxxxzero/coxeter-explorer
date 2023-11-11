@@ -212,38 +212,38 @@ vec3 project(in vec3 v, in float k) {
 #endif
 #if DIMENSIONS >= 4
 vec3 project(in vec4 v, in float k) {
-  float nr = p(v.w * fov4 + k);
-  return v.xyz / nr;
+  float nr = fov4 / p(v.w + k);
+  return v.xyz * nr;
 }
 #endif
 #if DIMENSIONS >= 5
 vec4 project(in vec5 v, in float k) {
-  float nr = p(v.u * fov5 + k);
-  return v.v / nr;
+  float nr = fov5 / p(v.u + k);
+  return v.v * nr;
 }
 #endif
 #if DIMENSIONS >= 6
 vec5 project(in vec6 v, in float k) {
-  float nr = p(v.u.y * fov6 + k);
-  return vec5(v.v / nr, v.u.x / nr);
+  float nr = fov6 / p(v.u.y + k);
+  return vec5(v.v * nr, v.u.x * nr);
 }
 #endif
 #if DIMENSIONS >= 7
 vec6 project(in vec7 v, in float k) {
-  float nr = p(v.u.z * fov7 + k);
-  return vec6(v.v / nr, v.u.xy / nr);
+  float nr = fov7 / p(v.u.z + k);
+  return vec6(v.v * nr, v.u.xy * nr);
 }
 #endif
 #if DIMENSIONS >= 8
 vec7 project(in vec8 v, in float k) {
-  float nr = p(v.u.w * fov8 + k);
-  return vec7(v.v / nr, v.u.xyz / nr);
+  float nr = fov8 / p(v.u.w + k);
+  return vec7(v.v * nr, v.u.xyz * nr);
 }
 #endif
 #if DIMENSIONS >= 9
 vec8 project(in vec9 v, in float k) {
-  float nr = p(v.t * fov9 + k);
-  return vec8(v.v / nr, v.u / nr);
+  float nr = fov9 / p(v.t + k);
+  return vec8(v.v * nr, v.u * nr);
 }
 #endif
 
