@@ -36,17 +36,6 @@ const closeIcon = (
   </svg>
 )
 
-const getNodeText = node => {
-  if (['string', 'number'].includes(typeof node)) {
-    return node
-  }
-  if (node instanceof Array) {
-    return node.map(getNodeText).join('')
-  }
-  if (typeof node === 'object' && node) {
-    return getNodeText(node.props.children)
-  }
-}
 export default function Presets({
   open,
   onPreset,
@@ -99,23 +88,21 @@ export default function Presets({
             </div>
           </div>
           <div className="presets-list">
-            {presets.map(({ type, content, name, params }, i) => (
+            {presets.map(({ type, content, name, params, subforms }, i) => (
               <Fragment key={i}>
                 {type === 'title' ? (
                   <h2>{content}</h2>
                 ) : type === 'group' ? (
                   <h4>{content}</h4>
-                ) : !search ||
-                  getNodeText(name)
-                    .toLowerCase()
-                    .includes(search.toLowerCase()) ? (
+                ) : (
                   <Preset
                     name={name}
                     params={params}
                     search={search}
+                    subforms={subforms}
                     onPreset={onPreset}
                   />
-                ) : null}
+                )}
               </Fragment>
             ))}
           </div>

@@ -72,6 +72,23 @@ const polytope = (coxeterArgs, mirrors, stellationArgs, extra) => {
   return params
 }
 
+const withSubforms = preset => {
+  return {
+    ...preset,
+    subforms: Object.entries(getOperators(preset.params.dimensions)).map(
+      ([name, mirrors]) => {
+        return {
+          name: `${name} ${preset.name}`,
+          params: {
+            ...preset.params,
+            mirrors,
+          },
+        }
+      }
+    ),
+  }
+}
+
 const tiling = (coxeterArgs, mirrors, stellationArgs, extra) => {
   return {
     ...polytope(coxeterArgs, mirrors, stellationArgs),
@@ -111,7 +128,6 @@ const honeycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
 const getOperators = d => {
   if (d === 4) {
     return {
-      '': [1, 0, 0, 0],
       Rectified: [0, 1, 0, 0],
       Truncated: [1, 1, 0, 0],
       Cantellated: [1, 0, 1, 0],
@@ -127,7 +143,6 @@ const getOperators = d => {
   }
   if (d === 5) {
     return {
-      '': [1, 0, 0, 0, 0],
       Rectified: [0, 1, 0, 0, 0],
       Birectified: [0, 0, 1, 0, 0],
       // Trirectified: [0, 0, 0, 1, 0],
@@ -142,7 +157,6 @@ const getOperators = d => {
   }
   if (d === 6) {
     return {
-      '': [1, 0, 0, 0, 0, 0],
       Rectified: [0, 1, 0, 0, 0, 0],
       Birectified: [0, 0, 1, 0, 0, 0],
       Truncated: [1, 1, 0, 0, 0, 0],
@@ -160,7 +174,6 @@ const getOperators = d => {
   }
   if (d === 7) {
     return {
-      '': [1, 0, 0, 0, 0, 0, 0],
       Rectified: [0, 1, 0, 0, 0, 0, 0],
       Birectified: [0, 0, 1, 0, 0, 0, 0],
       Truncated: [1, 1, 0, 0, 0, 0, 0],
@@ -179,7 +192,6 @@ const getOperators = d => {
   }
   if (d === 8) {
     return {
-      '': [1, 0, 0, 0, 0, 0, 0, 0],
       Rectified: [0, 1, 0, 0, 0, 0, 0, 0],
       Birectified: [0, 0, 1, 0, 0, 0, 0, 0],
       Truncated: [1, 1, 0, 0, 0, 0, 0, 0],
@@ -202,7 +214,6 @@ const getOperators = d => {
   }
   if (d === 9) {
     return {
-      '': [1, 0, 0, 0, 0, 0, 0, 0, 0],
       Rectified: [0, 1, 0, 0, 0, 0, 0, 0, 0],
       Birectified: [0, 0, 1, 0, 0, 0, 0, 0, 0],
       Truncated: [1, 1, 0, 0, 0, 0, 0, 0, 0],
@@ -397,58 +408,75 @@ export const presets = [
   {
     name: 'Tetrahedron',
     params: polytope([3, 3]),
+    subforms: [
+      {
+        name: 'Truncated Tetrahedron',
+        params: polytope([3, 3], [1, 1, 0]),
+      },
+    ],
   },
   {
     name: 'Cube',
     params: polytope([4, 3]),
+    subforms: [
+      {
+        name: 'Cuboctahedron',
+        params: polytope([4, 3], [0, 1, 0]),
+      },
+      {
+        name: 'Truncated Cube',
+        params: polytope([4, 3], [1, 1, 0]),
+      },
+      {
+        name: 'Rhombicuboctahedron',
+        params: polytope([4, 3], [1, 0, 1]),
+      },
+      {
+        name: 'Truncated Octahedron',
+        params: polytope([3, 4], [1, 1, 0]),
+      },
+      {
+        name: 'Truncated Cuboctahedron',
+        params: polytope([4, 3], [1, 1, 1]),
+      },
+      {
+        name: 'Octahedron',
+        params: polytope([3, 4]),
+      },
+    ],
   },
-  {
-    name: 'Octahedron',
-    params: polytope([3, 4]),
-  },
+
   {
     name: 'Dodecahedron',
     params: polytope([5, 3]),
+    subforms: [
+      {
+        name: 'Icosidodecahedron',
+        params: polytope([5, 3], [0, 1, 0]),
+      },
+      {
+        name: 'Truncate Dodecahedron',
+        params: polytope([5, 3], [1, 1, 0]),
+      },
+      {
+        name: 'Rhombicosidodecahedron',
+        params: polytope([5, 3], [1, 0, 1]),
+      },
+      {
+        name: 'Truncate Icosahedron',
+        params: polytope([3, 5], [1, 1, 0]),
+      },
+      {
+        name: 'Truncated Icosidodecahedron',
+        params: polytope([5, 3], [1, 1, 1]),
+      },
+      {
+        name: 'Icosahedron',
+        params: polytope([3, 5]),
+      },
+    ],
   },
-  {
-    name: 'Icosahedron',
-    params: polytope([3, 5]),
-  },
-  {
-    name: 'Cuboctahedron',
-    params: polytope([4, 3], [0, 1, 0]),
-  },
-  {
-    name: 'Icosidodecahedron',
-    params: polytope([5, 3], [0, 1, 0]),
-  },
-  {
-    name: 'Truncated Tetrahedron',
-    params: polytope([3, 3], [1, 1, 0]),
-  },
-  {
-    name: 'Truncated Cube',
-    params: polytope([4, 3], [1, 1, 0]),
-  },
-  { name: 'Truncate Octahedron', params: polytope([3, 4], [1, 1, 0]) },
-  { name: 'Truncate Dodecahedron', params: polytope([5, 3], [1, 1, 0]) },
-  { name: 'Truncate Icosahedron', params: polytope([3, 5], [1, 1, 0]) },
-  {
-    name: 'Rhombicuboctahedron',
-    params: polytope([4, 3], [1, 0, 1]),
-  },
-  {
-    name: 'Rhombicosidodecahedron',
-    params: polytope([5, 3], [1, 0, 1]),
-  },
-  {
-    name: 'Truncated Cuboctahedron',
-    params: polytope([4, 3], [1, 1, 1]),
-  },
-  {
-    name: 'Truncated Icosidodecahedron',
-    params: polytope([5, 3], [1, 1, 1]),
-  },
+
   {
     name: 'Snub Cube',
     params: polytope([4, 3], ['s', 's', 's']),
@@ -485,34 +513,30 @@ export const presets = [
       </>
     ),
   },
-  ...Object.entries(getOperators(4))
-    .map(([name, mirrors]) => [
-      {
-        name: `${name ? `${name} ` : ''}5-cell`,
-        params: polytope([3, 3, 3], mirrors),
-      },
-      {
-        name: `${name ? `${name} ` : ''}8-cell`,
-        params: polytope([4, 3, 3], mirrors),
-      },
-      {
-        name: `${name ? `${name} ` : ''}16-cell`,
-        params: polytope([3, 3, 4], mirrors),
-      },
-      {
-        name: `${name ? `${name} ` : ''}24-cell`,
-        params: polytope([3, 4, 3], mirrors),
-      },
-      {
-        name: `${name ? `${name} ` : ''}120-cell`,
-        params: polytope([5, 3, 3], mirrors),
-      },
-      {
-        name: `${name ? `${name} ` : ''}600-cell`,
-        params: polytope([3, 3, 5], mirrors),
-      },
-    ])
-    .flat(),
+  withSubforms({
+    name: '5-cell',
+    params: polytope([3, 3, 3]),
+  }),
+  withSubforms({
+    name: '8-cell',
+    params: polytope([4, 3, 3]),
+  }),
+  withSubforms({
+    name: '16-cell',
+    params: polytope([3, 3, 4]),
+  }),
+  withSubforms({
+    name: '24-cell',
+    params: polytope([3, 4, 3]),
+  }),
+  withSubforms({
+    name: '120-cell',
+    params: polytope([5, 3, 3]),
+  }),
+  withSubforms({
+    name: '600-cell',
+    params: polytope([3, 3, 5]),
+  }),
   {
     name: 'Snub 24-cell',
     params: polytope([3, 4, 3], ['s', 's', 0, 0]),
@@ -525,35 +549,28 @@ export const presets = [
       </>
     ),
   },
-  ...Object.entries(getOperators(5))
-    .map(([name, mirrors]) => [
-      {
-        name: `${name ? `${name} ` : ''}5-simplex`,
-        params: polytope([3, 3, 3, 3], mirrors),
-      },
-      {
-        name: `${name ? `${name} ` : ''}5-cube`,
-        params: polytope([4, 3, 3, 3], mirrors),
-      },
-      {
-        name: `${name ? `${name} ` : ''}5-orthoplex`,
-        params: polytope([3, 3, 3, 4], mirrors),
-      },
-      {
-        name: `${name ? `${name} ` : ''}5-demicube`,
-        params: polytope(
-          [
-            [1, 2, 3, 2, 2],
-            [2, 1, 3, 2, 2],
-            [3, 3, 1, 3, 2],
-            [2, 2, 3, 1, 3],
-            [2, 2, 2, 3, 1],
-          ],
-          mirrors
-        ),
-      },
-    ])
-    .flat(),
+  withSubforms({
+    name: '5-simplex',
+    params: polytope([3, 3, 3, 3]),
+  }),
+  withSubforms({
+    name: '5-cube',
+    params: polytope([4, 3, 3, 3]),
+  }),
+  withSubforms({
+    name: '5-orthoplex',
+    params: polytope([3, 3, 3, 4]),
+  }),
+  withSubforms({
+    name: '5-demicube',
+    params: polytope([
+      [1, 2, 3, 2, 2],
+      [2, 1, 3, 2, 2],
+      [3, 3, 1, 3, 2],
+      [2, 2, 3, 1, 3],
+      [2, 2, 2, 3, 1],
+    ]),
+  }),
   {
     type: 'group',
     content: (
@@ -562,36 +579,29 @@ export const presets = [
       </>
     ),
   },
-  ...Object.entries(getOperators(6))
-    .map(([name, mirrors]) => [
-      {
-        name: `${name ? `${name} ` : ''}6-simplex`,
-        params: polytope([3, 3, 3, 3, 3], mirrors),
-      },
-      {
-        name: `${name ? `${name} ` : ''}6-cube`,
-        params: polytope([4, 3, 3, 3, 3], mirrors),
-      },
-      {
-        name: `${name ? `${name} ` : ''}6-orthoplex`,
-        params: polytope([3, 3, 3, 3, 4], mirrors),
-      },
-      {
-        name: `${name ? `${name} ` : ''}6-demicube`,
-        params: polytope(
-          [
-            [1, 2, 3, 2, 2, 2],
-            [2, 1, 3, 2, 2, 2],
-            [3, 3, 1, 3, 2, 2],
-            [2, 2, 3, 1, 3, 2],
-            [2, 2, 2, 3, 1, 3],
-            [2, 2, 2, 2, 3, 1],
-          ],
-          mirrors
-        ),
-      },
-    ])
-    .flat(),
+  withSubforms({
+    name: '6-simplex',
+    params: polytope([3, 3, 3, 3, 3]),
+  }),
+  withSubforms({
+    name: '6-cube',
+    params: polytope([4, 3, 3, 3, 3]),
+  }),
+  withSubforms({
+    name: '6-orthoplex',
+    params: polytope([3, 3, 3, 3, 4]),
+  }),
+  withSubforms({
+    name: '6-demicube',
+    params: polytope([
+      [1, 2, 3, 2, 2, 2],
+      [2, 1, 3, 2, 2, 2],
+      [3, 3, 1, 3, 2, 2],
+      [2, 2, 3, 1, 3, 2],
+      [2, 2, 2, 3, 1, 3],
+      [2, 2, 2, 2, 3, 1],
+    ]),
+  }),
   {
     name: (
       <>
@@ -636,37 +646,30 @@ export const presets = [
       </>
     ),
   },
-  ...Object.entries(getOperators(7))
-    .map(([name, mirrors]) => [
-      {
-        name: `${name ? `${name} ` : ''}7-simplex`,
-        params: polytope([3, 3, 3, 3, 3, 3], mirrors),
-      },
-      {
-        name: `${name ? `${name} ` : ''}7-cube`,
-        params: polytope([4, 3, 3, 3, 3, 3], mirrors),
-      },
-      {
-        name: `${name ? `${name} ` : ''}7-orthoplex`,
-        params: polytope([3, 3, 3, 3, 3, 4], mirrors),
-      },
-      {
-        name: `${name ? `${name} ` : ''}7-demicube`,
-        params: polytope(
-          [
-            [1, 2, 3, 2, 2, 2, 2],
-            [2, 1, 3, 2, 2, 2, 2],
-            [3, 3, 1, 3, 2, 2, 2],
-            [2, 2, 3, 1, 3, 2, 2],
-            [2, 2, 2, 3, 1, 3, 2],
-            [2, 2, 2, 2, 3, 1, 3],
-            [2, 2, 2, 2, 2, 3, 1],
-          ],
-          mirrors
-        ),
-      },
-    ])
-    .flat(),
+  withSubforms({
+    name: '7-simplex',
+    params: polytope([3, 3, 3, 3, 3, 3]),
+  }),
+  withSubforms({
+    name: '7-cube',
+    params: polytope([4, 3, 3, 3, 3, 3]),
+  }),
+  withSubforms({
+    name: '7-orthoplex',
+    params: polytope([3, 3, 3, 3, 3, 4]),
+  }),
+  withSubforms({
+    name: '7-demicube',
+    params: polytope([
+      [1, 2, 3, 2, 2, 2, 2],
+      [2, 1, 3, 2, 2, 2, 2],
+      [3, 3, 1, 3, 2, 2, 2],
+      [2, 2, 3, 1, 3, 2, 2],
+      [2, 2, 2, 3, 1, 3, 2],
+      [2, 2, 2, 2, 3, 1, 3],
+      [2, 2, 2, 2, 2, 3, 1],
+    ]),
+  }),
   {
     name: (
       <>
@@ -732,39 +735,31 @@ export const presets = [
       </>
     ),
   },
-  ...Object.entries(getOperators(8))
-    .map(([name, mirrors]) => [
-      {
-        name: `${name ? `${name} ` : ''}8-simplex`,
-        params: polytope([3, 3, 3, 3, 3, 3, 3], mirrors),
-      },
-      {
-        name: `${name ? `${name} ` : ''}8-cube`,
-        params: polytope([4, 3, 3, 3, 3, 3, 3], mirrors),
-      },
-      {
-        name: `${name ? `${name} ` : ''}8-orthoplex`,
-        params: polytope([3, 3, 3, 3, 3, 3, 4], mirrors),
-      },
-      {
-        name: `${name ? `${name} ` : ''}8-demicube`,
-        params: polytope(
-          [
-            [1, 2, 3, 2, 2, 2, 2, 2],
-            [2, 1, 3, 2, 2, 2, 2, 2],
-            [3, 3, 1, 3, 2, 2, 2, 2],
-            [2, 2, 3, 1, 3, 2, 2, 2],
-            [2, 2, 2, 3, 1, 3, 2, 2],
-            [2, 2, 2, 2, 3, 1, 3, 2],
-            [2, 2, 2, 2, 2, 3, 1, 3],
-            [2, 2, 2, 2, 2, 2, 3, 1],
-          ],
-          mirrors
-        ),
-      },
-    ])
-    .flat(),
-
+  withSubforms({
+    name: '8-simplex',
+    params: polytope([3, 3, 3, 3, 3, 3, 3]),
+  }),
+  withSubforms({
+    name: '8-cube',
+    params: polytope([4, 3, 3, 3, 3, 3, 3]),
+  }),
+  withSubforms({
+    name: '8-orthoplex',
+    params: polytope([3, 3, 3, 3, 3, 3, 4]),
+  }),
+  withSubforms({
+    name: '8-demicube',
+    params: polytope([
+      [1, 2, 3, 2, 2, 2, 2, 2],
+      [2, 1, 3, 2, 2, 2, 2, 2],
+      [3, 3, 1, 3, 2, 2, 2, 2],
+      [2, 2, 3, 1, 3, 2, 2, 2],
+      [2, 2, 2, 3, 1, 3, 2, 2],
+      [2, 2, 2, 2, 3, 1, 3, 2],
+      [2, 2, 2, 2, 2, 3, 1, 3],
+      [2, 2, 2, 2, 2, 2, 3, 1],
+    ]),
+  }),
   {
     name: (
       <>
@@ -834,39 +829,32 @@ export const presets = [
       </>
     ),
   },
-  ...Object.entries(getOperators(9))
-    .map(([name, mirrors]) => [
-      {
-        name: `${name ? `${name} ` : ''}9-simplex`,
-        params: polytope([3, 3, 3, 3, 3, 3, 3, 3], mirrors),
-      },
-      {
-        name: `${name ? `${name} ` : ''}9-cube`,
-        params: polytope([4, 3, 3, 3, 3, 3, 3, 3], mirrors),
-      },
-      {
-        name: `${name ? `${name} ` : ''}9-orthoplex`,
-        params: polytope([3, 3, 3, 3, 3, 3, 3, 4], mirrors),
-      },
-      {
-        name: `${name ? `${name} ` : ''}9-demicube`,
-        params: polytope(
-          [
-            [1, 2, 3, 2, 2, 2, 2, 2, 2],
-            [2, 1, 3, 2, 2, 2, 2, 2, 2],
-            [3, 3, 1, 3, 2, 2, 2, 2, 2],
-            [2, 2, 3, 1, 3, 2, 2, 2, 2],
-            [2, 2, 2, 3, 1, 3, 2, 2, 2],
-            [2, 2, 2, 2, 3, 1, 3, 2, 2],
-            [2, 2, 2, 2, 2, 3, 1, 3, 2],
-            [2, 2, 2, 2, 2, 2, 3, 1, 3],
-            [2, 2, 2, 2, 2, 2, 2, 3, 1],
-          ],
-          mirrors
-        ),
-      },
-    ])
-    .flat(),
+  withSubforms({
+    name: '9-simplex',
+    params: polytope([3, 3, 3, 3, 3, 3, 3, 3]),
+  }),
+  withSubforms({
+    name: '9-cube',
+    params: polytope([4, 3, 3, 3, 3, 3, 3, 3]),
+  }),
+  withSubforms({
+    name: '9-orthoplex',
+    params: polytope([3, 3, 3, 3, 3, 3, 3, 4]),
+  }),
+  withSubforms({
+    name: '9-demicube',
+    params: polytope([
+      [1, 2, 3, 2, 2, 2, 2, 2, 2],
+      [2, 1, 3, 2, 2, 2, 2, 2, 2],
+      [3, 3, 1, 3, 2, 2, 2, 2, 2],
+      [2, 2, 3, 1, 3, 2, 2, 2, 2],
+      [2, 2, 2, 3, 1, 3, 2, 2, 2],
+      [2, 2, 2, 2, 3, 1, 3, 2, 2],
+      [2, 2, 2, 2, 2, 3, 1, 3, 2],
+      [2, 2, 2, 2, 2, 2, 3, 1, 3],
+      [2, 2, 2, 2, 2, 2, 2, 3, 1],
+    ]),
+  }),
   {
     type: 'title',
     content: (
