@@ -179,7 +179,10 @@ export default function UI({
           }${showUI === 'empty' ? ' empty' : ''}`}
           onClick={handleUI}
         >
-          <Space type={runtime.spaceType} dimensions={runtime.dimensions} />
+          <Space
+            {...(runtime.spaceType || {})}
+            dimensions={runtime.dimensions}
+          />
         </button>
         {['advanced', 'full'].includes(showUI) && (
           <aside className="parameters">
@@ -348,7 +351,7 @@ export default function UI({
                       >
                         {[
                           ...projections.filter(
-                            (projection, n) => i === 3 || n < 6
+                            (projection, n) => i === 3 || n < 7
                           ),
                         ].map(p => (
                           <option key={p} value={p}>

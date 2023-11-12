@@ -293,8 +293,8 @@ export const columnMajor = m => {
   throw new Error('Unsupported matrix size')
 }
 
-export const perspective = (fovy, aspect, near, far) => {
-  const f = 1.0 / tan(fovy / 2)
+export const perspective = (fovy, aspect, near, far, zoom = 1) => {
+  const f = zoom / tan(fovy / 2)
   const nf = 1 / (near - far)
   const out = ident(4)
   out[0][0] = f / aspect

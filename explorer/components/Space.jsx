@@ -1,17 +1,17 @@
-export default function Space({ type, dimensions }) {
+export default function Space({ type, subtype, level, dimensions }) {
   return (
     <>
       <span className="space">
-        {type === null || type.type === 'indefinite'
+        {type === null || type === 'indefinite'
           ? '𝕏'
-          : type.type === 'affine'
+          : type === 'affine'
           ? '𝔼'
-          : type.type === 'finite'
+          : type === 'finite'
           ? '𝕊'
           : 'ℍ'}
       </span>
       {dimensions ? <sup>{dimensions - 1}</sup> : null}
-      {type && type.type === 'hyperbolic' ? (
+      {type === 'hyperbolic' ? (
         <sub>
           {
             {
@@ -19,9 +19,9 @@ export default function Space({ type, dimensions }) {
               paracompact: '*',
               lorentzian: 'L',
               superhyperbolic: '**',
-            }[type.subtype]
+            }[subtype]
           }
-          {type.level}
+          {level}
         </sub>
       ) : null}
     </>

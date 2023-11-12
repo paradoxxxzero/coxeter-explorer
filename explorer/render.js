@@ -46,9 +46,15 @@ export const initializeGl = rt => {
     update() {
       const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight
       this.zoom = min(gl.canvas.clientWidth / gl.canvas.clientHeight, 1)
-      this.eye = [0, 0, this.position[2] / this.zoom]
+      this.eye = [0, 0, this.position[2]]
       const viewMatrix = lookAt(this.eye, [0, 0, 0], [0, 1, 0])
-      const projectionMatrix = perspective(this.fov, aspect, 0.001, 1000)
+      const projectionMatrix = perspective(
+        this.fov,
+        aspect,
+        0.001,
+        1000,
+        this.zoom
+      )
       this.viewProjection = columnMajor(multiply(projectionMatrix, viewMatrix))
     },
   }

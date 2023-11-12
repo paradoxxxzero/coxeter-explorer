@@ -273,7 +273,8 @@ export const presets = [
   {
     name: (
       <>
-        <Space type="hyperbolic" dimensions={3} /> Ideal triangles
+        <Space type="hyperbolic" subtype="paracompact" dimensions={3} /> Ideal
+        triangles
       </>
     ),
     params: tiling(
@@ -298,7 +299,8 @@ export const presets = [
   {
     name: (
       <>
-        <Space type="hyperbolic" dimensions={4} /> Ideal tetrahedron
+        <Space type="hyperbolic" subtype="paracompact" dimensions={4} /> Ideal
+        tetrahedron
       </>
     ),
     params: tiling([3, 3, 6], [1, 0, 0, ''], null, {
@@ -315,7 +317,8 @@ export const presets = [
   {
     name: (
       <>
-        <Space type="hyperbolic" dimensions={4} /> Horoball
+        <Space type="hyperbolic" subtype="paracompact" dimensions={4} />{' '}
+        Horoball
       </>
     ),
     params: tiling([6, 3, 4], [1, 0, 0, ''], null, {
@@ -340,7 +343,13 @@ export const presets = [
   {
     name: (
       <>
-        <Space type="hyperbolic" dimensions={4} /> 7-3-3 paracompact honeycomb
+        <Space
+          type="hyperbolic"
+          subtype="lorentzian"
+          level={2}
+          dimensions={4}
+        />{' '}
+        7-3-3 paracompact honeycomb
       </>
     ),
     params: honeycomb([7, 3, 3], [1, 0, 0, 0], null, {
@@ -353,7 +362,8 @@ export const presets = [
   {
     name: (
       <>
-        <Space type="hyperbolic" dimensions={4} /> Ideal Pentahedron
+        <Space type="hyperbolic" subtype="paracompact" dimensions={4} /> Ideal
+        Pentahedron
       </>
     ),
     params: tiling([5, 3, 6], [1, 0, 0, ''], null, {
@@ -1159,7 +1169,8 @@ export const presets = [
     type: 'group',
     content: (
       <>
-        <Space type="hyperbolic-compact" dimensions={4} /> Honeycombs compacts
+        <Space type="hyperbolic" subtype="compact" dimensions={4} /> Honeycombs
+        compacts
       </>
     ),
   },
@@ -1273,8 +1284,8 @@ export const presets = [
     type: 'group',
     content: (
       <>
-        <Space type="hyperbolic-paracompact" dimensions={4} /> Honeycombs
-        paracompacts
+        <Space type="hyperbolic" subtype="paracompact" dimensions={4} />{' '}
+        Honeycombs paracompacts
       </>
     ),
   },
@@ -1596,8 +1607,13 @@ export const presets = [
     type: 'group',
     content: (
       <>
-        <Space type="hyperbolic-lorentzian-level-2" dimensions={4} /> Honeycombs
-        lorentzians
+        <Space
+          type="hyperbolic"
+          subtype="lorentzian"
+          level={2}
+          dimensions={4}
+        />{' '}
+        Honeycombs lorentzians
       </>
     ),
   },
