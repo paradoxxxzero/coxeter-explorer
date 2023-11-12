@@ -278,9 +278,9 @@ export const presets = [
     ),
     params: tiling(
       [
-        [1, Infinity, Infinity],
-        [Infinity, 1, Infinity],
-        [Infinity, Infinity, 1],
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1],
       ],
       [1, 1, 1],
       null,
@@ -1001,7 +1001,7 @@ export const presets = [
   },
   {
     name: 'Infinite Order triangular',
-    params: tiling([3, Infinity], [1, 0, 0]),
+    params: tiling([3, 0], [1, 0, 0]),
   },
   {
     name: 'Order-5 square',
@@ -1021,7 +1021,7 @@ export const presets = [
   },
   {
     name: 'Infinite Order square',
-    params: tiling([4, Infinity], [1, 0, 0]),
+    params: tiling([4, 0], [1, 0, 0]),
   },
   {
     name: 'Order-4 pentagonal',
@@ -1045,7 +1045,7 @@ export const presets = [
   },
   {
     name: 'Infinite Order pentagonal',
-    params: tiling([5, Infinity], [1, 0, 0]),
+    params: tiling([5, 0], [1, 0, 0]),
   },
   {
     name: 'Order-4 hexagonal',
@@ -1069,7 +1069,7 @@ export const presets = [
   },
   {
     name: 'Infinite Order hexagonal',
-    params: tiling([6, Infinity], [1, 0, 0]),
+    params: tiling([6, 0], [1, 0, 0]),
   },
   {
     name: 'Order-3 heptagonal',
@@ -1097,7 +1097,7 @@ export const presets = [
   },
   {
     name: 'Infinite Order heptagonal',
-    params: tiling([7, Infinity], [1, 0, 0]),
+    params: tiling([7, 0], [1, 0, 0]),
   },
   {
     name: 'Order-3 octagonal',
@@ -1125,35 +1125,35 @@ export const presets = [
   },
   {
     name: 'Infinite Order octagonal',
-    params: tiling([8, Infinity], [1, 0, 0]),
+    params: tiling([8, 0], [1, 0, 0]),
   },
   {
     name: 'Order-3 apeirogonal',
-    params: tiling([Infinity, 3], [1, 0, 0]),
+    params: tiling([0, 3], [1, 0, 0]),
   },
   {
     name: 'Order-4 apeirogonal',
-    params: tiling([Infinity, 4], [1, 0, 0]),
+    params: tiling([0, 4], [1, 0, 0]),
   },
   {
     name: 'Order-5 apeirogonal',
-    params: tiling([Infinity, 5], [1, 0, 0]),
+    params: tiling([0, 5], [1, 0, 0]),
   },
   {
     name: 'Order-6 apeirogonal',
-    params: tiling([Infinity, 6], [1, 0, 0]),
+    params: tiling([0, 6], [1, 0, 0]),
   },
   {
     name: 'Order-7 apeirogonal',
-    params: tiling([Infinity, 7], [1, 0, 0]),
+    params: tiling([0, 7], [1, 0, 0]),
   },
   {
     name: 'Order-8 apeirogonal',
-    params: tiling([Infinity, 8], [1, 0, 0]),
+    params: tiling([0, 8], [1, 0, 0]),
   },
   {
     name: 'Infinite Order apeirogonal',
-    params: tiling([Infinity, Infinity], [1, 0, 0]),
+    params: tiling([0, 0], [1, 0, 0]),
   },
   {
     type: 'group',

@@ -124,7 +124,7 @@ export default function Number({
     if (raw === `${min}`) {
       // pass
     } else if (raw.includes('/')) {
-      update((parseInt(raw).split('/')[0] - step).toString())
+      update((parseInt(raw.split('/')[0]) - step).toString())
     } else {
       const val = parseInt(raw) - step
       if (step > 0 && step < 1) {
@@ -137,7 +137,7 @@ export default function Number({
 
   const handlePlus = useCallback(() => {
     if (!valid) {
-      update(`${min}`)
+      update(coxeter ? '3' : `${min}`)
       return
     }
     if (coxeter) {
@@ -162,7 +162,7 @@ export default function Number({
     if (raw === `${max}`) {
       // pass
     } else if (raw.includes('/')) {
-      update((parseInt(raw).split('/')[0] + step).toString())
+      update((parseInt(raw.split('/')[0]) + step).toString())
     } else {
       const val = parseInt(raw) + step
       if (step > 0 && step < 1) {

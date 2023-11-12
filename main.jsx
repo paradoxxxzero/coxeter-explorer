@@ -5,27 +5,11 @@ import './index.css'
 import { defaultParams, filterParams } from './statics.js'
 // import 'https://greggman.github.io/webgl-lint/webgl-lint.js'
 
-const parse = s => {
-  const replacer = (k, v) => {
-    if (v === 'Infinity') return Infinity
-    return v
-  }
-  return JSON.parse(s, replacer)
-}
-
-const stringify = o => {
-  const replacer = (k, v) => {
-    if (v === Infinity) return 'Infinity'
-    return v
-  }
-  return JSON.stringify(o, replacer)
-}
-
 const parseParams = (def = null) => {
   const { location } = window
   if (location.hash) {
     try {
-      const hash = parse(atob(location.hash.slice(1)))
+      const hash = JSON.parse(atob(location.hash.slice(1)))
       return hash
     } catch (e) {
       console.warn(e)
@@ -35,7 +19,7 @@ const parseParams = (def = null) => {
   return def
 }
 const syncParams = params => {
-  window.history.pushState(null, null, '#' + btoa(stringify(params)))
+  window.history.pushState(null, null, '#' + btoa(JSON.stringify(params)))
 }
 
 const arrayEquals = (a, b) => {

@@ -1,4 +1,15 @@
-import { PI, abs, acos, cos, cosh, round, sign, sin, sqrt } from './index.js'
+import {
+  PI,
+  abs,
+  acos,
+  cos,
+  cosh,
+  max,
+  round,
+  sign,
+  sin,
+  sqrt,
+} from './index.js'
 import { eigen, ident, inverse, multiplyVector } from './matrix.js'
 
 export const coxeterToGram = (coxeter, stellation) =>
@@ -40,12 +51,19 @@ export const getSubSignatures = (gram, sub = [], level = 0, maxLevel = 2) => {
 
 export const getSpaceType = gram => {
   const signature = getSignature(gram)
-
   if (signature['-'] === 0 && signature['0'] === 0) {
-    return 'finite'
+    return { type: 'finite', curvature: 1 }
   }
-  if (signature['-'] === 0 && signature['0'] === 1) {
-    return 'affine'
+  if (signature['-'] === 0 && signature['0'] > 0) {
+    return { type: 'affine', curvature: 0 }
+  }
+  if (signature['-'] > 1) {
+    return {
+      type: 'hyperbolic',
+      subtype: 'superhyperbolic',
+      level: signature['-'],
+      curvature: -1,
+    }
   }
   // Indefinite, check subgroups
   const subSignatures = getSubSignatures(gram)
@@ -53,19 +71,23 @@ export const getSpaceType = gram => {
   const subSignature = subSignatures[0]
 
   if (subSignature.every(s => s['-'] === 0 && s['0'] === 0)) {
-    return 'hyperbolic-compact'
+    return { type: 'hyperbolic', subtype: 'compact', curvature: -1 }
   }
   if (subSignature.every(s => s['-'] === 0)) {
-    return 'hyperbolic-paracompact'
+    return { type: 'hyperbolic', subtype: 'paracompact', curvature: -1 }
   }
   for (let i = 1; i < subSignatures.length; i++) {
     const subSignature = subSignatures[i]
     if (subSignature.every(s => s['-'] === 0)) {
-      return 'hyperbolic-lorentzian-level-' + (i + 1)
+      return {
+        type: 'hyperbolic',
+        subtype: 'lorentzian',
+        curvature: -1,
+        level: i + 1,
+      }
     }
   }
-
-  return 'indefinite'
+  return { type: 'indefinite', curvature: -1 }
 }
 
 export const xdot = (v1, v2, curvature) => {
@@ -98,7 +120,8 @@ export const normalize = (v, curvature) => {
 
   const nr =
     (curvature === -1 ? sign(v[v.length - 1]) || 1 : 1) /
-    sqrt(abs(xdot2(v, curvature)))
+    // Cheat a bit on null values
+    sqrt(max(1e-32, abs(xdot2(v, curvature))))
   for (let i = 0; i < v.length; i++) {
     v[i] *= nr
   }
@@ -338,7 +361,12 @@ export const xtranslate = (offset, level, rotations, dimensions, curvature) => {
   return matrix
 }
 
-export const getFundamentalSimplexMirrorsShifted = (shift, gram, curvature) => {
+export const getFundamentalSimplexMirrorsShifted = (
+  shift,
+  gram,
+  curvature,
+  force
+) => {
   const dimensions = gram[0].length
   const mirrorsPlanes = new Array(dimensions)
     .fill()
@@ -355,7 +383,7 @@ export const getFundamentalSimplexMirrorsShifted = (shift, gram, curvature) => {
         mirrorsPlanes[j][j_]
     }
     mirrorsPlanes[i][i_] = sqrt(abs(1 - xdot2(mirrorsPlanes[i].slice(0, i_))))
-    if (mirrorsPlanes[i][i_] < 1e-6 && i_ < dimensions - 1) {
+    if (mirrorsPlanes[i][i_] < 1e-6 && i_ < dimensions - 1 && !force) {
       // console.warn(`Parallel mirrors ${i - 1} and ${i} for shifted ${shift}`)
       return null
     }
@@ -676,7 +704,7 @@ export const getFundamentalSimplexMirrors = (
   // (15) :                               w0 * w4 + α = y
   let mirrorsPlanes = null
   const hyperideal = gram.every((row, i) =>
-    row.every((x, j) => x === (i === j ? 1 : -1))
+    row.every((x, j) => i === j || x <= -1)
   )
   if (centered || hyperideal) {
     mirrorsPlanes = new Array(dimensions)
@@ -852,8 +880,8 @@ export const getFundamentalSimplexMirrors = (
     }
     // TODO: general case for higher dimensions
 
-    // Other dimensions case, hyperideal only:
-    if (hyperideal) {
+    // Other dimensions case, perfect hyperideal only:
+    if (gram.every((row, i) => row.every((x, j) => i === j || x === -1))) {
       const alphas = [0]
       for (let i = 1; i < dimensions; i++) {
         alphas[i] = (alphas[i - 1] + 1) / (3 - alphas[i - 1])
@@ -885,7 +913,12 @@ export const getFundamentalSimplexMirrors = (
   }
 
   for (let i = 0; i < dimensions; i++) {
-    mirrorsPlanes = getFundamentalSimplexMirrorsShifted(i, gram, curvature)
+    mirrorsPlanes = getFundamentalSimplexMirrorsShifted(
+      i,
+      gram,
+      curvature,
+      i === dimensions - 1
+    )
     if (mirrorsPlanes) {
       break
     }

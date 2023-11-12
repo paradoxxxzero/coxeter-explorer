@@ -25,7 +25,7 @@ export default function CoxeterDiagram({ coxeter, mirrors, stellation }) {
   // TODO: Text anchoring for diagonal
   for (let i = 0; i < dimensions; i++) {
     for (let j = dimensions - 1; j > i + 1; j--) {
-      if (coxeter[i][j] > 2) {
+      if (coxeter[i][j] !== 2) {
         // Here's a loop from i to j, j stays at same height, i to j form a circle
         const start = i === 0
         const end = j === dimensions - 1
@@ -58,13 +58,10 @@ export default function CoxeterDiagram({ coxeter, mirrors, stellation }) {
   const links = []
   for (let i = 0; i < dimensions; i++) {
     for (let j = 0; j < i; j++) {
-      if (coxeter[i][j] > 2) {
+      if (coxeter[i][j] !== 2) {
         const m = coxeter[i][j]
         const s = stellation[i][j]
-        if (m === 2) {
-          return null
-        }
-        let value = `${m === Infinity ? '∞' : m}`
+        let value = `${m === 0 ? '∞' : m < 0 ? `${m === -1 ? '' : -m}i` : m}`
         if (s > 1) {
           value += `/${s}`
         }
@@ -75,6 +72,7 @@ export default function CoxeterDiagram({ coxeter, mirrors, stellation }) {
           source: nodes[i],
           target: nodes[j],
           value,
+          type: m < 0 ? 'dashed' : m === 0 ? 'bold' : 'solid',
         })
       }
     }
@@ -127,7 +125,7 @@ export default function CoxeterDiagram({ coxeter, mirrors, stellation }) {
           {mirrorSymbols[type]}
         </g>
       ))}
-      {links.map(({ source, target, value }) => {
+      {links.map(({ source, target, value, type }) => {
         const start = {
           x: source.x,
           y: source.y,
@@ -153,8 +151,9 @@ export default function CoxeterDiagram({ coxeter, mirrors, stellation }) {
           <g key={`${source.n}-${target.n}`} className="coxeter-diagram-link">
             <path
               d={`M ${start.x} ${start.y} L ${end.x} ${end.y}`}
-              strokeWidth="1"
+              strokeWidth={type === 'bold' ? '4' : '2'}
               stroke="currentColor"
+              strokeDasharray={type === 'dashed' ? '1 1' : ''}
             />
             <text
               style={{ fontSize: '1.25rem' }}

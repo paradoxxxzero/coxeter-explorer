@@ -26,7 +26,7 @@ export default function getMeshes(rt) {
       vertexVertex,
       fragmentVertex,
       geometries.vertex,
-      10000,
+      1024,
       rt.dimensions,
       rt.showVertices
     ),
@@ -36,7 +36,7 @@ export default function getMeshes(rt) {
       vertexEdge,
       fragmentEdge,
       geometries.edge,
-      10000,
+      1024,
       rt.dimensions,
       rt.showEdges,
       ['position', 'target']
@@ -47,7 +47,7 @@ export default function getMeshes(rt) {
       vertexFace,
       fragmentFace,
       geometries.face,
-      10000,
+      1024,
       rt.dimensions,
       rt.showFaces,
       ['position', 'target', 'center']

@@ -116,7 +116,11 @@ export const plot = (rt, order = null) => {
   rt.meshes.plot(rt, ranges)
 
   document.title = `Coxeter Explorer - ${
-    rt.spaceType === 'finite' ? 'S' : rt.spaceType === 'affine' ? 'E' : 'H'
+    rt.spaceType.type === 'finite'
+      ? 'S'
+      : rt.spaceType.type === 'affine'
+      ? 'E'
+      : 'H'
   }^${rt.dimensions} ${
     rt.currentOrder < rt.order ? `(${rt.currentOrder}/${rt.order})…` : ''
   }- ${rt.vertex.length} vertices, ${rt.edge.length} edges, ${

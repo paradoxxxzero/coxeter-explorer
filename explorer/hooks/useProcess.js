@@ -107,8 +107,7 @@ export const useProcess = (runtime, setRuntime) => {
           spaceType,
         }
       }
-      const curvature =
-        spaceType === 'finite' ? 1 : spaceType === 'affine' ? 0 : -1
+      const curvature = spaceType.curvature
 
       const grouper =
         runtime.grouper === '' || runtime.grouper.startsWith('auto-')

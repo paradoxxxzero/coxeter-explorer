@@ -75,7 +75,7 @@ export const augment = (rt, vertex, fragment) => {
   }
   const easing =
     rt.easing === 'auto' //FIXME
-      ? rt.spaceType?.startsWith('hyperbolic') && rt.projection4 !== 'inverted'
+      ? rt.spaceType?.type === 'hyperbolic' && rt.projection4 !== 'inverted'
         ? 'quintic'
         : 'linear'
       : rt.easing

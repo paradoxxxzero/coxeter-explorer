@@ -4,6 +4,13 @@ import Link from './Link'
 import Node from './Node'
 import { min } from '../math'
 
+const getType = (coxeter, i) =>
+  coxeter[i].some((m, j) => j < i && m < 0)
+    ? 'dashed'
+    : coxeter[i].some((m, j) => j < i && m === 0)
+    ? 'bold'
+    : 'solid'
+
 export default function CoxeterMatrix({
   dimensions,
   coxeter,
@@ -109,14 +116,9 @@ export default function CoxeterMatrix({
                 )}
               </div>
             )}
-            {i > 0 && <Link />}
-            <Node
-              index={i}
-              value={mirrors[i]}
-              extended={extended}
-              onChange={handleMirrorChange}
-            />
-            {i < dimensions - 1 && <Link />}
+            {i > 0 && <Link type={getType(coxeter, i)} />}
+            <Node index={i} value={mirrors[i]} onChange={handleMirrorChange} />
+            {i < dimensions - 1 && <Link type={getType(coxeter, i + 1)} />}
           </Fragment>
         ))}
       </div>

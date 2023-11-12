@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { sign } from '../math'
 import { mirrorToType, mirrorTypes } from '../mirrors'
 
@@ -48,17 +49,14 @@ export const mirrorSymbols = {
   ),
 }
 
-export default function Node({ index, value, extended, onChange }) {
+export default function Node({ index, value, onChange }) {
+  const ref = useRef(null)
+  const [menu, setMenu] = useState(false)
+
   const type = mirrorToType(value)
 
   const handleClick = () => {
-    const types = Object.keys(mirrorSymbols)
-    const current = types.indexOf(type)
-    const next = extended
-      ? types[(current + 1) % types.length]
-      : type === 'active'
-      ? 'inactive'
-      : 'active'
+    const next = type === 'active' ? 'inactive' : 'active'
     const newValue = mirrorTypes[next]
     onChange(index, newValue)
   }
@@ -71,8 +69,27 @@ export default function Node({ index, value, extended, onChange }) {
     onChange(index, newValue)
   }
 
+  const handleMenu = e => {
+    e.preventDefault()
+    setMenu(!menu)
+  }
+
+  useEffect(() => {
+    const handleMouseUp = e => {
+      if (!ref.current.contains(e.target)) {
+        setMenu(false)
+      }
+    }
+    if (menu) {
+      window.addEventListener('mouseup', handleMouseUp)
+      return () => {
+        window.removeEventListener('mouseup', handleMouseUp)
+      }
+    }
+  }, [menu])
+
   return (
-    <div className="coxeter-node" title={type}>
+    <div className="coxeter-node" title={type} ref={ref}>
       <svg
         className={`coxeter-graphic ${type}`}
         viewBox="0 0 32 32"
@@ -81,6 +98,7 @@ export default function Node({ index, value, extended, onChange }) {
         stroke="currentColor"
         fill="black"
         onClick={handleClick}
+        onContextMenu={handleMenu}
         onWheel={handleWheel}
       >
         {mirrorSymbols[type]}
@@ -93,6 +111,29 @@ export default function Node({ index, value, extended, onChange }) {
           style={{ width: `${value.toString().length + 1.5}ch` }}
           onChange={e => onChange(index, e.target.value)}
         />
+      )}
+      {menu && (
+        <div className="coxeter-node-menu">
+          {Object.keys(mirrorSymbols)
+            .filter(subtype => subtype !== type)
+            .map(type => (
+              <svg
+                key={type}
+                className={`coxeter-graphic ${type}`}
+                viewBox="0 0 32 32"
+                width="1em"
+                strokeWidth="2"
+                stroke="currentColor"
+                fill="black"
+                onClick={() => {
+                  onChange(index, mirrorTypes[type])
+                  setMenu(false)
+                }}
+              >
+                {mirrorSymbols[type]}
+              </svg>
+            ))}
+        </div>
       )}
     </div>
   )

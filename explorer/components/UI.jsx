@@ -178,7 +178,6 @@ export default function UI({
             runtime.processing ? ' processing' : ''
           }${showUI === 'empty' ? ' empty' : ''}`}
           onClick={handleUI}
-          title={`Space ${runtime.spaceType}`}
         >
           <Space type={runtime.spaceType} dimensions={runtime.dimensions} />
         </button>

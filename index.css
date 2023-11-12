@@ -258,10 +258,23 @@ select option {
   color: rgba(255, 255, 255, 1);
   font-size: 3em;
 }
-.coxeter-node:hover .coxeter-graphic {
+.coxeter-node > .coxeter-graphic:hover {
   color: rgba(200, 200, 200, 1);
 }
-
+.coxeter-node-menu {
+  z-index: 12;
+  position: absolute;
+  top: 3.5em;
+  left: -1.5em;
+  cursor: pointer;
+  background-color: #191919;
+}
+.coxeter-node-menu svg {
+  padding: 0.5em;
+}
+.coxeter-node-menu svg:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
 .coxeter-column {
   display: flex;
   flex-direction: column;
