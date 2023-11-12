@@ -113,7 +113,7 @@ export const getRels = (
   for (let i = 1; i < dimensions; i++) {
     for (let j = 0; j < i; j++) {
       const m = coxeter[i][j]
-      if (m < Infinity && enabled(mirrors[i]) && enabled(mirrors[j])) {
+      if (m > 1 && enabled(mirrors[i]) && enabled(mirrors[j])) {
         rules.push((itoa(j) + itoa(i)).repeat(coxeter[i][j]))
       }
     }

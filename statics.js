@@ -249,7 +249,11 @@ export const filterParams = (maybeBadParams, changed = []) => {
     } else if (Array.isArray(defaultParams[key])) {
       // arrays of arrays of numbers
       if (Array.isArray(value[0])) {
-        if (value.find(c => c.find(d => value === '' || isNaN(d)))) {
+        if (
+          value.find(c =>
+            c.find(d => value === '' || (key !== 'coxeter' && isNaN(d)))
+          )
+        ) {
           delete params[key]
           badParams.push(key)
         }
@@ -270,7 +274,9 @@ export const filterParams = (maybeBadParams, changed = []) => {
   })
 
   // Normalize params
-  normalizeCoxeter(params)
+  if (!badParams.includes('coxeter')) {
+    normalizeCoxeter(params)
+  }
 
   if (
     params.matrix.length !== params.dimensions ||

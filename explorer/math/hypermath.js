@@ -1,9 +1,19 @@
-import { PI, abs, acos, cos, round, sign, sin, sqrt } from './index.js'
+import { PI, abs, acos, cos, cosh, round, sign, sin, sqrt } from './index.js'
 import { eigen, ident, inverse, multiplyVector } from './matrix.js'
 
 export const coxeterToGram = (coxeter, stellation) =>
   coxeter.map((row, i) =>
-    row.map((column, j) => -cos((stellation[i][j] * PI) / column))
+    row.map((column, j) => {
+      if (column < 0) {
+        // Imaginary
+        return -cosh(-column / 10)
+      }
+      if (column === 0) {
+        // Infinity
+        return -1
+      }
+      return -cos((stellation[i][j] * PI) / column)
+    })
   )
 
 export const getSignature = gram => {

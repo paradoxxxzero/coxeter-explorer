@@ -246,35 +246,3 @@ vec8 project(in vec9 v, in float k) {
   return vec8(v.v * nr, v.u * nr);
 }
 #endif
-
-#if PROJECTION3 == 9
-
-// vec3 square(vec2 proj) {
-//   float Ke = 1.854;
-//   float iKe = -1. / Ke;
-
-//   vec2 a = vec2(proj.x - proj.y, proj.x + proj.y) / sqrt(2.);
-//   vec2 sqf = vec2(a.x * a.x - a.y * a.y - 1., 2. * a.x * a.y);
-
-//   float k = sqrt(sqf.x * sqf.x + sqf.y * sqf.y);
-//   vec2 sq = vec2(sqrt((k + sqf.x) / 2.), sign(sqf.y) * sqrt((k - sqf.x) / 2.));
-
-//   vec2 la = a + sq;
-
-//   vec2 ac = -vec2(atan(la.y, la.x), log(sqrt(la.x * la.x + la.y * la.y)));
-
-//   vec2 e = ellipticFi(ac, .5);
-
-//   vec2 R = vec2(iKe * (e.x + e.y), iKe * (e.y - e.x));
-
-//   vec2 r = R;
-//   if(R.x < R.y) {
-//     r *= -1.;
-//   }
-//   vec2 cr = vec2(r.x - 1., r.y + 1.);
-//   if(R.x <= -R.y) {
-//     return vec3(cr.yx, 0.);
-//   }
-//   return vec3(cr, 0.);
-// }
-#endif

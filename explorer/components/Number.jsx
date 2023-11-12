@@ -1,44 +1,42 @@
 import { useCallback, useEffect, useState } from 'react'
 
-export const parse = (raw, min, max, step, allowInfinity) => {
+export const parse = (raw, min, max, step, coxeter) => {
   let valid = true
   let value = 0
   let fraction = 1
 
-  if (['inf', 'Infinity'].includes(raw)) {
+  if (coxeter && ['∞', 'inf', 'Infinity'].includes(raw)) {
     raw = '∞'
-  }
-  if (raw === '∞' && allowInfinity) {
-    value = Infinity
+    value = 0
+  } else if (coxeter && raw.endsWith('i')) {
+    const realRaw = raw.slice(0, -1)
+    const real = realRaw === '' ? 1 : parseInt(realRaw)
+    value = -real
+    raw = `${value === -1 ? '' : -value}i`
   } else if (raw.includes('/')) {
     const [numerator, denominator] = raw.split('/')
-    value = numerator === '' ? '' : +numerator
-    fraction = denominator === '' ? '' : +denominator
+    value = numerator === '' ? '' : parseInt(numerator)
+    fraction = denominator === '' ? '' : parseInt(denominator)
     if (fraction === 1) {
       raw = `${value}`
+    } else {
+      raw = `${value}/${fraction}`
     }
-
-    valid = !(
-      value === '' ||
-      isNaN(value) ||
-      value < min ||
-      value > max ||
-      value % step !== 0 ||
-      isNaN(fraction) ||
-      fraction < min ||
-      fraction > max ||
-      fraction % step !== 0
-    )
   } else {
-    value = raw === '' ? '' : +raw
-    valid = !(
-      value === '' ||
-      isNaN(value) ||
-      value < min ||
-      value > max ||
-      (step % 1 === 0 && value % step !== 0)
-    )
+    value = raw === '' ? '' : parseInt(raw)
   }
+
+  valid = !(
+    value === '' ||
+    isNaN(value) ||
+    value < min ||
+    value > max ||
+    (step % 1 === 0 && value % step !== 0) ||
+    isNaN(fraction) ||
+    fraction < min ||
+    fraction > max ||
+    (step % 1 === 0 && fraction % step !== 0)
+  )
 
   return {
     valid,
@@ -55,7 +53,7 @@ export default function Number({
   max = Infinity,
   step = 1,
   value,
-  allowInfinity,
+  coxeter,
   fraction,
   fractionName,
   toggler,
@@ -63,27 +61,32 @@ export default function Number({
   onChange,
   ...props
 }) {
+  if (coxeter) {
+    min = -Infinity
+  }
   const defaultValue = useCallback(
     () =>
-      value === Infinity && allowInfinity
+      value < 0 && coxeter
+        ? `${value === -1 ? '' : -value}i`
+        : value === 0 && coxeter
         ? '∞'
         : fractionName && fraction > 1
         ? `${value}/${fraction}`
         : `${value}`,
-    [allowInfinity, fraction, fractionName, value]
+    [coxeter, fraction, fractionName, value]
   )
 
   const [raw, setRaw] = useState(defaultValue)
 
   useEffect(() => {
     setRaw(defaultValue())
-  }, [allowInfinity, defaultValue, fraction, fractionName, value])
+  }, [coxeter, defaultValue, fraction, fractionName, value])
 
   const [valid, setValid] = useState(true)
 
   const update = useCallback(
     newRaw => {
-      const parsed = parse(newRaw, min, max, step, allowInfinity)
+      const parsed = parse(newRaw, min, max, step, coxeter)
       setRaw(parsed.raw)
       setValid(parsed.valid)
       if (parsed.valid) {
@@ -93,51 +96,79 @@ export default function Number({
         }
       }
     },
-    [allowInfinity, fractionName, max, min, name, onChange, step]
+    [coxeter, fractionName, max, min, name, onChange, step]
   )
 
   const handleMinus = useCallback(() => {
     if (!valid) {
-      update(`${min}`)
+      update(coxeter ? '3' : `${min}`)
       return
     }
-    if (raw === '∞') {
-      return
+    if (coxeter) {
+      if (raw === '2') {
+        update('∞')
+        return
+      }
+      if (raw === '∞') {
+        update('i')
+        return
+      }
+      if (raw.endsWith('i')) {
+        const realRaw = raw.slice(0, -1)
+        let real = (realRaw === '' ? 1 : parseInt(realRaw)) + 1
+        update(`${real}i`)
+        return
+      }
     }
-    if (raw === `${min}`) {
-      allowInfinity && update('∞')
-    } else if (raw.includes('/')) {
-      update((+raw.split('/')[0] - step).toString())
+    if (raw.includes('/')) {
+      update((parseInt(raw).split('/')[0] - step).toString())
     } else {
-      const val = +raw - step
+      const val = parseInt(raw) - step
       if (step > 0 && step < 1) {
         update(val.toFixed(step.toString().split('.')[1].length))
       } else {
         update(val.toString())
       }
     }
-  }, [allowInfinity, min, raw, step, update, valid])
+  }, [coxeter, min, raw, step, update, valid])
 
   const handlePlus = useCallback(() => {
     if (!valid) {
       update(`${min}`)
       return
     }
+    if (coxeter) {
+      if (raw === '∞') {
+        update('2')
+        return
+      }
+      if (raw === 'i') {
+        update('∞')
+        return
+      }
+      if (raw.endsWith('i')) {
+        const realRaw = raw.slice(0, -1)
+        let real = parseInt(realRaw) - 1
+        if (real === 1) {
+          real = ''
+        }
+        update(`${real}i`)
+        return
+      }
+    }
     if (raw === `${max}`) {
       // pass
-    } else if (raw === '∞') {
-      allowInfinity && update(`${min}`)
     } else if (raw.includes('/')) {
-      update((+raw.split('/')[0] + step).toString())
+      update((parseInt(raw).split('/')[0] + step).toString())
     } else {
-      const val = +raw + step
+      const val = parseInt(raw) + step
       if (step > 0 && step < 1) {
         update(val.toFixed(step.toString().split('.')[1].length))
       } else {
         update(val.toString())
       }
     }
-  }, [allowInfinity, max, min, raw, step, update, valid])
+  }, [coxeter, max, min, raw, step, update, valid])
 
   const handleChange = event => {
     const raw = event.target.value

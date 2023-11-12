@@ -5,11 +5,9 @@ export default function Value({ i, j, value, stellation, onChange }) {
     <div className="coxeter-value">
       <Number
         name={`coxeter-${i}-${j}`}
-        min={2}
-        step={1}
         value={value}
         onChange={onChange}
-        allowInfinity
+        coxeter
         fraction={stellation}
         fractionName={`stellation-${i}-${j}`}
       />
