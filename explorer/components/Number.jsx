@@ -27,6 +27,7 @@ export const parse = (raw, min, max, step, coxeter) => {
   }
 
   valid = !(
+    (coxeter && value === 1) ||
     value === '' ||
     isNaN(value) ||
     value < min ||
@@ -120,7 +121,9 @@ export default function Number({
         return
       }
     }
-    if (raw.includes('/')) {
+    if (raw === `${min}`) {
+      // pass
+    } else if (raw.includes('/')) {
       update((parseInt(raw).split('/')[0] - step).toString())
     } else {
       const val = parseInt(raw) - step

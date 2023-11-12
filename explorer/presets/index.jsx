@@ -64,11 +64,6 @@ const polytope = (coxeterArgs, mirrors, stellationArgs, extra) => {
       .fill()
       .map((_, i) => new Array(dimensions).fill(1))
   }
-  if (dimensions > 4) {
-    for (let i = 4; i <= dimensions; i++) {
-      params[`fov${i}`] = (10 - i) * 10
-    }
-  }
   return params
 }
 

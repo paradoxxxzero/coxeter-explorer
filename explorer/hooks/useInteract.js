@@ -42,6 +42,9 @@ export const keydown = (
 ) => {
   const { code } = e
   const step = 0.01
+  if (e.altKey || e.ctrlKey || e.metaKey) {
+    return
+  }
   if (code === 'ArrowLeft' || code === 'KeyA') {
     translate(-step, 0, 0, rotations, matrix, dimensions, curvature)
   } else if (code === 'ArrowRight' || code === 'KeyD') {

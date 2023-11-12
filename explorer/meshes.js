@@ -103,9 +103,6 @@ export default function getMeshes(rt) {
 
       let start = range ? range[0] : 0
       let stop = range ? range[1] : objects.length
-      if (start === stop) {
-        return
-      }
       let startIdx = start
       let stopIdx = stop
       if (type === 'face') {

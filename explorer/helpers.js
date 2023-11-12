@@ -435,15 +435,11 @@ export const mesh = (
       type: `m${rt.dimensions}fv`,
       value: columnMajor(rt.matrix),
     },
-    ...(ambiances[rt.ambiance].lighting
-      ? [
-          {
-            name: 'eye',
-            type: `3fv`,
-            value: [0, 0, 0],
-          },
-        ]
-      : []),
+    {
+      name: 'eye',
+      type: `3fv`,
+      value: [0, 0, 0],
+    },
     {
       name: 'curvature',
       type: '1f',
@@ -486,6 +482,7 @@ export const mesh = (
     attributes: {},
     varying,
     vertex,
+    type,
     fragment,
     ...compileProgram(rt, type, ...augment(rt, vertex, fragment), uniforms(rt)),
     recompileProgram(rt) {
