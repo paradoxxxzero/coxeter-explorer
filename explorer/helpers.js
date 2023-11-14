@@ -450,6 +450,15 @@ export const mesh = (
       type: '1f',
       value: 1,
     },
+    ...(['edge', 'face'].includes(type)
+      ? [
+          {
+            name: 'segments',
+            type: '1f',
+            value: rt.curve ? rt.segments : 1,
+          },
+        ]
+      : []),
     ...(['vertex', 'edge'].includes(type)
       ? [
           {
@@ -459,11 +468,6 @@ export const mesh = (
           },
         ]
       : [
-          {
-            name: 'segments',
-            type: '1f',
-            value: rt.curve ? rt.segments : 1,
-          },
           {
             name: 'opacity',
             type: '1f',

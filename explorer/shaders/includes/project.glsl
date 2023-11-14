@@ -90,7 +90,7 @@ vec9 xnormalize(in vec9 v) {
 #endif
 
 vec4 viewProject(vec3 position) {
-  #if DIMENSIONS < 3 || PROJECTION3 == -1
+  #if DIMENSIONS != 3 || PROJECTION3 == -1
   return viewProjection * vec4(position, 1.);
   #else
   vec4 normalProjection = viewProjection * vec4(position, 1.);
@@ -173,9 +173,9 @@ vec3 xproject(in vec3 v) {
   #elif PROJECTION3 == 5 // UPPERHALF
   v.xy /= v.z;
   v.z = 1. / v.z;
-  v.yz *= 2. / p(1. + v.x);
+  v.xz *= 2. / p(1. - v.y);
   v.z -= 1.;
-  return vec3(v.yz, 0.);
+  return vec3(v.xz, 0.);
   #elif PROJECTION3 == 6 // BAND
   vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
   return vec3((2. / PI) * ((clog(cone + z)) - clog(cone - z)), v.z);
@@ -187,11 +187,11 @@ vec3 xproject(in vec3 v) {
   return vec3((2. / PI) * .5 * (clog(cone + z) - clog(cone - z) + cmul(ci, clog(cone - cmul(ci, z))) + cmul(-ci, clog(cone - cmul(-ci, z)))), v.z);
   #elif PROJECTION3 == 8 // HEART
   vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
-  return vec3(z.x * z.y + z.y, -.5 * (z.x * z.x - z.y * z.y + 2. * z.x - 0.75), v.z);
+  return vec3(-z.y * z.x + z.x, -.5 * (z.y * z.y - z.x * z.x - 2. * z.y - 0.75), v.z);
   #elif PROJECTION3 == 9 // TEARDROP
   vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
-  return vec3(sign(z.y) *
-    sqrt((sqrt((1. + z.x) * (1. + z.x) + z.y * z.y) - (1. + z.x)) / 2.), -(sqrt((sqrt((1. + z.x) * (1. + z.x) + z.y * z.y) + (1. + z.x)) / 2.) - 0.75), v.z);
+  return vec3(sign(z.x) *
+    sqrt((sqrt((1. - z.y) * (1. - z.y) + z.x * z.x) - (1. - z.y)) / 2.), -(sqrt((sqrt((1. - z.y) * (1. - z.y) + z.x * z.x) + (1. - z.y)) / 2.) - 0.75), v.z);
   #elif PROJECTION3 == 10 // SQUARE
   float Ke = 1.854;
   vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;

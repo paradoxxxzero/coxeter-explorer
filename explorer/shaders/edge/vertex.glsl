@@ -5,6 +5,7 @@ precision highp float;
 
 uniform mat4 viewProjection;
 uniform float curvature;
+uniform float segments;
 uniform float thickness;
 uniform matN matrix;
 
@@ -29,7 +30,6 @@ in mat3 target;
 out vec3 vPosition;
 out vec3 vNormal;
 flat out vec3 vColor;
-const vec3 up = vec3(0.f, 0.f, 1.f); 
 
 #include project
 
@@ -45,10 +45,29 @@ void main() {
   float t = ease(uv.y);
   vecN pos = mix(iPosition, iTarget, t);
   vecN next = mix(iPosition, iTarget, t + EPS);
+  vec3 start = xproject(iPosition);
+  vec3 end = xproject(iTarget);
+  vec3 direction = normalize(end - start);
+  vec3 up = vec3(0.f);
+  float min = 1.f;
+  if(abs(direction.x) < min) {
+    min = abs(direction.x);
+    up = vec3(1.f, 0.f, 0.f);
+  }
+  if(abs(direction.y) < min) {
+    min = abs(direction.y);
+    up = vec3(0.f, 1.f, 0.f);
+  }
+  if(abs(direction.z) < min) {
+    min = abs(direction.z);
+    up = vec3(0.f, 0.f, 1.f);
+  }
 
   // Position segments on hypersurface
-  pos = xnormalize(pos);
-  next = xnormalize(next);
+  if(segments > 1.f) {
+    pos = xnormalize(pos);
+    next = xnormalize(next);
+  }
 
   vec3 proj = xproject(pos);
   vec3 nextProj = xproject(next);
