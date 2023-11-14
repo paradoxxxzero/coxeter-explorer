@@ -64,10 +64,14 @@ void main() {
   vec3 nn = (xproject(next) - position);
   vec3 oo = (xproject(other) - position);
 
-  // Refine if near collinearity
+  // Use the whole vert if near collinearity
   if(length(nn) < .0001f || length(oo) < .0001f) {
-    nn = cross(nn, up);
-    oo = cross(oo, up);
+    vec3 start = xproject(iPosition);
+    vec3 end = xproject(iTarget);
+    vec3 cent = xproject(iCenter);
+
+    nn = (start - end);
+    oo = (cent - start);
   }
   //   next = trix(iPosition, iCenter, iTarget, t + vec2(EPS * 100.f, 0.f));
   //   other = trix(iPosition, iCenter, iTarget, t + vec2(0.f, EPS * 100.f));
