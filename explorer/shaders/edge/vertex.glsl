@@ -45,24 +45,19 @@ void main() {
   float t = ease(uv.y);
   vecN pos = mix(iPosition, iTarget, t);
   vecN next = mix(iPosition, iTarget, t + EPS);
+  // Find a stable norm for the whole tube
+  vecN mid = mix(iPosition, iTarget, .5f);
+
   vec3 start = xproject(iPosition);
   vec3 end = xproject(iTarget);
-  vec3 direction = normalize(end - start);
-  vec3 up = vec3(0.f);
-  float min = 1.f;
-  if(abs(direction.x) < min) {
-    min = abs(direction.x);
-    up = vec3(1.f, 0.f, 0.f);
-  }
-  if(abs(direction.y) < min) {
-    min = abs(direction.y);
-    up = vec3(0.f, 1.f, 0.f);
-  }
-  if(abs(direction.z) < min) {
-    min = abs(direction.z);
-    up = vec3(0.f, 0.f, 1.f);
-  }
+  vec3 middle = xproject(xnormalize(mid));
+  vec3 norm = cross(end - start, middle - start);
 
+  // If there is no curvature the tube will be straight:
+  if(length(norm) < 0.001f) {
+    middle += NOISE;
+    norm = cross(end - start, middle - start);
+  }
   // Position segments on hypersurface
   if(segments > 1.f) {
     pos = xnormalize(pos);
@@ -73,10 +68,10 @@ void main() {
   vec3 nextProj = xproject(next);
 
   vec3 tangent = normalize(proj - nextProj);
-  vec3 norm = cross(tangent, cross(tangent, up));
+  // vec3 norm = cross(tangent, cross(tangent, up));
 
   // Rodrigues' rotation formula: rotate norm around tangent by angle r:
-  float r = (1.f - uv.x) * TAU;
+  float r = uv.x * TAU;
   norm = normalize(norm * cos(r) + cross(tangent, norm) * sin(r));
 
   vec3 finalPosition = inflate(proj, pos, norm, thickness, 0.f);
