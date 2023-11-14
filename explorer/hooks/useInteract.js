@@ -107,7 +107,9 @@ export const useInteract = (
         columnMajor(localMatrix.current)
       )
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    // Stop rendering when these change
     runtime.ambiance,
     // runtime.askedOrder,
     runtime.camera,
@@ -119,11 +121,11 @@ export const useInteract = (
     runtime.curve,
     runtime.dimensions,
     runtime.easing,
-    runtime.edge,
+    // runtime.edge,
     runtime.edgeThickness,
     runtime.error,
     // runtime.extended,
-    runtime.face,
+    // runtime.face,
     // runtime.fb,
     runtime.fov3,
     runtime.fov4,
@@ -144,7 +146,7 @@ export const useInteract = (
     // runtime.passes,
     // runtime.processing,
     runtime.projection,
-    runtime.ranges,
+    // runtime.ranges,
     // runtime.rb,
     runtime.renderError,
     // runtime.rootVertex,
@@ -156,7 +158,7 @@ export const useInteract = (
     runtime.stellation,
     runtime.subsampling,
     runtime.vertexThickness,
-    runtime.vertex,
+    // runtime.vertex,
     runtime.zoom,
   ])
 
