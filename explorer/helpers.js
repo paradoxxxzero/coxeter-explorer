@@ -519,7 +519,7 @@ export const mesh = (
       this.attributes.color.extend(3, new Float32Array(maxSize * 3), true)
     },
     updateGeometry(rt) {
-      const geometry = geometryFunc(rt.curve ? rt.segments : 1)
+      const geometry = geometryFunc(rt.curvature && rt.curve ? rt.segments : 1)
       this.indices.update(new Uint16Array(geometry.indices))
       this.attributes.vertex.extend(3, new Float32Array(geometry.vertices))
       this.attributes.uv.extend(2, new Float32Array(geometry.uvs))

@@ -15,7 +15,7 @@ export const useRender = (runtime, setRuntime) => {
       runtime.meshes.updateGeometries(runtime)
       return runtime
     })
-  }, [runtime.curve, runtime.segments, setRuntime])
+  }, [runtime.curvature, runtime.curve, runtime.segments, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => {

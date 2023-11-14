@@ -83,9 +83,13 @@ export default function getMeshes(rt) {
             mesh.uniforms.thickness.update(rt.vertexThickness)
           } else if (type === 'edge') {
             mesh.uniforms.thickness.update(rt.edgeThickness)
-            mesh.uniforms.segments.update(rt.curve ? rt.segments : 1)
+            mesh.uniforms.segments.update(
+              rt.curvature && rt.curve ? rt.segments : 1
+            )
           } else {
-            mesh.uniforms.segments.update(rt.curve ? rt.segments : 1)
+            mesh.uniforms.segments.update(
+              rt.curvature && rt.curve ? rt.segments : 1
+            )
             mesh.uniforms.opacity.update(ambiances[rt.ambiance].opacity)
           }
         }
