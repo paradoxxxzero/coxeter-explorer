@@ -6,6 +6,7 @@ import {
   getSpaceType,
 } from '../math/hypermath'
 import { killRunningWorkers, workers } from '../workers/worker'
+import { ident } from '../math/matrix'
 
 const asyncProcess = async (runtime, running, setRuntime) => {
   // Rules gets computed on non stellated coxeter group
@@ -160,6 +161,13 @@ export const useProcess = (runtime, setRuntime) => {
     runtime.grouper,
     setRuntime,
   ])
+
+  useEffect(() => {
+    setRuntime(runtime => ({
+      ...runtime,
+      matrix: ident(runtime.dimensions),
+    }))
+  }, [runtime.curvature, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => {

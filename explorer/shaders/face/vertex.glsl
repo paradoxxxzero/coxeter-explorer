@@ -33,6 +33,7 @@ in mat3 center;
 out vec3 vPosition;
 out vec3 vNormal;
 flat out vec3 vColor;
+const vec3 up = vec3(0.f, 0.f, 1.f); 
 
 #include project
 
@@ -60,24 +61,27 @@ void main() {
 
   vec3 position = xproject(pos);
 
-  vec3 nn = xproject(next) - position;
-  vec3 oo = xproject(other) - position;
+  vec3 nn = (xproject(next) - position);
+  vec3 oo = (xproject(other) - position);
 
   // Refine if near collinearity
-  //   if(length(nn) < .0001 || length(oo) < .0001) {
-  //     next = trix(iCenter, iPosition, iTarget, t + vec2(.1, 0.));
-  //     other = trix(iCenter, iPosition, iTarget, t + vec2(0., .1));
+  if(length(nn) < .0001f || length(oo) < .0001f) {
+    nn = cross(nn, up);
+    oo = cross(oo, up);
+  }
+  //   next = trix(iPosition, iCenter, iTarget, t + vec2(EPS * 100.f, 0.f));
+  //   other = trix(iPosition, iCenter, iTarget, t + vec2(0.f, EPS * 100.f));
 
-  //     if(length(t) != 0. || segments > 1.) {
-  //       next = xnormalize(next);
-  //       other = xnormalize(other);
-  //     }
-
-  //     nn = xproject(next) - position;
-  //     oo = xproject(other) - position;
+  //   if(length(t) != 0.f || segments > 1.f) {
+  //     next = xnormalize(next);
+  //     other = xnormalize(other);
   //   }
 
-  gl_Position = viewProjection * vec4(position, 1.f);
+  //   nn = xproject(next) - position;
+  //   oo = xproject(other) - position;
+  // }
+
+  gl_Position = viewProject(position);
 
   vColor = color;
   vPosition = position;

@@ -285,7 +285,7 @@ export const filterParams = (maybeBadParams, changed = []) => {
     params.matrix = ident(params.dimensions)
   }
   if (changed.includes('dimensions') && params.dimensions >= 4) {
-    params[`projection3`] = 'native'
+    params[`projection3`] = 'perspective'
   }
   for (let i = 4; i <= 9; i++) {
     if (

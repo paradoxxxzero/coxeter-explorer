@@ -29,6 +29,7 @@ in mat3 target;
 out vec3 vPosition;
 out vec3 vNormal;
 flat out vec3 vColor;
+const vec3 up = vec3(0.f, 0.f, 1.f); 
 
 #include project
 
@@ -49,22 +50,21 @@ void main() {
   pos = xnormalize(pos);
   next = xnormalize(next);
 
-  vec3 position = xproject(pos);
+  vec3 proj = xproject(pos);
+  vec3 nextProj = xproject(next);
 
-  vec3 n = xproject(next) + NOISE; // Avoid collinearity
-  vec3 k = normalize(position - n); // current segment direction
+  vec3 tangent = normalize(proj - nextProj);
+  vec3 norm = cross(tangent, cross(tangent, up));
 
-  // Rodrigues' rotation formula
-  // To rotate v around axis k by angle r:
+  // Rodrigues' rotation formula: rotate norm around tangent by angle r:
   float r = (1.f - uv.x) * TAU;
-  vec3 v = normalize(cross(n, position));
-  vec3 normal = normalize(v * cos(r) + cross(k, v) * sin(r)); // + k * dot(k, v) * (1. - cos(r));
+  norm = normalize(norm * cos(r) + cross(tangent, norm) * sin(r));
 
-  position = inflate(position, pos, normal, thickness, 0.f);
+  vec3 finalPosition = inflate(proj, pos, norm, thickness, 0.f);
 
-  gl_Position = viewProjection * vec4(position, 1.f);
+  gl_Position = viewProject(finalPosition);
 
   vColor = color;
-  vPosition = position;
-  vNormal = normal;
+  vPosition = finalPosition;
+  vNormal = norm;
 }

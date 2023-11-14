@@ -172,7 +172,7 @@ export const tri = ({ segments = 3 } = {}) => {
 
       // Up triangle
       const p = (i * (i - 1)) / 2 + j
-      indices.push(p, k, k + 1)
+      indices.push(k, p, k + 1)
       // Down triangle
       if (i < segments) {
         const n = ((i + 1) * (i + 2)) / 2 + j

@@ -51,7 +51,7 @@ export const initializeGl = rt => {
       const projectionMatrix = perspective(
         this.fov,
         aspect,
-        0.001,
+        0.01,
         1000,
         this.zoom
       )
@@ -175,6 +175,7 @@ export const render = rt => {
   // OPAQUE
   gl.disable(gl.BLEND)
   gl.enable(gl.DEPTH_TEST)
+  // gl.enable(gl.CULL_FACE)
   gl.depthMask(true)
   gl.depthFunc(gl.LESS)
 
@@ -208,6 +209,7 @@ export const render = rt => {
     }
 
     gl.enable(gl.BLEND)
+    // gl.disable(gl.CULL_FACE)
     gl.depthMask(false)
     gl.blendFuncSeparate(gl.ONE, gl.ONE, gl.ZERO, gl.ONE_MINUS_SRC_ALPHA)
     gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.oit)
@@ -233,6 +235,7 @@ export const render = rt => {
   } else {
     if (ambiance.opacity < 1 && ambiance.transparency === 'blend') {
       gl.enable(gl.BLEND)
+      // gl.disable(gl.CULL_FACE)
       gl.depthMask(false)
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
     }
@@ -320,6 +323,7 @@ export const render = rt => {
 
   if (ambiance.glow) {
     gl.disable(gl.BLEND)
+    // gl.enable(gl.CULL_FACE)
     gl.enable(gl.DEPTH_TEST)
     gl.depthMask(true)
     gl.depthFunc(gl.LESS)

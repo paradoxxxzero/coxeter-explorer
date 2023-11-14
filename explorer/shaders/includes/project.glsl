@@ -89,28 +89,87 @@ vec9 xnormalize(in vec9 v) {
 }
 #endif
 
+vec4 viewProject(vec3 position) {
+  #if DIMENSIONS < 3 || PROJECTION3 == -1
+  return viewProjection * vec4(position, 1.);
+  #else
+  vec4 normalProjection = viewProjection * vec4(position, 1.);
+  vec4 flatProjection = viewProjection * vec4(position.xy, 0., 1.);
+  #if DIMENSIONS == 3
+  normalProjection.z *= -1.;
+  #endif
+  return vec4(flatProjection.xy / flatProjection.w, normalProjection.z / normalProjection.w, 1.);
+  #endif
+}
+
+float p(in float v) {
+  return mix(0., v, v > 0.);
+}
+
+#if DIMENSIONS >= 3
+#if PROJECTION3 > 3
+#include complex
+#endif
+
+vec3 project(in vec3 v, in float k) {
+  float nr = p(v.z + k);
+  return vec3(v.xy / nr, v.z);
+}
+#endif
+#if DIMENSIONS >= 4
+vec3 project(in vec4 v, in float k) {
+  float nr = fov4 / p(v.w + k);
+  return v.xyz * nr;
+}
+#endif
+#if DIMENSIONS >= 5
+vec4 project(in vec5 v, in float k) {
+  float nr = fov5 / p(v.u + k);
+  return v.v * nr;
+}
+#endif
+#if DIMENSIONS >= 6
+vec5 project(in vec6 v, in float k) {
+  float nr = fov6 / p(v.u.y + k);
+  return vec5(v.v * nr, v.u.x * nr);
+}
+#endif
+#if DIMENSIONS >= 7
+vec6 project(in vec7 v, in float k) {
+  float nr = fov7 / p(v.u.z + k);
+  return vec6(v.v * nr, v.u.xy * nr);
+}
+#endif
+#if DIMENSIONS >= 8
+vec7 project(in vec8 v, in float k) {
+  float nr = fov8 / p(v.u.w + k);
+  return vec7(v.v * nr, v.u.xyz * nr);
+}
+#endif
+#if DIMENSIONS >= 9
+vec8 project(in vec9 v, in float k) {
+  float nr = fov9 / p(v.t + k);
+  return vec8(v.v * nr, v.u * nr);
+}
+#endif
+
 vec3 xproject(in vec2 v) {
   return vec3(v, 0.);
 }
-
-#if PROJECTION3 > 5
-#include complex
-#endif
 
 #if DIMENSIONS >= 3
 vec3 xproject(in vec3 v) {
   #if PROJECTION3 == 0 // STEREOGRAPHIC
   return project(v, 1.);
   #elif PROJECTION3 == 1 // ORTHOGRAPHIC
-  return vec3(v.xy, 0.);
+  return vec3(v.xy, v.z);
   #elif PROJECTION3 == 2 // KLEIN
   return project(v, 0.);
   #elif PROJECTION3 == 3 // INVERTED
   return project(v, -1.);
   #elif PROJECTION3 == 4 // JOUKOWSKY
   vec2 z = project(v, 1.).xy;
-  float nr = 1. / dot(z, z);
-  return vec3(z * vec2(1. + nr, 1. - nr), 0.);
+  return vec3(.5 * (z + cinv(z)), 0.);
   #elif PROJECTION3 == 5 // UPPERHALF
   v.xy /= v.z;
   v.z = 1. / v.z;
@@ -119,20 +178,20 @@ vec3 xproject(in vec3 v) {
   return vec3(v.yz, 0.);
   #elif PROJECTION3 == 6 // BAND
   vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
-  return vec3((2. / PI) * ((clog(cone + z)) - clog(cone - z)), 0.);
+  return vec3((2. / PI) * ((clog(cone + z)) - clog(cone - z)), v.z);
   #elif PROJECTION3 == 7 // CROSS
   vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
   // Sum of angles
   // float o = -.5 * PI;
   // vec2 a = vec2(cos(o), sin(o));
-  return vec3((2. / PI) * .5 * (clog(cone + z) - clog(cone - z) + cmul(ci, clog(cone - cmul(ci, z))) + cmul(-ci, clog(cone - cmul(-ci, z)))), 0.);
+  return vec3((2. / PI) * .5 * (clog(cone + z) - clog(cone - z) + cmul(ci, clog(cone - cmul(ci, z))) + cmul(-ci, clog(cone - cmul(-ci, z)))), v.z);
   #elif PROJECTION3 == 8 // HEART
   vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
-  return vec3(z.x * z.y + z.y, -.5 * (z.x * z.x - z.y * z.y + 2. * z.x - 0.75), 0.);
+  return vec3(z.x * z.y + z.y, -.5 * (z.x * z.x - z.y * z.y + 2. * z.x - 0.75), v.z);
   #elif PROJECTION3 == 9 // TEARDROP
   vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
   return vec3(sign(z.y) *
-    sqrt((sqrt((1. + z.x) * (1. + z.x) + z.y * z.y) - (1. + z.x)) / 2.), -(sqrt((sqrt((1. + z.x) * (1. + z.x) + z.y * z.y) + (1. + z.x)) / 2.) - 0.75), 0.);
+    sqrt((sqrt((1. + z.x) * (1. + z.x) + z.y * z.y) - (1. + z.x)) / 2.), -(sqrt((sqrt((1. + z.x) * (1. + z.x) + z.y * z.y) + (1. + z.x)) / 2.) - 0.75), v.z);
   #elif PROJECTION3 == 10 // SQUARE
   float Ke = 1.854;
   vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
@@ -143,13 +202,13 @@ vec3 xproject(in vec3 v) {
     w.x = 2. * Ke - w.x;
   }
   w = cmul(vec2(1., -1.) / -Ke, w) + vec2(1., -1.);
-  return vec3(w, 0.);
+  return vec3(w, v.z);
   #elif PROJECTION3 == 11 // RING
   vec2 z = project(v, 1.).xy;
   z = (2. / PI) * ((clog(cone + z)) - clog(cone - z));
   float k = 4.;
   float P = 1.1393;
-  return vec3(cexp(TAU * cmul(ci, (z.xy + ci)) / (k * P)), 0.);
+  return vec3(cexp(TAU * cmul(ci, (z.xy + ci)) / (k * P)), v.z);
   // LAMBERT
   // float nr = sqrt(2. / (1. + v.z));
   // return vec3(v.xy * nr, 0.);
@@ -171,8 +230,10 @@ vec3 xproject(in vec4 v) {
   return xproject(project(v, -1.));
   #elif PROJECTION4 == 4 // JOUKOWSKY
   vec3 z = project(v, 1.);
-  float nr = 1. / dot(z, z);
-  return xproject(vec3(z * vec3(1. + nr, 1. - nr, 1. + nr)));
+  float r = length(z);
+  float nr = 1. / (r * r);
+  float k = 2. / 3.;
+  return xproject(vec3(-k * (r - nr), k * (r / 2. + nr), k * (r / 2. + nr)) * z);
   #elif PROJECTION4 == 5 // UPPERHALF
   v.xyz /= v.w;
   v.w = 1. / v.w;
@@ -197,8 +258,10 @@ vec3 xproject(in vec5 v) {
   return xproject(project(v, -1.));
   #elif PROJECTION5 == 4 // JOUKOWSKY
   vec4 z = project(v, 1.);
-  float nr = 1. / dot(z, z);
-  return xproject(vec4(z * vec4(1. + nr, 1. - nr, 1. + nr, 1. - nr)));
+  float r = length(z);
+  float nr = 1. / (r * r * r);
+  float k = 3. / 4.;
+  return xproject(vec4(-k * (r - nr), k * (r / 3. + nr), k * (r / 3. + nr), k * (r / 3. + nr)) * z);
   #elif PROJECTION5 == 5 // UPPERHALF
   v.v /= v.u;
   v.u = 1. / v.u;
@@ -370,88 +433,3 @@ vec9 multiplyMatrix(mat9 m, vec9 v) {
   return vec9(vec4(ndot(m.c1, v), ndot(m.c2, v), ndot(m.c3, v), ndot(m.c4, v)), vec4(ndot(m.c5, v), ndot(m.c6, v), ndot(m.c7, v), ndot(m.c8, v)), ndot(m.c9, v));
 }
 #endif
-// mat4 findRotationMatrix(in vec4 u, in vec4 v) {
-//   vec4 w = u + v;
-//   if(length(w) < 0.0001) {
-//     return mat4(-1.);
-//   }
-
-//   return 2. * outerProduct(w, w) / dot(w, w) - mat4(1.);
-// }
-// mat3 findRotationMatrix(in vec3 u, in vec3 v) {
-//   vec3 w = u + v;
-//   if(length(w) < 0.0001) {
-//     return mat3(-1.);
-//   }
-
-//   return 2. * outerProduct(w, w) / dot(w, w) - mat3(1.);
-// }
-
-// vec3 xprojectnormal(in vec4 n, in vec4 p, in vec3 pp) {
-//   #if DIMENSIONS == 4
-
-//   vec4 np = p + n;
-//   vec3 npp = xproject(np);
-
-//   return npp - pp;
-//   #else
-//   return n.xyz;
-//   #endif
-// }
-
-// vec4 xprojectnormal(in vec4 p, in vec4 n) {
-//   #if DIMENSIONS == 4
-//   vec4 v = xproject(n);
-//   #if PROJECTION == 'STEREOGRAPHIC'
-//   return vec4(v.xyz * (p.w - curvature) + p.xyz, 1.);
-//   #endif
-//   #if PROJECTION == 'ORTHOGRAPHIC'
-//   return vec4(v.xyz + p.xyz, 1.);
-//   #endif
-//   #if PROJECTION == 'KLEIN'
-//   return vec4(v.xyz * (p.w) + p.xyz, 1.);
-//   #endif
-//   #if PROJECTION == 'INVERTED'
-//   return vec4(n.xyz * (p.w + curvature) + p.xyz, 1.);
-//   #endif
-//   #if PROJECTION == 'JEMISPHERE'
-//   return vec4(v.xyz, 1.);
-//   #endif
-//   #if PROJECTION == 'UPPERHALF'
-//   v.xyz /= v.w;
-//   v.w = 1. / v.w;
-
-//   v.xzw *= 2. / (1. + v.y);
-//   v.y = 1.;
-//   v.wxyz = v.yxzw;
-//   v.z *= -1.;
-//   return v;
-//   #endif
-//   #else
-//   return n;
-//   #endif
-// }
-
-// vec4 cross4(in vec4 v1, in vec4 v2, in vec4 v3) {
-//   return vec4(v2.y * v3.z * v1.w -
-//     v3.y * v2.z * v1.w -
-//     v1.y * v3.z * v2.w +
-//     v3.y * v1.z * v2.w +
-//     v3.w * v1.y * v2.z -
-//     v3.w * v2.y * v1.z, -v2.x * v3.z * v1.w +
-//     v3.x * v2.z * v1.w +
-//     v1.x * v3.z * v2.w -
-//     v3.x * v1.z * v2.w -
-//     v3.w * v1.x * v2.z +
-//     v3.w * v2.x * v1.z, v2.x * v3.y * v1.w -
-//     v3.x * v2.y * v1.w -
-//     v1.x * v3.y * v2.w +
-//     v3.x * v1.y * v2.w +
-//     v3.w * v1.x * v2.y -
-//     v3.w * v2.x * v1.y, -v1.x * v2.y * v3.z +
-//     v1.x * v3.y * v2.z +
-//     v2.x * v1.y * v3.z -
-//     v2.x * v3.y * v1.z -
-//     v3.x * v1.y * v2.z +
-//     v3.x * v2.y * v1.z);
-// }

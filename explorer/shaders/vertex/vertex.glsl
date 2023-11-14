@@ -39,7 +39,7 @@ void main() {
   vec3 position = xproject(pos);
   position = inflate(position, pos, normal, thickness, .01f);
 
-  gl_Position = viewProjection * vec4(position, 1.f);
+  gl_Position = viewProject(position);
 
   vColor = color;
   vPosition = position;
