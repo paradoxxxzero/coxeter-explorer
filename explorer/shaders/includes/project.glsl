@@ -90,20 +90,17 @@ vec9 xnormalize(in vec9 v) {
 #endif
 
 vec4 viewProject(vec3 position) {
-  #if DIMENSIONS != 3 || PROJECTION3 == -1
-  return viewProjection * vec4(position, 1.);
-  #else
+  #if DIMENSIONS == 3 && PROJECTION3 != -1
   vec4 normalProjection = viewProjection * vec4(position, 1.);
   vec4 flatProjection = viewProjection * vec4(position.xy, 0., 1.);
-  #if DIMENSIONS == 3
-  normalProjection.z *= -1.;
-  #endif
   return vec4(flatProjection.xy / flatProjection.w, normalProjection.z / normalProjection.w, 1.);
+  #else
+  return viewProjection * vec4(position, 1.);
   #endif
 }
 
 float p(in float v) {
-  return mix(0., v, v > 0.);
+  return max(1e-9, v);
 }
 
 #if DIMENSIONS >= 3
@@ -162,7 +159,7 @@ vec3 xproject(in vec3 v) {
   #if PROJECTION3 == 0 // STEREOGRAPHIC
   return project(v, 1.);
   #elif PROJECTION3 == 1 // ORTHOGRAPHIC
-  return vec3(v.xy, v.z);
+  return v;
   #elif PROJECTION3 == 2 // KLEIN
   return project(v, 0.);
   #elif PROJECTION3 == 3 // INVERTED

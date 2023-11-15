@@ -89,6 +89,7 @@ export const ambiances = {
     opacity: 0.4,
     transparency: 'blend',
     color: ({ word }) => hsl((word.length * 0.03) % 1, 1, 0.8),
+    // culling: true,
   },
   oit: {
     background: [1, 1, 1, 1],

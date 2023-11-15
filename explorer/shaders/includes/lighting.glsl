@@ -1,6 +1,9 @@
 vec4 light(vec4 color, float ambient, float shininess) {
   #ifdef LIGHTING
-  vec3 eyeDirection = normalize(eye - vPosition);
+  vec3 eyeDirection = eye - vPosition;
+  float distance = length(eyeDirection);
+  float attenuation = 1. / (1. + distance * distance * .01);
+  eyeDirection = normalize(eyeDirection);
   vec3 lightDirection = eyeDirection;
   float diffuse = abs(dot(vNormal, lightDirection));
   #if LIGHTING == 0
@@ -23,7 +26,7 @@ vec4 light(vec4 color, float ambient, float shininess) {
   diffuse = floor(diffuse * 4.) / 4.;
   #endif
 
-  return vec4((ambient + diffuse + specular) * color.rgb, color.a);
+  return vec4((ambient + diffuse + specular) * attenuation * color.rgb, color.a);
   #else
   return color;
   #endif

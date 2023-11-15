@@ -59,35 +59,27 @@ void main() {
     other = xnormalize(other);
   }
 
-  vec3 position = xproject(pos);
+  vec3 proj = xproject(pos);
 
-  vec3 nn = (xproject(next) - position);
-  vec3 oo = (xproject(other) - position);
+  vec3 drdx = (xproject(next) - proj);
+  vec3 drdy = (xproject(other) - proj);
 
-  // Use the whole vert if near collinearity
-  if(length(nn) < .0001f || length(oo) < .0001f) {
-    vec3 start = xproject(iPosition);
-    vec3 end = xproject(iTarget);
-    vec3 cent = xproject(iCenter);
+  // // if |drdx| or |drdy| is too small the norm will vary too much, see horoball example
+  // if(length(drdx) < 1e-4f || length(drdy) < 1e-4f) {
+  //   next = trix(iProj, iCenter, iTarget, t + vec2(EPS * 10.f, 0.f));
+  //   other = trix(iProj, iCenter, iTarget, t + vec2(0.f, EPS * 10.f));
+  //   next = xnormalize(next);
+  //   other = xnormalize(other);
 
-    nn = (start - end);
-    oo = (cent - start);
-  }
-  //   next = trix(iPosition, iCenter, iTarget, t + vec2(EPS * 100.f, 0.f));
-  //   other = trix(iPosition, iCenter, iTarget, t + vec2(0.f, EPS * 100.f));
-
-  //   if(length(t) != 0.f || segments > 1.f) {
-  //     next = xnormalize(next);
-  //     other = xnormalize(other);
-  //   }
-
-  //   nn = xproject(next) - position;
-  //   oo = xproject(other) - position;
+  //   drdx = (xproject(next) - proj);
+  //   drdy = (xproject(other) - proj);
   // }
 
-  gl_Position = viewProject(position);
+  vec3 norm = normalize(cross(drdx, drdy));
+
+  gl_Position = viewProject(proj);
 
   vColor = color;
-  vPosition = position;
-  vNormal = normalize(cross(nn, oo));
+  vPosition = proj;
+  vNormal = norm;
 }

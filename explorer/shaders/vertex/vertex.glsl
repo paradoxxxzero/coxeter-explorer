@@ -34,14 +34,14 @@ void main() {
   #else
   vecN pos = matrix * position;
   #endif
-  pos = xnormalize(pos);
+  // pos = xnormalize(pos);
 
-  vec3 position = xproject(pos);
-  position = inflate(position, pos, normal, thickness, .01f);
+  vec3 proj = xproject(pos);
+  proj = inflate(proj, pos, normal, thickness, .01f);
 
-  gl_Position = viewProject(position);
+  gl_Position = viewProject(proj);
 
   vColor = color;
-  vPosition = position;
+  vPosition = proj;
   vNormal = normal;
 }
