@@ -85,26 +85,18 @@ export const ambiances = {
   colorful: {
     background: [1, 1, 1, 1],
     glow: false,
-    lighting: 'phong',
-    opacity: 0.4,
-    transparency: 'blend',
-    color: ({ word }) => hsl((word.length * 0.03) % 1, 1, 0.8),
-    // culling: true,
-  },
-  oit: {
-    background: [1, 1, 1, 1],
-    glow: false,
     lighting: 'blinn-phong',
-    opacity: 0.3,
+    opacity: 0.4,
     transparency: 'oit',
     color: ({ word }) => hsl((word.length * 0.03) % 1, 1, 0.8),
+    // culling: true,
   },
   reflection: {
     background: [1, 1, 1, 1],
     glow: false,
     lighting: 'toon',
     opacity: 0.6,
-    transparency: 'blend',
+    transparency: 'oit',
     color: ({ word }, type, { dimensions, showFaces }) => {
       const h = word.length ? atoi(word[word.length - 1]) / dimensions : 0
       return hsl(h % 1, 1, type === 'face' ? 0.6 : showFaces ? 0.05 : 0.8)

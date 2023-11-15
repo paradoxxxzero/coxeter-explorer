@@ -83,6 +83,8 @@ export const useInteract = (
     debounce(matrix => updateParams({ matrix }), 100),
     []
   )
+  const updateMatrixSync = useCallback(matrix => updateParams({ matrix }), [])
+
   const updateZoom = useCallback(
     debounce(zoom => updateParams({ zoom }), 100),
     []
@@ -186,7 +188,7 @@ export const useInteract = (
           speed[i] *= 0.96
           if (abs(speed[i]) < 1e-4) {
             speed[i] = 0
-            updateMatrix(localMatrix.current)
+            updateMatrixSync(localMatrix.current)
           }
         }
         if (rotations.auto !== 'damp' || !pause.has(i)) {
@@ -222,14 +224,14 @@ export const useInteract = (
         cancelAnimationFrame(loop.current)
         loop.current = null
       }
-      updateMatrix(localMatrix.current)
+      updateMatrixSync(localMatrix.current)
     }
   }, [
     rotations.auto,
     rotations.combinations,
     runtime.dimensions,
     runtime.curvature,
-    updateMatrix,
+    updateMatrixSync,
     quickUpdateMatrix,
   ])
 

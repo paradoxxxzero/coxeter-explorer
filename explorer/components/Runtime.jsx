@@ -32,7 +32,7 @@ export default function Runtime({
         })
       }
     }
-  }, [runtime.curvature])
+  }, [runtime.curvature, runtime.dimensions])
 
   return (
     <>
