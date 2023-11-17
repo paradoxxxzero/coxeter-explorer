@@ -50,8 +50,8 @@ void main() {
 
   vec2 t = ease(uv);
   vecN pos = trix(iPosition, iCenter, iTarget, t);
-  vecN next = trix(iPosition, iCenter, iTarget, t + vec2(EPS, 0.f));
-  vecN other = trix(iPosition, iCenter, iTarget, t + vec2(0.f, EPS));
+  vecN next = trix(iPosition, iCenter, iTarget, t + vec2(DT, 0.f));
+  vecN other = trix(iPosition, iCenter, iTarget, t + vec2(0.f, DT));
 
   if(segments > 1.f) {
     pos = xnormalize(pos);
@@ -66,10 +66,12 @@ void main() {
 
   // // if |drdx| or |drdy| is too small the norm will vary too much, see horoball example
   // if(length(drdx) < 1e-4f || length(drdy) < 1e-4f) {
-  //   next = trix(iProj, iCenter, iTarget, t + vec2(EPS * 10.f, 0.f));
-  //   other = trix(iProj, iCenter, iTarget, t + vec2(0.f, EPS * 10.f));
-  //   next = xnormalize(next);
-  //   other = xnormalize(other);
+  //   next = trix(iPosition, iCenter, iTarget, t + vec2(DT / (1000.f * length(drdx)), 0.f));
+  //   other = trix(iPosition, iCenter, iTarget, t + vec2(0.f, DT / (1000.f * length(drdy))));
+  //   if(segments > 1.f) {
+  //     next = xnormalize(next);
+  //     other = xnormalize(other);
+  //   }
 
   //   drdx = (xproject(next) - proj);
   //   drdy = (xproject(other) - proj);

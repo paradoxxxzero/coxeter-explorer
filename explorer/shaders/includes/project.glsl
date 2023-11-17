@@ -209,6 +209,24 @@ vec3 xproject(in vec3 v) {
   // LAMBERT
   // float nr = sqrt(2. / (1. + v.z));
   // return vec3(v.xy * nr, 0.);
+  #elif PROJECTION3 == 12 // SINUSOIDAL
+  vec2 z = project(v, 1.).xy;
+  return vec3(csin(1.5 * z), v.z);
+  #elif PROJECTION3 >= 13 // TRIANGLE  
+
+  vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
+  vec2 w = sc(z, PROJECTION3 - 10);
+  // Rotate by PI / 4
+  #if PROJECTION3 == 14
+  w = cmul(w, cexp(ci * PI / 4.));
+  #elif PROJECTION3 == 15
+  w = cmul(w, cexp(ci * PI / 10.));
+  #endif
+  return vec3(w, v.z);
+
+  // LAMBERT
+  // float nr = sqrt(2. / (1. + v.z));
+  // return vec3(v.xy * nr, 0.);
   #else
   return v;
   #endif

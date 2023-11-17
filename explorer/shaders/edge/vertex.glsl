@@ -44,7 +44,7 @@ void main() {
 
   float t = ease(uv.y);
   vecN pos = mix(iPosition, iTarget, t);
-  vecN next = mix(iPosition, iTarget, t + EPS);
+  vecN next = mix(iPosition, iTarget, t + DT);
   // Position segments on hypersurface
   if(segments > 1.f) {
     pos = xnormalize(pos);
@@ -52,14 +52,10 @@ void main() {
   }
 
   vec3 proj = xproject(pos);
-  vec3 nextProj = xproject(next);
+  vec3 nextProj = xproject(next) + NOISE;
   vec3 tangent = normalize(proj - nextProj);
 
   vec3 norm = cross(nextProj, proj);
-
-  if(length(norm) < 1e-6f) {
-    norm = cross(nextProj, proj + NOISE);
-  }
 
   // // Find a stable norm for the whole tube
   // vecN mid = mix(iPosition, iTarget, .5f);

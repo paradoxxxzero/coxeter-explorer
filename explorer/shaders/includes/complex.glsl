@@ -2,19 +2,12 @@ const vec2 cone = vec2(1., 0);
 const vec2 ci = vec2(0., 1.);
 const vec2 conei = vec2(1., 1.);
 
-vec2 cmul(in vec2 z0, in vec2 z1) {
-  float x0 = z0.x;
-  float y0 = z0.y;
-  float x1 = z1.x;
-  float y1 = z1.y;
-  return vec2(x0 * x1 - y0 * y1, x0 * y1 + x1 * y0);
+vec2 cmul(vec2 z, vec2 w) {
+  return vec2(z.x * w.x - z.y * w.y, z.x * w.y + z.y * w.x);
 }
 
-vec2 cinv(in vec2 z) {
-  float x = z.x;
-  float y = z.y;
-  float n = 1.0 / (x * x + y * y);
-  return vec2(n * x, -n * y);
+vec2 cinv(vec2 z) {
+  return z * vec2(1, -1) / dot(z, z);
 }
 
 vec2 cdiv(in vec2 z0, in vec2 z1) {
@@ -39,8 +32,7 @@ vec2 clog(in vec2 z) {
 }
 
 vec2 csin(in vec2 z) {
-  float x = z.x, y = z.y;
-  return cdiv(cexp(vec2(-y, x)) - cexp(vec2(y, -x)), vec2(0, 2.0));
+  return cdiv(cexp(vec2(-z.y, z.x)) - cexp(vec2(z.y, -z.x)), vec2(0, 2.0));
 }
 
 vec2 cpow(in vec2 z, in float k) {
@@ -194,4 +186,48 @@ vec2 ellipticFi(in vec2 z, in float m) {
   r = ellipticF(atan(1. / sqrt(max(0., cotLambda2))), m) * sign(z.x);
   i = ellipticF(atan(sqrt(max(0., (cotLambda2 / cotPhi2 - 1.) / m))), 1. - m) * sign(z.y);
   return vec2(r, i);
+}
+float gamma(float z) {
+  const float[8] p = float[](676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7);
+  z -= 1.0;
+  float x = 0.99999999999980993; // Unnecessary precision
+  for(int i = 0; i < 8; i++) {
+    float pval = p[i];
+    x += pval / (z + float(i + 1));
+  }
+  float t = z + 8.0 - 0.5;
+  return sqrt(2.0 * PI) * pow(t, z + 0.5) * exp(-t) * x;
+}
+float B(float a, float b) {
+  return (gamma(a) * gamma(b)) / gamma(a + b);
+}
+
+float binomial(float a, int n) {
+  float s = 1.0;
+  for(int i = n; i >= 1; i--, a--) {
+    s *= float(a) / float(i);
+  }
+  return s;
+}
+
+vec2 sc(vec2 w, int K) {
+  // https://fr.scribd.com/document/480603019/circletopolygon 2.14
+  vec2 sum = vec2(0.);
+  for(int n = 0; n <= 6; n++) {
+    sum += binomial(float(n) - 1.0 + 2.0 / float(K), n) / float(1 + n * K) * cpow(w, float(n * K));
+  }
+  return cmul(w, sum);
+}
+
+vec2 sc2(vec2 w, int K) {
+  // https://fr.scribd.com/document/480603019/circletopolygon A
+  float Kinv = 1. / float(K);
+  float k = 0.;
+  vec2 zk = (1. - Kinv) * B(1. + Kinv, 1. - 2. * Kinv) * cexp(TAU * k * Kinv * ci);
+
+  vec2 sum = vec2(0.);
+  for(int n = 0; n <= 6; n++) {
+    sum += binomial(float(n) - 1.0 * Kinv, n) / float(1 + n - 2 / K) * cpow(cone - cpow(w, float(K)), 1. + float(n) - 2. * Kinv);
+  }
+  return cmul(zk, 1. - (1. / B(1. - 2. * Kinv, Kinv)) * sum);
 }

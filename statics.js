@@ -21,6 +21,11 @@ export const projections = [
   'teardrop',
   'square',
   'ring',
+  'sinusoidal',
+  'SC_Triangle',
+  'SC_Square',
+  'SC_Pentagon',
+  'SC_Hexagon',
 ]
 export const easings = [
   'auto',
@@ -96,7 +101,7 @@ export const ambiances = {
     glow: false,
     lighting: 'toon',
     opacity: 0.6,
-    transparency: 'oit',
+    transparency: 'blend',
     color: ({ word }, type, { dimensions, showFaces }) => {
       const h = word.length ? atoi(word[word.length - 1]) / dimensions : 0
       return hsl(h % 1, 1, type === 'face' ? 0.6 : showFaces ? 0.05 : 0.8)
