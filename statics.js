@@ -96,6 +96,18 @@ export const ambiances = {
     color: ({ word }) => hsl((word.length * 0.03) % 1, 1, 0.8),
     // culling: true,
   },
+  shape: {
+    background: [1, 1, 1, 1],
+    glow: false,
+    lighting: 'lambert',
+    opacity: 0.9,
+    transparency: 'oit',
+    color: ({ word, vertices }, type) =>
+      type === 'face'
+        ? hsl(((vertices.length - 2) * 0.21) % 1, 1, 0.8)
+        : [1, 1, 1],
+    // culling: true,
+  },
   reflection: {
     background: [1, 1, 1, 1],
     glow: false,
