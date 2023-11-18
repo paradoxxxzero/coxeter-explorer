@@ -54,8 +54,15 @@ export const useRender = (runtime, setRuntime) => {
       if (runtime.currentOrder < 0) {
         return
       }
-      plot(runtime, runtime.currentOrder - 1)
-      return runtime
+      try {
+        plot(runtime, runtime.currentOrder - 1)
+        return runtime
+      } catch (e) {
+        return {
+          ...runtime,
+          error: e.message,
+        }
+      }
     })
   }, [
     runtime.currentOrder,
@@ -92,13 +99,18 @@ export const useRender = (runtime, setRuntime) => {
   useEffect(() => {
     setRuntime(runtime => {
       // Full plot
-      plot(runtime)
-      return runtime
+      try {
+        plot(runtime)
+        return runtime
+      } catch (e) {
+        return {
+          ...runtime,
+          error: e.message,
+        }
+      }
     })
   }, [
     runtime.ambiance,
-    runtime.curve,
-    runtime.segments,
     runtime.showEdges,
     runtime.showFaces,
     runtime.showVertices,

@@ -17,9 +17,23 @@ export const mirrorSymbols = {
       <circle cx="16" cy="16" r={dotSize} fill="currentColor" />
     </>
   ),
+  dual: (
+    <>
+      <circle cx="16" cy="16" r={dotSize} fill="currentColor" />
+      <path d="M 16 2 L 16 10" />
+      <path d="M 16 10 L 16 22" stroke="black" />
+      <path d="M 16 22 L 16 30" />
+    </>
+  ),
   snub: (
     <>
       <circle cx="16" cy="16" r={circleSize} />
+    </>
+  ),
+  dualsnub: (
+    <>
+      <circle cx="16" cy="16" r={circleSize - 4} />
+      <path d="M 16 0 L 16 32" />
     </>
   ),
   holosnub: (
@@ -56,7 +70,7 @@ export default function Node({ index, value, onChange }) {
   const type = mirrorToType(value)
 
   const handleClick = () => {
-    const next = type === 'active' ? 'inactive' : 'active'
+    const next = type === 'inactive' ? 'active' : 'inactive'
     const newValue = mirrorTypes[next]
     onChange(index, newValue)
   }
@@ -117,21 +131,29 @@ export default function Node({ index, value, onChange }) {
           {Object.keys(mirrorSymbols)
             .filter(subtype => subtype !== type)
             .map(type => (
-              <svg
+              <div
                 key={type}
-                className={`coxeter-graphic ${type}`}
-                viewBox="0 0 32 32"
-                width="1em"
-                strokeWidth="2"
-                stroke="currentColor"
-                fill="black"
+                title={type}
                 onClick={() => {
                   onChange(index, mirrorTypes[type])
                   setMenu(false)
                 }}
               >
-                {mirrorSymbols[type]}
-              </svg>
+                <svg
+                  className={`coxeter-graphic ${type}`}
+                  viewBox="0 0 32 32"
+                  width="1em"
+                  strokeWidth="2"
+                  stroke="currentColor"
+                  fill="black"
+                  onClick={() => {
+                    onChange(index, mirrorTypes[type])
+                    setMenu(false)
+                  }}
+                >
+                  {mirrorSymbols[type]}
+                </svg>
+              </div>
             ))}
         </div>
       )}

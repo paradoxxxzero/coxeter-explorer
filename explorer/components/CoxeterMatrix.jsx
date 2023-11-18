@@ -66,8 +66,15 @@ export default function CoxeterMatrix({
 
   const handleMirrorChange = useCallback(
     (index, value) => {
-      const newMirrors = mirrors.slice()
+      let newMirrors = mirrors.slice()
       newMirrors[index] = value
+
+      // If there is a dual, all active mirrors become duals
+      if (newMirrors.includes('d') || newMirrors.includes('b')) {
+        newMirrors = newMirrors.map((m, i) =>
+          m === 's' ? 'b' : m && m !== 'b' ? 'd' : m
+        )
+      }
       onChange('mirrors', newMirrors)
     },
     [mirrors, onChange]

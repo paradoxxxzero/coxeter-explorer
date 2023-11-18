@@ -100,7 +100,7 @@ export const ambiances = {
     background: [1, 1, 1, 1],
     glow: false,
     lighting: 'lambert',
-    opacity: 0.9,
+    opacity: 0.75,
     transparency: 'oit',
     color: ({ word, vertices }, type) =>
       type === 'face'

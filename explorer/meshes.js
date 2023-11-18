@@ -3,6 +3,7 @@ import { sphere, tri, tube } from './geometries'
 import { mesh } from './helpers'
 import { PI, tan } from './math'
 import { columnMajor } from './math/matrix'
+import { dual, holosnub, snub } from './operator'
 import { render } from './render'
 import fragmentEdge from './shaders/edge/fragment.glsl?raw'
 import vertexEdge from './shaders/edge/vertex.glsl?raw'
@@ -100,14 +101,14 @@ export default function getMeshes(rt) {
         }
       }
     },
-    plotType(rt, type, range) {
+    plotType(rt, type, range, vertex, objects = null) {
       const mesh = this[type]
-      const objects = rt[type]
+      objects = objects || vertex
       const { dimensions } = rt
       const ambiance = ambiances[rt.ambiance]
 
-      let start = range ? range[0] : 0
-      let stop = range ? range[1] : objects.length
+      const [start, stop] = range
+
       let startIdx = start
       let stopIdx = stop
       if (type === 'face') {
@@ -143,8 +144,8 @@ export default function getMeshes(rt) {
         } else if (type === 'edge') {
           vertices.push({
             ...object,
-            position: rt.vertex[object.start].vertex,
-            target: rt.vertex[object.end].vertex,
+            position: vertex[object.start].vertex,
+            target: vertex[object.end].vertex,
             type,
           })
         } else {
@@ -154,14 +155,14 @@ export default function getMeshes(rt) {
           if (object.vertices.length === 3) {
             vertices.push({
               ...object,
-              position: rt.vertex[object.vertices[0]].vertex,
-              target: rt.vertex[object.vertices[1]].vertex,
-              center: rt.vertex[object.vertices[2]].vertex,
+              position: vertex[object.vertices[0]].vertex,
+              target: vertex[object.vertices[1]].vertex,
+              center: vertex[object.vertices[2]].vertex,
             })
           } else {
             const faceVertices = new Array(object.vertices.length)
             for (let j = 0; j < object.vertices.length; j++) {
-              faceVertices[j] = rt.vertex[object.vertices[j]].vertex
+              faceVertices[j] = vertex[object.vertices[j]].vertex
             }
             const center = new Array(dimensions).fill(0)
             for (let j = 0; j < faceVertices.length; j++) {
@@ -212,12 +213,37 @@ export default function getMeshes(rt) {
         mesh.attributes.color.update(startIdx, stopIdx)
       }
     },
-    plot(rt, ranges) {
+    preprocess(rt, ranges) {
+      let plot = {
+        vertex: rt.vertex,
+        edge: rt.edge,
+        face: rt.face,
+        ranges,
+      }
+      if (rt.mirrors.some(mirror => 'sb'.includes(mirror))) {
+        plot = snub(plot, rt.mirrors, rt.dimensions, rt.curvature)
+      }
+      if (rt.mirrors.some(mirror => mirror === 'ß')) {
+        plot = holosnub(plot, rt.mirrors, rt.dimensions, rt.curvature)
+      }
+      if (rt.mirrors.some(mirror => 'db'.includes(mirror))) {
+        plot = dual(plot, rt.mirrors, rt.dimensions, rt.curvature)
+      }
+      return plot
+    },
+    plot(rt, ranges_) {
+      const { vertex, edge, face, ranges } = this.preprocess(rt, ranges_)
       for (let i = 0; i < this.meshes.length; i++) {
         const type = this.meshes[i]
         const mesh = this[type]
         if (mesh.visible) {
-          this.plotType(rt, type, ranges[type])
+          this.plotType(
+            rt,
+            type,
+            ranges[type],
+            vertex,
+            type !== 'vertex' ? (type === 'face' ? face : edge) : null
+          )
         }
       }
     },

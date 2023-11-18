@@ -118,7 +118,6 @@ export const plot = (rt, order = null) => {
           edge: [rt.ranges[0].edge[0], rt.ranges[rt.currentOrder - 1].edge[1]],
           face: [rt.ranges[0].face[0], rt.ranges[rt.currentOrder - 1].face[1]],
         }
-
   rt.meshes.plot(rt, ranges)
 
   document.title = `Coxeter Explorer - ${

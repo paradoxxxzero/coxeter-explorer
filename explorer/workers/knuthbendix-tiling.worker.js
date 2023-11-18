@@ -27,7 +27,9 @@ const init = (rootVertex, newRules, newMirrors) => {
   nextWords = ['']
   mirrors = newMirrors
   rules = newRules
-  const snubWord = mirrors.map((m, i) => (m === 's' ? itoa(i) : '')).join('')
+  const snubWord = mirrors
+    .map((m, i) => ('sb'.includes(m) ? itoa(i) : ''))
+    .join('')
   snub = snubWord.length > 0 ? new RegExp(`[^${snubWord}]`, 'g') : null
   // cleanInactive = new RegExp(
   //   `[${mirrors.map((m, i) => (m ? '' : itoa(i))).join('')}]*$`
