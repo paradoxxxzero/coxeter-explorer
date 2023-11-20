@@ -372,3 +372,9 @@ export const lookAt = (eye, center, up) => {
 
   return out
 }
+
+export const subvector = (vector, removed) =>
+  vector.filter((_, i) => i !== removed)
+
+export const submatrix = (matrix, removed) =>
+  subvector(matrix, removed).map(row => subvector(row, removed))

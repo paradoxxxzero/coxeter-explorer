@@ -65,7 +65,7 @@ const reflectWord = (state, word) => {
   return v
 }
 
-export const vertexIndex = (word, index = 0) => {
+export const reflectToVertex = (word, index) => {
   for (let i = 0; i < word.length; i++) {
     const j = atoi(word[i])
     const newIndex = verticesParams.cosets.normal[index][j]
@@ -132,15 +132,18 @@ onmessage = ({
         edgeParams.limit = limit * (curvature > 0 ? 1 : curvature < 0 ? 1.5 : 3) // ???
         solve(edgeParams)
       }
-      const startIndex = edgeParams.pair[0]
-      const endIndex = vertexIndex(edgeParams.pair[1])
+      // Get index of target vertex in base face
+      const target = reflectToVertex(edgeParams.target, 0)
       for (let j = edgeParams.lastDrawn; j < edgeParams.words.length; j++) {
         const word = edgeParams.words[j]
         if (word === undefined) {
           continue
         }
-        const start = vertexIndex(word, startIndex)
-        const end = vertexIndex(word, endIndex)
+        // Get the origin vertex after reflections
+        const start = reflectToVertex(word, 0)
+        // Get the target vertex after reflections
+        const end = reflectToVertex(word, target)
+
         if (start === undefined || end === undefined) {
           edgeParams.lastDrawn = j
           break
@@ -163,28 +166,26 @@ onmessage = ({
       }
 
       let fail = false
-      const indexes = []
+      const face = []
+      // Get vertices of the base face
       for (let j = 0; j < faceParams.face.length; j++) {
-        const face = faceParams.face[j]
-        const vIndex = vertexIndex(face)
+        const faceWord = faceParams.face[j]
+        const vIndex = reflectToVertex(faceWord, 0)
         if (vIndex === undefined) {
           fail = true
           break
         }
-        indexes.push(vIndex)
+        face.push(vIndex)
       }
       if (fail) {
-        break
+        continue
       }
+      // Get these vertices after reflections
       for (let j = faceParams.lastDrawn; j < faceParams.words.length; j++) {
         const word = faceParams.words[j]
-        if (word === undefined) {
-          // faceParams.lastDrawn = j ??
-          continue
-        }
         const vertices = []
-        for (let k = 0; k < indexes.length; k++) {
-          const vIndex = vertexIndex(word, indexes[k])
+        for (let k = 0; k < face.length; k++) {
+          const vIndex = reflectToVertex(word, face[k])
           if (vIndex === undefined) {
             fail = true
             break

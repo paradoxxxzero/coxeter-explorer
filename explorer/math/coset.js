@@ -34,24 +34,25 @@ export const getEdgesCosetsParams = (
   for (let i = 0; i < mirrors.length; i++) {
     if (mirrors[i]) {
       let subgens = itoa(i)
+
+      // Add commuting with inactive:
       for (let j = 0; j < dimensions; j++) {
-        if (coxeter[i][j] === 2) {
-          if (!mirrors[j]) {
-            subgens += itoa(j)
-          }
+        if (coxeter[i][j] === 2 && !mirrors[j]) {
+          subgens += itoa(j)
         }
       }
+
       params.push({
         gens,
         subgens,
         rels,
-        pair: [0, itoa(i)],
+        target: itoa(i),
       })
     }
   }
-
   return params
 }
+
 export const getFacesCosetsParams = (
   dimensions,
   coxeter,
@@ -70,41 +71,45 @@ export const getFacesCosetsParams = (
       pair = [pair[1], pair[0]]
     }
     const multiplier = coxeter[pair[0]][pair[1]]
+    // Can't make a face with infinite number of vertex
+    if (multiplier < 2) {
+      continue
+    }
+    // No face if no active in pair
+    if (!mirrors[pair[0]] && !mirrors[pair[1]]) {
+      continue
+    }
+    if (multiplier === 2 && !(mirrors[pair[0]] && mirrors[pair[1]])) {
+      // No face if only one active in commute pair
+      continue
+    }
+
     const face = []
     // If both active
-    if (mirrors[pair[0]] && mirrors[pair[1]] && multiplier >= 2) {
-      for (let j = 0; j < multiplier; j++) {
-        const chain = pair
-          .map(i => itoa(i))
-          .join('')
-          .repeat(j)
-        face.push(chain)
+    for (let j = 0; j < multiplier; j++) {
+      // Get the vertices in order by skipping one reflexion at a time:
+      const chain = (itoa(pair[0]) + itoa(pair[1])).repeat(j)
+      face.push(chain)
+      // If both active, it doubles the number of vertices
+      if (mirrors[pair[0]] && mirrors[pair[1]]) {
         face.push(itoa(pair[1]) + chain)
       }
-    } else if ((mirrors[pair[0]] || mirrors[pair[1]]) && multiplier > 2) {
-      for (let j = 0; j < multiplier; j++) {
-        const chain = pair
-          .map(i => itoa(i))
-          .join('')
-          .repeat(j)
-        face.push(chain)
-      }
-    } else {
-      continue
     }
 
     let subgens = itoa(pair[0]) + itoa(pair[1])
 
     for (let j = 0; j < dimensions; j++) {
-      if (coxeter[pair[0]][j] === 2 && coxeter[pair[1]][j] === 2) {
-        if (!mirrors[j]) {
-          subgens += itoa(j)
-        }
+      if (
+        coxeter[pair[0]][j] === 2 &&
+        coxeter[pair[1]][j] === 2 &&
+        !mirrors[j]
+      ) {
+        subgens += itoa(j)
       }
     }
     params.push({ gens, subgens, rels, face })
   }
-
+  console.log(params)
   return params
 }
 
@@ -246,7 +251,7 @@ export const solve = params => {
           continue
         }
 
-        words[target] = words[i] + itoa(gen)
+        words[target] = words[i] + gens[gen]
 
         change = true
       }
