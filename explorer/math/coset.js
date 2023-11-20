@@ -3,14 +3,10 @@ import { range } from '../../utils'
 import { isEnabled } from '../mirrors'
 
 export const getGens = (mirrors, skips = []) =>
-  mirrors
-    .map((m, i) => (!skips.includes(i) && isEnabled(m) ? itoa(i) : ''))
-    .join('')
+  mirrors.map((m, i) => (!skips.includes(i) ? itoa(i) : '')).join('')
 
 export const getSubGens = (mirrors, skips = []) =>
-  mirrors
-    .map((m, i) => (skips.includes(i) || m || !isEnabled(m) ? '' : itoa(i)))
-    .join('')
+  mirrors.map((m, i) => (skips.includes(i) || m ? '' : itoa(i))).join('')
 
 export const getVerticesCosetsParams = (
   dimensions,
@@ -19,10 +15,18 @@ export const getVerticesCosetsParams = (
   mirrors,
   curvature
 ) => {
-  const rels = getRels(dimensions, coxeter, stellation, mirrors, curvature)
+  const skips = mirrors.map((m, i) => (isEnabled(m) ? null : i)).filter(x => x)
+  const rels = getRels(
+    dimensions,
+    coxeter,
+    stellation,
+    mirrors,
+    curvature,
+    skips
+  )
 
-  const gens = getGens(mirrors)
-  const subgens = getSubGens(mirrors)
+  const gens = getGens(mirrors, skips)
+  const subgens = getSubGens(mirrors, skips)
   return { gens, subgens, rels }
 }
 
@@ -33,8 +37,16 @@ export const getEdgesCosetsParams = (
   mirrors,
   curvature
 ) => {
-  const rels = getRels(dimensions, coxeter, stellation, mirrors, curvature)
-  const gens = getGens(mirrors)
+  const skips = mirrors.map((m, i) => (isEnabled(m) ? null : i)).filter(x => x)
+  const rels = getRels(
+    dimensions,
+    coxeter,
+    stellation,
+    mirrors,
+    curvature,
+    skips
+  )
+  const gens = getGens(mirrors, skips)
   const params = []
 
   for (let i = 0; i < mirrors.length; i++) {
@@ -56,6 +68,7 @@ export const getEdgesCosetsParams = (
       })
     }
   }
+  console.log(params)
   return params
 }
 
@@ -66,28 +79,33 @@ export const getFacesCosetsParams = (
   mirrors,
   curvature
 ) => {
-  const rels = getRels(dimensions, coxeter, stellation, mirrors, curvature)
-  const gens = getGens(mirrors)
+  const skips = mirrors.map((m, i) => (isEnabled(m) ? null : i)).filter(x => x)
+  const rels = getRels(
+    dimensions,
+    coxeter,
+    stellation,
+    mirrors,
+    curvature,
+    skips
+  )
+  const gens = getGens(mirrors, skips)
   const params = []
 
   const faceSkips = combinations(range(dimensions), dimensions - 2)
 
   for (let i = 0; i < faceSkips.length; i++) {
-    const skips = faceSkips[i]
+    const subskips = Array.from(new Set(faceSkips[i].concat(skips)))
     const subRels = getRels(
       dimensions,
       coxeter,
       stellation,
       mirrors,
       curvature,
-      skips
+      subskips
     )
-    let subGens = getGens(mirrors, skips)
-    const subSubgens = getSubGens(mirrors, skips)
+    let subGens = getGens(mirrors, subskips)
+    const subSubgens = getSubGens(mirrors, subskips)
 
-    // if (i % 2) {
-    //   subGens = subGens.split('').reverse().join('')
-    // }
     const subwords = solve({
       gens: subGens,
       subgens: subSubgens,
@@ -103,7 +121,7 @@ export const getFacesCosetsParams = (
     if (subwords.length > 2) {
       let subsubsubgens = ''
       for (let j = 0; j < dimensions; j++) {
-        if (!skips.includes(j)) {
+        if (!subskips.includes(j)) {
           subsubsubgens += itoa(j)
         }
       }
@@ -111,7 +129,7 @@ export const getFacesCosetsParams = (
         if (!mirrors[j]) {
           let alltwo = true
           for (let k = 0; k < dimensions; k++) {
-            if (!skips.includes(k) && coxeter[k][j] !== 2) {
+            if (!subskips.includes(k) && coxeter[k][j] !== 2) {
               alltwo = false
               break
             }
@@ -126,9 +144,7 @@ export const getFacesCosetsParams = (
         subgens: subsubsubgens,
         rels,
         face: subwords,
-        double: mirrors
-          .filter((m, j) => !skips.includes(j) && isEnabled(m))
-          .every(m => !!m),
+        double: mirrors.filter((m, j) => !subskips.includes(j)).every(m => !!m),
       })
     }
   }
