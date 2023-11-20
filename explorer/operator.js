@@ -1,5 +1,6 @@
 import { itoa } from './math'
 import { normalize } from './math/hypermath'
+import { isSnub } from './mirrors'
 
 export const dual = (plot, mirrors, dimensions, curvature) => {
   const vertices = []
@@ -107,9 +108,7 @@ export const snub = (plot, mirrors, dimensions, curvature) => {
   const vertices = []
   const edges = []
   const faces = []
-  const snubWord = mirrors
-    .map((m, i) => ('sb'.includes(m) ? itoa(i) : ''))
-    .join('')
+  const snubWord = mirrors.map((m, i) => (isSnub(m) ? itoa(i) : '')).join('')
   const snubRe = snubWord.length > 0 ? new RegExp(`[^${snubWord}]`, 'g') : null
 
   for (let i = 0; i < plot.ranges.vertex[1]; i++) {

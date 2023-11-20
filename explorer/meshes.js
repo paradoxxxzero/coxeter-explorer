@@ -3,6 +3,7 @@ import { sphere, tri, tube } from './geometries'
 import { mesh } from './helpers'
 import { PI, tan } from './math'
 import { columnMajor } from './math/matrix'
+import { isDual, isHoloSnub, isSnub } from './mirrors'
 import { dual, holosnub, snub } from './operator'
 import { render } from './render'
 import fragmentEdge from './shaders/edge/fragment.glsl?raw'
@@ -214,13 +215,13 @@ export default function getMeshes(rt) {
       }
     },
     preprocess(rt, plot) {
-      if (rt.mirrors.some(mirror => 'sb'.includes(mirror))) {
+      if (rt.mirrors.some(mirror => isSnub(mirror))) {
         plot = snub(plot, rt.mirrors, rt.dimensions, rt.curvature)
       }
-      if (rt.mirrors.some(mirror => mirror === 'ß')) {
+      if (rt.mirrors.some(mirror => isHoloSnub(mirror))) {
         plot = holosnub(plot, rt.mirrors, rt.dimensions, rt.curvature)
       }
-      if (rt.mirrors.some(mirror => 'db'.includes(mirror))) {
+      if (rt.mirrors.some(mirror => isDual(mirror))) {
         plot = dual(plot, rt.mirrors, rt.dimensions, rt.curvature)
       }
       return plot

@@ -1,4 +1,4 @@
-import { enabled } from '../mirrors'
+import { isEnabled } from '../mirrors'
 import { getStellationSphericalOppositeAngle } from './hypermath'
 
 export const {
@@ -107,7 +107,7 @@ export const getRels = (
   const rules = []
 
   for (let i = 0; i < dimensions; i++) {
-    if (enabled(mirrors[i]) && !skips.includes(i)) {
+    if (isEnabled(mirrors[i]) && !skips.includes(i)) {
       rules.push(itoa(i).repeat(2))
     }
   }
@@ -115,7 +115,7 @@ export const getRels = (
     for (let j = 0; j < i; j++) {
       if (!skips.includes(i) && !skips.includes(j)) {
         const m = coxeter[i][j]
-        if (m > 1 && enabled(mirrors[i]) && enabled(mirrors[j])) {
+        if (m > 1 && isEnabled(mirrors[i]) && isEnabled(mirrors[j])) {
           rules.push((itoa(j) + itoa(i)).repeat(coxeter[i][j]))
         }
       }

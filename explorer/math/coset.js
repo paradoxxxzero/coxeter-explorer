@@ -1,15 +1,15 @@
 import { combinations, getRels, itoa } from '.'
 import { range } from '../../utils'
-import { enabled } from '../mirrors'
+import { isEnabled } from '../mirrors'
 
 export const getGens = (mirrors, skips = []) =>
   mirrors
-    .map((m, i) => (!skips.includes(i) && enabled(m) ? itoa(i) : ''))
+    .map((m, i) => (!skips.includes(i) && isEnabled(m) ? itoa(i) : ''))
     .join('')
 
 export const getSubGens = (mirrors, skips = []) =>
   mirrors
-    .map((m, i) => (skips.includes(i) || m || !enabled(m) ? '' : itoa(i)))
+    .map((m, i) => (skips.includes(i) || m || !isEnabled(m) ? '' : itoa(i)))
     .join('')
 
 export const getVerticesCosetsParams = (
@@ -127,7 +127,7 @@ export const getFacesCosetsParams = (
         rels,
         face: subwords,
         double: mirrors
-          .filter((m, j) => !skips.includes(j) && enabled(m))
+          .filter((m, j) => !skips.includes(j) && isEnabled(m))
           .every(m => !!m),
       })
     }

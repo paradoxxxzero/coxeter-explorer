@@ -1,6 +1,7 @@
-import { getBaseRules, hash, itoa, round } from '../math'
+import { getBaseRules, hash, itoa } from '../math'
 import { knuthBendix, shorten } from '../math/group'
 import { reflect } from '../math/hypermath'
+import { isSnub } from '../mirrors'
 
 let vertexHashes = new Map()
 let edgeHashes = new Set()
@@ -27,9 +28,7 @@ const init = (rootVertex, newRules, newMirrors) => {
   nextWords = ['']
   mirrors = newMirrors
   rules = newRules
-  const snubWord = mirrors
-    .map((m, i) => ('sb'.includes(m) ? itoa(i) : ''))
-    .join('')
+  const snubWord = mirrors.map((m, i) => (isSnub(m) ? itoa(i) : '')).join('')
   snub = snubWord.length > 0 ? new RegExp(`[^${snubWord}]`, 'g') : null
   // cleanInactive = new RegExp(
   //   `[${mirrors.map((m, i) => (m ? '' : itoa(i))).join('')}]*$`
