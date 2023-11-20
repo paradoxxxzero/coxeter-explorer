@@ -1,4 +1,4 @@
-import { atoi } from '../math'
+import { atoi, floor } from '../math'
 import {
   getEdgesCosetsParams,
   getFacesCosetsParams,
@@ -52,6 +52,7 @@ const initCosets = (dimensions, coxeter, stellation, mirrors, curvature) => {
   ).map(edgeParams => ({
     ...edgeParams,
     ...defaultParams(),
+    toRetry: new Set(),
   }))
 }
 
@@ -98,6 +99,7 @@ onmessage = ({
     let vertices = []
     let edges = []
     let faces = []
+    let partials = []
 
     if (!verticesParams.done) {
       verticesParams.limit = limit
@@ -165,47 +167,96 @@ onmessage = ({
         solve(faceParams)
       }
 
-      let fail = false
       const face = []
       // Get vertices of the base face
       for (let j = 0; j < faceParams.face.length; j++) {
-        const faceWord = faceParams.face[j]
-        const vIndex = reflectToVertex(faceWord, 0)
-        if (vIndex === undefined) {
-          fail = true
-          break
-        }
-        face.push(vIndex)
+        // These vertices can be undefined if the face is not yet closed or ever
+        face.push(reflectToVertex(faceParams.face[j], 0))
       }
-      if (fail) {
-        continue
-      }
-      // Get these vertices after reflections
-      for (let j = faceParams.lastDrawn; j < faceParams.words.length; j++) {
+
+      // Start by retrying last partial faces
+      for (const j of faceParams.toRetry) {
         const word = faceParams.words[j]
         const vertices = []
         for (let k = 0; k < face.length; k++) {
-          const vIndex = reflectToVertex(word, face[k])
-          if (vIndex === undefined) {
-            fail = true
-            break
+          const faceVertex = face[reorder(k, face.length, faceParams.double)]
+          if (faceVertex === undefined) {
+            continue
           }
-          vertices.push(vIndex)
+          const vertex = reflectToVertex(word, faceVertex)
+          if (vertex === undefined) {
+            continue
+          }
+          vertices.push(vertex)
+        }
+        if (vertices.length === face.length) {
+          faces.push({
+            vertices,
+            word,
+            len: face.length,
+          })
+          faceParams.toRetry.delete(j)
+        } else {
+          partials.push({
+            vertices,
+            word,
+            len: face.length,
+          })
+        }
+      }
+
+      // Get these vertices after reflections
+      for (let j = faceParams.lastDrawn; j < faceParams.words.length; j++) {
+        let fail = false
+        const word = faceParams.words[j]
+        const vertices = []
+        for (let k = 0; k < face.length; k++) {
+          const faceVertex = face[reorder(k, face.length, faceParams.double)]
+          if (faceVertex === undefined) {
+            fail = true
+            continue
+          }
+          const vertex = reflectToVertex(word, faceVertex)
+          if (vertex === undefined) {
+            fail = true
+            continue
+          }
+          vertices.push(vertex)
         }
         if (fail) {
-          faceParams.lastDrawn = j
-          break
+          partials.push({
+            vertices,
+            word,
+            len: face.length,
+          })
+          faceParams.toRetry.add(j)
+        } else {
+          faces.push({
+            vertices,
+            word,
+            len: face.length,
+          })
         }
-        faces.push({
-          vertices,
-          word,
-        })
         faceParams.lastDrawn = j + 1
       }
     }
 
-    postMessage({ vertices, edges, faces, order, uuid })
+    postMessage({ vertices, edges, faces, partials, order, uuid })
   } catch (e) {
     postMessage({ error: e.message, uuid })
   }
+}
+
+const reorder = (i, n, double = false) => {
+  if (double) {
+    const parity = i > 0 ? 1 - (i % 2) : 0
+    if (i >= n / 2 + parity) {
+      return 2 * (n - i) - 1 + parity
+    }
+    return 2 * i - parity
+  }
+  if (i >= n / 2) {
+    return 2 * (n - i) - 1
+  }
+  return 2 * i
 }

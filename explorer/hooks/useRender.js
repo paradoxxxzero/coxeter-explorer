@@ -58,6 +58,7 @@ export const useRender = (runtime, setRuntime) => {
         plot(runtime, runtime.currentOrder - 1)
         return runtime
       } catch (e) {
+        console.error(e)
         return {
           ...runtime,
           error: e.message,
@@ -103,6 +104,7 @@ export const useRender = (runtime, setRuntime) => {
         plot(runtime)
         return runtime
       } catch (e) {
+        console.error(e)
         return {
           ...runtime,
           error: e.message,

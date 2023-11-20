@@ -1,8 +1,16 @@
 import { combinations, getRels, itoa } from '.'
+import { range } from '../../utils'
 import { enabled } from '../mirrors'
 
-export const getGens = mirrors =>
-  mirrors.map((m, i) => (enabled(m) ? itoa(i) : '')).join('')
+export const getGens = (mirrors, skips = []) =>
+  mirrors
+    .map((m, i) => (!skips.includes(i) && enabled(m) ? itoa(i) : ''))
+    .join('')
+
+export const getSubGens = (mirrors, skips = []) =>
+  mirrors
+    .map((m, i) => (skips.includes(i) || m || !enabled(m) ? '' : itoa(i)))
+    .join('')
 
 export const getVerticesCosetsParams = (
   dimensions,
@@ -14,9 +22,7 @@ export const getVerticesCosetsParams = (
   const rels = getRels(dimensions, coxeter, stellation, mirrors, curvature)
 
   const gens = getGens(mirrors)
-  const subgens = mirrors
-    .map((m, i) => (m || !enabled(m) ? '' : itoa(i)))
-    .join('')
+  const subgens = getSubGens(mirrors)
   return { gens, subgens, rels }
 }
 
@@ -64,52 +70,68 @@ export const getFacesCosetsParams = (
   const gens = getGens(mirrors)
   const params = []
 
-  const mirrorsPairs = combinations([...Array(dimensions).keys()])
-  for (let i = 0; i < mirrorsPairs.length; i++) {
-    let pair = mirrorsPairs[i]
-    if ((pair[1] - pair[0]) % 2 === 0) {
-      pair = [pair[1], pair[0]]
-    }
-    const multiplier = coxeter[pair[0]][pair[1]]
-    // Can't make a face with infinite number of vertex
-    if (multiplier < 2) {
-      continue
-    }
-    // No face if no active in pair
-    if (!mirrors[pair[0]] && !mirrors[pair[1]]) {
-      continue
-    }
-    if (multiplier === 2 && !(mirrors[pair[0]] && mirrors[pair[1]])) {
-      // No face if only one active in commute pair
-      continue
-    }
+  const faceSkips = combinations(range(dimensions), dimensions - 2)
 
-    const face = []
-    // If both active
-    for (let j = 0; j < multiplier; j++) {
-      // Get the vertices in order by skipping one reflexion at a time:
-      const chain = (itoa(pair[0]) + itoa(pair[1])).repeat(j)
-      face.push(chain)
-      // If both active, it doubles the number of vertices
-      if (mirrors[pair[0]] && mirrors[pair[1]]) {
-        face.push(itoa(pair[1]) + chain)
+  for (let i = 0; i < faceSkips.length; i++) {
+    const skips = faceSkips[i]
+    const subRels = getRels(
+      dimensions,
+      coxeter,
+      stellation,
+      mirrors,
+      curvature,
+      skips
+    )
+    let subGens = getGens(mirrors, skips)
+    const subSubgens = getSubGens(mirrors, skips)
+
+    // if (i % 2) {
+    //   subGens = subGens.split('').reverse().join('')
+    // }
+    const subwords = solve({
+      gens: subGens,
+      subgens: subSubgens,
+      rels: subRels,
+      cosets: {
+        normal: [],
+        reverse: [],
+      },
+      rows: [],
+      words: [],
+      limit: 1000,
+    }).words
+    if (subwords.length > 2) {
+      let subsubsubgens = ''
+      for (let j = 0; j < dimensions; j++) {
+        if (!skips.includes(j)) {
+          subsubsubgens += itoa(j)
+        }
       }
-    }
-
-    let subgens = itoa(pair[0]) + itoa(pair[1])
-
-    for (let j = 0; j < dimensions; j++) {
-      if (
-        coxeter[pair[0]][j] === 2 &&
-        coxeter[pair[1]][j] === 2 &&
-        !mirrors[j]
-      ) {
-        subgens += itoa(j)
+      for (let j = 0; j < dimensions; j++) {
+        if (!mirrors[j]) {
+          let alltwo = true
+          for (let k = 0; k < dimensions; k++) {
+            if (!skips.includes(k) && coxeter[k][j] !== 2) {
+              alltwo = false
+              break
+            }
+          }
+          if (alltwo) {
+            subsubsubgens += itoa(j)
+          }
+        }
       }
+      params.push({
+        gens,
+        subgens: subsubsubgens,
+        rels,
+        face: subwords,
+        double: mirrors
+          .filter((m, j) => !skips.includes(j) && enabled(m))
+          .every(m => !!m),
+      })
     }
-    params.push({ gens, subgens, rels, face })
   }
-  console.log(params)
   return params
 }
 

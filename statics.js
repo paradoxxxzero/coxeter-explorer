@@ -102,9 +102,9 @@ export const ambiances = {
     lighting: 'lambert',
     opacity: 0.75,
     transparency: 'oit',
-    color: ({ word, vertices }, type) =>
+    color: ({ word, len, vertices }, type) =>
       type === 'face'
-        ? hsl(((vertices.length - 2) * 0.21) % 1, 1, 0.8)
+        ? hsl((((len || vertices.length) - 2) * 0.21) % 1, 1, 0.8)
         : [1, 1, 1],
     // culling: true,
   },

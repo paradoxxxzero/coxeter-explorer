@@ -213,13 +213,7 @@ export default function getMeshes(rt) {
         mesh.attributes.color.update(startIdx, stopIdx)
       }
     },
-    preprocess(rt, ranges) {
-      let plot = {
-        vertex: rt.vertex,
-        edge: rt.edge,
-        face: rt.face,
-        ranges,
-      }
+    preprocess(rt, plot) {
       if (rt.mirrors.some(mirror => 'sb'.includes(mirror))) {
         plot = snub(plot, rt.mirrors, rt.dimensions, rt.curvature)
       }
@@ -232,7 +226,22 @@ export default function getMeshes(rt) {
       return plot
     },
     plot(rt, ranges_) {
-      const { vertex, edge, face, ranges } = this.preprocess(rt, ranges_)
+      let face_extended = rt.face
+      let ranges_extended = ranges_
+      if (ranges_.face[1] === rt.face.length && rt.partial) {
+        face_extended = face_extended.concat(rt.partial)
+        ranges_extended = {
+          ...ranges_,
+          face: [ranges_.face[0], ranges_.face[1] + rt.partial.length],
+        }
+      }
+      const plot = {
+        vertex: rt.vertex,
+        edge: rt.edge,
+        face: face_extended,
+        ranges: ranges_extended,
+      }
+      const { vertex, edge, face, ranges } = this.preprocess(rt, plot)
       for (let i = 0; i < this.meshes.length; i++) {
         const type = this.meshes[i]
         const mesh = this[type]

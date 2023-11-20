@@ -49,9 +49,9 @@ void main() {
   #endif
 
   vec2 t = ease(uv);
-  vecN pos = trix(iPosition, iCenter, iTarget, t);
-  vecN next = trix(iPosition, iCenter, iTarget, t + vec2(DT, 0.f));
-  vecN other = trix(iPosition, iCenter, iTarget, t + vec2(0.f, DT));
+  vecN pos = trix(iPosition, iTarget, iCenter, t);
+  vecN next = trix(iPosition, iTarget, iCenter, t - vec2(DT, NOISE.y));
+  vecN other = trix(iPosition, iTarget, iCenter, t - vec2(NOISE.x, DT));
 
   if(segments > 1.f) {
     pos = xnormalize(pos);

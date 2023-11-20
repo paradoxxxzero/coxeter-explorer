@@ -101,20 +101,23 @@ export const getRels = (
   coxeter,
   stellation,
   mirrors,
-  curvature
+  curvature,
+  skips = []
 ) => {
   const rules = []
 
   for (let i = 0; i < dimensions; i++) {
-    if (enabled(mirrors[i])) {
+    if (enabled(mirrors[i]) && !skips.includes(i)) {
       rules.push(itoa(i).repeat(2))
     }
   }
   for (let i = 1; i < dimensions; i++) {
     for (let j = 0; j < i; j++) {
-      const m = coxeter[i][j]
-      if (m > 1 && enabled(mirrors[i]) && enabled(mirrors[j])) {
-        rules.push((itoa(j) + itoa(i)).repeat(coxeter[i][j]))
+      if (!skips.includes(i) && !skips.includes(j)) {
+        const m = coxeter[i][j]
+        if (m > 1 && enabled(mirrors[i]) && enabled(mirrors[j])) {
+          rules.push((itoa(j) + itoa(i)).repeat(coxeter[i][j]))
+        }
       }
     }
   }

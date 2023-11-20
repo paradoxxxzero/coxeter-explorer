@@ -2,7 +2,7 @@
 #include ease
 
 vec2 xnormalize(in vec2 v) {
-  if(curvature == 0.0) {
+  if(curvature == 0.0 || length(v) < 1e-9) {
     return v;
   }
   // Unalias?

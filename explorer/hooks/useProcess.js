@@ -20,7 +20,7 @@ const asyncProcess = async (runtime, running, setRuntime) => {
   }
   try {
     running.current = runtime.currentOrder
-    const { vertices, edges, faces, order } = await worker.process({
+    const { vertices, edges, faces, partials, order } = await worker.process({
       order: runtime.currentOrder,
       coxeter: runtime.coxeter,
       curvature: runtime.curvature,
@@ -40,6 +40,7 @@ const asyncProcess = async (runtime, running, setRuntime) => {
           vertex: [],
           edge: [],
           face: [],
+          partial: [],
           ranges: [],
           renderError: null,
           processing: true,
@@ -62,6 +63,7 @@ const asyncProcess = async (runtime, running, setRuntime) => {
         vertex: runtime.vertex.concat(vertices),
         edge: runtime.edge.concat(edges),
         face: runtime.face.concat(faces),
+        partial: partials,
         currentOrder: order + 1,
         processing: false,
         error: null,
@@ -139,6 +141,7 @@ export const useProcess = (runtime, setRuntime) => {
         vertex: [],
         edge: [],
         face: [],
+        partial: [],
         ranges: [],
         spaceType,
         curvature,

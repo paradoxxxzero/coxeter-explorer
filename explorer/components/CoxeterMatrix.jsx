@@ -3,6 +3,7 @@ import Value from './Value'
 import Link from './Link'
 import Node from './Node'
 import { min } from '../math'
+import { enabled } from '../mirrors'
 
 const getType = (coxeter, i) =>
   coxeter[i].some((m, j) => j < i && m < 0)
@@ -66,14 +67,27 @@ export default function CoxeterMatrix({
 
   const handleMirrorChange = useCallback(
     (index, value) => {
+      const oldValue = mirrors[index]
       let newMirrors = mirrors.slice()
       newMirrors[index] = value
 
       // If there is a dual, all active mirrors become duals
-      if (newMirrors.includes('d') || newMirrors.includes('b')) {
-        newMirrors = newMirrors.map((m, i) =>
-          m === 's' ? 'b' : m && m !== 'b' ? 'd' : m
-        )
+      if ('bd'.includes(value) || oldValue === 0) {
+        if (newMirrors.includes('d') || newMirrors.includes('b')) {
+          newMirrors = newMirrors.map((m, i) =>
+            m === 's' ? 'b' : m && m !== 'b' ? 'd' : m
+          )
+        }
+      } else {
+        if (
+          value !== 0 &&
+          enabled(value) &&
+          (newMirrors.includes('d') || newMirrors.includes('b'))
+        ) {
+          newMirrors = newMirrors.map((m, i) =>
+            m === 'b' ? 's' : m === 'd' ? 1 : m
+          )
+        }
       }
       onChange('mirrors', newMirrors)
     },
