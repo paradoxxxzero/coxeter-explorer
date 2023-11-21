@@ -80,7 +80,10 @@ export const useInteract = (
   updateParams
 ) => {
   const updateMatrix = useCallback(
-    debounce(matrix => updateParams({ matrix }), 100),
+    debounce(matrix => {
+      matrix._update = true
+      updateParams({ matrix })
+    }, 100),
     []
   )
   const updateMatrixSync = useCallback(matrix => updateParams({ matrix }), [])
@@ -169,7 +172,7 @@ export const useInteract = (
   }, [rotations.combinations])
 
   useEffect(() => {
-    if (diagonal(runtime.matrix)) {
+    if (!runtime.matrix._update) {
       animation.current.speed = new Array(rotations.combinations.length).fill(0)
     }
   }, [rotations.combinations.length, runtime.matrix])

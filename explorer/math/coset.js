@@ -68,7 +68,6 @@ export const getEdgesCosetsParams = (
       })
     }
   }
-  console.log(params)
   return params
 }
 

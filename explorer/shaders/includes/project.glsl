@@ -159,7 +159,7 @@ vec3 xproject(in vec3 v) {
   #if PROJECTION3 == 0 // STEREOGRAPHIC
   return project(v, 1.);
   #elif PROJECTION3 == 1 // ORTHOGRAPHIC
-  return v;
+  return vec3(v.xy, 0.);
   #elif PROJECTION3 == 2 // KLEIN
   return project(v, 0.);
   #elif PROJECTION3 == 3 // INVERTED

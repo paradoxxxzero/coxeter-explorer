@@ -13,6 +13,15 @@ import Number from './Number'
 import Presets from './Presets'
 import Space from './Space'
 import { range } from '../../utils.js'
+import {
+  centerView,
+  coxeterPlaneIcon,
+  dampedRotation,
+  freeRotation,
+  presetsIcon,
+  rotationShift,
+} from '../icons.jsx'
+import { coxeterPlane } from '../math/hypermath.js'
 
 export default function UI({
   runtime,
@@ -62,6 +71,21 @@ export default function UI({
     },
     [updateParams, closePresets]
   )
+
+  const handleCoxeterPlane = useCallback(() => {
+    updateParams({
+      matrix: coxeterPlane(
+        runtime.spaceType,
+        runtime.mirrorsPlanes,
+        runtime.dimensions
+      ),
+    })
+  }, [
+    updateParams,
+    runtime.spaceType,
+    runtime.mirrorsPlanes,
+    runtime.dimensions,
+  ])
 
   const handleMatrixReset = useCallback(() => {
     updateParams({
@@ -127,26 +151,25 @@ export default function UI({
             onClick={() => setPresets(presets => !presets)}
             title="Presets"
           >
-            ◭
+            {presetsIcon}
           </button>
         ) : null}
         {['simple', 'advanced', 'full'].includes(showUI) ? (
           <aside className="controls">
             <button
-              className="controls-button button"
+              className="rotation-button button"
               onClick={handleShift}
               title="Rotation Mode"
             >
-              <span
+              <div
                 style={{
-                  display: 'inline-block',
                   transform: `rotate(${
                     (rotations.shift / rotations.maxShift) * 360
                   }deg)`,
                 }}
               >
-                ⥁
-              </span>
+                {rotationShift}
+              </div>
               <sup>{rotations.shift + 1}</sup>
             </button>
             <div className="subcontrols">
@@ -156,9 +179,9 @@ export default function UI({
                 title="Animate rotations"
               >
                 {rotations.auto === 'free'
-                  ? '⤞'
+                  ? freeRotation
                   : rotations.auto === 'damp'
-                  ? '↠'
+                  ? dampedRotation
                   : '?'}
               </button>
               {!diagonal(runtime.matrix) && (
@@ -167,9 +190,18 @@ export default function UI({
                   onClick={handleMatrixReset}
                   title="Reset View"
                 >
-                  ⌖
+                  {centerView}
                 </button>
               )}
+              {runtime.curvature > 0 ? (
+                <button
+                  className="button coxeter-plane"
+                  onClick={handleCoxeterPlane}
+                  title="CoxeterPlane"
+                >
+                  {coxeterPlaneIcon}
+                </button>
+              ) : null}
             </div>
           </aside>
         ) : null}

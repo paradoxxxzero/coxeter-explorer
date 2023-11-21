@@ -55,21 +55,21 @@ void main() {
   vec3 nextProj = xproject(next) + NOISE;
   vec3 tangent = normalize(proj - nextProj);
 
-  vec3 norm = cross(nextProj, proj);
+  // vec3 norm = cross(nextProj, proj);
 
-  // // Find a stable norm for the whole tube
-  // vecN mid = mix(iPosition, iTarget, .5f);
+  // Find a stable norm for the whole tube
+  vecN mid = mix(iPosition, iTarget, .5f);
 
-  // vec3 start = xproject(iPosition);
-  // vec3 end = xproject(iTarget);
-  // vec3 middle = xproject(xnormalize(mid));
-  // vec3 norm = cross(end - start, middle - start);
+  vec3 start = xproject(iPosition);
+  vec3 end = xproject(iTarget);
+  vec3 middle = xproject(xnormalize(mid));
+  vec3 norm = cross(end - start, middle - start);
 
-  // // If there is no curvature the tube will be straight:
-  // if(length(norm) < 0.001f) {
-  //   middle += NOISE;
-  //   norm = cross(end - start, middle - start);
-  // }
+  // If there is no curvature the tube will be straight:
+  if(length(norm) < 0.001f) {
+    middle += NOISE;
+    norm = cross(end - start, middle - start);
+  }
 
   // Rodrigues' rotation formula: rotate norm around tangent by angle r:
   float r = uv.x * TAU;

@@ -299,6 +299,41 @@ export const presets = [
   {
     name: (
       <>
+        <Space type="finite" dimensions={8} /> E8 lattice (4<sub>21</sub>)
+      </>
+    ),
+    params: polytope(
+      [
+        [1, 3, 2, 2, 2, 2, 2, 2],
+        [3, 1, 3, 2, 2, 2, 2, 2],
+        [2, 3, 1, 3, 3, 2, 2, 2],
+        [2, 2, 3, 1, 2, 2, 2, 2],
+        [2, 2, 3, 2, 1, 3, 2, 2],
+        [2, 2, 2, 2, 3, 1, 3, 2],
+        [2, 2, 2, 2, 2, 3, 1, 3],
+        [2, 2, 2, 2, 2, 2, 3, 1],
+      ],
+      [0, 0, 0, 0, 0, 0, 0, 1],
+      null,
+      {
+        edgeThickness: 1,
+        curve: false,
+        ambiance: 'neon',
+        projection3: 'orthographic',
+        projection4: 'orthographic',
+        projection5: 'orthographic',
+        projection6: 'orthographic',
+        projection7: 'orthographic',
+        projection8: 'orthographic',
+        order: 20,
+        zoom: 1,
+        centered: 'coxeter',
+      }
+    ),
+  },
+  {
+    name: (
+      <>
         <Space type="hyperbolic" subtype="paracompact" dimensions={4} /> Ideal
         tetrahedron
       </>

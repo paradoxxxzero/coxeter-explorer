@@ -5,12 +5,22 @@ import {
   cos,
   cosh,
   max,
+  min,
   round,
   sign,
   sin,
   sqrt,
 } from './index.js'
-import { eigen, ident, inverse, multiplyVector } from './matrix.js'
+import {
+  det,
+  eigen,
+  ident,
+  inverse,
+  multiply,
+  multiplyVector,
+  set,
+  transpose,
+} from './matrix.js'
 
 export const coxeterToGram = (coxeter, stellation) =>
   coxeter.map((row, i) =>
@@ -28,11 +38,12 @@ export const coxeterToGram = (coxeter, stellation) =>
   )
 
 export const getSignature = gram => {
-  const eigenValues = eigen(gram).values
+  const eigens = eigen(gram)
   return {
-    '+': eigenValues.filter(v => v > 0).length,
-    '-': eigenValues.filter(v => v < 0).length,
-    0: eigenValues.filter(v => v === 0).length,
+    '+': eigens.values.filter(v => v > 0).length,
+    '-': eigens.values.filter(v => v < 0).length,
+    0: eigens.values.filter(v => v === 0).length,
+    eigens,
   }
 }
 export const getSubSignatures = (gram, sub = [], level = 0, maxLevel = 2) => {
@@ -51,11 +62,12 @@ export const getSubSignatures = (gram, sub = [], level = 0, maxLevel = 2) => {
 
 export const getSpaceType = gram => {
   const signature = getSignature(gram)
+  const eigens = signature.eigens
   if (signature['-'] === 0 && signature['0'] === 0) {
-    return { type: 'finite', curvature: 1 }
+    return { type: 'finite', curvature: 1, eigens }
   }
   if (signature['-'] === 0 && signature['0'] > 0) {
-    return { type: 'affine', curvature: 0 }
+    return { type: 'affine', curvature: 0, eigens }
   }
   if (signature['-'] > 1) {
     return {
@@ -63,6 +75,7 @@ export const getSpaceType = gram => {
       subtype: 'superhyperbolic',
       level: signature['-'],
       curvature: -1,
+      eigens,
     }
   }
   // Indefinite, check subgroups
@@ -71,10 +84,10 @@ export const getSpaceType = gram => {
   const subSignature = subSignatures[0]
 
   if (subSignature.every(s => s['-'] === 0 && s['0'] === 0)) {
-    return { type: 'hyperbolic', subtype: 'compact', curvature: -1 }
+    return { type: 'hyperbolic', subtype: 'compact', curvature: -1, eigens }
   }
   if (subSignature.every(s => s['-'] === 0)) {
-    return { type: 'hyperbolic', subtype: 'paracompact', curvature: -1 }
+    return { type: 'hyperbolic', subtype: 'paracompact', curvature: -1, eigens }
   }
   for (let i = 1; i < subSignatures.length; i++) {
     const subSignature = subSignatures[i]
@@ -84,10 +97,11 @@ export const getSpaceType = gram => {
         subtype: 'lorentzian',
         curvature: -1,
         level: i + 1,
+        eigens,
       }
     }
   }
-  return { type: 'indefinite', curvature: -1 }
+  return { type: 'indefinite', curvature: -1, eigens }
 }
 
 export const xdot = (v1, v2, curvature) => {
@@ -998,4 +1012,64 @@ export const getStellationSphericalOppositeAngle = (a, b, c, stellation) => {
               (sin(stellation * A) * sin(C)))
       )
   )
+}
+
+const proj = (a, b, curvature) => {
+  const result = []
+  const dot = xdot(a, b, curvature)
+  for (let i = 0; i < a.length; i++) {
+    result[i] = dot * b[i]
+  }
+  return result
+}
+const sub = (a, b) => {
+  const result = []
+  for (let i = 0; i < a.length; i++) {
+    result[i] = a[i] - b[i]
+  }
+  return result
+}
+
+export const gramSchmidt = (vectors, curvature) => {
+  const basis = [normalize(vectors[0], curvature)]
+  for (let i = 1; i < vectors.length; i++) {
+    let projection = vectors[i]
+    for (let j = 0; j < i; j++) {
+      projection = sub(projection, proj(vectors[i], basis[j], 1))
+    }
+    basis[i] = normalize(projection, curvature)
+  }
+  return basis
+}
+
+export const coxeterPlane = (spaceType, mirrorsPlanes, dimensions) => {
+  const { curvature } = spaceType
+
+  const eigens = spaceType.eigens
+  const eigenVecs = transpose(eigens.vectors)
+  const biggestEigenValue = max(...eigens.values)
+  const biggestEigenValueIndex = eigens.values.indexOf(biggestEigenValue)
+  const biggestEigenVector = eigenVecs[biggestEigenValueIndex]
+
+  const smallestEigenValue = min(...eigens.values)
+  const smallestEigenValueIndex = eigens.values.indexOf(smallestEigenValue)
+
+  const smallestEigenVector = eigenVecs[smallestEigenValueIndex]
+
+  biggestEigenVector[biggestEigenVector.length - 1] *= curvature
+  smallestEigenVector[smallestEigenVector.length - 1] *= curvature
+
+  const tr = transpose(mirrorsPlanes)
+  const u = normalize(multiplyVector(tr, biggestEigenVector), curvature)
+  const v = normalize(multiplyVector(tr, smallestEigenVector), curvature)
+
+  const id = ident(dimensions)
+  const basis = [u, v]
+  for (let i = 2; i < dimensions; i++) {
+    basis.push(id[i])
+  }
+  const matrix = gramSchmidt(basis, curvature)
+
+  // console.log(det(matrix))
+  return matrix
 }

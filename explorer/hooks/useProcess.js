@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import {
+  coxeterPlane,
   coxeterToGram,
   getFundamentalSimplexMirrors,
   getFundamentalVertex,
@@ -102,7 +103,9 @@ export const useProcess = (runtime, setRuntime) => {
   useEffect(() => {
     setRuntime(runtime => {
       const gram = coxeterToGram(runtime.coxeter, runtime.stellation)
+
       const spaceType = getSpaceType(gram)
+
       if (!spaceType) {
         return {
           ...runtime,
@@ -110,6 +113,8 @@ export const useProcess = (runtime, setRuntime) => {
         }
       }
       const curvature = spaceType.curvature
+      const forceCoxeterPlane = runtime.centered === 'coxeter'
+      runtime.centered = forceCoxeterPlane ? null : runtime.centered
 
       const grouper =
         runtime.grouper === '' || runtime.grouper.startsWith('auto-')
@@ -134,6 +139,9 @@ export const useProcess = (runtime, setRuntime) => {
         mirrorsPlanes,
         curvature
       )
+      // This is equal to multiplyScalar(multiply(mirrorsPlanes, transpose(mirrorsPlanes)), 2)
+      // const cartan = multiplyScalar(gram, 2)
+
       const newRuntime = {
         ...runtime,
         currentOrder: 0,
@@ -150,6 +158,15 @@ export const useProcess = (runtime, setRuntime) => {
         renderError: null,
         processing: true,
         error: null,
+      }
+
+      if (forceCoxeterPlane) {
+        newRuntime.matrix = coxeterPlane(
+          spaceType,
+          mirrorsPlanes,
+          runtime.dimensions
+        )
+        newRuntime.centered = null
       }
       asyncProcess(newRuntime, running, setRuntime)
       return newRuntime

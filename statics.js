@@ -294,7 +294,11 @@ export const filterParams = (maybeBadParams, changed = []) => {
   ) {
     params.matrix = ident(params.dimensions)
   }
-  if (changed.includes('dimensions') && params.dimensions >= 4) {
+  if (
+    changed.includes('dimensions') &&
+    !changed.some(k => k.startsWith('projection')) &&
+    params.dimensions >= 4
+  ) {
     params[`projection3`] = 'perspective'
   }
   for (let i = 4; i <= 9; i++) {
@@ -307,7 +311,9 @@ export const filterParams = (maybeBadParams, changed = []) => {
     }
     if (
       i <= params.dimensions &&
-      (!params[`projection${i}`] || changed.includes('dimensions')) &&
+      (!params[`projection${i}`] ||
+        (changed.includes('dimensions') &&
+          !changed.includes(`projection${i}`))) &&
       !badParams.includes(`projection${i}`)
     ) {
       params[`projection${i}`] =

@@ -5,6 +5,7 @@ import UI from './components/UI'
 import { binomial, ceil, combinations } from './math'
 import { sortRotations } from './math/hypermath'
 import { initializeGl } from './render'
+import { range } from '../utils'
 
 export default function App({ params, updateParams }) {
   const [runtime, setRuntime] = useState({
@@ -130,12 +131,7 @@ export default function App({ params, updateParams }) {
       ...rotations,
       shift: 0,
       maxShift: ~~ceil(binomial(params.dimensions, 2) / 2),
-      combinations: sortRotations(
-        combinations(
-          new Array(params.dimensions).fill().map((_, i) => i),
-          2
-        )
-      ),
+      combinations: sortRotations(combinations(range(params.dimensions), 2)),
       auto: 'damp',
     }))
   }, [params.dimensions])
