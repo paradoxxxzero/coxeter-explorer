@@ -113,8 +113,6 @@ export const useProcess = (runtime, setRuntime) => {
         }
       }
       const curvature = spaceType.curvature
-      const forceCoxeterPlane = runtime.centered === 'coxeter'
-      runtime.centered = forceCoxeterPlane ? null : runtime.centered
 
       const grouper =
         runtime.grouper === '' || runtime.grouper.startsWith('auto-')
@@ -160,14 +158,6 @@ export const useProcess = (runtime, setRuntime) => {
         error: null,
       }
 
-      if (forceCoxeterPlane) {
-        newRuntime.matrix = coxeterPlane(
-          spaceType,
-          mirrorsPlanes,
-          runtime.dimensions
-        )
-        newRuntime.centered = null
-      }
       asyncProcess(newRuntime, running, setRuntime)
       return newRuntime
     })

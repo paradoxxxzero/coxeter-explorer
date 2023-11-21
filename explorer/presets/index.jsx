@@ -1,6 +1,12 @@
 import { defaultParams } from '../../statics'
 import Space from '../components/Space'
 import { min } from '../math'
+import {
+  coxeterPlane,
+  coxeterToGram,
+  getFundamentalSimplexMirrors,
+  getSpaceType,
+} from '../math/hypermath'
 import { ident } from '../math/matrix'
 
 const coxeter_ = (...args) => {
@@ -35,7 +41,13 @@ const stellation_ = (...args) => {
   return { stellation }
 }
 
-const polytope = (coxeterArgs, mirrors, stellationArgs, extra) => {
+const polytope = (
+  coxeterArgs,
+  mirrors,
+  stellationArgs,
+  extra,
+  onCoxeterPlane
+) => {
   const coxeterParams = coxeter_(...coxeterArgs)
   const { dimensions } = coxeterParams
   const params = {
@@ -63,6 +75,18 @@ const polytope = (coxeterArgs, mirrors, stellationArgs, extra) => {
     params.stellation = new Array(dimensions)
       .fill()
       .map((_, i) => new Array(dimensions).fill(1))
+  }
+  if (onCoxeterPlane) {
+    const gram = coxeterToGram(params.coxeter, params.stellation)
+
+    const spaceType = getSpaceType(gram)
+    const mirrorsPlanes = getFundamentalSimplexMirrors(
+      gram,
+      spaceType.curvature,
+      false
+    )
+    params.matrix = coxeterPlane(spaceType, mirrorsPlanes, dimensions)
+    params.matrix._preset = true
   }
   return params
 }
@@ -299,6 +323,37 @@ export const presets = [
   {
     name: (
       <>
+        <Space type="finite" dimensions={8} /> 1<sub>22</sub>
+      </>
+    ),
+    params: polytope(
+      [
+        [1, 3, 2, 2, 2, 2],
+        [3, 1, 3, 2, 2, 2],
+        [2, 3, 1, 3, 3, 2],
+        [2, 2, 3, 1, 2, 2],
+        [2, 2, 3, 2, 1, 3],
+        [2, 2, 2, 2, 3, 1],
+      ],
+      [0, 0, 0, 1, 0, 0],
+      null,
+      {
+        vertexThickness: 40,
+        edgeThickness: 10,
+        ambiance: 'colorful',
+        showVertices: true,
+        projection3: 'orthographic',
+        projection4: 'orthographic',
+        projection5: 'orthographic',
+        projection6: 'orthographic',
+        zoom: 1,
+      },
+      true
+    ),
+  },
+  {
+    name: (
+      <>
         <Space type="finite" dimensions={8} /> E8 lattice (4<sub>21</sub>)
       </>
     ),
@@ -316,9 +371,11 @@ export const presets = [
       [0, 0, 0, 0, 0, 0, 0, 1],
       null,
       {
+        vertexThickness: 30,
         edgeThickness: 1,
         curve: false,
         ambiance: 'neon',
+        showVertices: true,
         projection3: 'orthographic',
         projection4: 'orthographic',
         projection5: 'orthographic',
@@ -327,8 +384,8 @@ export const presets = [
         projection8: 'orthographic',
         order: 20,
         zoom: 1,
-        centered: 'coxeter',
-      }
+      },
+      true
     ),
   },
   {

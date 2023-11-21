@@ -1070,6 +1070,5 @@ export const coxeterPlane = (spaceType, mirrorsPlanes, dimensions) => {
   }
   const matrix = gramSchmidt(basis, curvature)
 
-  // console.log(det(matrix))
   return matrix
 }

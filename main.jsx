@@ -67,7 +67,8 @@ const AppWithHistory = () => {
           ...params,
           ...newParams,
         },
-        Object.keys(newParams)
+        Object.keys(newParams),
+        params
       )
       if (!badParams.length) {
         syncParams(finalParams)

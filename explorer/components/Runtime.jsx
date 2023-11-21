@@ -1,8 +1,7 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback } from 'react'
 import { ErrorBoundary } from './ErrorBoundary'
 import Interact from './Interact'
 import Render from './Render'
-import { ident } from '../math/matrix'
 import Process from './Process'
 
 export default function Runtime({
@@ -23,16 +22,6 @@ export default function Runtime({
     },
     [setRuntime]
   )
-
-  useEffect(() => {
-    return () => {
-      if (runtime.curvature !== null) {
-        updateParams({
-          matrix: ident(runtime.dimensions),
-        })
-      }
-    }
-  }, [runtime.curvature, runtime.dimensions])
 
   return (
     <>

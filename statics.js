@@ -1,5 +1,6 @@
 import { hsl } from './explorer/helpers'
 import { atoi, min, pow } from './explorer/math'
+import { coxeterToGram, getSpaceType } from './explorer/math/hypermath'
 import { ident } from './explorer/math/matrix'
 import { mirrorChars } from './explorer/mirrors'
 
@@ -132,7 +133,7 @@ export const ambiances = {
     glow: false,
     lighting: false,
     opacity: 1,
-    color: ({ word }) => hsl((word.length * 0.06) % 1, 0.7, 0.5),
+    color: ({ word }) => hsl((word.length * 0.06) % 1, 0.7, 0.6),
   },
   plainblack: {
     extended: true,
@@ -244,7 +245,7 @@ export const normalizeCoxeter = params => {
   return params
 }
 
-export const filterParams = (maybeBadParams, changed = []) => {
+export const filterParams = (maybeBadParams, changed = [], oldParams) => {
   const params = {
     ...maybeBadParams,
   }
@@ -287,10 +288,16 @@ export const filterParams = (maybeBadParams, changed = []) => {
   if (!badParams.includes('coxeter')) {
     normalizeCoxeter(params)
   }
-
-  if (
+  if (params.matrix._preset) {
+    delete params.matrix._preset
+  } else if (
     params.matrix.length !== params.dimensions ||
-    params.matrix.some(r => r.length !== params.dimensions)
+    params.matrix.some(r => r.length !== params.dimensions) ||
+    ((changed.includes('coxeter') || changed.includes('stellation')) &&
+      getSpaceType(coxeterToGram(params.coxeter, params.stellation))
+        .curvature !==
+        getSpaceType(coxeterToGram(oldParams.coxeter, oldParams.stellation))
+          .curvature)
   ) {
     params.matrix = ident(params.dimensions)
   }
