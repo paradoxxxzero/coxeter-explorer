@@ -1,9 +1,11 @@
+export const mirrorChars = 'dsbßx'
+
 export const isEnabled = m => m !== '' && m !== 'x'
 export const isDual = m => m === 'd' || m === 'b'
 export const isSnub = m => m === 's' || m === 'b'
 export const isHoloSnub = m => m === 'ß'
-
-export const mirrorChars = 'dsbßx'
+// Fix this mess:
+export const mirrorValue = m => (isNaN(m) ? 1 : +m)
 
 export const mirrorTypes = {
   active: 1,

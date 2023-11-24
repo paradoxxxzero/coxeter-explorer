@@ -1,27 +1,27 @@
-import { Fragment, useCallback, useState } from 'react'
+import { useCallback, useState } from 'react'
 import {
   ambiances,
   defaultParams,
   easings,
   groupers,
   projections,
+  spaceLetters,
 } from '../../statics'
+import { range } from '../../utils.js'
+import {
+  centerView,
+  dampedRotation,
+  freeRotation,
+  presetsIcon,
+  rotationShift,
+} from '../icons.jsx'
 import { diagonal, ident } from '../math/matrix'
 import Boolean from './Boolean'
 import CoxeterMatrix from './CoxeterMatrix'
 import Number from './Number'
 import Presets from './Presets'
 import Space from './Space'
-import { range } from '../../utils.js'
-import {
-  centerView,
-  coxeterPlaneIcon,
-  dampedRotation,
-  freeRotation,
-  presetsIcon,
-  rotationShift,
-} from '../icons.jsx'
-import { coxeterPlane } from '../math/hypermath.js'
+import Rotation from './Rotation.jsx'
 
 export default function UI({
   runtime,
@@ -71,21 +71,6 @@ export default function UI({
     },
     [updateParams, closePresets]
   )
-
-  const handleCoxeterPlane = useCallback(() => {
-    updateParams({
-      matrix: coxeterPlane(
-        runtime.spaceType,
-        runtime.mirrorsPlanes,
-        runtime.dimensions
-      ),
-    })
-  }, [
-    updateParams,
-    runtime.spaceType,
-    runtime.mirrorsPlanes,
-    runtime.dimensions,
-  ])
 
   const handleMatrixReset = useCallback(() => {
     updateParams({
@@ -162,6 +147,7 @@ export default function UI({
               title="Rotation Mode"
             >
               <div
+                className="rotation"
                 style={{
                   transform: `rotate(${
                     (rotations.shift / rotations.maxShift) * 360
@@ -171,6 +157,17 @@ export default function UI({
                 {rotationShift}
               </div>
               <sup>{rotations.shift + 1}</sup>
+              <Rotation
+                rotations={rotations}
+                spaceType={runtime.spaceType}
+                axis={0}
+              />
+
+              <Rotation
+                rotations={rotations}
+                spaceType={runtime.spaceType}
+                axis={1}
+              />
             </button>
             <div className="subcontrols">
               <button
@@ -193,15 +190,6 @@ export default function UI({
                   {centerView}
                 </button>
               )}
-              {runtime.curvature > 0 ? (
-                <button
-                  className="button coxeter-plane"
-                  onClick={handleCoxeterPlane}
-                  title="CoxeterPlane"
-                >
-                  {coxeterPlaneIcon}
-                </button>
-              ) : null}
             </div>
           </aside>
         ) : null}
@@ -218,7 +206,7 @@ export default function UI({
         </button>
         {['advanced', 'full'].includes(showUI) && (
           <aside className="parameters">
-            {(showUI === 'full' || params.grouper !== '') && (
+            {showUI === 'full' && (
               <label className="select-label">
                 Grouper
                 <select
@@ -228,29 +216,23 @@ export default function UI({
                 >
                   {groupers.map(p => (
                     <option key={p} value={p}>
-                      {p === ''
-                        ? params.grouper === ''
-                          ? `Auto [${runtime.grouper.replace(/^auto-/, '')}]`
-                          : 'Auto'
-                        : p
-                            .replace(/_/g, ' ')
-                            .replace(/\b./g, c => c.toUpperCase())}
+                      {p
+                        .replace(/_/g, ' ')
+                        .replace(/\b./g, c => c.toUpperCase())}
                     </option>
                   ))}
                 </select>
               </label>
             )}
-            {(showUI === 'full' || params.grouper) && (
-              <label className="boolean-label">
-                inCentered
-                <Boolean
-                  name="centered"
-                  allowNull
-                  value={params.centered}
-                  onChange={handleChange}
-                />
-              </label>
-            )}
+            <label className="boolean-label">
+              inCentered
+              <Boolean
+                name="centered"
+                allowNull
+                value={params.centered}
+                onChange={handleChange}
+              />
+            </label>
             {(showUI === 'full' || runtime.curvature <= 0) && (
               <Number
                 name="order"
@@ -305,8 +287,7 @@ export default function UI({
               togglerName="showEdges"
               onChange={handleChange}
             />
-            {(runtime.grouper.replace(/^auto-/, '') === 'toddcoxeter' ||
-              runtime.grouper === 'fundamental') && (
+            {['toddcoxeter', 'fundamental'].includes(runtime.grouper) && (
               <label className="boolean-label">
                 Faces
                 <Boolean

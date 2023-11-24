@@ -12,6 +12,16 @@ export const transpose = m => {
   return res
 }
 
+export const epsize = m => {
+  // Set very small values to zero
+  for (let i = 0; i < m.length; i++) {
+    for (let j = 0; j < m[i].length; j++) {
+      m[i][j] = eps(m[i][j])
+    }
+  }
+  return m
+}
+
 export const multiply = (m1, m2) => {
   // Multiply two matrices m1, m2
   // if (m1.length === 0 || m2.length === 0) {
@@ -68,13 +78,18 @@ export const set = (m, nm) => {
   return m
 }
 
-export const ident = dimensions => {
-  const id = new Array(dimensions)
-  for (let i = 0; i < dimensions; i++) {
-    id[i] = new Array(dimensions).fill(0)
-    id[i][i] = 1
+export const diag = v => {
+  const d = new Array(v.length)
+  for (let i = 0; i < v.length; i++) {
+    d[i] = new Array(v.length).fill(0)
+    d[i][i] = v[i]
   }
-  return id
+  return d
+}
+
+export const ident = dimensions => {
+  const id = new Array(dimensions).fill(1)
+  return diag(id)
 }
 
 export const diagonal = m =>
@@ -112,10 +127,15 @@ export const eigen = matrix => {
     rotation = multiply(rotation, newRotation)
     diag = multiply(multiply(transpose(newRotation), diag), newRotation)
   }
-
+  const values = diag.map((row, i) => (abs(row[i]) < 1e-8 ? 0 : row[i]))
+  const order = values
+    .map((v, i) => [v, i])
+    .sort((a, b) => b[0] - a[0])
+    .map(v => v[1])
+  const vectors = transpose(rotation)
   return {
-    vectors: rotation,
-    values: diag.map((row, i) => (abs(row[i]) < 1e-8 ? 0 : row[i])),
+    values: order.map(i => values[i]),
+    vectors: order.map(i => vectors[i]),
   }
 }
 
@@ -154,6 +174,51 @@ export const inverse = m => {
   }
 
   return aug.map(row => row.slice(n))
+}
+
+export const cholesky = m => {
+  // Cholesky decomposition
+  // https://en.wikipedia.org/wiki/Cholesky_decomposition
+  const n = m.length
+  const l = ident(n)
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j <= i; j++) {
+      let sum = 0
+      for (let k = 0; k < j; k++) {
+        sum += l[i][k] * l[j][k]
+      }
+      l[i][j] = i === j ? sqrt(m[i][i] - sum) : (1 / l[j][j]) * (m[i][j] - sum)
+    }
+  }
+  return l
+}
+export const eps = x => (abs(x) < 1e-9 ? 0 : x)
+
+export const ldl = m => {
+  // LDL decomposition
+  // https://en.wikipedia.org/wiki/Cholesky_decomposition#LDL_decomposition
+  const n = m.length
+  const D = ident(n)
+  const L = ident(n)
+  for (let i = 0; i < n; i++) {
+    D[i][i] = m[i][i]
+    for (let j = 0; j < i; j++) {
+      D[i][i] -= L[i][j] ** 2 * D[j][j]
+    }
+    for (let j = i + 1; j < n; j++) {
+      let sum = 0
+      for (let k = 0; k < i; k++) {
+        sum += L[i][k] * L[j][k] * D[k][k]
+      }
+      L[j][i] = (m[j][i] - sum) / D[i][i]
+    }
+  }
+  epsize(D)
+  epsize(L)
+  return {
+    L,
+    D,
+  }
 }
 
 export const add = (m1, m2) =>

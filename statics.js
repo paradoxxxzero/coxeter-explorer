@@ -1,12 +1,12 @@
 import { hsl } from './explorer/helpers'
 import { atoi, min, pow } from './explorer/math'
-import { coxeterToGram, getSpaceType } from './explorer/math/hypermath'
 import { ident } from './explorer/math/matrix'
 import { mirrorChars } from './explorer/mirrors'
 
 const canvas = document.createElement('canvas')
 const tempGL = canvas.getContext('webgl2')
 const MSAA_MAX = tempGL.getParameter(tempGL.MAX_SAMPLES)
+export const spaceLetters = 'xyzwvutsrqponmlkjihgfedcba'
 
 export const projections = [
   'perspective',
@@ -47,8 +47,14 @@ export const easings = [
   'inverse_quartic',
   'inverse_quintic',
 ]
-export const groupers = ['', 'knuthbendix', 'toddcoxeter', 'fundamental']
-export const lightings = ['lambert', 'phong', 'blinn-phong', 'toon']
+export const groupers = ['toddcoxeter', 'knuthbendix', 'fundamental']
+export const lightings = [
+  'lambert',
+  'phong',
+  'blinn-phong',
+  'toon',
+  'oren-nayar',
+]
 export const ambiances = {
   neon: {
     background: [0, 0, 0, 1],
@@ -120,6 +126,37 @@ export const ambiances = {
       return hsl(h % 1, 1, type === 'face' ? 0.6 : showFaces ? 0.05 : 0.8)
     },
   },
+  catpuccin: {
+    background: [...hsl(240 / 360, 0.23, 0.09), 1],
+    glow: false,
+    lighting: 'lambert',
+    opacity: 0.6,
+    transparency: 'oit',
+    color: ({ word }, type, { dimensions, showFaces }) => {
+      const colors = [
+        hsl(10 / 360, 0.56, 0.91),
+        hsl(0 / 360, 0.59, 0.88),
+        hsl(316 / 360, 0.72, 0.86),
+        hsl(267 / 360, 0.84, 0.81),
+        hsl(343 / 360, 0.81, 0.75),
+        hsl(350 / 360, 0.65, 0.77),
+        hsl(23 / 360, 0.92, 0.75),
+        hsl(41 / 360, 0.86, 0.83),
+        hsl(115 / 360, 0.54, 0.76),
+        hsl(170 / 360, 0.57, 0.73),
+        hsl(189 / 360, 0.71, 0.73),
+        hsl(199 / 360, 0.76, 0.69),
+        hsl(217 / 360, 0.92, 0.76),
+        hsl(232 / 360, 0.97, 0.85),
+      ]
+      const l = word
+        .split('')
+        .map(c => atoi(c))
+        .reduce((a, b) => a + b, 0)
+
+      return colors[l % colors.length]
+    },
+  },
   pure: {
     background: [0, 0, 0, 1],
     glow: false,
@@ -181,10 +218,10 @@ export const defaultParams = {
   edgeThickness: 25,
   showFaces: false,
 
-  grouper: '',
+  grouper: 'toddcoxeter',
   controls: 'space',
   ambiance: 'neon',
-  centered: null,
+  centered: false,
 
   zoom: 1.5,
   fov3: 90,
@@ -292,12 +329,7 @@ export const filterParams = (maybeBadParams, changed = [], oldParams) => {
     delete params.matrix._preset
   } else if (
     params.matrix.length !== params.dimensions ||
-    params.matrix.some(r => r.length !== params.dimensions) ||
-    ((changed.includes('coxeter') || changed.includes('stellation')) &&
-      getSpaceType(coxeterToGram(params.coxeter, params.stellation))
-        .curvature !==
-        getSpaceType(coxeterToGram(oldParams.coxeter, oldParams.stellation))
-          .curvature)
+    params.matrix.some(r => r.length !== params.dimensions)
   ) {
     params.matrix = ident(params.dimensions)
   }

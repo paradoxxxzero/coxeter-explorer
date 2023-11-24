@@ -15,8 +15,8 @@ export default function App({ params, updateParams }) {
     askedOrder: null,
     spaceType: null,
     curvature: null,
-    mirrorsPlanes: null,
-    rootVertex: null,
+    rootNormals: null,
+    rootVertices: null,
     vertex: [],
     edge: [],
     ranges: [],
@@ -135,7 +135,6 @@ export default function App({ params, updateParams }) {
       auto: 'damp',
     }))
   }, [params.dimensions])
-
   useEffect(() => {
     setRuntime(rt => {
       if (params.grouper === '' && rt.grouper.startsWith('auto-')) {

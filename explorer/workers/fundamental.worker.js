@@ -1,6 +1,8 @@
+import { range } from '../../utils'
 import { combinations, hash } from '../math'
 import { getVerticesCosetsParams, solve } from '../math/coset'
-import { getFundamentalVertex, reflect } from '../math/hypermath'
+import { normalize, reflect } from '../math/hypermath'
+import { transpose } from '../math/matrix'
 
 let verticesParams = null
 let fundamentalVertices = null
@@ -13,8 +15,7 @@ const initCosets = (
   dimensions,
   coxeter,
   stellation,
-  mirrors,
-  mirrorsPlanes,
+  rootVertices,
   curvature
 ) => {
   const defaultParams = () => ({
@@ -27,13 +28,9 @@ const initCosets = (
     done: false,
     lastDrawn: 0,
   })
-
-  fundamentalVertices = new Array(dimensions).fill().map((_, i) =>
-    getFundamentalVertex(
-      new Array(dimensions).fill().map((_, j) => (j === i ? 1 : 0)),
-      mirrorsPlanes,
-      curvature
-    )
+  const rootVerticesT = transpose(rootVertices)
+  fundamentalVertices = range(dimensions).map(i =>
+    normalize(rootVerticesT[i], curvature)
   )
 
   verticesParams = {
@@ -53,11 +50,11 @@ const initCosets = (
 }
 
 const reflectWord = (state, word) => {
-  const { rootVertex, mirrorsPlanes, curvature } = state
+  const { rootVertex, rootNormals, curvature } = state
   let v = rootVertex
 
   for (let i = 0; i < word.length; i++) {
-    v = reflect(v, mirrorsPlanes[word.charCodeAt(i) - 97], curvature)
+    v = reflect(v, rootNormals[word.charCodeAt(i) - 97], curvature)
   }
   return v
 }
@@ -66,24 +63,16 @@ onmessage = ({
   data: {
     order,
     curvature,
-    mirrorsPlanes,
+    rootNormals,
     coxeter,
     stellation,
-    mirrors,
-    rootVertex,
+    rootVertices,
     dimensions,
     uuid,
   },
 }) => {
   if (order === 0) {
-    initCosets(
-      dimensions,
-      coxeter,
-      stellation,
-      mirrors,
-      mirrorsPlanes,
-      curvature
-    )
+    initCosets(dimensions, coxeter, stellation, rootVertices, curvature)
   }
   const limit = order === 0 ? 1 : (order + 1) * 10
   const edgeProduct = combinations(
@@ -113,7 +102,7 @@ onmessage = ({
         for (let j = 0; j < fundamentalVertices.length; j++) {
           const fundamentalVertex = fundamentalVertices[j]
           const vertex = reflectWord(
-            { rootVertex: fundamentalVertex, mirrorsPlanes, curvature },
+            { rootVertex: fundamentalVertex, rootNormals, curvature },
             word
           )
 

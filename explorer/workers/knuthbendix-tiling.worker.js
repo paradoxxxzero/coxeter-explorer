@@ -1,7 +1,8 @@
 import { getBaseRules, hash, itoa } from '../math'
 import { knuthBendix, shorten } from '../math/group'
-import { reflect } from '../math/hypermath'
-import { isSnub } from '../mirrors'
+import { normalize, reflect } from '../math/hypermath'
+import { multiplyVector } from '../math/matrix'
+import { isSnub, mirrorValue } from '../mirrors'
 
 let vertexHashes = new Map()
 let edgeHashes = new Set()
@@ -36,11 +37,11 @@ const init = (rootVertex, newRules, newMirrors) => {
 }
 
 const reflectWord = (state, word) => {
-  const { rootVertex, mirrorsPlanes, curvature } = state
+  const { rootVertex, rootNormals, curvature } = state
   let v = rootVertex
 
   for (let i = word.length - 1; i >= 0; i--) {
-    v = reflect(v, mirrorsPlanes[word.charCodeAt(i) - 97], curvature)
+    v = reflect(v, rootNormals[word.charCodeAt(i) - 97], curvature)
   }
   return v
 }
@@ -208,12 +209,19 @@ onmessage = ({
     coxeter,
     stellation,
     mirrors,
-    mirrorsPlanes,
-    rootVertex,
+    rootNormals,
+    rootVertices,
     dimensions,
     uuid,
   },
 }) => {
+  const rootVertex = normalize(
+    multiplyVector(
+      rootVertices,
+      mirrors.map(v => mirrorValue(v))
+    ),
+    curvature
+  )
   try {
     let failed = false
     if (order === 0) {
@@ -239,7 +247,7 @@ onmessage = ({
         try {
           nextWords = tileFundamentalChamber({
             curvature,
-            mirrorsPlanes,
+            rootNormals,
             rootVertex,
             dimensions,
           })
@@ -253,7 +261,7 @@ onmessage = ({
     if (order > 0 || failed) {
       nextWords = tile({
         curvature,
-        mirrorsPlanes,
+        rootNormals,
         rootVertex,
         dimensions,
       })

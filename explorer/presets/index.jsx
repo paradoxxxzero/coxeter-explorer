@@ -1,12 +1,6 @@
 import { defaultParams } from '../../statics'
 import Space from '../components/Space'
 import { min } from '../math'
-import {
-  coxeterPlane,
-  coxeterToGram,
-  getFundamentalSimplexMirrors,
-  getSpaceType,
-} from '../math/hypermath'
 import { ident } from '../math/matrix'
 
 const coxeter_ = (...args) => {
@@ -41,13 +35,7 @@ const stellation_ = (...args) => {
   return { stellation }
 }
 
-const polytope = (
-  coxeterArgs,
-  mirrors,
-  stellationArgs,
-  extra,
-  onCoxeterPlane
-) => {
+const polytope = (coxeterArgs, mirrors, stellationArgs, extra) => {
   const coxeterParams = coxeter_(...coxeterArgs)
   const { dimensions } = coxeterParams
   const params = {
@@ -60,6 +48,7 @@ const polytope = (
     ambiance: 'colorful',
     matrix: ident(dimensions),
     zoom: dimensions <= 3 ? 2 : dimensions > 4 ? 3 : 5,
+    centered: true,
     ...(extra || {}),
   }
   if (mirrors) {
@@ -75,18 +64,6 @@ const polytope = (
     params.stellation = new Array(dimensions)
       .fill()
       .map((_, i) => new Array(dimensions).fill(1))
-  }
-  if (onCoxeterPlane) {
-    const gram = coxeterToGram(params.coxeter, params.stellation)
-
-    const spaceType = getSpaceType(gram)
-    const mirrorsPlanes = getFundamentalSimplexMirrors(
-      gram,
-      spaceType.curvature,
-      false
-    )
-    params.matrix = coxeterPlane(spaceType, mirrorsPlanes, dimensions)
-    params.matrix._preset = true
   }
   return params
 }
@@ -124,7 +101,8 @@ const ehoneycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
     ambiance: 'neon',
     showFaces: false,
     showVertices: false,
-    grouper: '',
+    grouper: 'toddcoxeter',
+    centered: false,
     edgeThickness: 10,
     zoom: 2,
     ...extra,
@@ -137,7 +115,8 @@ const honeycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
     showFaces: false,
     showVertices: false,
     curve: true,
-    grouper: '',
+    grouper: 'toddcoxeter',
+    centered: false,
     edgeThickness: 10,
     zoom: 1.5,
     ...extra,
@@ -317,13 +296,14 @@ export const presets = [
         segments: 64,
         easing: 'quartic',
         ambiance: 'neon',
+        centered: true,
       }
     ),
   },
   {
     name: (
       <>
-        <Space type="finite" dimensions={8} /> 1<sub>22</sub>
+        <Space type="finite" dimensions={8} /> E6 (1<sub>22</sub>)
       </>
     ),
     params: polytope(
@@ -347,14 +327,14 @@ export const presets = [
         projection5: 'orthographic',
         projection6: 'orthographic',
         zoom: 1,
-      },
-      true
+        centered: false,
+      }
     ),
   },
   {
     name: (
       <>
-        <Space type="finite" dimensions={8} /> E8 lattice (4<sub>21</sub>)
+        <Space type="finite" dimensions={8} /> E8 (4<sub>21</sub>)
       </>
     ),
     params: polytope(
@@ -382,10 +362,10 @@ export const presets = [
         projection6: 'orthographic',
         projection7: 'orthographic',
         projection8: 'orthographic',
-        order: 20,
+        order: 14,
         zoom: 1,
-      },
-      true
+        centered: false,
+      }
     ),
   },
   {
@@ -400,7 +380,7 @@ export const presets = [
       showFaces: true,
       curve: true,
       order: 1,
-      centered: false,
+      centered: true,
       segments: 64,
       easing: 'quartic',
       ambiance: 'pure',
@@ -463,7 +443,7 @@ export const presets = [
       showFaces: true,
       curve: true,
       order: 1,
-      centered: false,
+      centered: true,
       segments: 32,
       easing: 'quartic',
       ambiance: 'pure',
@@ -484,6 +464,30 @@ export const presets = [
       zoom: 3,
       edgeThickness: 5,
     }),
+  },
+  {
+    name: (
+      <>
+        <Space type="affine" dimensions={5} /> Tesseract stack
+      </>
+    ),
+    params: polytope(
+      [
+        [1, 2, 2, 2, 0],
+        [2, 1, 2, 2, 2],
+        [2, 2, 1, 2, 2],
+        [2, 2, 2, 1, 2],
+        [0, 2, 2, 2, 1],
+      ],
+      [1, 1, 1, 1, 0],
+      null,
+      {
+        showVertices: false,
+        showFaces: true,
+        ambiance: 'neon',
+        edgeThickness: 35,
+      }
+    ),
   },
 
   {
@@ -637,6 +641,69 @@ export const presets = [
   {
     name: 'Snub 24-cell',
     params: polytope([3, 4, 3], ['s', 's', 0, 0]),
+  },
+  {
+    name: 'Icosahedral 120-cell',
+    params: polytope([3, 5, 5], [1, 0, 0, 0], [1, 1, 2], {
+      curve: false,
+    }),
+    subforms: [
+      {
+        name: 'Small stellated 120-cell',
+        params: polytope([3, 5, 5], [0, 0, 0, 1], [1, 1, 2], {
+          curve: false,
+        }),
+      },
+      {
+        name: 'Great 120-cell',
+        params: polytope([5, 5, 5], [1, 0, 0, 0], [1, 2, 1], {
+          curve: false,
+        }),
+      },
+      {
+        name: 'Grand 120-cell',
+        params: polytope([5, 3, 5], [1, 0, 0, 0], [1, 1, 2], {
+          curve: false,
+        }),
+      },
+      {
+        name: 'Great stellated 120-cell',
+        params: polytope([5, 3, 5], [0, 0, 0, 1], [1, 1, 2], {
+          curve: false,
+        }),
+      },
+      // FIXME
+      {
+        name: 'Grand stellated 120-cell',
+        params: polytope([5, 5, 5], [1, 0, 0, 0], [2, 1, 2], {
+          curve: false,
+        }),
+      },
+      {
+        name: 'Great grand 120-cell',
+        params: polytope([5, 5, 3], [1, 0, 0, 0], [1, 2, 1], {
+          curve: false,
+        }),
+      },
+      {
+        name: 'Great icosahedral 120-cell',
+        params: polytope([5, 5, 3], [0, 0, 0, 1], [1, 2, 1], {
+          curve: false,
+        }),
+      },
+      {
+        name: 'Great grand stellated 120-cell',
+        params: polytope([5, 3, 3], [1, 0, 0, 0], [2, 1, 1], {
+          curve: false,
+        }),
+      },
+    ],
+  },
+  {
+    name: 'Grand 600-cell',
+    params: polytope([3, 3, 5], [1, 0, 0, 0], [1, 1, 2], {
+      curve: false,
+    }),
   },
   {
     type: 'group',

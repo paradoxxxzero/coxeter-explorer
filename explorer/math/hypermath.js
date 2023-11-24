@@ -1,3 +1,4 @@
+import { range } from '../../utils.js'
 import {
   PI,
   abs,
@@ -12,97 +13,16 @@ import {
   sqrt,
 } from './index.js'
 import {
-  det,
+  diag,
   eigen,
+  epsize,
   ident,
   inverse,
+  ldl,
   multiply,
   multiplyVector,
-  set,
   transpose,
 } from './matrix.js'
-
-export const coxeterToGram = (coxeter, stellation) =>
-  coxeter.map((row, i) =>
-    row.map((column, j) => {
-      if (column < 0) {
-        // Imaginary
-        return -cosh(-column / 10)
-      }
-      if (column === 0) {
-        // Infinity
-        return -1
-      }
-      return -cos((stellation[i][j] * PI) / column)
-    })
-  )
-
-export const getSignature = gram => {
-  const eigens = eigen(gram)
-  return {
-    '+': eigens.values.filter(v => v > 0).length,
-    '-': eigens.values.filter(v => v < 0).length,
-    0: eigens.values.filter(v => v === 0).length,
-    eigens,
-  }
-}
-export const getSubSignatures = (gram, sub = [], level = 0, maxLevel = 2) => {
-  sub[level] = sub[level] || []
-  for (let i = 0; i < gram.length; i++) {
-    const subgram = gram
-      .filter((_, j) => j !== i)
-      .map(row => row.filter((_, j) => j !== i))
-    sub[level].push(getSignature(subgram))
-    if (subgram.length > 1 && level + 1 < maxLevel) {
-      getSubSignatures(subgram, sub, level + 1)
-    }
-  }
-  return sub
-}
-
-export const getSpaceType = gram => {
-  const signature = getSignature(gram)
-  const eigens = signature.eigens
-  if (signature['-'] === 0 && signature['0'] === 0) {
-    return { type: 'finite', curvature: 1, eigens }
-  }
-  if (signature['-'] === 0 && signature['0'] > 0) {
-    return { type: 'affine', curvature: 0, eigens }
-  }
-  if (signature['-'] > 1) {
-    return {
-      type: 'hyperbolic',
-      subtype: 'superhyperbolic',
-      level: signature['-'],
-      curvature: -1,
-      eigens,
-    }
-  }
-  // Indefinite, check subgroups
-  const subSignatures = getSubSignatures(gram)
-
-  const subSignature = subSignatures[0]
-
-  if (subSignature.every(s => s['-'] === 0 && s['0'] === 0)) {
-    return { type: 'hyperbolic', subtype: 'compact', curvature: -1, eigens }
-  }
-  if (subSignature.every(s => s['-'] === 0)) {
-    return { type: 'hyperbolic', subtype: 'paracompact', curvature: -1, eigens }
-  }
-  for (let i = 1; i < subSignatures.length; i++) {
-    const subSignature = subSignatures[i]
-    if (subSignature.every(s => s['-'] === 0)) {
-      return {
-        type: 'hyperbolic',
-        subtype: 'lorentzian',
-        curvature: -1,
-        level: i + 1,
-        eigens,
-      }
-    }
-  }
-  return { type: 'indefinite', curvature: -1, eigens }
-}
 
 export const xdot = (v1, v2, curvature) => {
   let sum = 0
@@ -140,6 +60,220 @@ export const normalize = (v, curvature) => {
     v[i] *= nr
   }
   return v
+}
+
+export const coxeterToGram = (coxeter, stellation) =>
+  epsize(
+    coxeter.map((row, i) =>
+      row.map((column, j) => {
+        if (column < 0) {
+          // Imaginary
+          return -cosh(-column / 10)
+        }
+        if (column === 0) {
+          // Infinity
+          return -1
+        }
+        return -cos((stellation[i][j] * PI) / column)
+      })
+    )
+  )
+
+export const getSignature = gram => {
+  const eigens = eigen(gram)
+  return {
+    '+': eigens.values.filter(v => v > 0).length,
+    '-': eigens.values.filter(v => v < 0).length,
+    0: eigens.values.filter(v => v === 0).length,
+    eigens,
+  }
+}
+export const getSubSignatures = (gram, sub = [], level = 0, maxLevel = 10) => {
+  sub[level] = sub[level] || []
+  for (let i = 0; i < gram.length; i++) {
+    const subgram = gram
+      .filter((_, j) => j !== i)
+      .map(row => row.filter((_, j) => j !== i))
+    sub[level].push(getSignature(subgram))
+    if (subgram.length > 1 && level + 1 < maxLevel) {
+      getSubSignatures(subgram, sub, level + 1, maxLevel)
+    }
+  }
+  return sub
+}
+
+export const getSpaceType = gram => {
+  const signature = getSignature(gram)
+  const eigens = signature.eigens
+  if (signature['-'] === 0 && signature['0'] === 0) {
+    return { type: 'finite', curvature: 1, eigens, gram }
+  }
+  if (signature['-'] === 0 && signature['0'] > 0) {
+    return { type: 'affine', curvature: 0, eigens, gram }
+  }
+  if (signature['-'] > 1) {
+    return {
+      type: 'hyperbolic',
+      subtype: 'superhyperbolic',
+      level: signature['-'],
+      curvature: -1,
+      eigens,
+      gram,
+    }
+  }
+  // Indefinite, check subgroups
+  const subSignatures = getSubSignatures(gram, [], 0, 3)
+
+  const subSignature = subSignatures[0]
+
+  if (subSignature.every(s => s['-'] === 0 && s['0'] === 0)) {
+    return {
+      type: 'hyperbolic',
+      subtype: 'compact',
+      curvature: -1,
+      eigens,
+      gram,
+    }
+  }
+  if (subSignature.every(s => s['-'] === 0)) {
+    return {
+      type: 'hyperbolic',
+      subtype: 'paracompact',
+      curvature: -1,
+      eigens,
+      gram,
+    }
+  }
+  for (let i = 1; i < subSignatures.length; i++) {
+    const subSignature = subSignatures[i]
+    if (subSignature.every(s => s['-'] === 0)) {
+      return {
+        type: 'hyperbolic',
+        subtype: 'lorentzian',
+        curvature: -1,
+        level: i + 1,
+        eigens,
+        gram,
+      }
+    }
+  }
+  console.log('indefinite', subSignatures)
+  return { type: 'indefinite', curvature: -1, eigens, gram }
+}
+
+export const getGeometry = (spaceType, centered) => {
+  const dimensions = spaceType.gram.length
+  const eigens = spaceType.eigens
+  const curvature = spaceType.curvature
+  console.log(eigens)
+  // Curvature matrix
+  const J = diag(
+    range(dimensions).map(i => (i === dimensions - 1 ? curvature || 1 : 1))
+  )
+  if (centered === true) {
+    // Use cholesky LDL decomposition
+    // G = L D L^T
+    // G = L sqrt(J D) sqrt(D J) L^T
+    // W = L sqrt(J D)
+    const { L, D } = ldl(spaceType.gram)
+    if (curvature === 0) {
+      D[dimensions - 1][dimensions - 1] = 0.25
+    }
+    if (D.some((_, i) => isNaN(D[i][i]))) {
+      const normals = analyticGeometry(spaceType, centered)
+      return {
+        normals: normals,
+        vertices: inverse(multiply(normals, J)),
+      }
+    }
+    const sqrtJD = multiply(J, D).map((row, i) =>
+      row.map((v, j) => (i === j ? sqrt(v) : 0))
+    )
+    const T = multiply(L, sqrtJD)
+    return {
+      normals: T,
+      vertices: inverse(multiply(T, J)),
+    }
+  }
+
+  // More details on this in https://researchers.ms.unimelb.edu.au/~snap/DHeard-PhD.pdf
+  // G = Gram matrix
+  // V = Vertex matrix
+  // W = Normal matrix
+  // J = Curvature matrix
+  // Spectral decomposition:
+  // G = Q L Q^-1
+  // G = Q L Q^T // Q orthogonal
+  // Q = eigenvectors of G
+  // L = eigenvalues of G (diagonal matrix)
+  // G. = V^T J V // Vertex Gram matrix
+  // G = W^T J W // Normal Gram matrix
+  // G = Q L Q^T
+  // G = Q sqrt(J L) sqrt(L J) Q^T
+  // W^T = Q sqrt(J L)
+
+  // Q^-1 = Q^T
+  // W^-1 = (Q sqrt(J L))^-1
+  // W^-1 = sqrt(J L)^-1 Q^-1
+  // W^-1 = sqrt(J L)^-1 Q^T
+  // (JW)^-1 = J^-1 sqrt(L J)^-1 Q^T
+  // J^-1 = J
+  // (JW)^-1 = J sqrt(L J)^-1 Q^T
+
+  // Choose:
+  // W^T J V = I
+
+  // V = (W^T J)^-1
+  // (W^T J)^-1 = (Q sqrt(J L) J)^-1
+  // (W^T J)^-1 = J sqrt(L J)^-1 Q^T
+  // V = J sqrt(L J)^-1 Q^T
+
+  // We have a choice here,
+  // we can order eigenvalues by their size
+  // we will have a random rotation
+  // or we can start with the biggest eigenvalue
+  // then the smallest positive eigenvalue
+  // by doing so we will be aligned with the coxeter plane
+  const eigenValues = eigens.values.slice()
+  const eigenVectors = eigens.vectors.slice()
+
+  if (centered === false) {
+    // We want to align with the coxeter plane
+    // so we put the biggest eigenvalue first
+    // then the smallest positive eigenvalue
+    // then the rest as previously ordered
+    // The biggest is alread first
+    const smallest = min(...eigenValues.filter(v => v > 0))
+    eigenVectors.splice(
+      1,
+      0,
+      eigenVectors.splice(eigenValues.indexOf(smallest), 1)[0]
+    )
+
+    eigenValues.splice(eigenValues.indexOf(smallest), 1)
+    eigenValues.splice(1, 0, smallest)
+  }
+
+  eigenValues.forEach((v, i) => {
+    // For euclidean space, replace null eigenvalues with a zoom
+    if (v === 0) {
+      eigenValues[i] = 0.05 // ??
+    }
+  })
+
+  const Q = transpose(eigenVectors)
+
+  // Sort values biggest first - negative will be last
+  const L = diag(eigenValues)
+  const sqrtJL = multiply(J, L).map((row, i) =>
+    row.map((v, j) => (i === j ? sqrt(v) : 0))
+  )
+  const invsqrtJL = sqrtJL.map((row, i) =>
+    row.map((v, j) => (i === j ? 1 / v : 0))
+  )
+  const normals = multiply(Q, sqrtJL)
+  const vertices = multiply(multiply(J, invsqrtJL), transpose(Q))
+  return { normals, vertices }
 }
 
 // cos† means cos in spherical coordinates and cosh in hyperbolic coordinates
@@ -361,7 +495,7 @@ export const xtranslate = (offset, level, rotations, dimensions, curvature) => {
   }
   const [i, j] = rotations[level]
   // Handle hyperbolic rotation -> cosh, sinh (last coordinate is hyperbolic for now)
-  const c = j === dimensions - 1 ? curvature || 1 : 1
+  const c = j === dimensions - 1 ? curvature : 1
 
   const cost = sqrt(1 - c * offset * offset)
   const sint = offset
@@ -375,48 +509,85 @@ export const xtranslate = (offset, level, rotations, dimensions, curvature) => {
   return matrix
 }
 
-export const getFundamentalSimplexMirrorsShifted = (
-  shift,
-  gram,
-  curvature,
-  force
-) => {
-  const dimensions = gram[0].length
-  const mirrorsPlanes = new Array(dimensions)
-    .fill()
-    .map(() => new Array(dimensions).fill(0))
-
-  mirrorsPlanes[shift][0] = 1
-  for (let i_ = 1; i_ < dimensions; i_++) {
-    const i = (i_ + shift) % dimensions
-    for (let j_ = 0; j_ < i_; j_++) {
-      const j = (j_ + shift) % dimensions
-      mirrorsPlanes[i][j_] =
-        (gram[i][j] -
-          xdot(mirrorsPlanes[i].slice(0, j_), mirrorsPlanes[j].slice(0, j_))) /
-        mirrorsPlanes[j][j_]
-    }
-    mirrorsPlanes[i][i_] = sqrt(abs(1 - xdot2(mirrorsPlanes[i].slice(0, i_))))
-    if (mirrorsPlanes[i][i_] < 1e-6 && i_ < dimensions - 1 && !force) {
-      // console.warn(`Parallel mirrors ${i - 1} and ${i} for shifted ${shift}`)
-      return null
-    }
-  }
-  const last = (dimensions - 1 + shift) % dimensions
-  if (curvature === 0) {
-    mirrorsPlanes[last][dimensions - 1] = 0.5
-  } else {
-    mirrorsPlanes[last][dimensions - 1] *= curvature
-  }
-  return mirrorsPlanes
+export const getStellationSphericalOppositeAngle = (a, b, c, stellation) => {
+  const A = PI / a
+  const B = PI / b
+  const C = PI / c
+  return round(
+    PI /
+      acos(
+        -cos(A) * cos(C) +
+          sin(A) *
+            sin(C) *
+            ((cos(B) - cos(stellation * A) * cos(C)) /
+              (sin(stellation * A) * sin(C)))
+      )
+  )
 }
 
-export const getFundamentalSimplexMirrors = (
-  gram,
-  curvature,
-  centered = false
-) => {
-  const dimensions = gram[0].length
+const proj = (a, b, curvature) => {
+  const result = []
+  const dot = xdot(a, b, curvature)
+  for (let i = 0; i < a.length; i++) {
+    result[i] = dot * b[i]
+  }
+  return result
+}
+const sub = (a, b) => {
+  const result = []
+  for (let i = 0; i < a.length; i++) {
+    result[i] = a[i] - b[i]
+  }
+  return result
+}
+
+export const gramSchmidt = (vectors, curvature) => {
+  const basis = [normalize(vectors[0], curvature)]
+  for (let i = 1; i < vectors.length; i++) {
+    let projection = vectors[i]
+    for (let j = 0; j < i; j++) {
+      projection = sub(projection, proj(vectors[i], basis[j], 1))
+    }
+    basis[i] = normalize(projection, curvature)
+  }
+  return basis
+}
+
+export const coxeterPlane = (spaceType, rootNormals, dimensions) => {
+  const { curvature } = spaceType
+
+  const eigens = spaceType.eigens
+  const eigenVecs = transpose(eigens.vectors)
+  const biggestEigenValue = max(...eigens.values)
+  const biggestEigenValueIndex = eigens.values.indexOf(biggestEigenValue)
+  const biggestEigenVector = eigenVecs[biggestEigenValueIndex]
+
+  const smallestEigenValue = min(...eigens.values)
+  const smallestEigenValueIndex = eigens.values.indexOf(smallestEigenValue)
+
+  const smallestEigenVector = eigenVecs[smallestEigenValueIndex]
+
+  biggestEigenVector[biggestEigenVector.length - 1] *= curvature
+  smallestEigenVector[smallestEigenVector.length - 1] *= curvature
+
+  const tr = transpose(rootNormals)
+  const u = normalize(multiplyVector(tr, biggestEigenVector), curvature)
+  const v = normalize(multiplyVector(tr, smallestEigenVector), curvature)
+
+  const id = ident(dimensions)
+  const basis = [u, v]
+  for (let i = 2; i < dimensions; i++) {
+    basis.push(id[i])
+  }
+  const matrix = gramSchmidt(basis, curvature)
+
+  return matrix
+}
+
+const analyticGeometry = (spaceType, centered) => {
+  const gram = spaceType.gram
+  const dimensions = gram.length
+  const curvature = spaceType.curvature
 
   // Hyperideal case like
   // o - ∞ - o
@@ -716,25 +887,25 @@ export const getFundamentalSimplexMirrors = (
   // (13) :                     z0 * z3 + w0 * w3 + α = w
   // (14) :                               w1 * w4 + α = x
   // (15) :                               w0 * w4 + α = y
-  let mirrorsPlanes = null
+  let normals = null
   const hyperideal = gram.every((row, i) =>
     row.every((x, j) => i === j || x <= -1)
   )
   if (centered || hyperideal) {
-    mirrorsPlanes = new Array(dimensions)
+    normals = new Array(dimensions)
       .fill(0)
       .map(() => new Array(dimensions).fill(0))
 
     if (dimensions === 2) {
       const alpha = (gram[0][1] + 1) / 2
-      mirrorsPlanes[0][0] = sqrt(alpha - gram[0][1])
-      mirrorsPlanes[1][0] = -sqrt(alpha - gram[0][1])
-      mirrorsPlanes[0][1] = mirrorsPlanes[1][1] = sqrt((curvature || 1) * alpha)
+      normals[0][0] = sqrt(alpha - gram[0][1])
+      normals[1][0] = -sqrt(alpha - gram[0][1])
+      normals[0][1] = normals[1][1] = sqrt((curvature || 1) * alpha)
       // FIXME:
       if (curvature === 0) {
-        mirrorsPlanes[1][1] = 0.5
+        normals[1][1] = 0.5
       }
-      return mirrorsPlanes
+      return normals
     } else if (dimensions === 3) {
       const p = gram[0][1]
       const q = gram[1][2]
@@ -752,26 +923,26 @@ export const getFundamentalSimplexMirrors = (
             - 3)
 
       // z0 = z1 = z2 = sqrt(curvature * α)
-      mirrorsPlanes[0][2] =
-        mirrorsPlanes[1][2] =
-        mirrorsPlanes[2][2] =
+      normals[0][2] =
+        normals[1][2] =
+        normals[2][2] =
           curvature * sqrt(curvature * alpha)
       // y2 = -sqrt(1 - α)
-      mirrorsPlanes[2][1] = -sqrt(1 - alpha)
+      normals[2][1] = -sqrt(1 - alpha)
       // y1 = (χ - α) / y2
-      mirrorsPlanes[1][1] = (q - alpha) / mirrorsPlanes[2][1]
+      normals[1][1] = (q - alpha) / normals[2][1]
       // y0 = (ρ - α) / y2
-      mirrorsPlanes[0][1] = (r - alpha) / mirrorsPlanes[2][1]
+      normals[0][1] = (r - alpha) / normals[2][1]
       // x1 = -sqrt(1 - y1^2 - α)
-      mirrorsPlanes[1][0] = -sqrt(1 - mirrorsPlanes[1][1] ** 2 - alpha)
+      normals[1][0] = -sqrt(1 - normals[1][1] ** 2 - alpha)
       // x0 = sqrt(1 - y0^2 - α)
-      mirrorsPlanes[0][0] = sqrt(1 - mirrorsPlanes[0][1] ** 2 - alpha)
-      // check(mirrorsPlanes, gram, curvature)
+      normals[0][0] = sqrt(1 - normals[0][1] ** 2 - alpha)
+      // check(normals, gram, curvature)
       // FIXME:
       if (curvature === 0) {
-        mirrorsPlanes[2][2] = 0.5
+        normals[2][2] = 0.5
       }
-      return mirrorsPlanes
+      return normals
     } else if (dimensions === 4) {
       const p = gram[0][1]
       const q = gram[1][2]
@@ -850,47 +1021,41 @@ export const getFundamentalSimplexMirrors = (
               + 2))
 
       // w0 = w1 = w2 = w3 = sqrt(curvature * α)
-      mirrorsPlanes[0][3] =
-        mirrorsPlanes[1][3] =
-        mirrorsPlanes[2][3] =
-        mirrorsPlanes[3][3] =
+      normals[0][3] =
+        normals[1][3] =
+        normals[2][3] =
+        normals[3][3] =
           curvature * sqrt(curvature * alpha)
       // z3 = -sqrt(1 - α)
-      mirrorsPlanes[3][2] = -sqrt(1 - alpha)
+      normals[3][2] = -sqrt(1 - alpha)
       // z2 = (r - α) / z3
-      mirrorsPlanes[2][2] = (r - alpha) / mirrorsPlanes[3][2]
+      normals[2][2] = (r - alpha) / normals[3][2]
       // z1 = (t - α) / z3
-      mirrorsPlanes[1][2] = (t - alpha) / mirrorsPlanes[3][2]
+      normals[1][2] = (t - alpha) / normals[3][2]
       // z0 = (u - α) / z3
-      mirrorsPlanes[0][2] = (u - alpha) / mirrorsPlanes[3][2]
+      normals[0][2] = (u - alpha) / normals[3][2]
 
       // y2 = -sqrt(1 - α - z2^2)
-      mirrorsPlanes[2][1] = -sqrt(1 - alpha - mirrorsPlanes[2][2] ** 2)
+      normals[2][1] = -sqrt(1 - alpha - normals[2][2] ** 2)
       // y1 = (q - α - z1 * z2) / y2
-      mirrorsPlanes[1][1] =
-        (q - alpha - mirrorsPlanes[1][2] * mirrorsPlanes[2][2]) /
-        mirrorsPlanes[2][1]
+      normals[1][1] =
+        (q - alpha - normals[1][2] * normals[2][2]) / normals[2][1]
       // y0 = (s - α - z0 * z2) / y2
-      mirrorsPlanes[0][1] =
-        (s - alpha - mirrorsPlanes[0][2] * mirrorsPlanes[2][2]) /
-        mirrorsPlanes[2][1]
+      normals[0][1] =
+        (s - alpha - normals[0][2] * normals[2][2]) / normals[2][1]
 
       // x1 = -sqrt(1 - α - y1^2 - z1^2)
-      mirrorsPlanes[1][0] = -sqrt(
-        1 - alpha - mirrorsPlanes[1][1] ** 2 - mirrorsPlanes[1][2] ** 2
-      )
+      normals[1][0] = -sqrt(1 - alpha - normals[1][1] ** 2 - normals[1][2] ** 2)
       // x0 = sqrt(1 - α - y0^2 - z0^2)
-      mirrorsPlanes[0][0] = sqrt(
-        1 - alpha - mirrorsPlanes[0][1] ** 2 - mirrorsPlanes[0][2] ** 2
-      )
+      normals[0][0] = sqrt(1 - alpha - normals[0][1] ** 2 - normals[0][2] ** 2)
 
-      // check(mirrorsPlanes, gram, curvature)
+      // check(normals, gram, curvature)
       // FIXME:
       if (curvature === 0) {
-        mirrorsPlanes[3][3] = 0.5
+        normals[3][3] = 0.5
       }
 
-      return mirrorsPlanes
+      return normals
     }
     // TODO: general case for higher dimensions
 
@@ -901,17 +1066,17 @@ export const getFundamentalSimplexMirrors = (
         alphas[i] = (alphas[i - 1] + 1) / (3 - alphas[i - 1])
       }
 
-      mirrorsPlanes[0][0] = 1
-      mirrorsPlanes[1][0] = -1
-      mirrorsPlanes[0][1] = sqrt(alphas[1])
-      mirrorsPlanes[1][1] = sqrt(alphas[1])
+      normals[0][0] = 1
+      normals[1][0] = -1
+      normals[0][1] = sqrt(alphas[1])
+      normals[1][1] = sqrt(alphas[1])
 
       for (let i = 0; i < dimensions; i++) {
         for (let j = 0; j < dimensions; j++) {
           if (i < 2 && j < 2) {
             continue
           }
-          mirrorsPlanes[i][j] =
+          normals[i][j] =
             j < i - 1
               ? 0
               : j === i - 1
@@ -922,153 +1087,7 @@ export const getFundamentalSimplexMirrors = (
         }
       }
 
-      return mirrorsPlanes
+      return normals
     }
   }
-
-  for (let i = 0; i < dimensions; i++) {
-    mirrorsPlanes = getFundamentalSimplexMirrorsShifted(
-      i,
-      gram,
-      curvature,
-      i === dimensions - 1
-    )
-    if (mirrorsPlanes) {
-      break
-    }
-  }
-  if (!mirrorsPlanes && !centered) {
-    return getFundamentalSimplexMirrors(gram, curvature, true)
-  }
-
-  if (mirrorsPlanes && centered) {
-    const omnipoint = getFundamentalVertex(
-      new Array(dimensions).fill(1),
-      mirrorsPlanes,
-      curvature
-    )
-    if (curvature === 0) {
-      // ?
-    } else {
-      const mirror = normalize(
-        omnipoint.slice().map((x, i) => (i === dimensions - 1 ? x - 1 : x)),
-        curvature
-      )
-
-      for (let i = 0; i < dimensions; i++) {
-        mirrorsPlanes[i] = reflect(mirrorsPlanes[i], mirror, curvature)
-      }
-    }
-  }
-  return mirrorsPlanes
-}
-
-const check = (m, g, curvature) => {
-  for (let i = 0; i < m.length; i++) {
-    for (let j = 0; j < m[i].length; j++) {
-      const d = xdot(m[i], m[j], curvature)
-      console.log(i, j, d, g[i][j], abs(d - g[i][j]) < 1e-10 ? 'OK' : 'FAIL')
-    }
-  }
-}
-
-export const getFundamentalVertex = (mirrors, mirrorsPlanes, curvature) => {
-  // solve linear system for mirrors
-  let active = mirrors.map(v => (isNaN(v) ? 1 : +v))
-  let hyperPlanes = mirrorsPlanes.slice()
-
-  let inv
-  for (let i = 0; i < active.length; i++) {
-    inv = inverse(hyperPlanes)
-    if (inv.some(row => row.some(x => isNaN(x) || abs(x) > 1e8))) {
-      console.warn('Non invertible matrix, retrying by shifting mirrors')
-      hyperPlanes.push(hyperPlanes.shift())
-      active.push(active.shift())
-    } else {
-      break
-    }
-    if (i === active.length - 1) {
-      console.warn('Non invertible matrix, returning default value')
-      return [0, 0, 1]
-    }
-  }
-  const p = multiplyVector(inv, active)
-
-  p[p.length - 1] *= curvature || 1
-  return normalize(p, curvature)
-}
-
-export const getStellationSphericalOppositeAngle = (a, b, c, stellation) => {
-  const A = PI / a
-  const B = PI / b
-  const C = PI / c
-  return round(
-    PI /
-      acos(
-        -cos(A) * cos(C) +
-          sin(A) *
-            sin(C) *
-            ((cos(B) - cos(stellation * A) * cos(C)) /
-              (sin(stellation * A) * sin(C)))
-      )
-  )
-}
-
-const proj = (a, b, curvature) => {
-  const result = []
-  const dot = xdot(a, b, curvature)
-  for (let i = 0; i < a.length; i++) {
-    result[i] = dot * b[i]
-  }
-  return result
-}
-const sub = (a, b) => {
-  const result = []
-  for (let i = 0; i < a.length; i++) {
-    result[i] = a[i] - b[i]
-  }
-  return result
-}
-
-export const gramSchmidt = (vectors, curvature) => {
-  const basis = [normalize(vectors[0], curvature)]
-  for (let i = 1; i < vectors.length; i++) {
-    let projection = vectors[i]
-    for (let j = 0; j < i; j++) {
-      projection = sub(projection, proj(vectors[i], basis[j], 1))
-    }
-    basis[i] = normalize(projection, curvature)
-  }
-  return basis
-}
-
-export const coxeterPlane = (spaceType, mirrorsPlanes, dimensions) => {
-  const { curvature } = spaceType
-
-  const eigens = spaceType.eigens
-  const eigenVecs = transpose(eigens.vectors)
-  const biggestEigenValue = max(...eigens.values)
-  const biggestEigenValueIndex = eigens.values.indexOf(biggestEigenValue)
-  const biggestEigenVector = eigenVecs[biggestEigenValueIndex]
-
-  const smallestEigenValue = min(...eigens.values)
-  const smallestEigenValueIndex = eigens.values.indexOf(smallestEigenValue)
-
-  const smallestEigenVector = eigenVecs[smallestEigenValueIndex]
-
-  biggestEigenVector[biggestEigenVector.length - 1] *= curvature
-  smallestEigenVector[smallestEigenVector.length - 1] *= curvature
-
-  const tr = transpose(mirrorsPlanes)
-  const u = normalize(multiplyVector(tr, biggestEigenVector), curvature)
-  const v = normalize(multiplyVector(tr, smallestEigenVector), curvature)
-
-  const id = ident(dimensions)
-  const basis = [u, v]
-  for (let i = 2; i < dimensions; i++) {
-    basis.push(id[i])
-  }
-  const matrix = gramSchmidt(basis, curvature)
-
-  return matrix
 }

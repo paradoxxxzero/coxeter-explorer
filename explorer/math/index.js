@@ -27,6 +27,8 @@ export const {
 
 export const TAU = PI * 2
 
+export const eps = x => (abs(x) < 1e-9 ? 0 : x)
+
 const kBuf = new ArrayBuffer(8)
 const kBufAsF64 = new Float64Array(kBuf)
 const kBufAsI32 = new Int32Array(kBuf)
@@ -120,13 +122,16 @@ export const getRels = (
       }
     }
   }
-  if (stellation && !stellation.every(row => row.every(x => x === 1))) {
+  if (
+    !skips.length && // TODO: Fix skips
+    stellation &&
+    !stellation.every(row => row.every(x => x === 1))
+  ) {
     // TODO: Improve generalization
-
     if (curvature > 0) {
       if (
         dimensions === 4 &&
-        (stellation[0][1] > 1 || stellation[2][3] > 1) &&
+        stellation[0][1] > 1 !== stellation[2][3] > 1 &&
         coxeter[0][1] > 3 &&
         coxeter[2][3] > 3
       ) {

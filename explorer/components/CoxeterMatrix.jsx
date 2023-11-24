@@ -70,16 +70,19 @@ export default function CoxeterMatrix({
       const oldValue = mirrors[index]
       let newMirrors = mirrors.slice()
       newMirrors[index] = value
-
       // If there is a dual, all active mirrors become duals
       if (isDual(value) || oldValue === 0) {
-        if (isDual(newMirrors)) {
+        if (newMirrors.some(m => isDual(m))) {
           newMirrors = newMirrors.map((m, i) =>
             m === 's' ? 'b' : m && m !== 'b' ? 'd' : m
           )
         }
       } else {
-        if (value !== 0 && isEnabled(value) && isDual(newMirrors)) {
+        if (
+          value !== 0 &&
+          isEnabled(value) &&
+          newMirrors.some(m => isDual(m))
+        ) {
           newMirrors = newMirrors.map((m, i) =>
             m === 'b' ? 's' : m === 'd' ? 1 : m
           )

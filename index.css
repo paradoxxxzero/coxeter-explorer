@@ -16,9 +16,13 @@
   touch-action: none;
   user-select: none;
   background: black;
-  font-family:
-    Fira Code,
-    monospace;
+  font-family: 'Fira Code', monospace;
+}
+
+button,
+select,
+input {
+  font-family: 'Fira Sans', sans-serif;
 }
 
 :root,
@@ -140,17 +144,47 @@ select option {
   font-size: 3.5em;
   z-index: 2;
 }
-.rotation-button sup {
+.rotation-button > sup {
   position: absolute;
   top: 0.25em;
   right: 0;
   font-size: 0.5em;
 }
+.rotation {
+  width: 1em;
+  height: 1em;
+  transform: rotate(0);
+  transition: transform 0.5s;
+}
+.x-rotation sup,
+.y-rotation sup {
+  color: rgba(33, 150, 243);
+}
+
+.x-rotation,
+.y-rotation {
+  position: absolute;
+  font-size: 0.3em;
+  color: rgba(255, 255, 255, 0.65);
+}
+.x-rotation {
+  bottom: 25%;
+  left: 100%;
+  transform-origin: bottom left;
+  transform: rotate(-90deg);
+}
+.y-rotation {
+  bottom: 0;
+  right: 25%;
+}
 
 .subcontrols {
   display: flex;
-  font-size: 0.5em;
+  font-size: 0.6em;
   margin: 0.5em;
+}
+.subcontrols > * {
+  margin: 0 0.25em;
 }
 
 .parameters {

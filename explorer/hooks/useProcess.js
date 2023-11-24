@@ -1,12 +1,23 @@
 import { useEffect, useRef } from 'react'
+import { range } from '../../utils'
+import { min, sqrt } from '../math'
 import {
-  coxeterPlane,
   coxeterToGram,
-  getFundamentalSimplexMirrors,
-  getFundamentalVertex,
+  getGeometry,
   getSpaceType,
+  normalize,
+  reflect,
 } from '../math/hypermath'
+import {
+  diag,
+  eigen,
+  inverse,
+  multiply,
+  multiplyVector,
+  transpose,
+} from '../math/matrix'
 import { killRunningWorkers, workers } from '../workers/worker'
+import { mirrorValue } from '../mirrors'
 
 const asyncProcess = async (runtime, running, setRuntime) => {
   // Rules gets computed on non stellated coxeter group
@@ -27,8 +38,8 @@ const asyncProcess = async (runtime, running, setRuntime) => {
       curvature: runtime.curvature,
       stellation: runtime.stellation,
       mirrors: runtime.mirrors,
-      mirrorsPlanes: runtime.mirrorsPlanes,
-      rootVertex: runtime.rootVertex,
+      rootNormals: runtime.rootNormals,
+      rootVertices: runtime.rootVertices,
       dimensions: runtime.dimensions,
     })
     running.current = false
@@ -103,6 +114,7 @@ export const useProcess = (runtime, setRuntime) => {
   useEffect(() => {
     setRuntime(runtime => {
       const gram = coxeterToGram(runtime.coxeter, runtime.stellation)
+      // const cartan = multiplyScalar(gram, 2)
 
       const spaceType = getSpaceType(gram)
 
@@ -114,36 +126,14 @@ export const useProcess = (runtime, setRuntime) => {
       }
       const curvature = spaceType.curvature
 
-      const grouper =
-        runtime.grouper === '' || runtime.grouper.startsWith('auto-')
-          ? 'auto-toddcoxeter'
-          : // curvature
-            //   !runtime.stellation.some(row => row.some(x => x > 1))
-            //   ? 'auto-toddcoxeter'
-            //   : 'auto-knuthbendix'
-            runtime.grouper
-
-      const mirrorsPlanes = getFundamentalSimplexMirrors(
-        gram,
-        curvature,
-        runtime.centered === null
-          ? (grouper.replace(/^auto-/, '') === 'toddcoxeter' &&
-              curvature <= 0) ||
-              gram.some(row => row.some(x => x === -1))
-          : runtime.centered
+      const { vertices: rootVertices, normals: rootNormals } = getGeometry(
+        spaceType,
+        runtime.centered
       )
-      const rootVertex = getFundamentalVertex(
-        runtime.mirrors,
-        mirrorsPlanes,
-        curvature
-      )
-      // This is equal to multiplyScalar(multiply(mirrorsPlanes, transpose(mirrorsPlanes)), 2)
-      // const cartan = multiplyScalar(gram, 2)
 
       const newRuntime = {
         ...runtime,
         currentOrder: 0,
-        grouper,
         vertex: [],
         edge: [],
         face: [],
@@ -151,8 +141,8 @@ export const useProcess = (runtime, setRuntime) => {
         ranges: [],
         spaceType,
         curvature,
-        mirrorsPlanes,
-        rootVertex,
+        rootNormals,
+        rootVertices,
         renderError: null,
         processing: true,
         error: null,

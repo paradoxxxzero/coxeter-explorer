@@ -5,7 +5,9 @@ import {
   getVerticesCosetsParams,
   solve,
 } from '../math/coset'
-import { reflect } from '../math/hypermath'
+import { normalize, reflect } from '../math/hypermath'
+import { multiplyVector } from '../math/matrix'
+import { mirrorValue } from '../mirrors'
 
 let verticesParams = null
 let edgesParams = null
@@ -57,11 +59,12 @@ const initCosets = (dimensions, coxeter, stellation, mirrors, curvature) => {
 }
 
 const reflectWord = (state, word) => {
-  const { rootVertex, mirrorsPlanes, curvature } = state
+  const { rootVertex, rootNormals, curvature } = state
+
   let v = rootVertex
 
   for (let i = 0; i < word.length; i++) {
-    v = reflect(v, mirrorsPlanes[word.charCodeAt(i) - 97], curvature)
+    v = reflect(v, rootNormals[word.charCodeAt(i) - 97], curvature)
   }
   return v
 }
@@ -82,11 +85,11 @@ onmessage = ({
   data: {
     order,
     curvature,
-    mirrorsPlanes,
+    rootNormals,
     coxeter,
     stellation,
     mirrors,
-    rootVertex,
+    rootVertices,
     dimensions,
     uuid,
   },
@@ -94,6 +97,13 @@ onmessage = ({
   if (order === 0) {
     initCosets(dimensions, coxeter, stellation, mirrors, curvature)
   }
+  const rootVertex = normalize(
+    multiplyVector(
+      rootVertices,
+      mirrors.map(v => mirrorValue(v))
+    ),
+    curvature
+  )
   const limit = (order + 1) * (curvature > 0 ? 500 : 100)
   try {
     let vertices = []
@@ -115,10 +125,7 @@ onmessage = ({
           vertices.push({ vertex: new Array(dimensions).fill(NaN), word: '' })
           continue
         }
-        const vertex = reflectWord(
-          { rootVertex, mirrorsPlanes, curvature },
-          word
-        )
+        const vertex = reflectWord({ rootVertex, rootNormals, curvature }, word)
         vertices.push({
           vertex,
           word,

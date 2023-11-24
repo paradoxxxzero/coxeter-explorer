@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import { debounce } from '../../utils'
 import { PI, abs, hypot } from '../math'
 import { xtranslate } from '../math/hypermath'
-import { columnMajor, diagonal, multiply, set } from '../math/matrix'
+import { columnMajor, multiply, set } from '../math/matrix'
 import { render } from '../render'
 // import { hyperMaterials } from '../shader/hyperMaterial'
 
@@ -10,26 +10,21 @@ const zoomSpeed = 0.95
 const autoSpeed = 25
 
 const translate = (x, y, shift, rotations, matrix, dimensions, curvature) => {
-  set(
-    matrix,
-    multiply(
-      xtranslate(
-        x,
-        shift * 2 + 1,
-        rotations.combinations,
-        dimensions,
-        curvature
-      ),
-      matrix
+  const rotate = (o, level) => {
+    set(
+      matrix,
+      multiply(
+        xtranslate(o, level, rotations.combinations, dimensions, curvature),
+        matrix
+      )
     )
-  )
-  set(
-    matrix,
-    multiply(
-      xtranslate(y, shift * 2, rotations.combinations, dimensions, curvature),
-      matrix
-    )
-  )
+  }
+  if (2 * shift + 1 > rotations.combinations.length - 1) {
+    rotate(x, shift * 2)
+  } else {
+    rotate(x, shift * 2 + 1)
+    rotate(y, shift * 2)
+  }
 }
 
 export const keydown = (
@@ -144,7 +139,7 @@ export const useInteract = (
     // runtime.matrix,
     // runtime.meshes,
     // runtime.mirrors,
-    // runtime.mirrorsPlanes,
+    // runtime.rootNormals,
     runtime.msaa,
     runtime.msaaSamples,
     // runtime.order,
@@ -154,7 +149,7 @@ export const useInteract = (
     // runtime.ranges,
     // runtime.rb,
     runtime.renderError,
-    // runtime.rootVertex,
+    // runtime.rootVertices,
     runtime.segments,
     runtime.showEdges,
     runtime.showFaces,

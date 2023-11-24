@@ -23,7 +23,12 @@ export const parse = (raw, min, max, step, coxeter) => {
       raw = `${value}/${fraction}`
     }
   } else {
-    value = raw === '' ? '' : parseInt(raw)
+    value =
+      raw === ''
+        ? ''
+        : parseInt(step) === parseFloat(step)
+        ? parseInt(raw)
+        : parseFloat(raw)
   }
 
   valid = !(
@@ -34,6 +39,7 @@ export const parse = (raw, min, max, step, coxeter) => {
     value > max ||
     (step % 1 === 0 && value % step !== 0) ||
     isNaN(fraction) ||
+    fraction === '' ||
     fraction < min ||
     fraction > max ||
     (step % 1 === 0 && fraction % step !== 0)
@@ -126,7 +132,10 @@ export default function Number({
     } else if (raw.includes('/')) {
       update((parseInt(raw.split('/')[0]) - step).toString())
     } else {
-      const val = parseInt(raw) - step
+      const val =
+        (parseInt(step) === parseFloat(step)
+          ? parseInt(raw)
+          : parseFloat(raw)) - step
       if (step > 0 && step < 1) {
         update(val.toFixed(step.toString().split('.')[1].length))
       } else {
@@ -164,7 +173,10 @@ export default function Number({
     } else if (raw.includes('/')) {
       update((parseInt(raw.split('/')[0]) + step).toString())
     } else {
-      const val = parseInt(raw) + step
+      const val =
+        (parseInt(step) === parseFloat(step)
+          ? parseInt(raw)
+          : parseFloat(raw)) + step
       if (step > 0 && step < 1) {
         update(val.toFixed(step.toString().split('.')[1].length))
       } else {

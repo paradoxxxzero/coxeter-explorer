@@ -85,6 +85,6 @@ export const killRunningWorkers = () =>
 export const workers = {
   knuthbendix: new Worker('knuthbendix', KunthBendixTiling),
   toddcoxeter: new Worker('toddcoxeter', ToddCoxeterTiling),
-  fundamental: new Worker('toddcoxeter', FundamentalTiling),
+  fundamental: new Worker('fundamental', FundamentalTiling),
   // hybrid: new Worker('hybrid', HybridTiling),
 }

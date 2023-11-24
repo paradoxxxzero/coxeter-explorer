@@ -191,7 +191,7 @@ export const useRender = (runtime, setRuntime) => {
     runtime.matrix,
     // runtime.meshes,
     // runtime.mirrors,
-    // runtime.mirrorsPlanes,
+    // runtime.rootNormals,
     runtime.msaa,
     runtime.msaaSamples,
     // runtime.order,
