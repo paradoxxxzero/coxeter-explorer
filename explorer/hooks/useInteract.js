@@ -76,7 +76,6 @@ export const useInteract = (
 ) => {
   const updateMatrix = useCallback(
     debounce(matrix => {
-      matrix._update = true
       updateParams({ matrix })
     }, 100),
     []
@@ -164,12 +163,6 @@ export const useInteract = (
   useEffect(() => {
     animation.current.speed = new Array(rotations.combinations.length).fill(0)
   }, [rotations.combinations])
-
-  useEffect(() => {
-    if (!runtime.matrix._update) {
-      animation.current.speed = new Array(rotations.combinations.length).fill(0)
-    }
-  }, [rotations.combinations.length, runtime.matrix])
 
   useEffect(() => {
     const animate = () => {
