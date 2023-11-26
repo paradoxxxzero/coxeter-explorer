@@ -9,16 +9,23 @@ export default function Rotation({ rotations, spaceType, axis }) {
   if (index >= rotations.combinations.length) {
     return null
   }
-  const combination = rotations.combinations[index]
+  let combination = rotations.combinations[index]
+  const type = combination.some(i => spaceType.eigens.values[i] < 0)
+    ? 'hyperbolic'
+    : combination.some(i => spaceType.eigens.values[i] === 0)
+    ? 'translation'
+    : 'spheric'
+  const letters = spaceLetters
+    .slice(0, dimensions)
+    .split('')
+    .filter((_, i) => !combination.includes(i))
+
   return (
     <aside className={`${axis ? 'y' : 'x'}-rotation`}>
-      {spaceLetters
-        .slice(0, dimensions)
-        .split('')
-        .filter((_, i) => !combination.includes(i))}
-      {combination.some(i => spaceType.eigens.values[i] < 0) ? (
+      {letters}
+      {type === 'hyperbolic' ? (
         <sup>†</sup>
-      ) : combination.some(i => spaceType.eigens.values[i] === 0) ? (
+      ) : type === 'translation' ? (
         <sup>0</sup>
       ) : (
         ''

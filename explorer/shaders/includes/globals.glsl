@@ -5,7 +5,7 @@ const float PI = 3.14159265358979323846264338327950288;
 const float TAU = 2. * PI;
 const float ETA = PI / 2.;
 const float DT = .001;
-const float SCALING = .001;
+const float SCALING = .0005;
 const vec3 NOISE = vec3(.000003, -.000002, .000017);
 
 // Structures for >4 vec and mat

@@ -45,21 +45,21 @@ export const keydown = (
   } else if (code === 'ArrowRight' || code === 'KeyD') {
     translate(step, 0, 0, rotations, matrix, dimensions, metric)
   } else if (code === 'ArrowUp' || code === 'KeyW') {
-    translate(0, -step, 1, rotations, matrix, dimensions, metric)
+    translate(0, -step, 0, rotations, matrix, dimensions, metric)
   } else if (code === 'ArrowDown' || code === 'KeyS') {
-    translate(0, step, 1, rotations, matrix, dimensions, metric)
+    translate(0, step, 0, rotations, matrix, dimensions, metric)
   } else if (code === 'PageUp' || code === 'KeyQ') {
-    translate(-step, 0, 2, rotations, matrix, dimensions, metric)
+    translate(-step, 0, 1, rotations, matrix, dimensions, metric)
   } else if (code === 'PageDown' || code === 'KeyE') {
-    translate(step, 0, 2, rotations, matrix, dimensions, metric)
+    translate(step, 0, 1, rotations, matrix, dimensions, metric)
   } else if (code === 'Digit1') {
-    translate(0, -step, 2, rotations, matrix, dimensions, metric)
+    translate(0, -step, 1, rotations, matrix, dimensions, metric)
   } else if (code === 'Digit3') {
-    translate(0, step, 2, rotations, matrix, dimensions, metric)
+    translate(0, step, 1, rotations, matrix, dimensions, metric)
   } else if (code === 'KeyZ') {
-    translate(-step, 0, 3, rotations, matrix, dimensions, metric)
+    translate(-step, 0, 2, rotations, matrix, dimensions, metric)
   } else if (code === 'KeyC') {
-    translate(step, 0, 3, rotations, matrix, dimensions, metric)
+    translate(step, 0, 2, rotations, matrix, dimensions, metric)
   } else if (code === 'ControlLeft') {
     updateRotations('shift', (rotations.shift + 1) % rotations.maxShift)
   } else {

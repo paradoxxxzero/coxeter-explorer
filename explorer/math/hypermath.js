@@ -504,16 +504,24 @@ export const xtranslate = (offset, level, rotations, dimensions, metric) => {
   }
   const [i, j] = rotations[level]
   // Handle hyperbolic rotation -> cosh, sinh (last coordinate is hyperbolic for now)
-  const c = min(metric[i][i], metric[j][j])
-  const d = metric[i][i] * metric[j][j] // Find Ads rotation matrix
+  if (metric[i][i] === 0 || metric[j][j] === 0) {
+    if (metric[i][i] === 0) {
+      matrix[j][i] = offset
+    }
+    if (metric[j][j] === 0) {
+      matrix[i][j] = offset
+    }
+    return matrix
+  }
 
+  const c = min(metric[i][i], metric[j][j])
   const cost = sqrt(1 - c * offset * offset)
   const sint = offset
 
   matrix[i][i] = cost
   matrix[j][j] = cost
 
-  matrix[i][j] = -d * sint
+  matrix[i][j] = -c * sint
   matrix[j][i] = sint
 
   return matrix
