@@ -1,23 +1,6 @@
 import { useEffect, useRef } from 'react'
-import { range } from '../../utils'
-import { min, sqrt } from '../math'
-import {
-  coxeterToGram,
-  getGeometry,
-  getSpaceType,
-  normalize,
-  reflect,
-} from '../math/hypermath'
-import {
-  diag,
-  eigen,
-  inverse,
-  multiply,
-  multiplyVector,
-  transpose,
-} from '../math/matrix'
+import { coxeterToGram, getGeometry, getSpaceType } from '../math/hypermath'
 import { killRunningWorkers, workers } from '../workers/worker'
-import { mirrorValue } from '../mirrors'
 
 const asyncProcess = async (runtime, running, setRuntime) => {
   // Rules gets computed on non stellated coxeter group
@@ -35,8 +18,9 @@ const asyncProcess = async (runtime, running, setRuntime) => {
     const { vertices, edges, faces, partials, order } = await worker.process({
       order: runtime.currentOrder,
       coxeter: runtime.coxeter,
-      curvature: runtime.curvature,
       stellation: runtime.stellation,
+      metric: runtime.spaceType.metric,
+      curvature: runtime.spaceType.curvature,
       mirrors: runtime.mirrors,
       rootNormals: runtime.rootNormals,
       rootVertices: runtime.rootVertices,
@@ -124,7 +108,6 @@ export const useProcess = (runtime, setRuntime) => {
           spaceType,
         }
       }
-      const curvature = spaceType.curvature
 
       const { vertices: rootVertices, normals: rootNormals } = getGeometry(
         spaceType,
@@ -140,7 +123,6 @@ export const useProcess = (runtime, setRuntime) => {
         partial: [],
         ranges: [],
         spaceType,
-        curvature,
         rootNormals,
         rootVertices,
         renderError: null,

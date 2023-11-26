@@ -37,11 +37,11 @@ const init = (rootVertex, newRules, newMirrors) => {
 }
 
 const reflectWord = (state, word) => {
-  const { rootVertex, rootNormals, curvature } = state
+  const { rootVertex, rootNormals, metric } = state
   let v = rootVertex
 
   for (let i = word.length - 1; i >= 0; i--) {
-    v = reflect(v, rootNormals[word.charCodeAt(i) - 97], curvature)
+    v = reflect(v, rootNormals[word.charCodeAt(i) - 97], metric)
   }
   return v
 }
@@ -205,7 +205,7 @@ const tileFundamentalChamber = state => {
 onmessage = ({
   data: {
     order,
-    curvature,
+    metric,
     coxeter,
     stellation,
     mirrors,
@@ -220,7 +220,7 @@ onmessage = ({
       rootVertices,
       mirrors.map(v => mirrorValue(v))
     ),
-    curvature
+    metric
   )
   try {
     let failed = false
@@ -230,7 +230,7 @@ onmessage = ({
         coxeter,
         stellation,
         mirrors,
-        curvature
+        metric
       )
       try {
         rules = knuthBendix(baseRules, dimensions)
@@ -246,7 +246,7 @@ onmessage = ({
       } else {
         try {
           nextWords = tileFundamentalChamber({
-            curvature,
+            metric,
             rootNormals,
             rootVertex,
             dimensions,
@@ -260,7 +260,7 @@ onmessage = ({
     }
     if (order > 0 || failed) {
       nextWords = tile({
-        curvature,
+        metric,
         rootNormals,
         rootVertex,
         dimensions,

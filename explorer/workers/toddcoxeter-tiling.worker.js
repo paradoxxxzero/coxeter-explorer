@@ -1,4 +1,4 @@
-import { atoi, floor } from '../math'
+import { atoi } from '../math'
 import {
   getEdgesCosetsParams,
   getFacesCosetsParams,
@@ -6,14 +6,14 @@ import {
   solve,
 } from '../math/coset'
 import { normalize, reflect } from '../math/hypermath'
-import { multiplyVector } from '../math/matrix'
+import { multiplyVector, transpose } from '../math/matrix'
 import { mirrorValue } from '../mirrors'
 
 let verticesParams = null
 let edgesParams = null
 let facesParams = null
 
-const initCosets = (dimensions, coxeter, stellation, mirrors, curvature) => {
+const initCosets = (dimensions, coxeter, stellation, mirrors) => {
   const defaultParams = () => ({
     cosets: {
       normal: [],
@@ -26,21 +26,14 @@ const initCosets = (dimensions, coxeter, stellation, mirrors, curvature) => {
   })
 
   verticesParams = {
-    ...getVerticesCosetsParams(
-      dimensions,
-      coxeter,
-      stellation,
-      mirrors,
-      curvature
-    ),
+    ...getVerticesCosetsParams(dimensions, coxeter, stellation, mirrors),
     ...defaultParams(),
   }
   edgesParams = getEdgesCosetsParams(
     dimensions,
     coxeter,
     stellation,
-    mirrors,
-    curvature
+    mirrors
   ).map(edgeParams => ({
     ...edgeParams,
     ...defaultParams(),
@@ -49,8 +42,7 @@ const initCosets = (dimensions, coxeter, stellation, mirrors, curvature) => {
     dimensions,
     coxeter,
     stellation,
-    mirrors,
-    curvature
+    mirrors
   ).map(edgeParams => ({
     ...edgeParams,
     ...defaultParams(),
@@ -59,12 +51,12 @@ const initCosets = (dimensions, coxeter, stellation, mirrors, curvature) => {
 }
 
 const reflectWord = (state, word) => {
-  const { rootVertex, rootNormals, curvature } = state
+  const { rootVertex, rootNormals, metric } = state
 
   let v = rootVertex
 
   for (let i = 0; i < word.length; i++) {
-    v = reflect(v, rootNormals[word.charCodeAt(i) - 97], curvature)
+    v = reflect(v, rootNormals[word.charCodeAt(i) - 97], metric)
   }
   return v
 }
@@ -85,24 +77,25 @@ onmessage = ({
   data: {
     order,
     curvature,
-    rootNormals,
+    metric,
     coxeter,
     stellation,
     mirrors,
     rootVertices,
+    rootNormals,
     dimensions,
     uuid,
   },
 }) => {
   if (order === 0) {
-    initCosets(dimensions, coxeter, stellation, mirrors, curvature)
+    initCosets(dimensions, coxeter, stellation, mirrors)
   }
-  const rootVertex = normalize(
+  let rootVertex = normalize(
     multiplyVector(
       rootVertices,
       mirrors.map(v => mirrorValue(v))
     ),
-    curvature
+    metric
   )
   const limit = (order + 1) * (curvature > 0 ? 500 : 100)
   try {
@@ -125,7 +118,7 @@ onmessage = ({
           vertices.push({ vertex: new Array(dimensions).fill(NaN), word: '' })
           continue
         }
-        const vertex = reflectWord({ rootVertex, rootNormals, curvature }, word)
+        const vertex = reflectWord({ rootVertex, rootNormals, metric }, word)
         vertices.push({
           vertex,
           word,

@@ -1,11 +1,9 @@
-import { range } from '../../utils.js'
 import {
   PI,
   abs,
   acos,
   cos,
   cosh,
-  max,
   min,
   round,
   sign,
@@ -14,52 +12,35 @@ import {
 } from './index.js'
 import {
   diag,
+  dot,
   eigen,
   epsize,
   ident,
   inverse,
   ldl,
+  mulV,
   multiply,
   multiplyVector,
+  subV,
   transpose,
 } from './matrix.js'
 
-export const xdot = (v1, v2, curvature) => {
-  let sum = 0
-  for (let i = 0; i < v1.length; i++) {
-    sum += v1[i] * v2[i] * (i === v1.length - 1 ? curvature || 1 : 1)
-  }
-  return sum
+export const reflect = (v, n, metric) => {
+  return subV(
+    v,
+    mulV(
+      multiplyVector(nonnegative(metric), n),
+      2 * dot(multiplyVector(nonzero(metric), v), n)
+    )
+  )
 }
 
-export const xdot2 = (x, curvature) => xdot(x, x, curvature)
-
-export const reflect = (v, n, curvature) => {
-  v = v.slice()
-  const vn2 = 2 * xdot(v, n, curvature)
-  for (let i = 0; i < v.length; i++) {
-    v[i] -= vn2 * (curvature || i !== v.length - 1 ? n[i] : 0)
+export const normalize = (v, metric) => {
+  if (metric.some((row, i) => row.some((v, j) => i === j && v === 0))) {
+    return mulV(v, 1 / v[v.length - 1])
   }
-  return v
-}
-
-export const normalize = (v, curvature) => {
-  v = v.slice()
-  if (curvature === 0) {
-    for (let i = 0; i < v.length; i++) {
-      v[i] /= v[v.length - 1]
-    }
-    return v
-  }
-
-  const nr =
-    (curvature === -1 ? sign(v[v.length - 1]) || 1 : 1) /
-    // Cheat a bit on null values
-    sqrt(max(1e-32, abs(xdot2(v, curvature))))
-  for (let i = 0; i < v.length; i++) {
-    v[i] *= nr
-  }
-  return v
+  // We use -1 to orient the hyperboloids in front of camera
+  return mulV(v, -1 / sqrt(abs(dot(multiplyVector(metric, v), v))))
 }
 
 export const coxeterToGram = (coxeter, stellation) =>
@@ -104,21 +85,30 @@ export const getSubSignatures = (gram, sub = [], level = 0, maxLevel = 10) => {
 
 export const getSpaceType = gram => {
   const signature = getSignature(gram)
+  // Eigenvalues/eigenvectors of gram matrix
   const eigens = signature.eigens
+  // Lorentzian metric tensor
+  const metric = diag(eigens.values.map(v => sign(v)))
+
+  const common = {
+    eigens,
+    gram,
+    metric,
+  }
+
   if (signature['-'] === 0 && signature['0'] === 0) {
-    return { type: 'finite', curvature: 1, eigens, gram }
+    return { ...common, type: 'finite', curvature: 1 }
   }
   if (signature['-'] === 0 && signature['0'] > 0) {
-    return { type: 'affine', curvature: 0, eigens, gram }
+    return { ...common, type: 'affine', curvature: 0 }
   }
   if (signature['-'] > 1) {
     return {
+      ...common,
       type: 'hyperbolic',
       subtype: 'superhyperbolic',
       level: signature['-'],
       curvature: -1,
-      eigens,
-      gram,
     }
   }
   // Indefinite, check subgroups
@@ -128,74 +118,90 @@ export const getSpaceType = gram => {
 
   if (subSignature.every(s => s['-'] === 0 && s['0'] === 0)) {
     return {
+      ...common,
       type: 'hyperbolic',
       subtype: 'compact',
       curvature: -1,
-      eigens,
-      gram,
     }
   }
   if (subSignature.every(s => s['-'] === 0)) {
     return {
+      ...common,
       type: 'hyperbolic',
       subtype: 'paracompact',
       curvature: -1,
-      eigens,
-      gram,
     }
   }
   for (let i = 1; i < subSignatures.length; i++) {
     const subSignature = subSignatures[i]
     if (subSignature.every(s => s['-'] === 0)) {
       return {
+        ...common,
         type: 'hyperbolic',
         subtype: 'lorentzian',
         curvature: -1,
         level: i + 1,
-        eigens,
-        gram,
       }
     }
   }
   console.log('indefinite', subSignatures)
-  return { type: 'indefinite', curvature: -1, eigens, gram }
+  return { ...common, type: 'indefinite', curvature: -1 }
 }
 
-export const getGeometry = (spaceType, centered) => {
-  const dimensions = spaceType.gram.length
-  const eigens = spaceType.eigens
-  const curvature = spaceType.curvature
-  console.log(eigens)
-  // Curvature matrix
-  const J = diag(
-    range(dimensions).map(i => (i === dimensions - 1 ? curvature || 1 : 1))
+const euclidean_scaling = 1
+
+export const nonzero = m =>
+  m.map((row, i) =>
+    row.map((v, j) => (i === j && v === 0 ? euclidean_scaling : v))
   )
+export const nonnegative = m => m.map(row => row.map(v => abs(v)))
+
+export const getGeometry = (spaceType, centered) => {
+  const eigens = spaceType.eigens
+  const metric = spaceType.metric
+
   if (centered === true) {
     // Use cholesky LDL decomposition
+    // J = Curvature tensor metric
     // G = L D L^T
     // G = L sqrt(J D) sqrt(D J) L^T
     // W = L sqrt(J D)
     const { L, D } = ldl(spaceType.gram)
-    if (curvature === 0) {
-      D[dimensions - 1][dimensions - 1] = 0.25
+
+    let normals
+    if (!D.some((_, i) => isNaN(D[i][i]))) {
+      const sqrtJD = multiply(metric, D).map((row, i) =>
+        row.map((v, j) => (i === j ? sqrt(v) : 0))
+      )
+      metric.forEach((row, i) => {
+        if (row[i] === 0) {
+          sqrtJD[i][i] = euclidean_scaling
+        }
+      })
+      normals = multiply(L, sqrtJD)
+    } else {
+      console.warn('Can’t cholesky')
+      normals = analyticGeometry(spaceType, centered)
     }
-    if (D.some((_, i) => isNaN(D[i][i]))) {
-      const normals = analyticGeometry(spaceType, centered)
-      return {
-        normals: normals,
-        vertices: inverse(multiply(normals, J)),
+
+    if (normals) {
+      const metricNormals = multiply(normals, nonzero(metric))
+      const vertices = inverse(metricNormals)
+      // metric.forEach((row, i) => {
+      //   if (row[i] === 0) {
+      //     normals[i][i] = 0
+      //     vertices[i][i] = 0
+      //   }
+      // })
+      if (!vertices.some(row => row.some(v => isNaN(v)))) {
+        return {
+          normals,
+          vertices,
+        }
       }
     }
-    const sqrtJD = multiply(J, D).map((row, i) =>
-      row.map((v, j) => (i === j ? sqrt(v) : 0))
-    )
-    const T = multiply(L, sqrtJD)
-    return {
-      normals: T,
-      vertices: inverse(multiply(T, J)),
-    }
+    console.warn('Can’t center')
   }
-
   // More details on this in https://researchers.ms.unimelb.edu.au/~snap/DHeard-PhD.pdf
   // G = Gram matrix
   // V = Vertex matrix
@@ -244,13 +250,16 @@ export const getGeometry = (spaceType, centered) => {
     // then the rest as previously ordered
     // The biggest is alread first
     const smallest = min(...eigenValues.filter(v => v > 0))
-    eigenVectors.splice(
-      1,
-      0,
-      eigenVectors.splice(eigenValues.indexOf(smallest), 1)[0]
-    )
+    const smallestIndex = eigenValues.indexOf(smallest)
 
-    eigenValues.splice(eigenValues.indexOf(smallest), 1)
+    ;[metric[smallestIndex][smallestIndex], metric[1][1]] = [
+      metric[1][1],
+      metric[smallestIndex][smallestIndex],
+    ]
+
+    eigenVectors.splice(1, 0, eigenVectors.splice(smallestIndex, 1)[0])
+
+    eigenValues.splice(smallestIndex, 1)
     eigenValues.splice(1, 0, smallest)
   }
 
@@ -265,14 +274,14 @@ export const getGeometry = (spaceType, centered) => {
 
   // Sort values biggest first - negative will be last
   const L = diag(eigenValues)
-  const sqrtJL = multiply(J, L).map((row, i) =>
+  const sqrtJL = multiply(metric, L).map((row, i) =>
     row.map((v, j) => (i === j ? sqrt(v) : 0))
   )
   const invsqrtJL = sqrtJL.map((row, i) =>
-    row.map((v, j) => (i === j ? 1 / v : 0))
+    row.map((v, j) => (i === j ? (v !== 0 ? 1 / v : 1) : 0))
   )
   const normals = multiply(Q, sqrtJL)
-  const vertices = multiply(multiply(J, invsqrtJL), transpose(Q))
+  const vertices = multiply(multiply(metric, invsqrtJL), transpose(Q))
   return { normals, vertices }
 }
 
@@ -487,7 +496,7 @@ export const sortRotations = rotations =>
     return ai === bi ? bj - aj : bi - ai
   })
 
-export const xtranslate = (offset, level, rotations, dimensions, curvature) => {
+export const xtranslate = (offset, level, rotations, dimensions, metric) => {
   const matrix = ident(dimensions)
 
   if (level > rotations.length - 1 || abs(offset) > 1) {
@@ -495,7 +504,8 @@ export const xtranslate = (offset, level, rotations, dimensions, curvature) => {
   }
   const [i, j] = rotations[level]
   // Handle hyperbolic rotation -> cosh, sinh (last coordinate is hyperbolic for now)
-  const c = j === dimensions - 1 ? curvature : 1
+  const c = min(metric[i][i], metric[j][j])
+  const d = metric[i][i] * metric[j][j] // Find Ads rotation matrix
 
   const cost = sqrt(1 - c * offset * offset)
   const sint = offset
@@ -503,7 +513,7 @@ export const xtranslate = (offset, level, rotations, dimensions, curvature) => {
   matrix[i][i] = cost
   matrix[j][j] = cost
 
-  matrix[i][j] = -c * sint
+  matrix[i][j] = -d * sint
   matrix[j][i] = sint
 
   return matrix
@@ -523,65 +533,6 @@ export const getStellationSphericalOppositeAngle = (a, b, c, stellation) => {
               (sin(stellation * A) * sin(C)))
       )
   )
-}
-
-const proj = (a, b, curvature) => {
-  const result = []
-  const dot = xdot(a, b, curvature)
-  for (let i = 0; i < a.length; i++) {
-    result[i] = dot * b[i]
-  }
-  return result
-}
-const sub = (a, b) => {
-  const result = []
-  for (let i = 0; i < a.length; i++) {
-    result[i] = a[i] - b[i]
-  }
-  return result
-}
-
-export const gramSchmidt = (vectors, curvature) => {
-  const basis = [normalize(vectors[0], curvature)]
-  for (let i = 1; i < vectors.length; i++) {
-    let projection = vectors[i]
-    for (let j = 0; j < i; j++) {
-      projection = sub(projection, proj(vectors[i], basis[j], 1))
-    }
-    basis[i] = normalize(projection, curvature)
-  }
-  return basis
-}
-
-export const coxeterPlane = (spaceType, rootNormals, dimensions) => {
-  const { curvature } = spaceType
-
-  const eigens = spaceType.eigens
-  const eigenVecs = transpose(eigens.vectors)
-  const biggestEigenValue = max(...eigens.values)
-  const biggestEigenValueIndex = eigens.values.indexOf(biggestEigenValue)
-  const biggestEigenVector = eigenVecs[biggestEigenValueIndex]
-
-  const smallestEigenValue = min(...eigens.values)
-  const smallestEigenValueIndex = eigens.values.indexOf(smallestEigenValue)
-
-  const smallestEigenVector = eigenVecs[smallestEigenValueIndex]
-
-  biggestEigenVector[biggestEigenVector.length - 1] *= curvature
-  smallestEigenVector[smallestEigenVector.length - 1] *= curvature
-
-  const tr = transpose(rootNormals)
-  const u = normalize(multiplyVector(tr, biggestEigenVector), curvature)
-  const v = normalize(multiplyVector(tr, smallestEigenVector), curvature)
-
-  const id = ident(dimensions)
-  const basis = [u, v]
-  for (let i = 2; i < dimensions; i++) {
-    basis.push(id[i])
-  }
-  const matrix = gramSchmidt(basis, curvature)
-
-  return matrix
 }
 
 const analyticGeometry = (spaceType, centered) => {
@@ -923,10 +874,7 @@ const analyticGeometry = (spaceType, centered) => {
             - 3)
 
       // z0 = z1 = z2 = sqrt(curvature * α)
-      normals[0][2] =
-        normals[1][2] =
-        normals[2][2] =
-          curvature * sqrt(curvature * alpha)
+      normals[0][2] = normals[1][2] = normals[2][2] = sqrt(curvature * alpha)
       // y2 = -sqrt(1 - α)
       normals[2][1] = -sqrt(1 - alpha)
       // y1 = (χ - α) / y2
@@ -1025,7 +973,7 @@ const analyticGeometry = (spaceType, centered) => {
         normals[1][3] =
         normals[2][3] =
         normals[3][3] =
-          curvature * sqrt(curvature * alpha)
+          sqrt(curvature * alpha)
       // z3 = -sqrt(1 - α)
       normals[3][2] = -sqrt(1 - alpha)
       // z2 = (r - α) / z3
@@ -1080,7 +1028,7 @@ const analyticGeometry = (spaceType, centered) => {
             j < i - 1
               ? 0
               : j === i - 1
-              ? -(i * sqrt(alphas[j] - alphas[j - 1]))
+              ? i * sqrt(alphas[j] - alphas[j - 1])
               : j < dimensions - 1
               ? sqrt(alphas[j] - alphas[j - 1])
               : sqrt(alphas[j - 1])

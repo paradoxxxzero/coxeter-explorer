@@ -9,12 +9,12 @@ import { render } from '../render'
 const zoomSpeed = 0.95
 const autoSpeed = 25
 
-const translate = (x, y, shift, rotations, matrix, dimensions, curvature) => {
+const translate = (x, y, shift, rotations, matrix, dimensions, metric) => {
   const rotate = (o, level) => {
     set(
       matrix,
       multiply(
-        xtranslate(o, level, rotations.combinations, dimensions, curvature),
+        xtranslate(o, level, rotations.combinations, dimensions, metric),
         matrix
       )
     )
@@ -32,7 +32,7 @@ export const keydown = (
   rotations,
   matrix,
   dimensions,
-  curvature,
+  metric,
   updateRotations
 ) => {
   const { code } = e
@@ -41,25 +41,25 @@ export const keydown = (
     return
   }
   if (code === 'ArrowLeft' || code === 'KeyA') {
-    translate(-step, 0, 0, rotations, matrix, dimensions, curvature)
+    translate(-step, 0, 0, rotations, matrix, dimensions, metric)
   } else if (code === 'ArrowRight' || code === 'KeyD') {
-    translate(step, 0, 0, rotations, matrix, dimensions, curvature)
+    translate(step, 0, 0, rotations, matrix, dimensions, metric)
   } else if (code === 'ArrowUp' || code === 'KeyW') {
-    translate(0, -step, 1, rotations, matrix, dimensions, curvature)
+    translate(0, -step, 1, rotations, matrix, dimensions, metric)
   } else if (code === 'ArrowDown' || code === 'KeyS') {
-    translate(0, step, 1, rotations, matrix, dimensions, curvature)
+    translate(0, step, 1, rotations, matrix, dimensions, metric)
   } else if (code === 'PageUp' || code === 'KeyQ') {
-    translate(-step, 0, 2, rotations, matrix, dimensions, curvature)
+    translate(-step, 0, 2, rotations, matrix, dimensions, metric)
   } else if (code === 'PageDown' || code === 'KeyE') {
-    translate(step, 0, 2, rotations, matrix, dimensions, curvature)
+    translate(step, 0, 2, rotations, matrix, dimensions, metric)
   } else if (code === 'Digit1') {
-    translate(0, -step, 2, rotations, matrix, dimensions, curvature)
+    translate(0, -step, 2, rotations, matrix, dimensions, metric)
   } else if (code === 'Digit3') {
-    translate(0, step, 2, rotations, matrix, dimensions, curvature)
+    translate(0, step, 2, rotations, matrix, dimensions, metric)
   } else if (code === 'KeyZ') {
-    translate(-step, 0, 3, rotations, matrix, dimensions, curvature)
+    translate(-step, 0, 3, rotations, matrix, dimensions, metric)
   } else if (code === 'KeyC') {
-    translate(step, 0, 3, rotations, matrix, dimensions, curvature)
+    translate(step, 0, 3, rotations, matrix, dimensions, metric)
   } else if (code === 'ControlLeft') {
     updateRotations('shift', (rotations.shift + 1) % rotations.maxShift)
   } else {
@@ -117,7 +117,6 @@ export const useInteract = (
     // runtime.controls,
     runtime.coxeter,
     // runtime.currentOrder,
-    runtime.curvature,
     runtime.curve,
     runtime.dimensions,
     runtime.easing,
@@ -198,7 +197,7 @@ export const useInteract = (
                 i,
                 rotations.combinations,
                 runtime.dimensions,
-                runtime.curvature
+                runtime.spaceType.metric
               ),
               localMatrix.current
             )
@@ -228,7 +227,7 @@ export const useInteract = (
     rotations.auto,
     rotations.combinations,
     runtime.dimensions,
-    runtime.curvature,
+    runtime.spaceType,
     updateMatrixSync,
     quickUpdateMatrix,
   ])
@@ -326,7 +325,7 @@ export const useInteract = (
         },
         localMatrix.current,
         runtime.dimensions,
-        runtime.curvature
+        runtime.spaceType.metric
       )
       quickUpdateMatrix()
       updateMatrix(localMatrix.current)
@@ -366,7 +365,7 @@ export const useInteract = (
     rotations.combinations,
     rotations.shift,
     runtime.dimensions,
-    runtime.curvature,
+    runtime.spaceType,
     runtime.camera,
 
     quickUpdateMatrix,
@@ -385,7 +384,7 @@ export const useInteract = (
           rotations,
           localMatrix.current,
           runtime.dimensions,
-          runtime.curvature,
+          runtime.spaceType.metric,
           updateRotations
         )
       ) {
@@ -398,7 +397,7 @@ export const useInteract = (
   }, [
     quickUpdateMatrix,
     rotations,
-    runtime.curvature,
+    runtime.spaceType,
     runtime.dimensions,
     updateRotations,
     updateMatrix,

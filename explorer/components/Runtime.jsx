@@ -26,26 +26,28 @@ export default function Runtime({
 
   useEffect(() => {
     return () => {
-      if (runtime.curvature !== null) {
+      if (runtime.spaceType?.curvature !== null) {
         updateParams({
           matrix: ident(runtime.dimensions),
         })
       }
     }
-  }, [runtime.curvature])
+  }, [runtime.spaceType?.curvature])
 
   return (
     <>
       <ErrorBoundary error={runtime.renderError} onError={handleError}>
         <Process runtime={runtime} setRuntime={setRuntime} />
-        <Render runtime={runtime} setRuntime={setRuntime} />
-        {runtime.curvature !== null ? (
-          <Interact
-            runtime={runtime}
-            rotations={rotations}
-            updateRotations={updateRotations}
-            updateParams={updateParams}
-          />
+        {runtime.spaceType ? (
+          <>
+            <Render runtime={runtime} setRuntime={setRuntime} />
+            <Interact
+              runtime={runtime}
+              rotations={rotations}
+              updateRotations={updateRotations}
+              updateParams={updateParams}
+            />
+          </>
         ) : null}
       </ErrorBoundary>
     </>

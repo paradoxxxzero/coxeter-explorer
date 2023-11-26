@@ -489,7 +489,22 @@ export const presets = [
       }
     ),
   },
-
+  {
+    name: (
+      <>
+        <Space type="hyperbolic" subtype="superhyperbolic" dimensions={4} />{' '}
+        Superhyperbolic (Anti-de Sitter)
+      </>
+    ),
+    params: polytope([-1, 2, -1], [1, 0, 0, 1], null, {
+      showVertices: false,
+      showFaces: false,
+      curve: true,
+      ambiance: 'neon',
+      centered: false,
+      edgeThickness: 10,
+    }),
+  },
   {
     type: 'title',
     content: (

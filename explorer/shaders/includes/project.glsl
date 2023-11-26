@@ -1,89 +1,43 @@
 #include helpers
 #include ease
 
+#if DIMENSIONS == 2
 vec2 xnormalize(in vec2 v) {
-  if(curvature == 0.0 || length(v) < 1e-9) {
-    return v;
-  }
-  // Unalias?
-  // v.y *= .999999;
   float n = sqrt(curvature * xdot(v));
   return v / n;
 }
-
+#elif DIMENSIONS == 3
 vec3 xnormalize(in vec3 v) {
-  if(curvature == 0.0) {
-    return v;
-  }
-  // Unalias?
-  // v.z *= .999999;
   float n = sqrt(curvature * xdot(v));
   return v / n;
 }
-
+#elif DIMENSIONS == 4
 vec4 xnormalize(in vec4 v) {
-  if(curvature == 0.0) {
-    return v;
-  }
-  // Unalias?
-  // v.w *= .999999;
-  // float d = curvature * xdot(v);
-  // if(d < 0.) {
-  //   v.w = 0.;
-  //   v.xyz /= sqrt(dot(v.xyz, v.xyz));
-  //   return v;
-  // }
   float n = sqrt(curvature * xdot(v));
   return v / n;
 }
-
-#if DIMENSIONS == 5
+#elif DIMENSIONS == 5
 vec5 xnormalize(in vec5 v) {
-  if(curvature == 0.0) {
-    return v;
-  }
-  // Unalias?
-  // v.u *= .999999;
   float n = sqrt(curvature * xdot(v));
   return vec5(v.v / n, v.u / n);
 }
 #elif DIMENSIONS == 6
 vec6 xnormalize(in vec6 v) {
-  if(curvature == 0.0) {
-    return v;
-  }
-  // Unalias?
-  // v.u.x *= .999999;
   float n = sqrt(curvature * xdot(v));
   return vec6(v.v / n, v.u / n);
 }
 #elif DIMENSIONS == 7
 vec7 xnormalize(in vec7 v) {
-  if(curvature == 0.0) {
-    return v;
-  }
-  // Unalias?
-  // v.u.y *= .999999;
   float n = sqrt(curvature * xdot(v));
   return vec7(v.v / n, v.u / n);
 }
 #elif DIMENSIONS == 8
 vec8 xnormalize(in vec8 v) {
-  if(curvature == 0.0) {
-    return v;
-  }
-  // Unalias?
-  // v.u.z *= .999999;
   float n = sqrt(curvature * xdot(v));
   return vec8(v.v / n, v.u / n);
 }
 #elif DIMENSIONS == 9
 vec9 xnormalize(in vec9 v) {
-  if(curvature == 0.0) {
-    return v;
-  }
-  // Unalias?
-  // v.t *= .999999;
   float n = sqrt(curvature * xdot(v));
   return vec9(v.v / n, v.u / n, v.t / n);
 }
@@ -403,48 +357,5 @@ vec3 xproject(in vec9 v) {
   #else
   return xproject(project(v, zoom));
   #endif
-}
-#endif
-
-#if DIMENSIONS == 5
-vec5 fromMat(in mat3 m) {
-  return vec5(vec4(m[0], m[1][0]), m[1][1]);
-}
-#elif DIMENSIONS == 6
-vec6 fromMat(in mat3 m) {
-  return vec6(vec4(m[0], m[1][0]), vec2(m[1][1], m[1][2]));
-}
-#elif DIMENSIONS == 7
-vec7 fromMat(in mat3 m) {
-  return vec7(vec4(m[0], m[1][0]), vec3(m[1][1], m[1][2], m[2][0]));
-}
-#elif DIMENSIONS == 8
-vec8 fromMat(in mat3 m) {
-  return vec8(vec4(m[0], m[1][0]), vec4(m[1][1], m[1][2], m[2][0], m[2][1]));
-}
-#elif DIMENSIONS == 9
-vec9 fromMat(in mat3 m) {
-  return vec9(vec4(m[0], m[1][0]), vec4(m[1][1], m[1][2], m[2][0], m[2][1]), m[2][2]);
-}
-#endif
-#if DIMENSIONS == 5
-vec5 multiplyMatrix(mat5 m, vec5 v) {
-  return vec5(vec4(ndot(m.c1, v), ndot(m.c2, v), ndot(m.c3, v), ndot(m.c4, v)), ndot(m.c5, v));
-}
-#elif DIMENSIONS == 6
-vec6 multiplyMatrix(mat6 m, vec6 v) {
-  return vec6(vec4(ndot(m.c1, v), ndot(m.c2, v), ndot(m.c3, v), ndot(m.c4, v)), vec2(ndot(m.c5, v), ndot(m.c6, v)));
-}
-#elif DIMENSIONS == 7
-vec7 multiplyMatrix(mat7 m, vec7 v) {
-  return vec7(vec4(ndot(m.c1, v), ndot(m.c2, v), ndot(m.c3, v), ndot(m.c4, v)), vec3(ndot(m.c5, v), ndot(m.c6, v), ndot(m.c7, v)));
-}
-#elif DIMENSIONS == 8
-vec8 multiplyMatrix(mat8 m, vec8 v) {
-  return vec8(vec4(ndot(m.c1, v), ndot(m.c2, v), ndot(m.c3, v), ndot(m.c4, v)), vec4(ndot(m.c5, v), ndot(m.c6, v), ndot(m.c7, v), ndot(m.c8, v)));
-}
-#elif DIMENSIONS == 9
-vec9 multiplyMatrix(mat9 m, vec9 v) {
-  return vec9(vec4(ndot(m.c1, v), ndot(m.c2, v), ndot(m.c3, v), ndot(m.c4, v)), vec4(ndot(m.c5, v), ndot(m.c6, v), ndot(m.c7, v), ndot(m.c8, v)), ndot(m.c9, v));
 }
 #endif

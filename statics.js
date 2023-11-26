@@ -170,7 +170,13 @@ export const ambiances = {
     glow: false,
     lighting: false,
     opacity: 1,
-    color: ({ word }) => hsl((word.length * 0.06) % 1, 0.7, 0.6),
+    color: ({ word }, type, { dimensions, showFaces }) => {
+      return hsl(
+        (word.length * 0.06) % 1,
+        1,
+        type === 'face' ? 0.6 : showFaces ? 0.05 : 1
+      )
+    },
   },
   plainblack: {
     extended: true,

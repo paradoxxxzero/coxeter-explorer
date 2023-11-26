@@ -12,18 +12,10 @@ export const getVerticesCosetsParams = (
   dimensions,
   coxeter,
   stellation,
-  mirrors,
-  curvature
+  mirrors
 ) => {
   const skips = mirrors.map((m, i) => (isEnabled(m) ? null : i)).filter(x => x)
-  const rels = getRels(
-    dimensions,
-    coxeter,
-    stellation,
-    mirrors,
-    curvature,
-    skips
-  )
+  const rels = getRels(dimensions, coxeter, stellation, skips)
 
   const gens = getGens(mirrors, skips)
   const subgens = getSubGens(mirrors, skips)
@@ -34,18 +26,10 @@ export const getEdgesCosetsParams = (
   dimensions,
   coxeter,
   stellation,
-  mirrors,
-  curvature
+  mirrors
 ) => {
   const skips = mirrors.map((m, i) => (isEnabled(m) ? null : i)).filter(x => x)
-  const rels = getRels(
-    dimensions,
-    coxeter,
-    stellation,
-    mirrors,
-    curvature,
-    skips
-  )
+  const rels = getRels(dimensions, coxeter, stellation, skips)
   const gens = getGens(mirrors, skips)
   const params = []
 
@@ -75,18 +59,10 @@ export const getFacesCosetsParams = (
   dimensions,
   coxeter,
   stellation,
-  mirrors,
-  curvature
+  mirrors
 ) => {
   const skips = mirrors.map((m, i) => (isEnabled(m) ? null : i)).filter(x => x)
-  const rels = getRels(
-    dimensions,
-    coxeter,
-    stellation,
-    mirrors,
-    curvature,
-    skips
-  )
+  const rels = getRels(dimensions, coxeter, stellation, skips)
   const gens = getGens(mirrors, skips)
   const params = []
 
@@ -94,14 +70,7 @@ export const getFacesCosetsParams = (
 
   for (let i = 0; i < faceSkips.length; i++) {
     const subskips = Array.from(new Set(faceSkips[i].concat(skips)))
-    const subRels = getRels(
-      dimensions,
-      coxeter,
-      stellation,
-      mirrors,
-      curvature,
-      subskips
-    )
+    const subRels = getRels(dimensions, coxeter, stellation, subskips)
     let subGens = getGens(mirrors, subskips)
     const subSubgens = getSubGens(mirrors, subskips)
 

@@ -3,10 +3,7 @@ precision highp float;
 
 #include globals
 
-uniform float curvature;
 uniform float thickness;
-uniform mat4 viewProjection;
-uniform matN matrix;
 
 in vec2 uv;
 in vec3 normal;
@@ -34,7 +31,10 @@ void main() {
   #else
   vecN pos = matrix * position;
   #endif
-  // pos = xnormalize(pos);
+  if(segments > 1.f) {
+    // Normalization is done mainly to remove OOD points
+    pos = xnormalize(pos);
+  }
 
   vec3 proj = xproject(pos);
   proj = inflate(proj, pos, normal, thickness, .01f);

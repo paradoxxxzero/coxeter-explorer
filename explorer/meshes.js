@@ -74,7 +74,8 @@ export default function getMeshes(rt) {
         const type = this.meshes[i]
         const mesh = this[type]
         if (!quick) {
-          mesh.uniforms.curvature.update(rt.curvature)
+          mesh.uniforms.curvature.update(rt.spaceType.curvature)
+          mesh.uniforms.metric.update(columnMajor(rt.spaceType.metric))
           mesh.uniforms.matrix.update(columnMajor(rt.matrix))
           for (let i = 4; i <= rt.dimensions; i++) {
             mesh.uniforms[`fov${i}`].update(
@@ -86,11 +87,11 @@ export default function getMeshes(rt) {
           } else if (type === 'edge') {
             mesh.uniforms.thickness.update(rt.edgeThickness)
             mesh.uniforms.segments.update(
-              rt.curvature && rt.curve ? rt.segments : 1
+              rt.spaceType.curvature && rt.curve ? rt.segments : 1
             )
           } else {
             mesh.uniforms.segments.update(
-              rt.curvature && rt.curve ? rt.segments : 1
+              rt.spaceType.curvature && rt.curve ? rt.segments : 1
             )
             mesh.uniforms.opacity.update(ambiances[rt.ambiance].opacity)
           }
@@ -182,7 +183,10 @@ export default function getMeshes(rt) {
                 target: faceVertices[(j + 1) % faceVertices.length],
                 center,
               }
-              if (object.word.length % 2 === (rt.curvature > 0 ? 0 : 1)) {
+              if (
+                object.word.length % 2 ===
+                (rt.spaceType.curvature > 0 ? 0 : 1)
+              ) {
                 ;[vertex.position, vertex.target] = [
                   vertex.target,
                   vertex.position,
@@ -216,13 +220,13 @@ export default function getMeshes(rt) {
     },
     preprocess(rt, plot) {
       if (rt.mirrors.some(mirror => isSnub(mirror))) {
-        plot = snub(plot, rt.mirrors, rt.dimensions, rt.curvature)
+        plot = snub(plot, rt.mirrors, rt.dimensions, rt.spaceType.metric)
       }
       if (rt.mirrors.some(mirror => isHoloSnub(mirror))) {
-        plot = holosnub(plot, rt.mirrors, rt.dimensions, rt.curvature)
+        plot = holosnub(plot, rt.mirrors, rt.dimensions, rt.spaceType.metric)
       }
       if (rt.mirrors.some(mirror => isDual(mirror))) {
-        plot = dual(plot, rt.mirrors, rt.dimensions, rt.curvature)
+        plot = dual(plot, rt.mirrors, rt.dimensions, rt.spaceType.metric)
       }
       return plot
     },

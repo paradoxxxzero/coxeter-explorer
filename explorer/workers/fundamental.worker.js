@@ -11,13 +11,7 @@ let edgeHashes = null
 let faceHashes = null
 let baseIndex = 0
 
-const initCosets = (
-  dimensions,
-  coxeter,
-  stellation,
-  rootVertices,
-  curvature
-) => {
+const initCosets = (dimensions, coxeter, stellation, rootVertices, metric) => {
   const defaultParams = () => ({
     cosets: {
       normal: [],
@@ -30,7 +24,7 @@ const initCosets = (
   })
   const rootVerticesT = transpose(rootVertices)
   fundamentalVertices = range(dimensions).map(i =>
-    normalize(rootVerticesT[i], curvature)
+    normalize(rootVerticesT[i], metric)
   )
 
   verticesParams = {
@@ -39,7 +33,7 @@ const initCosets = (
       coxeter,
       stellation,
       new Array(dimensions).fill(1),
-      curvature
+      metric
     ),
     ...defaultParams(),
   }
@@ -50,11 +44,11 @@ const initCosets = (
 }
 
 const reflectWord = (state, word) => {
-  const { rootVertex, rootNormals, curvature } = state
+  const { rootVertex, rootNormals, metric } = state
   let v = rootVertex
 
   for (let i = 0; i < word.length; i++) {
-    v = reflect(v, rootNormals[word.charCodeAt(i) - 97], curvature)
+    v = reflect(v, rootNormals[word.charCodeAt(i) - 97], metric)
   }
   return v
 }
@@ -62,7 +56,7 @@ const reflectWord = (state, word) => {
 onmessage = ({
   data: {
     order,
-    curvature,
+    metric,
     rootNormals,
     coxeter,
     stellation,
@@ -72,7 +66,7 @@ onmessage = ({
   },
 }) => {
   if (order === 0) {
-    initCosets(dimensions, coxeter, stellation, rootVertices, curvature)
+    initCosets(dimensions, coxeter, stellation, rootVertices, metric)
   }
   const limit = order === 0 ? 1 : (order + 1) * 10
   const edgeProduct = combinations(
@@ -102,7 +96,7 @@ onmessage = ({
         for (let j = 0; j < fundamentalVertices.length; j++) {
           const fundamentalVertex = fundamentalVertices[j]
           const vertex = reflectWord(
-            { rootVertex: fundamentalVertex, rootNormals, curvature },
+            { rootVertex: fundamentalVertex, rootNormals, metric },
             word
           )
 

@@ -1,5 +1,29 @@
 import { PI, abs, atan, cos, sign, sin, sqrt, tan } from '.'
 
+export const dot = (v1, v2) => {
+  let sum = 0
+  for (let i = 0; i < v1.length; i++) {
+    sum += v1[i] * v2[i]
+  }
+  return sum
+}
+
+export const subV = (a, b) => {
+  const result = []
+  for (let i = 0; i < a.length; i++) {
+    result[i] = a[i] - b[i]
+  }
+  return result
+}
+
+export const mulV = (v, s) => {
+  const result = []
+  for (let i = 0; i < v.length; i++) {
+    result[i] = v[i] * s
+  }
+  return result
+}
+
 export const transpose = m => {
   // Transpose matrix m (swap rows and columns)
   const res = []

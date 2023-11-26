@@ -233,7 +233,7 @@ export default function UI({
                 onChange={handleChange}
               />
             </label>
-            {(showUI === 'full' || runtime.curvature <= 0) && (
+            {(showUI === 'full' || runtime.spaceType.curvature <= 0) && (
               <Number
                 name="order"
                 label="Precision"

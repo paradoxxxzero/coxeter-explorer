@@ -2,7 +2,7 @@ import { itoa } from './math'
 import { normalize } from './math/hypermath'
 import { isSnub } from './mirrors'
 
-export const dual = (plot, mirrors, dimensions, curvature) => {
+export const dual = (plot, mirrors, dimensions, metric) => {
   const vertices = []
   const edges = []
   const faces = []
@@ -22,7 +22,7 @@ export const dual = (plot, mirrors, dimensions, curvature) => {
     }
     // Normalize center
     vertices.push({
-      vertex: normalize(center, curvature),
+      vertex: normalize(center, metric),
       word: face.word,
     })
   }
@@ -103,7 +103,7 @@ export const dual = (plot, mirrors, dimensions, curvature) => {
   }
 }
 
-export const snub = (plot, mirrors, dimensions, curvature) => {
+export const snub = (plot, mirrors, dimensions, metric) => {
   const snub = new Map()
   const vertices = []
   const edges = []
@@ -223,7 +223,7 @@ export const snub = (plot, mirrors, dimensions, curvature) => {
   }
 }
 
-export const holosnub = (plot, mirrors, dimensions, curvature) => {
+export const holosnub = (plot, mirrors, dimensions, metric) => {
   const holosnub = [new Map(), new Map()]
   const vertices = []
   const edges = []

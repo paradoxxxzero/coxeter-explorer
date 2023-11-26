@@ -14,7 +14,6 @@ export default function App({ params, updateParams }) {
     currentOrder: 0,
     askedOrder: null,
     spaceType: null,
-    curvature: null,
     rootNormals: null,
     rootVertices: null,
     vertex: [],

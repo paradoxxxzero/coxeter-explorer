@@ -3,11 +3,7 @@ precision highp float;
 
 #include globals
 
-uniform mat4 viewProjection;
-uniform float curvature;
-uniform float segments;
 uniform float thickness;
-uniform matN matrix;
 
 in vec2 uv;
 in vec3 normal;

@@ -1,32 +1,14 @@
 #include config
 
+// Constants
 const float PI = 3.14159265358979323846264338327950288;
 const float TAU = 2. * PI;
 const float ETA = PI / 2.;
 const float DT = .001;
-const float SCALING = .0005;
+const float SCALING = .001;
 const vec3 NOISE = vec3(.000003, -.000002, .000017);
 
-#if DIMENSIONS >= 4
-uniform float fov4;
-#endif
-#if DIMENSIONS >= 5
-uniform float fov5;
-#endif
-#if DIMENSIONS >= 6
-uniform float fov6;
-#endif
-#if DIMENSIONS >= 7
-uniform float fov7;
-#endif
-#if DIMENSIONS >= 8
-uniform float fov8;
-#endif
-#if DIMENSIONS >= 9
-uniform float fov9;
-#endif
-uniform float zoom;
-
+// Structures for >4 vec and mat
 #if DIMENSIONS >= 5
 struct vec5 {
   vec4 v;
@@ -80,3 +62,30 @@ struct mat9 {
   vec9 c1, c2, c3, c4, c5, c6, c7, c8, c9;
 };
 #endif
+
+// Global vertex uniforms
+uniform float segments;
+uniform mat4 viewProjection;
+uniform matN metric;
+uniform matN matrix;
+uniform float curvature;
+
+#if DIMENSIONS >= 4
+uniform float fov4;
+#endif
+#if DIMENSIONS >= 5
+uniform float fov5;
+#endif
+#if DIMENSIONS >= 6
+uniform float fov6;
+#endif
+#if DIMENSIONS >= 7
+uniform float fov7;
+#endif
+#if DIMENSIONS >= 8
+uniform float fov8;
+#endif
+#if DIMENSIONS >= 9
+uniform float fov9;
+#endif
+uniform float zoom;

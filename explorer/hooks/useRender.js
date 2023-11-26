@@ -15,7 +15,7 @@ export const useRender = (runtime, setRuntime) => {
       runtime.meshes.updateGeometries(runtime)
       return runtime
     })
-  }, [runtime.curvature, runtime.curve, runtime.segments, setRuntime])
+  }, [runtime.spaceType, runtime.curve, runtime.segments, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => {
@@ -127,7 +127,6 @@ export const useRender = (runtime, setRuntime) => {
   }, [
     runtime.ambiance,
     runtime.ambiance,
-    runtime.curvature,
     runtime.curve,
     runtime.dimensions,
     runtime.easing,
@@ -169,7 +168,6 @@ export const useRender = (runtime, setRuntime) => {
     // runtime.controls,
     runtime.coxeter,
     runtime.currentOrder,
-    runtime.curvature,
     runtime.curve,
     runtime.dimensions,
     runtime.easing,
