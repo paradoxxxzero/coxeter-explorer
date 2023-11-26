@@ -82,17 +82,14 @@ export default function getMeshes(rt) {
               1 / tan((PI * rt[`fov${i}`] * 0.5) / 180)
             )
           }
+          mesh.uniforms.segments.update(
+            rt.spaceType.curvature && rt.curve ? rt.segments : 1
+          )
           if (type === 'vertex') {
             mesh.uniforms.thickness.update(rt.vertexThickness)
           } else if (type === 'edge') {
             mesh.uniforms.thickness.update(rt.edgeThickness)
-            mesh.uniforms.segments.update(
-              rt.spaceType.curvature && rt.curve ? rt.segments : 1
-            )
           } else {
-            mesh.uniforms.segments.update(
-              rt.spaceType.curvature && rt.curve ? rt.segments : 1
-            )
             mesh.uniforms.opacity.update(ambiances[rt.ambiance].opacity)
           }
         }
@@ -160,6 +157,7 @@ export default function getMeshes(rt) {
               position: vertex[object.vertices[0]].vertex,
               target: vertex[object.vertices[1]].vertex,
               center: vertex[object.vertices[2]].vertex,
+              parity: 0,
             })
           } else {
             const faceVertices = new Array(object.vertices.length)
@@ -182,6 +180,7 @@ export default function getMeshes(rt) {
                 position: faceVertices[j],
                 target: faceVertices[(j + 1) % faceVertices.length],
                 center,
+                parity: j % 2,
               }
               if (
                 object.word.length % 2 ===

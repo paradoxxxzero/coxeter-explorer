@@ -33,15 +33,9 @@ const vec3 up = vec3(0.f, 0.f, 1.f);
 #include project
 
 void main() {
-  #if DIMENSIONS > 4
-  vecN iPosition = multiplyMatrix(matrix, fromMat(position));
-  vecN iTarget = multiplyMatrix(matrix, fromMat(target));
-  vecN iCenter = multiplyMatrix(matrix, fromMat(center));
-  #else
-  vecN iPosition = matrix * position;
-  vecN iTarget = matrix * target;
-  vecN iCenter = matrix * center;
-  #endif
+  vecN iPosition = multiplyMatrix(matrix, adapt(position));
+  vecN iTarget = multiplyMatrix(matrix, adapt(target));
+  vecN iCenter = multiplyMatrix(matrix, adapt(center));
 
   vec2 t = ease(uv);
   vecN pos = trix(iPosition, iTarget, iCenter, t);

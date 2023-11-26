@@ -8,60 +8,7 @@ const float DT = .001;
 const float SCALING = .0005;
 const vec3 NOISE = vec3(.000003, -.000002, .000017);
 
-// Structures for >4 vec and mat
-#if DIMENSIONS >= 5
-struct vec5 {
-  vec4 v;
-  float u;
-};
-#endif
-#if DIMENSIONS >= 6
-struct vec6 {
-  vec4 v;
-  vec2 u;
-};
-#endif
-#if DIMENSIONS >= 7
-struct vec7 {
-  vec4 v;
-  vec3 u;
-};
-#endif
-#if DIMENSIONS >= 8
-struct vec8 {
-  vec4 v;
-  vec4 u;
-};
-#endif
-#if DIMENSIONS >= 9
-struct vec9 {
-  vec4 v;
-  vec4 u;
-  float t;
-};
-#endif
-
-#if DIMENSIONS == 5
-struct mat5 {
-  vec5 c1, c2, c3, c4, c5;
-};
-#elif DIMENSIONS == 6
-struct mat6 {
-  vec6 c1, c2, c3, c4, c5, c6;
-};
-#elif DIMENSIONS == 7
-struct mat7 {
-  vec7 c1, c2, c3, c4, c5, c6, c7;
-};
-#elif DIMENSIONS == 8
-struct mat8 {
-  vec8 c1, c2, c3, c4, c5, c6, c7, c8;
-};
-#elif DIMENSIONS == 9
-struct mat9 {
-  vec9 c1, c2, c3, c4, c5, c6, c7, c8, c9;
-};
-#endif
+#include dimensions
 
 // Global vertex uniforms
 uniform float segments;

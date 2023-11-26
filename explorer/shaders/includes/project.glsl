@@ -1,48 +1,6 @@
 #include helpers
 #include ease
 
-#if DIMENSIONS == 2
-vec2 xnormalize(in vec2 v) {
-  float n = sqrt(curvature * xdot(v));
-  return v / n;
-}
-#elif DIMENSIONS == 3
-vec3 xnormalize(in vec3 v) {
-  float n = sqrt(curvature * xdot(v));
-  return v / n;
-}
-#elif DIMENSIONS == 4
-vec4 xnormalize(in vec4 v) {
-  float n = sqrt(curvature * xdot(v));
-  return v / n;
-}
-#elif DIMENSIONS == 5
-vec5 xnormalize(in vec5 v) {
-  float n = sqrt(curvature * xdot(v));
-  return vec5(v.v / n, v.u / n);
-}
-#elif DIMENSIONS == 6
-vec6 xnormalize(in vec6 v) {
-  float n = sqrt(curvature * xdot(v));
-  return vec6(v.v / n, v.u / n);
-}
-#elif DIMENSIONS == 7
-vec7 xnormalize(in vec7 v) {
-  float n = sqrt(curvature * xdot(v));
-  return vec7(v.v / n, v.u / n);
-}
-#elif DIMENSIONS == 8
-vec8 xnormalize(in vec8 v) {
-  float n = sqrt(curvature * xdot(v));
-  return vec8(v.v / n, v.u / n);
-}
-#elif DIMENSIONS == 9
-vec9 xnormalize(in vec9 v) {
-  float n = sqrt(curvature * xdot(v));
-  return vec9(v.v / n, v.u / n, v.t / n);
-}
-#endif
-
 vec4 viewProject(vec3 position) {
   #if DIMENSIONS == 3 && PROJECTION3 != -1
   vec4 normalProjection = viewProjection * vec4(position, 1.);

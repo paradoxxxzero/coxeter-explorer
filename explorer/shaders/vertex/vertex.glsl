@@ -26,11 +26,8 @@ flat out vec3 vColor;
 #include project
 
 void main() {
-  #if DIMENSIONS > 4
-  vecN pos = multiplyMatrix(matrix, fromMat(position));
-  #else
-  vecN pos = matrix * position;
-  #endif
+  vecN pos = multiplyMatrix(matrix, adapt(position));
+
   if(segments > 1.f) {
     // Normalization is done mainly to remove OOD points
     pos = xnormalize(pos);

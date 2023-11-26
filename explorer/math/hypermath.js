@@ -187,12 +187,6 @@ export const getGeometry = (spaceType, centered) => {
     if (normals) {
       const metricNormals = multiply(normals, nonzero(metric))
       const vertices = inverse(metricNormals)
-      // metric.forEach((row, i) => {
-      //   if (row[i] === 0) {
-      //     normals[i][i] = 0
-      //     vertices[i][i] = 0
-      //   }
-      // })
       if (!vertices.some(row => row.some(v => isNaN(v)))) {
         return {
           normals,
@@ -277,11 +271,16 @@ export const getGeometry = (spaceType, centered) => {
   const sqrtJL = multiply(metric, L).map((row, i) =>
     row.map((v, j) => (i === j ? sqrt(v) : 0))
   )
+  metric.forEach((row, i) => {
+    if (row[i] === 0) {
+      sqrtJL[i][i] = euclidean_scaling
+    }
+  })
   const invsqrtJL = sqrtJL.map((row, i) =>
     row.map((v, j) => (i === j ? (v !== 0 ? 1 / v : 1) : 0))
   )
   const normals = multiply(Q, sqrtJL)
-  const vertices = multiply(multiply(metric, invsqrtJL), transpose(Q))
+  const vertices = multiply(multiply(nonzero(metric), invsqrtJL), transpose(Q))
   return { normals, vertices }
 }
 

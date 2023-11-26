@@ -6,7 +6,7 @@ import {
   solve,
 } from '../math/coset'
 import { normalize, reflect } from '../math/hypermath'
-import { multiplyVector, transpose } from '../math/matrix'
+import { multiplyVector } from '../math/matrix'
 import { mirrorValue } from '../mirrors'
 
 let verticesParams = null

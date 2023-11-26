@@ -256,7 +256,6 @@ export const presets = [
       showFaces: true,
       curve: true,
       ambiance: 'neon',
-      centered: false,
       zoom: 4.2,
     }),
   },
@@ -503,6 +502,7 @@ export const presets = [
       ambiance: 'neon',
       centered: false,
       edgeThickness: 10,
+      zoom: 1,
     }),
   },
   {

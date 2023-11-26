@@ -30,13 +30,8 @@ flat out vec3 vColor;
 #include project
 
 void main() {
-  #if DIMENSIONS > 4
-  vecN iPosition = multiplyMatrix(matrix, fromMat(position));
-  vecN iTarget = multiplyMatrix(matrix, fromMat(target));
-  #else
-  vecN iPosition = matrix * position;
-  vecN iTarget = matrix * target;
-  #endif
+  vecN iPosition = multiplyMatrix(matrix, adapt(position));
+  vecN iTarget = multiplyMatrix(matrix, adapt(target));
 
   float t = ease(uv.y);
   vecN pos = mix(iPosition, iTarget, t);

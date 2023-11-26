@@ -1,6 +1,7 @@
 import { ambiances, easings, lightings, projections } from '../statics'
 import ease from './shaders/includes/ease.glsl?raw'
 import globals from './shaders/includes/globals.glsl?raw'
+import dimensions from './shaders/includes/dimensions.glsl?raw'
 import helpers from './shaders/includes/helpers.glsl?raw'
 import project from './shaders/includes/project.glsl?raw'
 import complex from './shaders/includes/complex.glsl?raw'
@@ -12,6 +13,7 @@ import { render } from './render'
 
 export const includes = {
   globals,
+  dimensions,
   project,
   helpers,
   complex,
@@ -455,15 +457,11 @@ export const mesh = (
       type: '1f',
       value: 1,
     },
-    ...(['edge', 'face'].includes(type)
-      ? [
-          {
-            name: 'segments',
-            type: '1f',
-            value: rt.curve ? rt.segments : 1,
-          },
-        ]
-      : []),
+    {
+      name: 'segments',
+      type: '1f',
+      value: rt.curve ? rt.segments : 1,
+    },
     ...(['vertex', 'edge'].includes(type)
       ? [
           {

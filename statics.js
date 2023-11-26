@@ -132,29 +132,35 @@ export const ambiances = {
     lighting: 'lambert',
     opacity: 0.6,
     transparency: 'oit',
-    color: ({ word }, type, { dimensions, showFaces }) => {
+    color: ({ word, parity }, type, { dimensions, showFaces }) => {
       const colors = [
-        hsl(10 / 360, 0.56, 0.91),
-        hsl(0 / 360, 0.59, 0.88),
-        hsl(316 / 360, 0.72, 0.86),
-        hsl(267 / 360, 0.84, 0.81),
-        hsl(343 / 360, 0.81, 0.75),
-        hsl(350 / 360, 0.65, 0.77),
-        hsl(23 / 360, 0.92, 0.75),
-        hsl(41 / 360, 0.86, 0.83),
-        hsl(115 / 360, 0.54, 0.76),
-        hsl(170 / 360, 0.57, 0.73),
-        hsl(189 / 360, 0.71, 0.73),
-        hsl(199 / 360, 0.76, 0.69),
-        hsl(217 / 360, 0.92, 0.76),
-        hsl(232 / 360, 0.97, 0.85),
+        [10 / 360, 0.56, 0.91],
+        [0 / 360, 0.59, 0.88],
+        [316 / 360, 0.72, 0.86],
+        [267 / 360, 0.84, 0.81],
+        [343 / 360, 0.81, 0.75],
+        [350 / 360, 0.65, 0.77],
+        [23 / 360, 0.92, 0.75],
+        [41 / 360, 0.86, 0.83],
+        [115 / 360, 0.54, 0.76],
+        [170 / 360, 0.57, 0.73],
+        [189 / 360, 0.71, 0.73],
+        [199 / 360, 0.76, 0.69],
+        [217 / 360, 0.92, 0.76],
+        [232 / 360, 0.97, 0.85],
       ]
       const l = word
         .split('')
         .map(c => atoi(c))
         .reduce((a, b) => a + b, 0)
 
-      return colors[l % colors.length]
+      const color = colors[l % colors.length]
+      if (type === 'face') {
+        if (parity) {
+          color[2] *= 0.9
+        }
+      }
+      return hsl(...color)
     },
   },
   pure: {
