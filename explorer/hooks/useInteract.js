@@ -36,7 +36,7 @@ export const keydown = (
   updateRotations
 ) => {
   const { code } = e
-  const step = 0.01
+  const step = 0.1
   if (e.altKey || e.ctrlKey || e.metaKey) {
     return
   }

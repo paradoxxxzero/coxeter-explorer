@@ -180,7 +180,7 @@ export const ambiances = {
       return hsl(
         (word.length * 0.06) % 1,
         1,
-        type === 'face' ? 0.6 : showFaces ? 0.05 : 1
+        type === 'face' ? 0.6 : showFaces ? 0.05 : 0.5
       )
     },
   },
