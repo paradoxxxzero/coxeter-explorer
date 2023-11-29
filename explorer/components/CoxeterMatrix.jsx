@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
+import { Fragment, memo, useCallback, useEffect, useRef, useState } from 'react'
 import Value from './Value'
 import Link from './Link'
 import Node from './Node'
@@ -12,7 +12,7 @@ const getType = (coxeter, i) =>
     ? 'bold'
     : 'solid'
 
-export default function CoxeterMatrix({
+export default memo(function CoxeterMatrix({
   dimensions,
   coxeter,
   mirrors,
@@ -167,4 +167,4 @@ export default function CoxeterMatrix({
       </div>
     </aside>
   )
-}
+})

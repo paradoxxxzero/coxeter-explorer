@@ -100,6 +100,9 @@ export const useInteract = (
   }, [runtime.matrix])
 
   const quickUpdateMatrix = useCallback(() => {
+    if (runtime.matrix._reset) {
+      return
+    }
     const meshes = ['vertex', 'edge', 'face']
     for (let i = 0; i < meshes.length; i++) {
       runtime.meshes[meshes[i]].uniforms.matrix.update(
@@ -162,7 +165,20 @@ export const useInteract = (
 
   useEffect(() => {
     animation.current.speed = new Array(rotations.combinations.length).fill(0)
-  }, [rotations.combinations])
+  }, [rotations.combinations.length])
+
+  useEffect(() => {
+    if (runtime.matrix._reset) {
+      delete runtime.matrix._reset
+      animation.current.speed = new Array(rotations.combinations.length).fill(0)
+    }
+  }, [rotations.combinations.length, runtime.matrix])
+
+  useEffect(() => {
+    runtime.camera.position[2] = -runtime.zoom
+    runtime.camera.update()
+    runtime.meshes.updateUniforms(runtime, true)
+  }, [runtime.camera, runtime.zoom])
 
   useEffect(() => {
     const animate = () => {
@@ -178,7 +194,6 @@ export const useInteract = (
           speed[i] *= 0.96
           if (abs(speed[i]) < 1e-4) {
             speed[i] = 0
-            updateMatrixSync(localMatrix.current)
           }
         }
         if (rotations.auto !== 'damp' || !pause.has(i)) {
@@ -197,41 +212,25 @@ export const useInteract = (
           )
         }
       }
+      if (
+        speed.reduce((a, b) => abs(a) + abs(b), 0) === 0 &&
+        !runtime.matrix._reset
+      ) {
+        updateMatrixSync(localMatrix.current)
+        loop.current = null
+        return
+      }
       if (changed) {
         quickUpdateMatrix()
         render(runtime)
       }
-      if (loop.current !== null) {
-        loop.current = requestAnimationFrame(animate)
-      }
-    }
-
-    if (rotations.auto) {
       loop.current = requestAnimationFrame(animate)
     }
-    return () => {
-      if (loop.current) {
-        cancelAnimationFrame(loop.current)
-        loop.current = null
-      }
-      updateMatrixSync(localMatrix.current)
+
+    if (animation.current.speed.reduce((a, b) => abs(a) + abs(b), 0) > 0) {
+      loop.current = requestAnimationFrame(animate)
     }
-  }, [
-    rotations.auto,
-    rotations.combinations,
-    runtime.dimensions,
-    runtime.spaceType,
-    updateMatrixSync,
-    quickUpdateMatrix,
-  ])
 
-  useEffect(() => {
-    runtime.camera.position[2] = -runtime.zoom
-    runtime.camera.update()
-    runtime.meshes.updateUniforms(runtime, true)
-  }, [runtime.camera, runtime.zoom])
-
-  useEffect(() => {
     const pointers = new Map()
     let distance = null
     let time = null
@@ -274,6 +273,9 @@ export const useInteract = (
         const speed = [(autoSpeed * delta[0]) / dt, (autoSpeed * delta[1]) / dt]
         animation.current.speed[rotations.shift * 2] = speed[1]
         animation.current.speed[rotations.shift * 2 + 1] = speed[0]
+        if (!loop.current) {
+          loop.current = requestAnimationFrame(animate)
+        }
       }
 
       pointers.set(e.pointerId, [e.clientX, e.clientY])
@@ -352,6 +354,11 @@ export const useInteract = (
       document.removeEventListener('pointerdown', onDown)
       document.removeEventListener('pointermove', onMove)
       document.removeEventListener('pointerup', onUp)
+
+      if (loop.current) {
+        cancelAnimationFrame(loop.current)
+        loop.current = null
+      }
     }
   }, [
     rotations.auto,

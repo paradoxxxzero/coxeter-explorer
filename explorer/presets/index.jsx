@@ -492,7 +492,7 @@ export const presets = [
     name: (
       <>
         <Space type="hyperbolic" subtype="superhyperbolic" dimensions={4} />{' '}
-        Superhyperbolic (Anti-de Sitter)
+        Ultrahyperbolic surface (Anti-de Sitter Ads3)
       </>
     ),
     params: polytope([-1, 2, -1], [1, 0, 0, 1], null, {
@@ -503,6 +503,23 @@ export const presets = [
       centered: false,
       edgeThickness: 10,
       zoom: 1,
+    }),
+  },
+  {
+    name: (
+      <>
+        <Space type="hyperbolic" subtype="superhyperbolic" dimensions={5} />{' '}
+        Ultrahyperbolic honeycomb (Anti-de Sitter Ads4)
+      </>
+    ),
+    params: polytope([-1, 3, 3, -1], [1, 0, 0, 0, 1], null, {
+      showVertices: false,
+      showFaces: false,
+      curve: true,
+      ambiance: 'neon',
+      centered: false,
+      edgeThickness: 10,
+      zoom: 2,
     }),
   },
   {

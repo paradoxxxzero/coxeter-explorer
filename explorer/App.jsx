@@ -2,10 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { filterParams } from '../statics'
 import Runtime from './components/Runtime'
 import UI from './components/UI'
-import { binomial, ceil, combinations } from './math'
-import { sortRotations } from './math/hypermath'
+import { getRotations } from './math/hypermath'
 import { initializeGl } from './render'
-import { range } from '../utils'
 
 export default function App({ params, updateParams }) {
   const [runtime, setRuntime] = useState({
@@ -126,14 +124,15 @@ export default function App({ params, updateParams }) {
     params.zoom,
   ])
   useEffect(() => {
-    setRotations(rotations => ({
-      ...rotations,
-      shift: 0,
-      maxShift: ~~ceil(binomial(params.dimensions, 2) / 2),
-      combinations: sortRotations(combinations(range(params.dimensions), 2)),
-      auto: 'damp',
-    }))
-  }, [params.dimensions])
+    if (runtime.spaceType) {
+      setRotations(rotations => ({
+        ...rotations,
+        shift: 0,
+        ...getRotations(params.dimensions, runtime.spaceType),
+      }))
+    }
+  }, [params.dimensions, runtime.spaceType])
+
   useEffect(() => {
     setRuntime(rt => {
       if (params.grouper === '' && rt.grouper.startsWith('auto-')) {

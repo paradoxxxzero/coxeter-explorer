@@ -269,6 +269,18 @@ export const squareRoot = m => {
   return y
 }
 
+export const logm = m => {
+  const n = m.length
+  const A = add(multiply(transpose(m), m), multiplyScalar(ident(n), -1))
+  return multiplyScalar(
+    multiply(
+      add(A, multiplyScalar(multiply(A, A), 0.5)),
+      inverse(add(ident(n), add(A, multiplyScalar(multiply(A, A), 1 / 6))))
+    ),
+    0.5
+  )
+}
+
 export const det = m => {
   if (m.length === 1) {
     return m[0][0]

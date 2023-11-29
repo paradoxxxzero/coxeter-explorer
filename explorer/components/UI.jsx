@@ -5,7 +5,6 @@ import {
   easings,
   groupers,
   projections,
-  spaceLetters,
 } from '../../statics'
 import { range } from '../../utils.js'
 import {
@@ -20,8 +19,8 @@ import Boolean from './Boolean'
 import CoxeterMatrix from './CoxeterMatrix'
 import Number from './Number'
 import Presets from './Presets'
-import Space from './Space'
 import Rotation from './Rotation.jsx'
+import Space from './Space'
 
 export default function UI({
   runtime,
@@ -73,8 +72,10 @@ export default function UI({
   )
 
   const handleMatrixReset = useCallback(() => {
+    const matrix = ident(runtime.dimensions)
+    matrix._reset = true
     updateParams({
-      matrix: ident(runtime.dimensions),
+      matrix,
     })
   }, [updateParams, runtime.dimensions])
 

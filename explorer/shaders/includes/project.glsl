@@ -2,7 +2,7 @@
 #include ease
 
 vec4 viewProject(vec3 position) {
-  #if DIMENSIONS == 3 && PROJECTION3 != -1
+  #if DIMENSIONS == 3 && PROJECTION3 != -1 && PROJECTION3 != 7
   vec4 normalProjection = viewProjection * vec4(position, 1.);
   vec4 flatProjection = viewProjection * vec4(position.xy, 0., 1.);
   return vec4(flatProjection.xy / flatProjection.w, normalProjection.z / normalProjection.w, 1.);
@@ -85,23 +85,35 @@ vec3 xproject(in vec3 v) {
   v.xz *= 2. / p(1. - v.y);
   v.z -= 1.;
   return vec3(v.xz, 0.);
-  #elif PROJECTION3 == 6 // BAND
+  #elif PROJECTION3 == 6 // HOROSPHERE
+  v.xy /= v.z;
+  v.z = 1. / v.z;
+  v.xz *= 2. / p(1. - v.y);
+  v.z = log(v.z);
+  return vec3(v.xz, 0.);
+  #elif PROJECTION3 == 7 // HALFSPHERE
+  v.xy /= v.z;
+  v.z = 1. / v.z;
+  v.xyz *= 2. / p(1. - v.y);
+  v.z -= 1.;
+  return vec3(v.xz, v.y) * .5;
+  #elif PROJECTION3 == 8 // BAND
   vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
   return vec3((2. / PI) * ((clog(cone + z)) - clog(cone - z)), v.z);
-  #elif PROJECTION3 == 7 // CROSS
+  #elif PROJECTION3 == 9 // CROSS
   vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
   // Sum of angles
   // float o = -.5 * PI;
   // vec2 a = vec2(cos(o), sin(o));
   return vec3((2. / PI) * .5 * (clog(cone + z) - clog(cone - z) + cmul(ci, clog(cone - cmul(ci, z))) + cmul(-ci, clog(cone - cmul(-ci, z)))), v.z);
-  #elif PROJECTION3 == 8 // HEART
+  #elif PROJECTION3 == 10 // HEART
   vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
   return vec3(-z.y * z.x + z.x, -.5 * (z.y * z.y - z.x * z.x - 2. * z.y - 0.75), v.z);
-  #elif PROJECTION3 == 9 // TEARDROP
+  #elif PROJECTION3 == 11 // TEARDROP
   vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
   return vec3(sign(z.x) *
     sqrt((sqrt((1. - z.y) * (1. - z.y) + z.x * z.x) - (1. - z.y)) / 2.), -(sqrt((sqrt((1. - z.y) * (1. - z.y) + z.x * z.x) + (1. - z.y)) / 2.) - 0.75), v.z);
-  #elif PROJECTION3 == 10 // SQUARE
+  #elif PROJECTION3 == 12 // SQUARE
   float Ke = 1.854;
   vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
   z = cmul(conei / sqrt(2.), z);
@@ -112,26 +124,27 @@ vec3 xproject(in vec3 v) {
   }
   w = cmul(vec2(1., -1.) / -Ke, w) + vec2(1., -1.);
   return vec3(w, v.z);
-  #elif PROJECTION3 == 11 // RING
+  #elif PROJECTION3 == 13 // RING
   vec2 z = project(v, 1.).xy;
   z = (2. / PI) * ((clog(cone + z)) - clog(cone - z));
   float k = 4.;
   float P = 1.1393;
   return vec3(cexp(TAU * cmul(ci, (z.xy + ci)) / (k * P)), v.z);
-  // LAMBERT
-  // float nr = sqrt(2. / (1. + v.z));
-  // return vec3(v.xy * nr, 0.);
-  #elif PROJECTION3 == 12 // SINUSOIDAL
+  #elif PROJECTION3 == 14 // SINUSOIDAL
   vec2 z = project(v, 1.).xy;
   return vec3(csin(1.5 * z), v.z);
-  #elif PROJECTION3 >= 13 // TRIANGLE  
-
+  #elif PROJECTION3 == 15 // SPIRAL
+  vec2 z = project(v, 1.).xy;
+  z = ((clog(cone + z)) - clog(cone - z));
+  z = cmul(z, conei);
+  return vec3(cexp(z), 0.);
+  #elif PROJECTION3 >= 16 // TRIANGLE
   vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
-  vec2 w = sc(z, PROJECTION3 - 10);
+  vec2 w = sc(z, PROJECTION3 - 13);
   // Rotate by PI / 4
-  #if PROJECTION3 == 14
+  #if PROJECTION3 == 17
   w = cmul(w, cexp(ci * PI / 4.));
-  #elif PROJECTION3 == 15
+  #elif PROJECTION3 == 18
   w = cmul(w, cexp(ci * PI / 10.));
   #endif
   return vec3(w, v.z);

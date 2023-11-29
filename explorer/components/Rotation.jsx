@@ -1,6 +1,8 @@
+import { memo } from 'react'
 import { spaceLetters } from '../../statics'
+import { abs } from '../math'
 
-export default function Rotation({ rotations, spaceType, axis }) {
+export default memo(function Rotation({ rotations, spaceType, axis }) {
   if (!spaceType) {
     return null
   }
@@ -10,20 +12,25 @@ export default function Rotation({ rotations, spaceType, axis }) {
     return null
   }
   let combination = rotations.combinations[index]
-  const type = combination.some(i => spaceType.eigens.values[i] < 0)
+  const type = combination.some(v => v < 0)
+    ? 'parabolic'
+    : combination.some(i => spaceType.eigens.values[i] < 0)
     ? 'hyperbolic'
     : combination.some(i => spaceType.eigens.values[i] === 0)
     ? 'translation'
     : 'spheric'
-  const letters = spaceLetters
-    .slice(0, dimensions)
-    .split('')
-    .filter((_, i) => !combination.includes(i))
+  const letters = spaceLetters.slice(0, dimensions).split('')
+  const rotation =
+    type === 'parabolic'
+      ? combination.map(i => letters[abs(i)]).join('->')
+      : letters.filter((_, i) => !combination.includes(i))
 
   return (
     <aside className={`${axis ? 'y' : 'x'}-rotation`}>
-      {letters}
-      {type === 'hyperbolic' ? (
+      {rotation}
+      {type === 'parabolic' ? (
+        <sup>∞</sup>
+      ) : type === 'hyperbolic' ? (
         <sup>†</sup>
       ) : type === 'translation' ? (
         <sup>0</sup>
@@ -32,4 +39,4 @@ export default function Rotation({ rotations, spaceType, axis }) {
       )}
     </aside>
   )
-}
+})

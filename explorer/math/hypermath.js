@@ -1,16 +1,21 @@
+import { range } from '../../utils.js'
 import {
   PI,
   abs,
   acos,
+  ceil,
+  combinations,
   cos,
   cosh,
   min,
   round,
   sign,
   sin,
+  sinh,
   sqrt,
 } from './index.js'
 import {
+  add,
   diag,
   dot,
   eigen,
@@ -18,6 +23,7 @@ import {
   ident,
   inverse,
   ldl,
+  logm,
   mulV,
   multiply,
   multiplyVector,
@@ -495,15 +501,59 @@ export const sortRotations = rotations =>
     return ai === bi ? bj - aj : bi - ai
   })
 
+export const getRotations = (dimensions, spaceType) => {
+  const rotations = sortRotations(combinations(range(dimensions), 2))
+  if (
+    spaceType.metric.filter((_, i) => spaceType.metric[i][i] < 0).length === 1 // TODO: Ultrahyperbolic parabolic?
+  ) {
+    // Add parabolic rotations
+    const parabolicRotations = [
+      ...combinations(range(dimensions - 1), 2),
+      ...combinations(range(dimensions - 1), 2).map(([i, j]) => [j, i]),
+    ]
+      .sort((a, b) => a[0] - b[0] || (a[0] < a[1] ? a[1] - b[1] : b[1] - a[1]))
+      .map(([i, j]) => [-i, -j]) // Encode parabolic
+    if (rotations.length % 2) {
+      const odd = rotations.pop()
+      rotations.push(...parabolicRotations, odd)
+    } else {
+      rotations.push(...parabolicRotations)
+    }
+  }
+  return {
+    combinations: rotations,
+    maxShift: ~~ceil(rotations.length / 2),
+  }
+}
+
 export const xtranslate = (offset, level, rotations, dimensions, metric) => {
   const matrix = ident(dimensions)
 
   if (level > rotations.length - 1 || abs(offset) > 1) {
     return matrix
   }
-  const [i, j] = rotations[level]
-  // Handle hyperbolic rotation -> cosh, sinh (last coordinate is hyperbolic for now)
-  if (metric[i][i] === 0 || metric[j][j] === 0) {
+  let [i, j] = rotations[level]
+
+  if (i < 0 || j < 0) {
+    // Parabolic
+    const k = -i
+    i = -j
+    j = range(dimensions).find(v => metric[v][v] < 0)
+    const o2 = 0.5 * offset * offset
+    matrix[k][k] = 1 - o2
+    matrix[j][j] = 1 + o2
+
+    matrix[k][i] = offset
+    matrix[i][k] = -offset
+    matrix[i][j] = offset
+    matrix[j][i] = offset
+
+    matrix[k][j] = o2
+    matrix[j][k] = -o2
+
+    return matrix
+  }
+  if (metric[i][i] * metric[j][j] === 0) {
     if (metric[i][i] === 0) {
       matrix[j][i] = offset
     }
@@ -513,15 +563,32 @@ export const xtranslate = (offset, level, rotations, dimensions, metric) => {
     return matrix
   }
 
-  const c = min(metric[i][i], metric[j][j])
-  const cost = sqrt(1 - c * offset * offset)
-  const sint = offset
+  // The rotation is i if metric elements have same sign
+  // j instead
+  // i^2 = -1, j^2 = 1
+  // exp(i * o) = cos(o) + i * sin(o)
+  // exp(j * o) = cosh(o) + j * sinh(j * o)
+  const c = metric[i][i] * metric[j][j]
+
+  // Handle hyperbolic rotation -> cosh, sinh
+  const sinx = c > 0 ? sin : sinh
+
+  const sint = sinx(offset) // ~offset
+  const cost = sqrt(1 - c * sint * sint)
 
   matrix[i][i] = cost
   matrix[j][j] = cost
 
   matrix[i][j] = -c * sint
   matrix[j][i] = sint
+
+  // const L = logm(matrix)
+  // ==> This should be null
+  // console.log(
+  //   epsize(add(multiply(transpose(L), metric), multiply(metric, L)))
+  //     .map(row => row.join(' '))
+  //     .join('\n')
+  // )
 
   return matrix
 }

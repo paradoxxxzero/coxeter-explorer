@@ -16,6 +16,8 @@ export const projections = [
   'inverted',
   'joukowsky',
   'upperhalf',
+  'horosphere',
+  'halfsphere',
   'band',
   'cross',
   'heart',
@@ -23,6 +25,7 @@ export const projections = [
   'square',
   'ring',
   'sinusoidal',
+  'spiral',
   'SC_Triangle',
   'SC_Square',
   'SC_Pentagon',
@@ -337,9 +340,7 @@ export const filterParams = (maybeBadParams, changed = [], oldParams) => {
   if (!badParams.includes('coxeter')) {
     normalizeCoxeter(params)
   }
-  if (params.matrix._preset) {
-    delete params.matrix._preset
-  } else if (
+  if (
     params.matrix.length !== params.dimensions ||
     params.matrix.some(r => r.length !== params.dimensions)
   ) {
