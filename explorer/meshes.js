@@ -94,7 +94,7 @@ export default function getMeshes(rt) {
           }
         }
         mesh.uniforms.viewProjection.update(rt.camera.viewProjection)
-        mesh.uniforms.zoom.update(-rt.camera.position[2])
+        mesh.uniforms.zoom.update(rt.zoom)
         if (ambiances[rt.ambiance].lighting) {
           mesh.uniforms.eye.update(rt.camera.eye)
         }

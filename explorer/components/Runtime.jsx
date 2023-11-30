@@ -26,9 +26,11 @@ export default function Runtime({
 
   useEffect(() => {
     return () => {
-      if (runtime.spaceType?.curvature !== null) {
+      if (runtime.spaceType && runtime.spaceType.curvature !== null) {
+        const matrix = ident(runtime.dimensions)
+        matrix._reset = true
         updateParams({
-          matrix: ident(runtime.dimensions),
+          matrix,
         })
       }
     }

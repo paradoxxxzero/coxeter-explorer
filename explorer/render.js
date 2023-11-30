@@ -133,8 +133,9 @@ export const plot = (rt, order = null) => {
   } faces`
 }
 
-export const updateCameraFov = rt => {
+export const updateCamera = (rt, zoom = null) => {
   rt.camera.fov = (PI * rt.fov3) / 180
+  rt.camera.position[2] = zoom === null ? -rt.zoom : -zoom
   rt.camera.update()
   rt.meshes.updateUniforms(rt, true)
 }

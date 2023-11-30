@@ -1,14 +1,14 @@
 import { useEffect } from 'react'
-import { changeAmbiance, plot, render, show, updateCameraFov } from '../render'
+import { changeAmbiance, plot, render, show, updateCamera } from '../render'
 import refreshTextures from '../textures'
 
 export const useRender = (runtime, setRuntime) => {
   useEffect(() => {
     setRuntime(runtime => {
-      updateCameraFov(runtime)
+      updateCamera(runtime)
       return runtime
     })
-  }, [runtime.fov3, runtime.camera, setRuntime])
+  }, [runtime.fov3, runtime.camera, runtime.zoom, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => {
