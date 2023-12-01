@@ -30,7 +30,9 @@ const arrayEquals = (a, b) => {
 }
 
 const AppWithHistory = () => {
-  const [params, setParams] = useState(parseParams(defaultParams))
+  const [params, setParams] = useState(
+    parseParams(filterParams(defaultParams).params)
+  )
   const popstate = useCallback(
     e => {
       const newParams = parseParams()

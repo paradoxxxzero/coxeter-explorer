@@ -37,7 +37,7 @@ export const coxeterPlaneIcon = (
     />
   </svg>
 )
-export const centerView = (
+export const centerViewIcon = (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <g
       id="feTarget0"
@@ -55,7 +55,7 @@ export const centerView = (
     </g>
   </svg>
 )
-export const freeRotation = (
+export const freeRotationIcon = (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path
       fill="none"
@@ -67,7 +67,7 @@ export const freeRotation = (
     />
   </svg>
 )
-export const dampedRotation = (
+export const dampedRotationIcon = (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path
       fill="none"
@@ -80,7 +80,7 @@ export const dampedRotation = (
   </svg>
 )
 
-export const rotationShift = (
+export const rotationShiftIcon = (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 14">
     <g fill="none" stroke="currentColor">
       <path strokeLinecap="round" d="M13.326 8.5a6.5 6.5 0 1 1-.558-4.5" />
@@ -93,6 +93,22 @@ export const presetsIcon = (
     <path
       fill="currentColor"
       d="M8.065 2.016A.13.13 0 0 0 8.002 2v11.983l6.856.017a.12.12 0 0 0 .066-.017a.162.162 0 0 0 .054-.06a.176.176 0 0 0-.002-.183L8.12 2.073a.146.146 0 0 0-.054-.057zm-1.043-.45a1.13 1.13 0 0 1 1.96 0l6.856 11.667c.458.778-.091 1.767-.98 1.767H1.146c-.889 0-1.437-.99-.98-1.767L7.022 1.566z"
+    />
+  </svg>
+)
+export const lockIcon = (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path
+      fill="currentColor"
+      d="M16 6v1h.75A3.25 3.25 0 0 1 20 10.25v7.5A3.25 3.25 0 0 1 16.75 21h-9.5A3.25 3.25 0 0 1 4 17.75v-7.5A3.25 3.25 0 0 1 7.25 7H8V6a4 4 0 1 1 8 0ZM9.5 6v1h5V6a2.5 2.5 0 0 0-5 0Zm2.5 9.5a1.5 1.5 0 1 0 0-3a1.5 1.5 0 0 0 0 3Z"
+    />
+  </svg>
+)
+export const unlockIcon = (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path
+      fill="currentColor"
+      d="M16 5a2.5 2.5 0 0 1 5 0v.25a.75.75 0 0 0 1.5 0V5a4 4 0 0 0-8 0v2H7.25A3.25 3.25 0 0 0 4 10.25v7.5A3.25 3.25 0 0 0 7.25 21h9.5A3.25 3.25 0 0 0 20 17.75v-7.5A3.25 3.25 0 0 0 16.75 7H16V5Zm-4 10.5a1.5 1.5 0 1 1 0-3a1.5 1.5 0 0 1 0 3Z"
     />
   </svg>
 )

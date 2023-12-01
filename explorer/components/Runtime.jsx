@@ -12,7 +12,9 @@ export default function Runtime({
   updateRotations,
   updateParams,
 }) {
+  // Debug
   window.rt = runtime
+  window.ro = rotations
 
   const handleError = useCallback(
     error => {

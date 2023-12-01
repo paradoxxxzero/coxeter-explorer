@@ -1,30 +1,58 @@
 import { useCallback, useEffect, useRef } from 'react'
-import { PI, abs, hypot, log, pow } from '../math'
-import { xtranslate } from '../math/hypermath'
+import { PI, abs, hypot, log, max, pow } from '../math'
+import { rotate } from '../math/hypermath'
 import { columnMajor, multiply, set } from '../math/matrix'
 import { render, updateCamera } from '../render'
 // import { hyperMaterials } from '../shader/hyperMaterial'
 
 const zoomSpeed = 0.95
 const dampSpeed = 0.95
-const autoSpeed = 25
+const autoSpeed = 10
+const speedSamples = 10
 
-const translate = (x, y, shift, rotations, matrix, dimensions, metric) => {
-  const rotate = (o, level) => {
-    set(
-      matrix,
-      multiply(
-        xtranslate(o, level, rotations.combinations, dimensions, metric),
-        matrix
-      )
-    )
+const translate = (offset, shift, rotations, matrix, dimensions, metric) => {
+  const { combinations } = rotations
+  const couples = [[], []]
+
+  const rotateInPlace = (o, pair) => {
+    set(matrix, multiply(rotate(o, pair, dimensions, metric), matrix))
   }
-  if (2 * shift + 1 > rotations.combinations.length - 1) {
-    rotate(x, shift * 2)
-  } else {
-    rotate(x, shift * 2 + 1)
-    rotate(y, shift * 2)
+  const pairs =
+    2 * shift + 1 > combinations.length - 1
+      ? [shift * 2]
+      : [shift * 2 + 1, shift * 2]
+
+  for (let j = 0; j < pairs.length; j++) {
+    const pair = pairs[j]
+    couples[j].push(pair)
+
+    if (
+      rotations.lock &&
+      combinations[pair][0] >= 0 &&
+      combinations[pair][1] >= 0
+    ) {
+      for (let i = 0; i < combinations.length; i++) {
+        if (combinations[i][0] < 0 || combinations[i][1] < 0) {
+          // Skip parabolic rotations
+          continue
+        }
+        if (
+          !combinations[pair].some(v => combinations[i].includes(v)) &&
+          (j > 0 ? i !== pairs[1 - j] : true)
+        ) {
+          couples[j].push(i)
+        }
+      }
+    }
   }
+  for (let j = 0; j < couples.length; j++) {
+    const couple = couples[j]
+    for (let i = 0; i < couple.length; i++) {
+      const pair = couple[i]
+      rotateInPlace(offset[j], combinations[pair])
+    }
+  }
+  return couples
 }
 
 export const keydown = (
@@ -41,25 +69,25 @@ export const keydown = (
     return
   }
   if (code === 'ArrowLeft' || code === 'KeyA') {
-    translate(-step, 0, 0, rotations, matrix, dimensions, metric)
+    translate([-step, 0], rotations[0], matrix, dimensions, metric)
   } else if (code === 'ArrowRight' || code === 'KeyD') {
-    translate(step, 0, 0, rotations, matrix, dimensions, metric)
+    translate([step, 0], rotations[0], matrix, dimensions, metric)
   } else if (code === 'ArrowUp' || code === 'KeyW') {
-    translate(0, -step, 0, rotations, matrix, dimensions, metric)
+    translate([0, -step], rotations[0], matrix, dimensions, metric)
   } else if (code === 'ArrowDown' || code === 'KeyS') {
-    translate(0, step, 0, rotations, matrix, dimensions, metric)
+    translate([0, step], rotations[0], matrix, dimensions, metric)
   } else if (code === 'PageUp' || code === 'KeyQ') {
-    translate(-step, 0, 1, rotations, matrix, dimensions, metric)
+    translate([-step, 0], rotations[1], matrix, dimensions, metric)
   } else if (code === 'PageDown' || code === 'KeyE') {
-    translate(step, 0, 1, rotations, matrix, dimensions, metric)
+    translate([step, 0], rotations[1], matrix, dimensions, metric)
   } else if (code === 'Digit1') {
-    translate(0, -step, 1, rotations, matrix, dimensions, metric)
+    translate([0, -step], rotations[1], matrix, dimensions, metric)
   } else if (code === 'Digit3') {
-    translate(0, step, 1, rotations, matrix, dimensions, metric)
+    translate([0, step], rotations[1], matrix, dimensions, metric)
   } else if (code === 'KeyZ') {
-    translate(-step, 0, 2, rotations, matrix, dimensions, metric)
+    translate([-step], 0, rotations[2], matrix, dimensions, metric)
   } else if (code === 'KeyC') {
-    translate(step, 0, 2, rotations, matrix, dimensions, metric)
+    translate([step, 0], rotations[2], matrix, dimensions, metric)
   } else if (code === 'ControlLeft') {
     updateRotations('shift', (rotations.shift + 1) % rotations.maxShift)
   } else {
@@ -243,14 +271,13 @@ export const useInteract = (
           speed[i] = 0
         }
       }
-      if (rotations.auto !== 'damp' || !pause.has(i)) {
+      if (!pause.has(i)) {
         set(
           local.current.matrix,
           multiply(
-            xtranslate(
+            rotate(
               speed[i],
-              i,
-              rotations.combinations,
+              rotations.combinations[i],
               runtime.dimensions,
               runtime.spaceType.metric
             ),
@@ -305,7 +332,8 @@ export const useInteract = (
 
     const pointers = new Map()
     let distance = null
-    let time = null
+    let times = []
+    let speeds = []
 
     const getDistance = () => {
       const vals = pointers.values()
@@ -320,11 +348,16 @@ export const useInteract = (
         return
       }
       if (rotations.auto) {
-        time = performance.now()
-        animation.current.pause.add(rotations.shift * 2)
-        animation.current.pause.add(rotations.shift * 2 + 1)
-        animation.current.speed[rotations.shift * 2] = 0
-        animation.current.speed[rotations.shift * 2 + 1] = 0
+        times.push(performance.now())
+        if (pointers.size === 1) {
+          animation.current.pause.delete(rotations.shift * 2)
+          animation.current.pause.delete(rotations.shift * 2 + 1)
+        } else {
+          animation.current.pause.add(rotations.shift * 2)
+          animation.current.pause.add(rotations.shift * 2 + 1)
+        }
+        // animation.current.speed[rotations.shift * 2] = 0
+        // animation.current.speed[rotations.shift * 2 + 1] = 0
       }
       pointers.set(e.pointerId, [e.clientX, e.clientY])
     }
@@ -338,29 +371,20 @@ export const useInteract = (
         -(e.clientX - last[0]) / window.innerHeight, // height is intentional
         -(e.clientY - last[1]) / window.innerHeight,
       ]
-      if (rotations.auto) {
-        const newTime = performance.now()
-        const dt = newTime - time
-        time = newTime
-        const speed = [(autoSpeed * delta[0]) / dt, (autoSpeed * delta[1]) / dt]
-        animation.current.speed[rotations.shift * 2] = speed[1]
-        animation.current.speed[rotations.shift * 2 + 1] = speed[0]
-        if (!loop.current) {
-          loop.current = requestAnimationFrame(animate)
-        }
-      }
 
       pointers.set(e.pointerId, [e.clientX, e.clientY])
 
       if (pointers.size === 2) {
         if (distance === null) {
           distance = getDistance()
+          animation.current.zoom = local.current.zoom
           return
         }
         const newDistance = getDistance()
-        runtime.zoom *= distance / newDistance
+        local.current.zoom *= distance / newDistance
+        animation.current.zoom = local.current.zoom
         distance = newDistance
-        updateCamera(runtime)
+        updateCamera(runtime, local.current.zoom)
         render(runtime)
         return
       }
@@ -376,22 +400,39 @@ export const useInteract = (
         shift = 4
       }
 
-      if (pointers.size > 2) {
-        shift += pointers.size - 2
-      }
-      translate(
-        PI * delta[0],
-        PI * delta[1],
+      const couples = translate(
+        [PI * delta[0], PI * delta[1]],
         shift,
-        {
-          combinations: rotations.combinations,
-          auto: rotations.auto,
-          shift: rotations.shift,
-        },
+        rotations,
         local.current.matrix,
         runtime.dimensions,
         runtime.spaceType.metric
       )
+      if (rotations.auto) {
+        times.push(performance.now())
+        if (times.length > speedSamples) {
+          times.shift()
+        }
+        speeds.push([autoSpeed * PI * delta[0], autoSpeed * PI * delta[1]])
+        if (speeds.length > speedSamples) {
+          speeds.shift()
+        }
+
+        const dt = times.slice(-1)[0] - times[0]
+        const deltas = speeds.reduce(
+          (a, b) => [a[0] + b[0], a[1] + b[1]],
+          [0, 0]
+        )
+
+        for (let k = 0; k < 2; k++) {
+          for (let i = 0; i < couples[k].length; i++) {
+            animation.current.speed[couples[k][i]] = deltas[k] / dt
+          }
+        }
+        if (!loop.current) {
+          loop.current = requestAnimationFrame(animate)
+        }
+      }
       quickUpdateMatrix()
     }
 
@@ -400,17 +441,15 @@ export const useInteract = (
         return
       }
       if (rotations.auto) {
-        const newTime = performance.now()
-        const dt = newTime - time
-        if (dt > 100) {
-          animation.current.speed[rotations.shift * 2] = 0
-          animation.current.speed[rotations.shift * 2 + 1] = 0
-        } else if (rotations.auto === 'free') {
-          animation.current.speed[rotations.shift * 2] *= 0.5
-          animation.current.speed[rotations.shift * 2 + 1] *= 0.5
+        if (pointers.size === 1) {
+          speeds = []
+          times = []
+          animation.current.pause.delete(rotations.shift * 2)
+          animation.current.pause.delete(rotations.shift * 2 + 1)
+        } else {
+          animation.current.pause.add(rotations.shift * 2)
+          animation.current.pause.add(rotations.shift * 2 + 1)
         }
-        animation.current.pause.delete(rotations.shift * 2)
-        animation.current.pause.delete(rotations.shift * 2 + 1)
       }
       distance = null
       pointers.delete(e.pointerId)
@@ -430,9 +469,7 @@ export const useInteract = (
       }
     }
   }, [
-    rotations.auto,
-    rotations.combinations,
-    rotations.shift,
+    rotations,
     runtime.dimensions,
     runtime.spaceType,
     runtime.camera,

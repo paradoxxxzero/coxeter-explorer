@@ -15,7 +15,6 @@ import {
   sqrt,
 } from './index.js'
 import {
-  add,
   diag,
   dot,
   eigen,
@@ -23,7 +22,6 @@ import {
   ident,
   inverse,
   ldl,
-  logm,
   mulV,
   multiply,
   multiplyVector,
@@ -526,13 +524,8 @@ export const getRotations = (dimensions, spaceType) => {
   }
 }
 
-export const xtranslate = (offset, level, rotations, dimensions, metric) => {
+export const rotate = (offset, [i, j], dimensions, metric) => {
   const matrix = ident(dimensions)
-
-  if (level > rotations.length - 1 || abs(offset) > 1) {
-    return matrix
-  }
-  let [i, j] = rotations[level]
 
   if (i < 0 || j < 0) {
     // Parabolic

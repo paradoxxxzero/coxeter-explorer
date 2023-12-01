@@ -45,6 +45,7 @@ export default function App({ params, updateParams }) {
     maxShift: 0,
     combinations: [],
     auto: 'damp',
+    lock: false,
   })
 
   useEffect(() => {

@@ -8,11 +8,13 @@ import {
 } from '../../statics'
 import { range } from '../../utils.js'
 import {
-  centerView,
-  dampedRotation,
-  freeRotation,
+  centerViewIcon,
+  dampedRotationIcon,
+  freeRotationIcon,
+  lockIcon,
   presetsIcon,
-  rotationShift,
+  rotationShiftIcon,
+  unlockIcon,
 } from '../icons.jsx'
 import { diagonal, ident } from '../math/matrix'
 import Boolean from './Boolean'
@@ -85,6 +87,12 @@ export default function UI({
     },
     [rotations.maxShift, rotations.shift, updateRotations]
   )
+  const handleLock = useCallback(
+    param => {
+      updateRotations('lock', !rotations.lock)
+    },
+    [rotations.lock, updateRotations]
+  )
   const handleAuto = useCallback(
     param => {
       updateRotations('auto', rotations.auto === 'free' ? 'damp' : 'free')
@@ -155,7 +163,7 @@ export default function UI({
                   }deg)`,
                 }}
               >
-                {rotationShift}
+                {rotationShiftIcon}
               </div>
               <sup>{rotations.shift + 1}</sup>
               <Rotation
@@ -170,6 +178,11 @@ export default function UI({
                 axis={1}
               />
             </button>
+            <div className="supcontrols">
+              <button className="button" onClick={handleLock}>
+                {rotations.lock ? lockIcon : unlockIcon}
+              </button>
+            </div>
             <div className="subcontrols">
               <button
                 className="button anim-view"
@@ -177,9 +190,9 @@ export default function UI({
                 title="Animate rotations"
               >
                 {rotations.auto === 'free'
-                  ? freeRotation
+                  ? freeRotationIcon
                   : rotations.auto === 'damp'
-                  ? dampedRotation
+                  ? dampedRotationIcon
                   : '?'}
               </button>
               {!diagonal(runtime.matrix) && (
@@ -188,7 +201,7 @@ export default function UI({
                   onClick={handleMatrixReset}
                   title="Reset View"
                 >
-                  {centerView}
+                  {centerViewIcon}
                 </button>
               )}
             </div>
