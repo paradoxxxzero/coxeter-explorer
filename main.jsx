@@ -49,7 +49,7 @@ const AppWithHistory = () => {
     [params]
   )
 
-  const updateParams = useCallback(newParams => {
+  const updateParams = useCallback((newParams, full = false) => {
     setParams(params => {
       // Check if there is one new newParams
       if (
@@ -63,11 +63,13 @@ const AppWithHistory = () => {
         return params
       }
       const { params: finalParams, badParams } = filterParams(
-        {
-          ...params,
-          ...newParams,
-        },
-        Object.keys(newParams),
+        full
+          ? newParams
+          : {
+              ...params,
+              ...newParams,
+            },
+        full ? [] : Object.keys(newParams),
         params
       )
       if (!badParams.length) {

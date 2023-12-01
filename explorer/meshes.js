@@ -69,7 +69,7 @@ export default function getMeshes(rt) {
         this[this.meshes[i]].recompileProgram(rt)
       }
     },
-    updateUniforms(rt, quick = false) {
+    updateUniforms(rt, quick = false, zoom = null) {
       for (let i = 0; i < this.meshes.length; i++) {
         const type = this.meshes[i]
         const mesh = this[type]
@@ -94,7 +94,7 @@ export default function getMeshes(rt) {
           }
         }
         mesh.uniforms.viewProjection.update(rt.camera.viewProjection)
-        mesh.uniforms.zoom.update(rt.zoom)
+        mesh.uniforms.zoom.update(quick ? zoom : rt.zoom)
         if (ambiances[rt.ambiance].lighting) {
           mesh.uniforms.eye.update(rt.camera.eye)
         }

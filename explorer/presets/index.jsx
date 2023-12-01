@@ -1,4 +1,5 @@
 import { defaultParams } from '../../statics'
+import { range } from '../../utils'
 import Space from '../components/Space'
 import { min } from '../math'
 import { ident } from '../math/matrix'
@@ -49,6 +50,12 @@ const polytope = (coxeterArgs, mirrors, stellationArgs, extra) => {
     matrix: ident(dimensions),
     zoom: dimensions <= 3 ? 2 : dimensions > 4 ? 3 : 5,
     centered: true,
+    ...Object.fromEntries(
+      range(3, dimensions + 1).map(i => [
+        `projection${i}`,
+        i === dimensions ? 'stereographic' : 'perspective',
+      ])
+    ),
     ...(extra || {}),
   }
   if (mirrors) {

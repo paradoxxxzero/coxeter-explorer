@@ -134,10 +134,10 @@ export const plot = (rt, order = null) => {
 }
 
 export const updateCamera = (rt, zoom = null) => {
-  rt.camera.fov = (PI * rt.fov3) / 180
+  rt.camera.fov = rt.fov3 ? (PI * rt.fov3) / 180 : 1
   rt.camera.position[2] = zoom === null ? -rt.zoom : -zoom
   rt.camera.update()
-  rt.meshes.updateUniforms(rt, true)
+  rt.meshes.updateUniforms(rt, true, zoom)
 }
 
 export const changeAmbiance = rt => {
@@ -169,7 +169,7 @@ export const render = rt => {
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
     refreshTextures(rt)
     rt.camera.update()
-    rt.meshes.updateUniforms(rt, true)
+    rt.meshes.updateUniforms(rt, true, rt.zoom)
   }
 
   // OPAQUE

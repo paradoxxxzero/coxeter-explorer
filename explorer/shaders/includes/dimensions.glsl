@@ -150,44 +150,6 @@ vec9 trix(in vec9 c, in vec9 p, in vec9 t, in vec2 a) {
 float ndot(in vec2 v, in vec2 w) {
   return dot(v, w);
 }
-#endif
-#if DIMENSIONS >= 3
-float ndot(in vec3 v, in vec3 w) {
-  return dot(v, w);
-}
-#endif
-#if DIMENSIONS >= 4
-float ndot(in vec4 v, in vec4 w) {
-  return dot(v, w);
-}
-#endif
-#if DIMENSIONS >= 5
-float ndot(in vec5 v, in vec5 w) {
-  return dot(v.v, w.v) + v.u * w.u;
-}
-#endif
-#if DIMENSIONS >= 6
-float ndot(in vec6 v, in vec6 w) {
-  return dot(v.v, w.v) + dot(v.u, w.u);
-}
-#endif
-#if DIMENSIONS >= 7
-float ndot(in vec7 v, in vec7 w) {
-  return dot(v.v, w.v) + dot(v.u, w.u);
-}
-#endif
-#if DIMENSIONS >= 8
-float ndot(in vec8 v, in vec8 w) {
-  return dot(v.v, w.v) + dot(v.u, w.u);
-}
-#endif
-#if DIMENSIONS >= 9
-float ndot(in vec9 v, in vec9 w) {
-  return dot(v.v, w.v) + dot(v.u, w.u) + v.t * w.t;
-}
-#endif
-
-#if DIMENSIONS == 2
 vec2 nadd(in vec2 v, in vec2 w) {
   return v + w;
 }
@@ -197,7 +159,14 @@ vec2 nsub(in vec2 v, in vec2 w) {
 vec2 nmul(in vec2 v, in float s) {
   return v * s;
 }
-#elif DIMENSIONS == 3
+float nonlast(in vec2 v) {
+  return v.x;
+}
+#endif
+#if DIMENSIONS >= 3
+float ndot(in vec3 v, in vec3 w) {
+  return dot(v, w);
+}
 vec3 nadd(in vec3 v, in vec3 w) {
   return v + w;
 }
@@ -207,7 +176,14 @@ vec3 nsub(in vec3 v, in vec3 w) {
 vec3 nmul(in vec3 v, in float s) {
   return v * s;
 }
-#elif DIMENSIONS == 4
+vec2 nonlast(in vec3 v) {
+  return v.xy;
+}
+#endif
+#if DIMENSIONS >= 4
+float ndot(in vec4 v, in vec4 w) {
+  return dot(v, w);
+}
 vec4 nadd(in vec4 v, in vec4 w) {
   return v + w;
 }
@@ -217,7 +193,14 @@ vec4 nsub(in vec4 v, in vec4 w) {
 vec4 nmul(in vec4 v, in float s) {
   return v * s;
 }
-#elif DIMENSIONS == 5
+vec3 nonlast(in vec4 v) {
+  return v.xyz;
+}
+#endif
+#if DIMENSIONS >= 5
+float ndot(in vec5 v, in vec5 w) {
+  return dot(v.v, w.v) + v.u * w.u;
+}
 vec5 nadd(in vec5 v, in vec5 w) {
   return vec5(v.v + w.v, v.u + w.u);
 }
@@ -227,7 +210,14 @@ vec5 nsub(in vec5 v, in vec5 w) {
 vec5 nmul(in vec5 v, in float s) {
   return vec5(v.v * s, v.u * s);
 }
-#elif DIMENSIONS == 6
+vec4 nonlast(in vec5 v) {
+  return v.v;
+}
+#endif
+#if DIMENSIONS >= 6
+float ndot(in vec6 v, in vec6 w) {
+  return dot(v.v, w.v) + dot(v.u, w.u);
+}
 vec6 nadd(in vec6 v, in vec6 w) {
   return vec6(v.v + w.v, v.u + w.u);
 }
@@ -237,7 +227,14 @@ vec6 nsub(in vec6 v, in vec6 w) {
 vec6 nmul(in vec6 v, in float s) {
   return vec6(v.v * s, v.u * s);
 }
-#elif DIMENSIONS == 7
+vec5 nonlast(in vec6 v) {
+  return vec5(v.v, v.u.x);
+}
+#endif
+#if DIMENSIONS >= 7
+float ndot(in vec7 v, in vec7 w) {
+  return dot(v.v, w.v) + dot(v.u, w.u);
+}
 vec7 nadd(in vec7 v, in vec7 w) {
   return vec7(v.v + w.v, v.u + w.u);
 }
@@ -247,7 +244,14 @@ vec7 nsub(in vec7 v, in vec7 w) {
 vec7 nmul(in vec7 v, in float s) {
   return vec7(v.v * s, v.u * s);
 }
-#elif DIMENSIONS == 8
+vec6 nonlast(in vec7 v) {
+  return vec6(v.v, v.u.xy);
+}
+#endif
+#if DIMENSIONS >= 8
+float ndot(in vec8 v, in vec8 w) {
+  return dot(v.v, w.v) + dot(v.u, w.u);
+}
 vec8 nadd(in vec8 v, in vec8 w) {
   return vec8(v.v + w.v, v.u + w.u);
 }
@@ -257,7 +261,14 @@ vec8 nsub(in vec8 v, in vec8 w) {
 vec8 nmul(in vec8 v, in float s) {
   return vec8(v.v * s, v.u * s);
 }
-#elif DIMENSIONS == 9
+vec7 nonlast(in vec8 v) {
+  return vec7(v.v, v.u.xyz);
+}
+#endif
+#if DIMENSIONS >= 9
+float ndot(in vec9 v, in vec9 w) {
+  return dot(v.v, w.v) + dot(v.u, w.u) + v.t * w.t;
+}
 vec9 nadd(in vec9 v, in vec9 w) {
   return vec9(v.v + w.v, v.u + w.u, v.t + w.t);
 }
@@ -267,13 +278,15 @@ vec9 nsub(in vec9 v, in vec9 w) {
 vec9 nmul(in vec9 v, in float s) {
   return vec9(v.v * s, v.u * s, v.t * s);
 }
+vec8 nonlast(in vec9 v) {
+  return vec8(v.v, v.u);
+}
 #endif
 
-#if DIMENSIONS == 2
 vec2 adapt(in vec2 m) {
   return m;
 }
-#elif DIMENSIONS == 3
+#if DIMENSIONS == 3
 vec3 adapt(in vec3 m) {
   return m;
 }
@@ -334,5 +347,143 @@ vec8 multiplyMatrix(mat8 m, vec8 v) {
 #elif DIMENSIONS == 9
 vec9 multiplyMatrix(mat9 m, vec9 v) {
   return vec9(vec4(ndot(m.c1, v), ndot(m.c2, v), ndot(m.c3, v), ndot(m.c4, v)), vec4(ndot(m.c5, v), ndot(m.c6, v), ndot(m.c7, v), ndot(m.c8, v)), ndot(m.c9, v));
+}
+#endif
+
+float nget(in vec2 v, in int i) {
+  i = (i + DIMENSIONS) % DIMENSIONS;
+  return v[i];
+}
+#if DIMENSIONS >= 3
+float nget(in vec3 v, in int i) {
+  i = (i + DIMENSIONS) % DIMENSIONS;
+  return v[i];
+}
+#endif
+#if DIMENSIONS >= 4
+float nget(in vec4 v, in int i) {
+  i = (i + DIMENSIONS) % DIMENSIONS;
+  return v[i];
+}
+#endif
+#if DIMENSIONS >= 5
+float nget(in vec5 v, in int i) {
+  i = (i + DIMENSIONS) % DIMENSIONS;
+  if(i < 4) {
+    return v.v[i];
+  } else {
+    return v.u;
+  }
+}
+#endif
+#if DIMENSIONS >= 6
+float nget(in vec6 v, in int i) {
+  i = (i + DIMENSIONS) % DIMENSIONS;
+  if(i < 4) {
+    return v.v[i];
+  } else {
+    return v.u[i - 4];
+  }
+}
+#endif
+#if DIMENSIONS >= 7
+float nget(in vec7 v, in int i) {
+  i = (i + DIMENSIONS) % DIMENSIONS;
+  if(i < 4) {
+    return v.v[i];
+  } else {
+    return v.u[i - 4];
+  }
+}
+#endif
+#if DIMENSIONS >= 8
+float nget(in vec8 v, in int i) {
+  i = (i + DIMENSIONS) % DIMENSIONS;
+  if(i < 4) {
+    return v.v[i];
+  } else {
+    return v.u[i - 4];
+  }
+}
+#endif
+#if DIMENSIONS >= 9
+float nget(in vec9 v, in int i) {
+  i = (i + DIMENSIONS) % DIMENSIONS;
+  if(i < 4) {
+    return v.v[i];
+  } else if(i < 8) {
+    return v.u[i - 4];
+  } else {
+    return v.t;
+  }
+}
+#endif
+
+void nset(inout vec2 v, in int i, in float x) {
+  i = (i + DIMENSIONS) % DIMENSIONS;
+  v[i] = x;
+}
+#if DIMENSIONS >= 3
+void nset(inout vec3 v, in int i, in float x) {
+  i = (i + DIMENSIONS) % DIMENSIONS;
+  v[i] = x;
+}
+#endif
+#if DIMENSIONS >= 4
+void nset(inout vec4 v, in int i, in float x) {
+  i = (i + DIMENSIONS) % DIMENSIONS;
+  v[i] = x;
+}
+#endif
+#if DIMENSIONS >= 5
+void nset(inout vec5 v, in int i, in float x) {
+  i = (i + DIMENSIONS) % DIMENSIONS;
+  if(i < 4) {
+    v.v[i] = x;
+  } else {
+    v.u = x;
+  }
+}
+#endif
+#if DIMENSIONS >= 6
+void nset(inout vec6 v, in int i, in float x) {
+  i = (i + DIMENSIONS) % DIMENSIONS;
+  if(i < 4) {
+    v.v[i] = x;
+  } else {
+    v.u[i - 4] = x;
+  }
+}
+#endif
+#if DIMENSIONS >= 7
+void nset(inout vec7 v, in int i, in float x) {
+  i = (i + DIMENSIONS) % DIMENSIONS;
+  if(i < 4) {
+    v.v[i] = x;
+  } else {
+    v.u[i - 4] = x;
+  }
+}
+#endif
+#if DIMENSIONS >= 8
+void nset(inout vec8 v, in int i, in float x) {
+  i = (i + DIMENSIONS) % DIMENSIONS;
+  if(i < 4) {
+    v.v[i] = x;
+  } else {
+    v.u[i - 4] = x;
+  }
+}
+#endif
+#if DIMENSIONS >= 9
+void nset(inout vec9 v, in int i, in float x) {
+  i = (i + DIMENSIONS) % DIMENSIONS;
+  if(i < 4) {
+    v.v[i] = x;
+  } else if(i < 8) {
+    v.u[i - 4] = x;
+  } else {
+    v.t = x;
+  }
 }
 #endif

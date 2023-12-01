@@ -1,5 +1,5 @@
 import { hsl } from './explorer/helpers'
-import { atoi, min, pow } from './explorer/math'
+import { atoi, min, pow, sign } from './explorer/math'
 import { ident } from './explorer/math/matrix'
 import { mirrorChars } from './explorer/mirrors'
 
@@ -15,8 +15,8 @@ export const projections = [
   'klein',
   'inverted',
   'joukowsky',
+  'half',
   'upperhalf',
-  'horosphere',
   'halfsphere',
   'band',
   'cross',
@@ -239,10 +239,6 @@ export const defaultParams = {
   centered: false,
 
   zoom: 1.5,
-  fov3: 90,
-  projection3: 'perspective',
-  fov4: 90,
-  projection4: 'stereographic',
 
   msaa: window.devicePixelRatio <= 1,
   msaaSamples: MSAA_MAX,
@@ -346,14 +342,7 @@ export const filterParams = (maybeBadParams, changed = [], oldParams) => {
   ) {
     params.matrix = ident(params.dimensions)
   }
-  if (
-    changed.includes('dimensions') &&
-    !changed.some(k => k.startsWith('projection')) &&
-    params.dimensions >= 4
-  ) {
-    params[`projection3`] = 'perspective'
-  }
-  for (let i = 4; i <= 9; i++) {
+  for (let i = 3; i <= 9; i++) {
     if (
       i <= params.dimensions &&
       !params[`fov${i}`] &&
@@ -363,21 +352,34 @@ export const filterParams = (maybeBadParams, changed = [], oldParams) => {
     }
     if (
       i <= params.dimensions &&
-      (!params[`projection${i}`] ||
-        (changed.includes('dimensions') &&
-          !changed.includes(`projection${i}`))) &&
+      !params[`projection${i}`] &&
       !badParams.includes(`projection${i}`)
     ) {
-      params[`projection${i}`] =
-        i === params.dimensions
-          ? params[`projection${i + 1}`] || 'stereographic'
-          : 'perspective'
+      params[`projection${i}`] = 'perspective'
     }
-    if (i > params.dimensions && params[`fov${i}`]) {
+    if (i > params.dimensions && `fov${i}` in params) {
       delete params[`fov${i}`]
     }
-    if (i > params.dimensions && params[`projection${i}`]) {
+    if (i > params.dimensions && `projection${i}` in params) {
       delete params[`projection${i}`]
+    }
+  }
+
+  if (oldParams && changed.includes('dimensions')) {
+    // Shift projections from smallest
+    const s = sign(oldParams.dimensions - params.dimensions)
+    for (let i = 4; i <= params.dimensions; i++) {
+      params[`projection${i}`] = oldParams[`projection${i + s}`]
+    }
+    if (params.dimensions !== 3) {
+      params.projection3 = 'perspective'
+    }
+    if (
+      params.dimensions === 4 &&
+      oldParams.dimensions === 3 &&
+      oldParams.projection3 === 'perspective'
+    ) {
+      params.projection4 = 'stereographic'
     }
   }
   return { params, badParams }

@@ -65,7 +65,7 @@ export default function UI({
 
   const handlePreset = useCallback(
     preset => {
-      updateParams(preset)
+      updateParams(preset, true)
       closePresets()
     },
     [updateParams, closePresets]
@@ -365,7 +365,7 @@ export default function UI({
                       >
                         {[
                           ...projections.filter(
-                            (projection, n) => i === 3 || n < 7
+                            (projection, n) => i === 3 || n < 8
                           ),
                         ].map(p => (
                           <option key={p} value={p}>

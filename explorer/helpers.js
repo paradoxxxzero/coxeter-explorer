@@ -64,10 +64,38 @@ export const resizeCanvasToDisplaySize = (canvas, multiplier) => {
   }
   return false
 }
-const preprocess = (source, dimensions) =>
+
+const preprocessDimensions = (source, dimensions) =>
   source
     .replace(/\bvecN\b/g, `vec${dimensions}`)
     .replace(/\bmatN\b/g, `mat${dimensions}`)
+    .replace(/\bfovN\b/g, `fov${dimensions}`)
+    .replace(/\bvecN_1\b/g, `vec${dimensions - 1}`)
+    .replace(/\bvec1\b/g, `float`)
+    .replace(/\b_N_\b/g, `${dimensions}`)
+    .replace(/\b_Nf_\b/g, `${dimensions}.`)
+    .replace(/\PROJECTION_N\b/g, `PROJECTION${dimensions}`)
+
+const preprocess = (source, dimensions) =>
+  preprocessDimensions(
+    source.replace(/#loopN(\d)(.+?)#endloopN/gs, (_, n, code) => {
+      const rv = []
+      for (let i = n; i <= dimensions; i++) {
+        rv.push(
+          preprocessDimensions(
+            code.replace(
+              /#ifN(\d)(.+?)(#elseN(.+?)):?#endifN/gs,
+              (_, n, code, __, else_) =>
+                n === `${i}` ? preprocessDimensions(code, i) : else_ || ''
+            ),
+            i
+          )
+        )
+      }
+      return rv.join('\n')
+    }),
+    dimensions
+  )
 
 export const augment = (rt, vertex, fragment) => {
   const ambiance = ambiances[rt.ambiance]

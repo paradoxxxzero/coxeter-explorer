@@ -143,15 +143,6 @@ export default memo(function CoxeterMatrix({
         ))}
       </div>
       <div className="coxeter-toggles">
-        {dimensions > 2 && (
-          <button
-            className="button"
-            onClick={() => onChange('dimensions', dimensions - 1)}
-            title="Decrease dimensions"
-          >
-            −
-          </button>
-        )}
         {dimensions < 9 && (
           <button
             className="button"
@@ -159,6 +150,15 @@ export default memo(function CoxeterMatrix({
             title="Increase dimensions"
           >
             +
+          </button>
+        )}
+        {dimensions > 2 && (
+          <button
+            className="button"
+            onClick={() => onChange('dimensions', dimensions - 1)}
+            title="Decrease dimensions"
+          >
+            −
           </button>
         )}
         <button className="button" onClick={handleExtend} title="extended mode">
