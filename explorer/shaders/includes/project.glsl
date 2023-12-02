@@ -144,3 +144,18 @@ vec3 xproject(in vecN v) {
   #endif
 }
 #endloopN
+
+vec3 inflate(in vec3 point, in vecN pos, in vec3 norm, in float size, in float min) {
+  // Removing 3d length in perspective computation
+  #if DIMENSIONS < 5
+  pos.xy = vec2(1.);
+  #if DIMENSIONS >= 3 && PROJECTION3 == -1
+  pos.z = 1.;
+  #endif
+  #else
+  pos.v.xyz = vec3(1.);
+  #endif
+  vec3 inv = abs(xproject(pos));
+
+  return size * SCALING * norm * inv + point;
+}
