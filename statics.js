@@ -151,7 +151,7 @@ export const ambiances = Object.fromEntries(
       lighting: {
         vertex: 'lambert',
         edge: 'lambert',
-        face: 'lambert',
+        face: 'fresnel',
       },
       opacity: {
         vertex: 1,
@@ -217,7 +217,7 @@ export const ambiances = Object.fromEntries(
       lighting: {
         vertex: 'lambert',
         edge: 'lambert',
-        face: 'lambert',
+        face: 'fresnel',
       },
       opacity: {
         vertex: 1,
