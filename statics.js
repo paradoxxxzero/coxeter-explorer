@@ -57,6 +57,23 @@ export const lightings = [
   'blinn-phong',
   'toon',
   'oren-nayar',
+  'fresnel',
+]
+const catpuccin = [
+  [10 / 360, 0.56, 0.91],
+  [0 / 360, 0.59, 0.88],
+  [316 / 360, 0.72, 0.86],
+  [267 / 360, 0.84, 0.81],
+  [343 / 360, 0.81, 0.75],
+  [350 / 360, 0.65, 0.77],
+  [23 / 360, 0.92, 0.75],
+  [41 / 360, 0.86, 0.83],
+  [115 / 360, 0.54, 0.76],
+  [170 / 360, 0.57, 0.73],
+  [189 / 360, 0.71, 0.73],
+  [199 / 360, 0.76, 0.69],
+  [217 / 360, 0.92, 0.76],
+  [232 / 360, 0.97, 0.85],
 ]
 export const ambiances = {
   neon: {
@@ -71,11 +88,27 @@ export const ambiances = {
       steps: 3,
       pow: 2,
     },
-    exposure: 0.75,
     lighting: false,
-    opacity: 0.05,
+    opacity: 0.025,
     transparency: 'blend',
     color: ({ word }) => hsl((word.length * 0.17) % 1, 0.5, 0.6),
+  },
+  disco: {
+    background: [0, 0, 0, 1],
+    glow: {
+      exposure: 1.5,
+      strength: 2,
+      offset: {
+        up: 2,
+        down: 2,
+      },
+      steps: 4,
+      pow: 2,
+    },
+    lighting: 'lambert',
+    opacity: 0.025,
+    transparency: 'blend',
+    color: ({ word }) => hsl(...catpuccin[word.length % catpuccin.length]),
   },
   synthwave: {
     background: [...hsl(0.77, 0.6, 0.04), 1],
@@ -89,9 +122,8 @@ export const ambiances = {
       steps: 3,
       pow: 2,
     },
-    exposure: 0.75,
     lighting: false,
-    opacity: 0.12,
+    opacity: 0.15,
     afterImage: 0.7,
     transparency: 'blend',
     color: ({ word }) =>
@@ -101,7 +133,7 @@ export const ambiances = {
     background: [1, 1, 1, 1],
     glow: false,
     lighting: 'blinn-phong',
-    opacity: 0.4,
+    opacity: 0.1,
     transparency: 'oit',
     color: ({ word }) => hsl((word.length * 0.03) % 1, 1, 0.8),
     // culling: true,
@@ -110,13 +142,12 @@ export const ambiances = {
     background: [1, 1, 1, 1],
     glow: false,
     lighting: 'lambert',
-    opacity: 0.75,
+    opacity: 0.2,
     transparency: 'oit',
     color: ({ word, len, vertices }, type) =>
       type === 'face'
         ? hsl((((len || vertices.length) - 2) * 0.21) % 1, 1, 0.8)
         : [1, 1, 1],
-    // culling: true,
   },
   reflection: {
     background: [1, 1, 1, 1],
@@ -129,38 +160,22 @@ export const ambiances = {
       return hsl(h % 1, 1, type === 'face' ? 0.6 : showFaces ? 0.05 : 0.8)
     },
   },
-  catpuccin: {
+  arlequin: {
     background: [...hsl(240 / 360, 0.23, 0.09), 1],
     glow: false,
     lighting: 'lambert',
     opacity: 0.6,
     transparency: 'oit',
     color: ({ word, parity }, type, { dimensions, showFaces }) => {
-      const colors = [
-        [10 / 360, 0.56, 0.91],
-        [0 / 360, 0.59, 0.88],
-        [316 / 360, 0.72, 0.86],
-        [267 / 360, 0.84, 0.81],
-        [343 / 360, 0.81, 0.75],
-        [350 / 360, 0.65, 0.77],
-        [23 / 360, 0.92, 0.75],
-        [41 / 360, 0.86, 0.83],
-        [115 / 360, 0.54, 0.76],
-        [170 / 360, 0.57, 0.73],
-        [189 / 360, 0.71, 0.73],
-        [199 / 360, 0.76, 0.69],
-        [217 / 360, 0.92, 0.76],
-        [232 / 360, 0.97, 0.85],
-      ]
       const l = word
         .split('')
         .map(c => atoi(c))
         .reduce((a, b) => a + b, 0)
 
-      const color = colors[l % colors.length]
+      const color = [...catpuccin[l % catpuccin.length]]
       if (type === 'face') {
         if (parity) {
-          color[2] *= 0.9
+          color[2] *= 0.5
         }
       }
       return hsl(...color)

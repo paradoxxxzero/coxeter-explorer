@@ -68,26 +68,29 @@ export const keydown = (
   if (e.altKey || e.ctrlKey || e.metaKey) {
     return
   }
+  const rotateStep = (x, y, shift) =>
+    translate([x, y], shift, rotations, matrix, dimensions, metric)
+
   if (code === 'ArrowLeft' || code === 'KeyA') {
-    translate([-step, 0], rotations[0], matrix, dimensions, metric)
+    rotateStep(step, 0, 0)
   } else if (code === 'ArrowRight' || code === 'KeyD') {
-    translate([step, 0], rotations[0], matrix, dimensions, metric)
+    rotateStep(-step, 0, 0)
   } else if (code === 'ArrowUp' || code === 'KeyW') {
-    translate([0, -step], rotations[0], matrix, dimensions, metric)
+    rotateStep(0, step, 0)
   } else if (code === 'ArrowDown' || code === 'KeyS') {
-    translate([0, step], rotations[0], matrix, dimensions, metric)
+    rotateStep(0, -step, 0)
   } else if (code === 'PageUp' || code === 'KeyQ') {
-    translate([-step, 0], rotations[1], matrix, dimensions, metric)
+    rotateStep(step, 0, 1)
   } else if (code === 'PageDown' || code === 'KeyE') {
-    translate([step, 0], rotations[1], matrix, dimensions, metric)
+    rotateStep(-step, 0, 1)
   } else if (code === 'Digit1') {
-    translate([0, -step], rotations[1], matrix, dimensions, metric)
+    rotateStep(0, step, 1)
   } else if (code === 'Digit3') {
-    translate([0, step], rotations[1], matrix, dimensions, metric)
+    rotateStep(0, -step, 1)
   } else if (code === 'KeyZ') {
-    translate([-step], 0, rotations[2], matrix, dimensions, metric)
+    rotateStep(step, 0, 2)
   } else if (code === 'KeyC') {
-    translate([step, 0], rotations[2], matrix, dimensions, metric)
+    rotateStep(-step, 0, 2)
   } else if (code === 'ControlLeft') {
     updateRotations('shift', (rotations.shift + 1) % rotations.maxShift)
   } else {
@@ -494,6 +497,7 @@ export const useInteract = (
         )
       ) {
         quickUpdateMatrix()
+        render(runtime)
       }
     }
     document.addEventListener('keydown', onKeyDown)

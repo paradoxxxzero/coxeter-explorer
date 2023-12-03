@@ -2,7 +2,7 @@ vec4 light(vec4 color, float ambient, float shininess) {
   #ifdef LIGHTING
   vec3 eyeDirection = eye - vPosition;
   float distance = length(eyeDirection);
-  float attenuation = 1. / (1. + distance * distance * .005);
+  float attenuation = 1.;//1. / (1. + distance * distance * .005);
   eyeDirection = normalize(eyeDirection);
   vec3 lightDirection = eyeDirection;
   float diffuse = abs(dot(vNormal, lightDirection));
@@ -40,8 +40,18 @@ vec4 light(vec4 color, float ambient, float shininess) {
 
   #endif
 
+  #if LIGHTING != 3
+  if(color.a <= .25) {
+      // Fresnel
+    color.a = clamp(pow(1. - diffuse, 3.), color.a, 1.);
+
+    diffuse = 1. - ambient;
+  }
+  #endif
+
   return vec4((ambient + diffuse + specular) * attenuation * color.rgb, color.a);
   #else
+
   return color;
   #endif
 }
