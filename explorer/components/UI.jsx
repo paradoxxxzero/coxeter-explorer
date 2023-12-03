@@ -178,12 +178,10 @@ export default function UI({
                 axis={1}
               />
             </button>
-            <div className="supcontrols">
+            <div className="subcontrols">
               <button className="button" onClick={handleLock}>
                 {rotations.lock ? lockIcon : unlockIcon}
               </button>
-            </div>
-            <div className="subcontrols">
               <button
                 className="button anim-view"
                 onClick={handleAuto}
