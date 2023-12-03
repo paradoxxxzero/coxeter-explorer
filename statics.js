@@ -75,145 +75,279 @@ const catpuccin = [
   [217 / 360, 0.92, 0.76],
   [232 / 360, 0.97, 0.85],
 ]
-export const ambiances = {
-  neon: {
-    background: [0, 0, 0, 1],
-    glow: {
-      exposure: 1.75,
-      strength: 2,
-      offset: {
-        up: 2,
-        down: 2,
-      },
-      steps: 3,
-      pow: 2,
-    },
-    lighting: false,
-    opacity: 0.025,
-    transparency: 'blend',
-    color: ({ word }) => hsl((word.length * 0.17) % 1, 0.5, 0.6),
-  },
-  disco: {
-    background: [0, 0, 0, 1],
-    glow: {
-      exposure: 1.5,
-      strength: 2,
-      offset: {
-        up: 2,
-        down: 2,
-      },
-      steps: 4,
-      pow: 2,
-    },
-    lighting: 'lambert',
-    opacity: 0.025,
-    transparency: 'blend',
-    color: ({ word }) => hsl(...catpuccin[word.length % catpuccin.length]),
-  },
-  synthwave: {
-    background: [...hsl(0.77, 0.6, 0.04), 1],
-    glow: {
-      exposure: 1.5,
-      strength: 3,
-      offset: {
-        up: 3,
-        down: 3,
-      },
-      steps: 3,
-      pow: 2,
-    },
-    lighting: false,
-    opacity: 0.15,
-    afterImage: 0.7,
-    transparency: 'blend',
-    color: ({ word }) =>
-      hsl((0.5 - ((word.length * 0.05) % 0.5) + 0.65) % 1, 0.4, 0.6),
-  },
-  colorful: {
-    background: [1, 1, 1, 1],
-    glow: false,
-    lighting: 'blinn-phong',
-    opacity: 0.1,
-    transparency: 'oit',
-    color: ({ word }) => hsl((word.length * 0.03) % 1, 1, 0.8),
-    // culling: true,
-  },
-  shape: {
-    background: [1, 1, 1, 1],
-    glow: false,
-    lighting: 'lambert',
-    opacity: 0.2,
-    transparency: 'oit',
-    color: ({ word, len, vertices }, type) =>
-      type === 'face'
-        ? hsl((((len || vertices.length) - 2) * 0.21) % 1, 1, 0.8)
-        : [1, 1, 1],
-  },
-  reflection: {
-    background: [1, 1, 1, 1],
-    glow: false,
-    lighting: 'toon',
-    opacity: 0.6,
-    transparency: 'blend',
-    color: ({ word }, type, { dimensions, showFaces }) => {
-      const h = word.length ? atoi(word[word.length - 1]) / dimensions : 0
-      return hsl(h % 1, 1, type === 'face' ? 0.6 : showFaces ? 0.05 : 0.8)
-    },
-  },
-  arlequin: {
-    background: [...hsl(240 / 360, 0.23, 0.09), 1],
-    glow: false,
-    lighting: 'lambert',
-    opacity: 0.6,
-    transparency: 'oit',
-    color: ({ word, parity }, type, { dimensions, showFaces }) => {
-      const l = word
-        .split('')
-        .map(c => atoi(c))
-        .reduce((a, b) => a + b, 0)
 
-      const color = [...catpuccin[l % catpuccin.length]]
-      if (type === 'face') {
-        if (parity) {
-          color[2] *= 0.5
-        }
-      }
-      return hsl(...color)
-    },
+const defaults = {
+  background: [0, 0, 0, 1],
+  glow: false,
+  lighting: {
+    vertex: 'lambert',
+    edge: 'lambert',
+    face: 'lambert',
   },
-  pure: {
-    background: [0, 0, 0, 1],
-    glow: false,
-    lighting: 'lambert',
-    opacity: 1,
-    color: ({ word }) => hsl((word.length * 0.03) % 1, 0.75, 0.7),
+  gouraud: {
+    vertex: false,
+    edge: false,
+    face: true,
   },
-  plain: {
-    extended: true,
-    background: [1, 1, 1, 1],
-    glow: false,
-    lighting: false,
-    opacity: 1,
-    color: ({ word }, type, { dimensions, showFaces }) => {
-      return hsl(
-        (word.length * 0.06) % 1,
-        1,
-        type === 'face' ? 0.6 : showFaces ? 0.05 : 0.5
-      )
-    },
+  opacity: {
+    vertex: 1,
+    edge: 1,
+    face: 0.2,
   },
-  plainblack: {
-    extended: true,
-    background: [1, 1, 1, 1],
-    glow: false,
-    lighting: false,
-    opacity: 1,
-    color: ({ word }, type) =>
-      type === 'face'
-        ? new Array(3).fill(1 - pow(0.9, word.length + 1))
-        : [0, 0, 0],
+  shininess: {
+    vertex: 32,
+    edge: 32,
+    face: 32,
   },
+  ambient: {
+    vertex: 0.2,
+    edge: 0.2,
+    face: 0.2,
+  },
+  transparency: 'oit',
+  color: ({ word }) => hsl((word.length * 0.03) % 1, 0.75, 0.7),
 }
+
+export const ambiances = Object.fromEntries(
+  Object.entries({
+    neon: {
+      background: [0, 0, 0, 1],
+      glow: {
+        exposure: 1.75,
+        strength: 2,
+        offset: {
+          up: 2,
+          down: 2,
+        },
+        steps: 3,
+        pow: 2,
+      },
+      lighting: {
+        vertex: false,
+        edge: false,
+        face: false,
+      },
+      opacity: {
+        vertex: 1,
+        edge: 1,
+        face: 0.025,
+      },
+
+      transparency: 'blend',
+      color: ({ word }) => hsl((word.length * 0.17) % 1, 0.5, 0.6),
+    },
+    disco: {
+      background: [0, 0, 0, 1],
+      glow: {
+        exposure: 1.5,
+        strength: 2,
+        offset: {
+          up: 2,
+          down: 2,
+        },
+        steps: 4,
+        pow: 2,
+      },
+      lighting: {
+        vertex: 'lambert',
+        edge: 'lambert',
+        face: 'lambert',
+      },
+      opacity: {
+        vertex: 1,
+        edge: 1,
+        face: 0.025,
+      },
+
+      transparency: 'blend',
+      color: ({ word }) => hsl(...catpuccin[word.length % catpuccin.length]),
+    },
+    synthwave: {
+      background: [...hsl(0.77, 0.6, 0.04), 1],
+      glow: {
+        exposure: 1.5,
+        strength: 3,
+        offset: {
+          up: 3,
+          down: 3,
+        },
+        steps: 3,
+        pow: 2,
+      },
+      lighting: {
+        vertex: false,
+        edge: false,
+        face: false,
+      },
+      opacity: {
+        vertex: 1,
+        edge: 1,
+        face: 0.15,
+      },
+
+      afterImage: 0.7,
+      transparency: 'blend',
+      color: ({ word }) =>
+        hsl((0.5 - ((word.length * 0.05) % 0.5) + 0.65) % 1, 0.4, 0.6),
+    },
+    colorful: {
+      background: [1, 1, 1, 1],
+      lighting: {
+        vertex: 'blinn-phong',
+        edge: 'blinn-phong',
+        face: 'fresnel',
+      },
+      gouraud: {
+        vertex: false,
+        edge: false,
+        face: true,
+      },
+      opacity: {
+        vertex: 1,
+        edge: 1,
+        face: 0.1,
+      },
+
+      transparency: 'oit',
+      color: ({ word }) => hsl((word.length * 0.03) % 1, 1, 0.8),
+      // culling: true,
+    },
+    shape: {
+      background: [1, 1, 1, 1],
+      lighting: {
+        vertex: 'lambert',
+        edge: 'lambert',
+        face: 'lambert',
+      },
+      opacity: {
+        vertex: 1,
+        edge: 1,
+        face: 0.2,
+      },
+
+      transparency: 'oit',
+      color: ({ word, len, vertices }, type) =>
+        type === 'face'
+          ? hsl((((len || vertices.length) - 2) * 0.21) % 1, 1, 0.8)
+          : [1, 1, 1],
+    },
+    reflection: {
+      background: [1, 1, 1, 1],
+      lighting: {
+        vertex: 'toon',
+        edge: 'toon',
+        face: 'toon',
+      },
+      opacity: {
+        vertex: 1,
+        edge: 1,
+        face: 0.6,
+      },
+
+      transparency: 'blend',
+      color: ({ word }, type, { dimensions, showFaces }) => {
+        const h = word.length ? atoi(word[word.length - 1]) / dimensions : 0
+        return hsl(h % 1, 1, type === 'face' ? 0.6 : showFaces ? 0.05 : 0.8)
+      },
+    },
+    arlequin: {
+      background: [...hsl(240 / 360, 0.23, 0.09), 1],
+      lighting: {
+        vertex: 'lambert',
+        edge: 'lambert',
+        face: 'lambert',
+      },
+      opacity: {
+        vertex: 1,
+        edge: 1,
+        face: 0.6,
+      },
+
+      transparency: 'oit',
+      color: ({ word, parity }, type, { dimensions, showFaces }) => {
+        const l = word
+          .split('')
+          .map(c => atoi(c))
+          .reduce((a, b) => a + b, 0)
+
+        const color = [...catpuccin[l % catpuccin.length]]
+        if (type === 'face') {
+          if (parity) {
+            color[2] *= 0.5
+          }
+        }
+        return hsl(...color)
+      },
+    },
+    pure: {
+      background: [0, 0, 0, 1],
+      lighting: {
+        vertex: 'lambert',
+        edge: 'lambert',
+        face: 'lambert',
+      },
+      opacity: {
+        vertex: 1,
+        edge: 1,
+        face: 1,
+      },
+      gouraud: {
+        vertex: false,
+        edge: false,
+        face: false,
+      },
+
+      color: ({ word }) => hsl((word.length * 0.03) % 1, 0.75, 0.7),
+    },
+    plain: {
+      extended: true,
+      background: [1, 1, 1, 1],
+      glow: false,
+      lighting: {
+        vertex: false,
+        edge: false,
+        face: false,
+      },
+      opacity: {
+        vertex: 1,
+        edge: 1,
+        face: 1,
+      },
+
+      color: ({ word }, type, { dimensions, showFaces }) => {
+        return hsl(
+          (word.length * 0.06) % 1,
+          1,
+          type === 'face' ? 0.6 : showFaces ? 0.05 : 0.5
+        )
+      },
+    },
+    plainblack: {
+      extended: true,
+      background: [1, 1, 1, 1],
+      lighting: {
+        vertex: false,
+        edge: false,
+        face: false,
+      },
+      opacity: {
+        vertex: 1,
+        edge: 1,
+        face: 1,
+      },
+      color: ({ word }, type) =>
+        type === 'face'
+          ? new Array(3).fill(1 - pow(0.9, word.length + 1))
+          : [0, 0, 0],
+    },
+  }).map(([name, ambiance]) => [
+    name,
+    {
+      ...defaults,
+      ...ambiance,
+    },
+  ])
+)
 
 export const defaultParams = {
   dimensions: 4,

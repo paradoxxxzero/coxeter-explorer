@@ -1,11 +1,15 @@
-vec4 light(vec4 color, float ambient, float shininess) {
+uniform vec3 eye;
+uniform float ambient;
+uniform float shininess;
+
+vec4 light(vec3 position, vec3 normal, vec4 color) {
   #ifdef LIGHTING
-  vec3 eyeDirection = eye - vPosition;
+  vec3 eyeDirection = eye - position;
   float distance = length(eyeDirection);
   float attenuation = 1.;//1. / (1. + distance * distance * .005);
   eyeDirection = normalize(eyeDirection);
   vec3 lightDirection = eyeDirection;
-  float diffuse = abs(dot(vNormal, lightDirection));
+  float diffuse = abs(dot(normal, lightDirection));
   float specular = 0.;
   #if LIGHTING == 0
   // Lambert
@@ -13,13 +17,13 @@ vec4 light(vec4 color, float ambient, float shininess) {
 
   #elif LIGHTING == 1
   // Phong
-  vec3 reflectDirection = reflect(-lightDirection, vNormal);
+  vec3 reflectDirection = reflect(-lightDirection, normal);
   specular = pow(max(dot(eyeDirection, reflectDirection), 0.), shininess * .25);
 
   #elif LIGHTING == 2
   // Blinn-phong
   vec3 halfVector = normalize(lightDirection + eyeDirection);
-  specular = pow(abs(dot(vNormal, halfVector)), shininess);
+  specular = pow(abs(dot(normal, halfVector)), shininess);
 
   #elif LIGHTING == 3
   // Toon
@@ -31,22 +35,18 @@ vec4 light(vec4 color, float ambient, float shininess) {
   float roughness = 0.5;
   float A = 1. - 0.5 * (roughness / (roughness + 0.33));
   float B = 0.45 * (roughness / (roughness + 0.09));
-  float theta_i = acos(dot(vNormal, lightDirection));
-  float theta_r = acos(dot(vNormal, eyeDirection));
+  float theta_i = acos(dot(normal, lightDirection));
+  float theta_r = acos(dot(normal, eyeDirection));
   float alpha = max(theta_i, theta_r);
   float beta = min(theta_i, theta_r);
-  diffuse = max(0., dot(lightDirection, vNormal)) * (A + B * max(0., cos(theta_i - theta_r)) * sin(alpha) * tan(beta));
+  diffuse = max(0., dot(lightDirection, normal)) * (A + B * max(0., cos(theta_i - theta_r)) * sin(alpha) * tan(beta));
   specular = 0.;
 
-  #endif
-
-  #if LIGHTING != 3
-  if(color.a <= .25) {
-      // Fresnel
-    color.a = clamp(pow(1. - diffuse, 3.), color.a, 1.);
-
-    diffuse = 1. - ambient;
-  }
+  #elif LIGHTING == 5
+  // Fresnel
+  float p = 1. - diffuse;
+  color.a = clamp(p * p * p, color.a, 1.);
+  diffuse = 1. - ambient;
   #endif
 
   return vec4((ambient + diffuse + specular) * attenuation * color.rgb, color.a);

@@ -43,7 +43,7 @@ export default function refreshTextures(rt) {
   if (rt.rb.depth_copy) {
     gl.deleteRenderbuffer(rt.rb.depth_copy)
   }
-  if (ambiance.opacity < 1 && ambiance.transparency === 'oit') {
+  if (ambiance.transparency === 'oit') {
     rt.fb.oit = gl.createFramebuffer()
     gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.oit)
 

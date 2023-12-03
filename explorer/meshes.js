@@ -89,9 +89,10 @@ export default function getMeshes(rt) {
             mesh.uniforms.thickness.update(rt.vertexThickness)
           } else if (type === 'edge') {
             mesh.uniforms.thickness.update(rt.edgeThickness)
-          } else {
-            mesh.uniforms.opacity.update(ambiances[rt.ambiance].opacity)
           }
+          mesh.uniforms.opacity.update(ambiances[rt.ambiance].opacity[type])
+          mesh.uniforms.ambient.update(ambiances[rt.ambiance].ambient[type])
+          mesh.uniforms.shininess.update(ambiances[rt.ambiance].shininess[type])
         }
         mesh.uniforms.viewProjection.update(rt.camera.viewProjection)
         mesh.uniforms.zoom.update(quick ? zoom : rt.zoom)

@@ -19,9 +19,17 @@ in vec4 position;
 in mat3 position;
 #endif
 
+#ifdef LIGHTING
+#ifdef GOURAUD
+#include lighting
+#else
 out vec3 vPosition;
 out vec3 vNormal;
-flat out vec3 vColor;
+
+flat 
+#endif
+#endif
+out vec4 vColor;
 
 #include project
 
@@ -34,11 +42,22 @@ void main() {
   }
 
   vec3 proj = xproject(pos);
-  proj = inflate(proj, pos, normal, thickness, .01f);
+  vec3 norm = normal;
+  proj = inflate(proj, pos, normal, thickness);
 
   gl_Position = viewProject(proj);
 
-  vColor = color;
+  #ifndef LIGHTING
+  vColor = vec4(color, opacity);
+  #else
+
+  #ifdef GOURAUD
+  vColor = light(proj, norm, vec4(color, opacity));
+  #else 
+  vColor = vec4(color, opacity);
+
   vPosition = proj;
-  vNormal = normal;
+  vNormal = norm;
+  #endif
+  #endif
 }

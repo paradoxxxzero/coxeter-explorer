@@ -97,11 +97,11 @@ const preprocess = (source, dimensions) =>
     dimensions
   )
 
-export const augment = (rt, vertex, fragment) => {
+export const augment = (rt, vertex, fragment, type) => {
   const ambiance = ambiances[rt.ambiance]
   let config = ''
-  if (ambiance.lighting) {
-    config += `#define LIGHTING ${lightings.indexOf(ambiance.lighting)}\n`
+  if (ambiance.lighting[type]) {
+    config += `#define LIGHTING ${lightings.indexOf(ambiance.lighting[type])}\n`
   }
   const easing =
     rt.easing === 'auto' //FIXME
@@ -116,8 +116,11 @@ export const augment = (rt, vertex, fragment) => {
     }\n`
   }
   config += `#define EASING ${easings.indexOf(easing)}\n`
-  if (ambiance.opacity < 1 && ambiance.transparency === 'oit') {
+  if (ambiance.opacity[type] < 1 && ambiance.transparency === 'oit') {
     config += `#define OIT\n`
+  }
+  if (ambiance.gouraud[type]) {
+    config += `#define GOURAUD\n`
   }
   Object.entries({ ...includes, config }).forEach(([key, value]) => {
     vertex = vertex.replace(`#include ${key}`, value)
@@ -490,6 +493,21 @@ export const mesh = (
       type: '1f',
       value: rt.curve ? rt.segments : 1,
     },
+    {
+      name: 'opacity',
+      type: '1f',
+      value: 0,
+    },
+    {
+      name: 'ambient',
+      type: '1f',
+      value: 0,
+    },
+    {
+      name: 'shininess',
+      type: '1f',
+      value: 0,
+    },
     ...(['vertex', 'edge'].includes(type)
       ? [
           {
@@ -498,13 +516,7 @@ export const mesh = (
             value: 0,
           },
         ]
-      : [
-          {
-            name: 'opacity',
-            type: '1f',
-            value: 0,
-          },
-        ]),
+      : []),
     ...range(4, rt.dimensions + 1, 1, true).map(i => ({
       name: `fov${i}`,
       type: '1f',
@@ -519,9 +531,19 @@ export const mesh = (
     vertex,
     type,
     fragment,
-    ...compileProgram(rt, type, ...augment(rt, vertex, fragment), uniforms(rt)),
+    ...compileProgram(
+      rt,
+      type,
+      ...augment(rt, vertex, fragment, type),
+      uniforms(rt)
+    ),
     recompileProgram(rt) {
-      const [newVertex, newFragment] = augment(rt, this.vertex, this.fragment)
+      const [newVertex, newFragment] = augment(
+        rt,
+        this.vertex,
+        this.fragment,
+        this.type
+      )
       this.recompile(rt, newVertex, newFragment, uniforms(rt))
     },
     changeArity(arity) {
@@ -616,6 +638,7 @@ export const mesh = (
       1
     )
   })
+  mesh.type = type
   mesh.arity = arity
   mesh.instances = size
   mesh.count = 0

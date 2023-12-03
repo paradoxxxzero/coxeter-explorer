@@ -182,64 +182,87 @@ export const render = rt => {
   gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.base)
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-  rt.meshes.vertex.render(rt)
-  rt.meshes.edge.render(rt)
+  if (ambiance.opacity.vertex === 1) {
+    rt.meshes.vertex.render(rt)
+  }
+  if (ambiance.opacity.edge === 1) {
+    rt.meshes.edge.render(rt)
+  }
+  if (ambiance.opacity.face === 1) {
+    rt.meshes.face.render(rt)
+  }
 
   // TRANSPARENT
   if (
-    rt.meshes.face.visible &&
-    ambiance.opacity < 1 &&
-    ambiance.transparency === 'oit'
+    ambiance.opacity.vertex < 1 ||
+    ambiance.opacity.edge < 1 ||
+    ambiance.opacity.face < 1
   ) {
-    if (msaa) {
-      gl.bindFramebuffer(gl.READ_FRAMEBUFFER, rt.fb.base)
-      gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, rt.fb.oit)
-      gl.blitFramebuffer(
-        0,
-        0,
-        gl.drawingBufferWidth,
-        gl.drawingBufferHeight,
-        0,
-        0,
-        gl.drawingBufferWidth,
-        gl.drawingBufferHeight,
-        gl.DEPTH_BUFFER_BIT,
-        gl.NEAREST
-      )
-    }
+    if (ambiance.transparency === 'oit') {
+      if (msaa) {
+        gl.bindFramebuffer(gl.READ_FRAMEBUFFER, rt.fb.base)
+        gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, rt.fb.oit)
+        gl.blitFramebuffer(
+          0,
+          0,
+          gl.drawingBufferWidth,
+          gl.drawingBufferHeight,
+          0,
+          0,
+          gl.drawingBufferWidth,
+          gl.drawingBufferHeight,
+          gl.DEPTH_BUFFER_BIT,
+          gl.NEAREST
+        )
+      }
 
-    gl.enable(gl.BLEND)
-    ambiance.culling && gl.disable(gl.CULL_FACE)
-    gl.depthMask(false)
-    gl.blendFuncSeparate(gl.ONE, gl.ONE, gl.ZERO, gl.ONE_MINUS_SRC_ALPHA)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.oit)
-    gl.clear(gl.COLOR_BUFFER_BIT)
+      gl.enable(gl.BLEND)
+      ambiance.culling && gl.disable(gl.CULL_FACE)
+      gl.depthMask(false)
+      gl.blendFuncSeparate(gl.ONE, gl.ONE, gl.ZERO, gl.ONE_MINUS_SRC_ALPHA)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.oit)
+      gl.clear(gl.COLOR_BUFFER_BIT)
 
-    rt.meshes.face.render(rt)
+      if (ambiance.opacity.vertex < 1) {
+        rt.meshes.vertex.render(rt)
+      }
+      if (ambiance.opacity.edge < 1) {
+        rt.meshes.edge.render(rt)
+      }
+      if (ambiance.opacity.face < 1) {
+        rt.meshes.face.render(rt)
+      }
 
-    // COMPOSITE
+      // COMPOSITE
 
-    gl.depthMask(true)
-    gl.depthFunc(gl.ALWAYS)
-    gl.blendFunc(gl.ONE_MINUS_SRC_ALPHA, gl.SRC_ALPHA)
+      gl.depthMask(true)
+      gl.depthFunc(gl.ALWAYS)
+      gl.blendFunc(gl.ONE_MINUS_SRC_ALPHA, gl.SRC_ALPHA)
 
-    gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.base)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.base)
 
-    gl.useProgram(rt.passes.oit.program)
-    gl.activeTexture(gl.TEXTURE0)
-    gl.bindTexture(gl.TEXTURE_2D, rt.textures.oitAccum.texture)
+      gl.useProgram(rt.passes.oit.program)
+      gl.activeTexture(gl.TEXTURE0)
+      gl.bindTexture(gl.TEXTURE_2D, rt.textures.oitAccum.texture)
 
-    gl.activeTexture(gl.TEXTURE1)
-    gl.bindTexture(gl.TEXTURE_2D, rt.textures.oitReveal.texture)
-    gl.drawArrays(gl.TRIANGLES, 0, 3)
-  } else {
-    if (ambiance.opacity < 1 && ambiance.transparency === 'blend') {
+      gl.activeTexture(gl.TEXTURE1)
+      gl.bindTexture(gl.TEXTURE_2D, rt.textures.oitReveal.texture)
+      gl.drawArrays(gl.TRIANGLES, 0, 3)
+    } else if (ambiance.transparency === 'blend') {
       gl.enable(gl.BLEND)
       ambiance.culling && gl.disable(gl.CULL_FACE)
       gl.depthMask(false)
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+      if (ambiance.opacity.vertex < 1) {
+        rt.meshes.vertex.render(rt)
+      }
+      if (ambiance.opacity.edge < 1) {
+        rt.meshes.edge.render(rt)
+      }
+      if (ambiance.opacity.face < 1) {
+        rt.meshes.face.render(rt)
+      }
     }
-    rt.meshes.face.render(rt)
   }
 
   const out = ambiance.afterImage

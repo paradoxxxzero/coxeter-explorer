@@ -2,6 +2,18 @@
 #include ease
 #include complex
 
+vec3 project(in vec3 v, in float k) {
+  float nr = 1. / max(v.z + k, 1e-9);
+  return vec3(v.xy * nr, v.z);
+}
+
+#loopN4
+vecN_1 project(in vecN v, in float k) {
+  float nr = fovN / max(nget(v, -1) + k, 1e-9);
+  return nmul(nonlast(v), nr);
+}
+#endloopN
+
 vec4 viewProject(vec3 position) {
   #if DIMENSIONS == 3 && PROJECTION3 != -1 && PROJECTION3 != 7
   vec4 normalProjection = viewProjection * vec4(position, 1.);
@@ -145,7 +157,7 @@ vec3 xproject(in vecN v) {
 }
 #endloopN
 
-vec3 inflate(in vec3 point, in vecN pos, in vec3 norm, in float size, in float min) {
+vec3 inflate(in vec3 point, in vecN pos, in vec3 norm, in float size) {
   // Removing 3d length in perspective computation
   #if DIMENSIONS < 5
   pos.xy = vec2(1.);
@@ -155,7 +167,7 @@ vec3 inflate(in vec3 point, in vecN pos, in vec3 norm, in float size, in float m
   #else
   pos.v.xyz = vec3(1.);
   #endif
-  vec3 inv = abs(xproject(pos));
+  vec3 inv = clamp(abs(xproject(pos)), 0.01, 100.);
 
   return size * SCALING * norm * inv + point;
 }

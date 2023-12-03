@@ -25,10 +25,17 @@ in mat3 target;
 in mat3 center;
 #endif
 
+#ifdef LIGHTING
+#ifdef GOURAUD
+#include lighting
+#else
 out vec3 vPosition;
 out vec3 vNormal;
-flat out vec3 vColor;
-const vec3 up = vec3(0.f, 0.f, 1.f); 
+
+flat 
+#endif
+#endif
+out vec4 vColor;
 
 #include project
 
@@ -70,7 +77,17 @@ void main() {
 
   gl_Position = viewProject(proj);
 
-  vColor = color;
+  #ifndef LIGHTING
+  vColor = vec4(color, opacity);
+  #else
+
+  #ifdef GOURAUD
+  vColor = light(proj, norm, vec4(color, opacity));
+  #else 
+  vColor = vec4(color, opacity);
+
   vPosition = proj;
   vNormal = norm;
+  #endif
+  #endif
 }

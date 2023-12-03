@@ -13,18 +13,6 @@ vecN xnormalize(in vecN v) {
   return nmul(v, n);
 }
 
-vec3 project(in vec3 v, in float k) {
-  float nr = 1. / max(v.z + k, 1e-9);
-  return vec3(v.xy * nr, v.z);
-}
-
-#loopN4
-vecN_1 project(in vecN v, in float k) {
-  float nr = fovN / max(nget(v, -1) + k, 1e-9);
-  return nmul(nonlast(v), nr);
-}
-#endloopN
-
 #loopN3
 vecN halff(in vecN v, in float k) {
   nset(v, -1, 1. / nget(v, -1)); // Invert last

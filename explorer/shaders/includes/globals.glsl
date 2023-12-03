@@ -16,6 +16,7 @@ uniform mat4 viewProjection;
 uniform matN metric;
 uniform matN matrix;
 uniform float curvature;
+uniform float opacity;
 
 #if DIMENSIONS >= 4
 uniform float fov4;

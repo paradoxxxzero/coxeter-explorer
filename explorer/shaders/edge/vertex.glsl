@@ -23,9 +23,17 @@ in mat3 position;
 in mat3 target;
 #endif
 
+#ifdef LIGHTING
+#ifdef GOURAUD
+#include lighting
+#else
 out vec3 vPosition;
 out vec3 vNormal;
-flat out vec3 vColor;
+
+flat 
+#endif
+#endif
+out vec4 vColor;
 
 #include project
 
@@ -66,11 +74,21 @@ void main() {
   float r = uv.x * TAU;
   norm = normalize(norm * cos(r) + cross(tangent, norm) * sin(r));
 
-  vec3 finalPosition = inflate(proj, pos, norm, thickness, 0.f);
+  proj = inflate(proj, pos, norm, thickness);
 
-  gl_Position = viewProject(finalPosition);
+  gl_Position = viewProject(proj);
 
-  vColor = color;
-  vPosition = finalPosition;
+  #ifndef LIGHTING
+  vColor = vec4(color, opacity);
+  #else
+
+  #ifdef GOURAUD
+  vColor = light(proj, norm, vec4(color, opacity));
+  #else 
+  vColor = vec4(color, opacity);
+
+  vPosition = proj;
   vNormal = norm;
+  #endif
+  #endif
 }
