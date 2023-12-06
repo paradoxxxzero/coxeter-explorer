@@ -32,7 +32,6 @@ export const projections = [
   'SC_Hexagon',
 ]
 export const easings = [
-  'auto',
   'linear',
   'sine',
   'quadratic',
@@ -378,8 +377,8 @@ export const defaultParams = {
 
   order: 10,
   curve: true,
-  segments: 32,
-  easing: 'auto',
+  segments: 16,
+  easing: 'linear',
   showVertices: false,
   vertexThickness: 75,
   showEdges: true,
@@ -390,6 +389,10 @@ export const defaultParams = {
   controls: 'space',
   ambiance: 'neon',
   centered: false,
+  fov3: 90,
+  projection3: 'perspective',
+  fov4: 90,
+  projection4: 'stereographic',
 
   zoom: 1.5,
 

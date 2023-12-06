@@ -300,7 +300,7 @@ export const presets = [
         showFaces: true,
         curve: true,
         segments: 64,
-        easing: 'quartic',
+        easing: 'quintic',
         ambiance: 'neon',
         centered: true,
       }

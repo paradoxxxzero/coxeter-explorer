@@ -1,4 +1,4 @@
-import { PI, TAU, cos, sin } from './math'
+import { PI, TAU, cos, log, sin, sqrt } from './math'
 
 export const sphere = ({
   radius = 1,
@@ -144,6 +144,11 @@ export const tube = ({
 }
 
 export const tri = ({ segments = 3 } = {}) => {
+  if (segments > 8) {
+    // Reduce segment number for faces to avoid quadratic growth
+    segments = (8 + sqrt(segments - 8)) | 0
+  }
+
   const indices = []
   const vertices = []
   const normals = []

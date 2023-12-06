@@ -103,12 +103,7 @@ export const augment = (rt, vertex, fragment, type) => {
   if (ambiance.lighting[type]) {
     config += `#define LIGHTING ${lightings.indexOf(ambiance.lighting[type])}\n`
   }
-  const easing =
-    rt.easing === 'auto' //FIXME
-      ? rt.spaceType?.type === 'hyperbolic' && rt.projection4 !== 'inverted'
-        ? 'quintic'
-        : 'linear'
-      : rt.easing
+  const easing = rt.easing
   config += `#define DIMENSIONS ${rt.dimensions}\n`
   for (let i = 3; i <= rt.dimensions; i++) {
     config += `#define PROJECTION${i} ${
@@ -259,6 +254,14 @@ export const attribute = (
     extend(size, newData, copy = false) {
       gl.bindVertexArray(this.mesh.vao)
       this.size = size
+      if (newData) {
+        if (copy) {
+          if (newData.length >= this.data.length) {
+            newData.set(this.data)
+          }
+        }
+        this.data = newData
+      }
       this.location = gl.getAttribLocation(this.mesh.program, this.name)
       if (this.location === -1) {
         return
@@ -289,14 +292,6 @@ export const attribute = (
         for (let i = 0; i < locSize; i++) {
           gl.vertexAttribDivisor(this.location + i, this.instances)
         }
-      }
-      if (newData) {
-        if (copy) {
-          if (newData.length >= this.data.length) {
-            newData.set(this.data)
-          }
-        }
-        this.data = newData
       }
       this.update()
     },
