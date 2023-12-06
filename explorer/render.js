@@ -194,9 +194,9 @@ export const render = rt => {
 
   // TRANSPARENT
   if (
-    ambiance.opacity.vertex < 1 ||
-    ambiance.opacity.edge < 1 ||
-    ambiance.opacity.face < 1
+    (rt.showVertices && ambiance.opacity.vertex < 1) ||
+    (rt.showEdges && ambiance.opacity.edge < 1) ||
+    (rt.showFaces && ambiance.opacity.face < 1)
   ) {
     if (ambiance.transparency === 'oit') {
       if (msaa) {
