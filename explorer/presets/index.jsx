@@ -47,6 +47,7 @@ const polytope = (coxeterArgs, mirrors, stellationArgs, extra) => {
     curve: dimensions > 3,
     grouper: 'toddcoxeter',
     ambiance: 'colorful',
+    segments: 32,
     matrix: ident(dimensions),
     zoom: dimensions <= 3 ? 2 : dimensions > 4 ? 3 : 5,
     centered: true,
@@ -99,6 +100,7 @@ const tiling = (coxeterArgs, mirrors, stellationArgs, extra) => {
     showVertices: false,
     curve: true,
     zoom: 1,
+    segments: 32,
     ...extra,
   }
 }
@@ -111,20 +113,25 @@ const ehoneycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
     grouper: 'toddcoxeter',
     centered: false,
     edgeThickness: 10,
+    segments: 16,
     zoom: 2,
     ...extra,
   }
 }
 const honeycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
+  const poly = polytope(coxeterArgs, mirrors, stellationArgs)
+  const dimensions = poly.matrix.length
   return {
-    ...polytope(coxeterArgs, mirrors, stellationArgs),
+    ...poly,
     ambiance: 'neon',
     showFaces: false,
     showVertices: false,
     curve: true,
     grouper: 'toddcoxeter',
     centered: false,
-    edgeThickness: 10,
+    edgeThickness: dimensions > 4 ? 10 : 25,
+    segments: 16,
+    order: dimensions > 4 ? 15 : 25,
     zoom: 1.5,
     ...extra,
   }
@@ -434,7 +441,6 @@ export const presets = [
       zoom: 1.5,
       showFaces: true,
       showVertices: true,
-      segments: 16,
     }),
   },
   {
@@ -1184,6 +1190,362 @@ export const presets = [
     ),
   },
   {
+    type: 'group',
+    content: (
+      <>
+        <Space type="affine" dimensions={6} /> 5-Honeycombs
+      </>
+    ),
+  },
+  {
+    name: '5-simplex',
+    params: ehoneycomb(
+      [
+        [1, 3, 2, 2, 2, 3],
+        [3, 1, 3, 2, 2, 2],
+        [2, 3, 1, 3, 2, 2],
+        [2, 2, 3, 1, 3, 2],
+        [2, 2, 2, 3, 1, 3],
+        [3, 2, 2, 2, 3, 1],
+      ],
+      [1, 0, 0, 0, 0, 0]
+    ),
+  },
+  {
+    name: '5-cubic',
+    params: ehoneycomb([4, 3, 3, 3, 4], [1, 0, 0, 0, 0, 0]),
+  },
+  {
+    name: '5-demicubic',
+    params: ehoneycomb(
+      [
+        [1, 2, 3, 2, 2, 2],
+        [2, 1, 3, 2, 2, 2],
+        [3, 3, 1, 3, 2, 2],
+        [2, 2, 3, 1, 3, 2],
+        [2, 2, 2, 3, 1, 4],
+        [2, 2, 2, 2, 4, 1],
+      ],
+      [1, 0, 0, 0, 0, 0]
+    ),
+  },
+  {
+    name: 'Quarter 5-cubic',
+    params: ehoneycomb(
+      [
+        [1, 2, 3, 2, 2, 2],
+        [2, 1, 3, 2, 2, 2],
+        [3, 3, 1, 3, 2, 2],
+        [2, 2, 3, 1, 3, 3],
+        [2, 2, 2, 3, 1, 2],
+        [2, 2, 2, 3, 2, 1],
+      ],
+      [1, 0, 0, 0, 0, 1]
+    ),
+  },
+  {
+    type: 'group',
+    content: (
+      <>
+        <Space type="affine" dimensions={7} /> 6-Honeycombs
+      </>
+    ),
+  },
+  {
+    name: '6-simplex',
+    params: ehoneycomb(
+      [
+        [1, 3, 2, 2, 2, 2, 3],
+        [3, 1, 3, 2, 2, 2, 2],
+        [2, 3, 1, 3, 2, 2, 2],
+        [2, 2, 3, 1, 3, 2, 2],
+        [2, 2, 2, 3, 1, 3, 2],
+        [2, 2, 2, 2, 3, 1, 3],
+        [3, 2, 2, 2, 2, 3, 1],
+      ],
+      [1, 0, 0, 0, 0, 0, 0]
+    ),
+  },
+  {
+    name: '6-cubic',
+    params: ehoneycomb([4, 3, 3, 3, 3, 4], [1, 0, 0, 0, 0, 0, 0]),
+  },
+  {
+    name: '6-demicubic',
+    params: ehoneycomb(
+      [
+        [1, 2, 3, 2, 2, 2, 2],
+        [2, 1, 3, 2, 2, 2, 2],
+        [3, 3, 1, 3, 2, 2, 2],
+        [2, 2, 3, 1, 3, 2, 2],
+        [2, 2, 2, 3, 1, 3, 2],
+        [2, 2, 2, 2, 3, 1, 4],
+        [2, 2, 2, 2, 2, 4, 1],
+      ],
+      [1, 0, 0, 0, 0, 0, 0]
+    ),
+  },
+  {
+    name: 'Quarter 6-cubic',
+    params: ehoneycomb(
+      [
+        [1, 2, 3, 2, 2, 2, 2],
+        [2, 1, 3, 2, 2, 2, 2],
+        [3, 3, 1, 3, 2, 2, 2],
+        [2, 2, 3, 1, 3, 2, 2],
+        [2, 2, 2, 3, 1, 3, 3],
+        [2, 2, 2, 2, 3, 1, 2],
+        [2, 2, 2, 2, 3, 2, 1],
+      ],
+      [1, 0, 0, 0, 0, 0, 1]
+    ),
+  },
+  {
+    name: (
+      <>
+        2<sub>22</sub>
+      </>
+    ),
+    params: ehoneycomb(
+      [
+        [1, 3, 2, 2, 2, 2, 2],
+        [3, 1, 3, 2, 2, 2, 2],
+        [2, 3, 1, 3, 2, 3, 2],
+        [2, 2, 3, 1, 3, 2, 2],
+        [2, 2, 2, 3, 1, 2, 2],
+        [2, 2, 3, 2, 2, 1, 3],
+        [2, 2, 2, 2, 2, 3, 1],
+      ],
+      [0, 0, 0, 0, 1, 0, 0]
+    ),
+  },
+  {
+    type: 'group',
+    content: (
+      <>
+        <Space type="affine" dimensions={8} /> 7-Honeycombs
+      </>
+    ),
+  },
+  {
+    name: '7-simplex',
+    params: ehoneycomb(
+      [
+        [1, 3, 2, 2, 2, 2, 2, 3],
+        [3, 1, 3, 2, 2, 2, 2, 2],
+        [2, 3, 1, 3, 2, 2, 2, 2],
+        [2, 2, 3, 1, 3, 2, 2, 2],
+        [2, 2, 2, 3, 1, 3, 2, 2],
+        [2, 2, 2, 2, 3, 1, 3, 2],
+        [2, 2, 2, 2, 2, 3, 1, 3],
+        [3, 2, 2, 2, 2, 2, 3, 1],
+      ],
+      [1, 0, 0, 0, 0, 0, 0, 0]
+    ),
+  },
+  {
+    name: '7-cubic',
+    params: ehoneycomb([4, 3, 3, 3, 3, 3, 4], [1, 0, 0, 0, 0, 0, 0, 0]),
+  },
+  {
+    name: '7-demicubic',
+    params: ehoneycomb(
+      [
+        [1, 2, 3, 2, 2, 2, 2, 2],
+        [2, 1, 3, 2, 2, 2, 2, 2],
+        [3, 3, 1, 3, 2, 2, 2, 2],
+        [2, 2, 3, 1, 3, 2, 2, 2],
+        [2, 2, 2, 3, 1, 3, 2, 2],
+        [2, 2, 2, 2, 3, 1, 3, 2],
+        [2, 2, 2, 2, 2, 3, 1, 4],
+        [2, 2, 2, 2, 2, 2, 4, 1],
+      ],
+      [1, 0, 0, 0, 0, 0, 0, 0]
+    ),
+  },
+  {
+    name: 'Quarter 7-cubic',
+    params: ehoneycomb(
+      [
+        [1, 2, 3, 2, 2, 2, 2, 2],
+        [2, 1, 3, 2, 2, 2, 2, 2],
+        [3, 3, 1, 3, 2, 2, 2, 2],
+        [2, 2, 3, 1, 3, 2, 2, 2],
+        [2, 2, 3, 3, 1, 3, 2, 2],
+        [2, 2, 2, 2, 3, 1, 3, 3],
+        [2, 2, 2, 2, 2, 3, 1, 2],
+        [2, 2, 2, 2, 2, 3, 2, 1],
+      ],
+      [1, 0, 0, 0, 0, 0, 0, 1]
+    ),
+  },
+  {
+    name: (
+      <>
+        1<sub>33</sub>
+      </>
+    ),
+    params: ehoneycomb(
+      [
+        [1, 3, 2, 2, 2, 2, 2, 2],
+        [3, 1, 3, 2, 2, 2, 2, 2],
+        [2, 3, 1, 3, 2, 2, 2, 2],
+        [2, 2, 3, 1, 3, 3, 2, 2],
+        [2, 2, 2, 3, 1, 2, 2, 2],
+        [2, 2, 2, 3, 2, 1, 3, 2],
+        [2, 2, 2, 2, 2, 3, 1, 3],
+        [2, 2, 2, 2, 2, 2, 3, 1],
+      ],
+      [0, 0, 0, 0, 1, 0, 0, 0]
+    ),
+  },
+  {
+    name: (
+      <>
+        3<sub>31</sub>
+      </>
+    ),
+    params: ehoneycomb(
+      [
+        [1, 3, 2, 2, 2, 2, 2, 2],
+        [3, 1, 3, 2, 2, 2, 2, 2],
+        [2, 3, 1, 3, 2, 2, 2, 2],
+        [2, 2, 3, 1, 3, 3, 2, 2],
+        [2, 2, 2, 3, 1, 2, 2, 2],
+        [2, 2, 2, 3, 2, 1, 3, 2],
+        [2, 2, 2, 2, 2, 3, 1, 3],
+        [2, 2, 2, 2, 2, 2, 3, 1],
+      ],
+      [1, 0, 0, 0, 0, 0, 0, 0]
+    ),
+  },
+  {
+    type: 'group',
+    content: (
+      <>
+        <Space type="affine" dimensions={9} /> 8-Honeycombs
+      </>
+    ),
+  },
+  {
+    name: '8-simplex',
+    params: ehoneycomb(
+      [
+        [1, 3, 2, 2, 2, 2, 2, 2, 3],
+        [3, 1, 3, 2, 2, 2, 2, 2, 2],
+        [2, 3, 1, 3, 2, 2, 2, 2, 2],
+        [2, 2, 3, 1, 3, 2, 2, 2, 2],
+        [2, 2, 2, 3, 1, 3, 2, 2, 2],
+        [2, 2, 2, 2, 3, 1, 3, 2, 2],
+        [2, 2, 2, 2, 2, 3, 1, 3, 2],
+        [2, 2, 2, 2, 2, 2, 3, 1, 3],
+        [3, 2, 2, 2, 2, 2, 2, 3, 1],
+      ],
+      [1, 0, 0, 0, 0, 0, 0, 0, 0]
+    ),
+  },
+  {
+    name: '8-cubic',
+    params: ehoneycomb([4, 3, 3, 3, 3, 3, 3, 4], [1, 0, 0, 0, 0, 0, 0, 0, 0]),
+  },
+  {
+    name: '8-demicubic',
+    params: ehoneycomb(
+      [
+        [1, 2, 3, 2, 2, 2, 2, 2, 2],
+        [2, 1, 3, 2, 2, 2, 2, 2, 2],
+        [3, 3, 1, 3, 2, 2, 2, 2, 2],
+        [2, 2, 3, 1, 3, 2, 2, 2, 2],
+        [2, 2, 2, 3, 1, 3, 2, 2, 2],
+        [2, 2, 2, 2, 3, 1, 3, 2, 2],
+        [2, 2, 2, 2, 2, 3, 1, 3, 2],
+        [2, 2, 2, 2, 2, 2, 3, 1, 4],
+        [2, 2, 2, 2, 2, 2, 2, 4, 1],
+      ],
+      [1, 0, 0, 0, 0, 0, 0, 0, 0]
+    ),
+  },
+  {
+    name: 'Quarter 8-cubic',
+    params: ehoneycomb(
+      [
+        [1, 2, 3, 2, 2, 2, 2, 2, 2],
+        [2, 1, 3, 2, 2, 2, 2, 2, 2],
+        [3, 3, 1, 3, 2, 2, 2, 2, 2],
+        [2, 2, 3, 1, 3, 2, 2, 2, 2],
+        [2, 2, 2, 3, 1, 3, 2, 2, 2],
+        [2, 2, 2, 2, 3, 1, 3, 2, 2],
+        [2, 2, 2, 2, 2, 3, 1, 3, 3],
+        [2, 2, 2, 2, 2, 2, 3, 1, 2],
+        [2, 2, 2, 2, 2, 2, 3, 2, 1],
+      ],
+      [1, 0, 0, 0, 0, 0, 0, 0, 1]
+    ),
+  },
+  {
+    name: (
+      <>
+        1<sub>52</sub>
+      </>
+    ),
+    params: ehoneycomb(
+      [
+        [1, 3, 2, 2, 2, 2, 2, 2, 2],
+        [3, 1, 3, 2, 2, 2, 2, 2, 2],
+        [2, 3, 1, 3, 3, 2, 2, 2, 2],
+        [2, 2, 3, 1, 2, 2, 2, 2, 2],
+        [2, 2, 3, 2, 1, 3, 2, 2, 2],
+        [2, 2, 2, 2, 3, 1, 3, 2, 2],
+        [2, 2, 2, 2, 2, 3, 1, 3, 2],
+        [2, 2, 2, 2, 2, 2, 3, 1, 3],
+        [2, 2, 2, 2, 2, 2, 2, 3, 1],
+      ],
+      [0, 0, 0, 1, 0, 0, 0, 0, 0]
+    ),
+  },
+  {
+    name: (
+      <>
+        2<sub>51</sub>
+      </>
+    ),
+    params: ehoneycomb(
+      [
+        [1, 3, 2, 2, 2, 2, 2, 2, 2],
+        [3, 1, 3, 2, 2, 2, 2, 2, 2],
+        [2, 3, 1, 3, 3, 2, 2, 2, 2],
+        [2, 2, 3, 1, 2, 2, 2, 2, 2],
+        [2, 2, 3, 2, 1, 3, 2, 2, 2],
+        [2, 2, 2, 2, 3, 1, 3, 2, 2],
+        [2, 2, 2, 2, 2, 3, 1, 3, 2],
+        [2, 2, 2, 2, 2, 2, 3, 1, 3],
+        [2, 2, 2, 2, 2, 2, 2, 3, 1],
+      ],
+      [1, 0, 0, 0, 0, 0, 0, 0, 0]
+    ),
+  },
+  {
+    name: (
+      <>
+        5<sub>21</sub>
+      </>
+    ),
+    params: ehoneycomb(
+      [
+        [1, 3, 2, 2, 2, 2, 2, 2, 2],
+        [3, 1, 3, 2, 2, 2, 2, 2, 2],
+        [2, 3, 1, 3, 3, 2, 2, 2, 2],
+        [2, 2, 3, 1, 2, 2, 2, 2, 2],
+        [2, 2, 3, 2, 1, 3, 2, 2, 2],
+        [2, 2, 2, 2, 3, 1, 3, 2, 2],
+        [2, 2, 2, 2, 2, 3, 1, 3, 2],
+        [2, 2, 2, 2, 2, 2, 3, 1, 3],
+        [2, 2, 2, 2, 2, 2, 2, 3, 1],
+      ],
+      [0, 0, 0, 0, 0, 0, 0, 0, 1]
+    ),
+  },
+  {
     type: 'title',
     content: (
       <>
@@ -1367,8 +1729,8 @@ export const presets = [
     type: 'group',
     content: (
       <>
-        <Space type="hyperbolic" subtype="compact" dimensions={4} /> Honeycombs
-        compacts
+        <Space type="hyperbolic" subtype="compact" dimensions={4} /> Compact
+        Hyperbolic Honeycombs
       </>
     ),
   },
@@ -1483,7 +1845,7 @@ export const presets = [
     content: (
       <>
         <Space type="hyperbolic" subtype="paracompact" dimensions={4} />{' '}
-        Honeycombs paracompacts
+        Paracompact Hyperbolic Honeycombs
       </>
     ),
   },
@@ -1491,6 +1853,8 @@ export const presets = [
     name: 'Triangular',
     params: honeycomb([3, 6, 3], [1, 0, 0, 0], null, {
       grouper: 'toddcoxeter',
+      easing: 'quintic',
+      segments: 32,
     }),
   },
   {
@@ -1503,6 +1867,8 @@ export const presets = [
     name: 'Order-6 tetrahedral',
     params: honeycomb([3, 3, 6], [1, 0, 0, 0], null, {
       grouper: 'toddcoxeter',
+      easing: 'quintic',
+      segments: 32,
     }),
   },
   {
@@ -1518,6 +1884,8 @@ export const presets = [
       null,
       {
         grouper: 'toddcoxeter',
+        easing: 'quintic',
+        segments: 32,
       }
     ),
   },
@@ -1545,8 +1913,10 @@ export const presets = [
   },
   {
     name: 'Order-6 hexagonal',
-    params: honeycomb([6, 3, 6], [1, 0, 0, 0], null, {
+    params: honeycomb([6, 3, 6], [0, 0, 0, 1], null, {
       grouper: 'toddcoxeter',
+      easing: 'quintic',
+      segments: 32,
     }),
   },
   {
@@ -1622,6 +1992,7 @@ export const presets = [
   //     null,
   //     {
   //       grouper: 'toddcoxeter',
+  //       easing: 'quintic'
   //     }
   //   ),
   // },
@@ -1638,6 +2009,8 @@ export const presets = [
       null,
       {
         grouper: 'toddcoxeter',
+        easing: 'quintic',
+        segments: 32,
       }
     ),
   },
@@ -1698,10 +2071,12 @@ export const presets = [
         [2, 6, 1, 3],
         [6, 2, 3, 1],
       ],
-      [1, 0, 0, 0],
+      [0, 0, 0, 1],
       null,
       {
         grouper: 'toddcoxeter',
+        easing: 'quintic',
+        segments: 32,
       }
     ),
   },
@@ -1811,7 +2186,7 @@ export const presets = [
           level={2}
           dimensions={4}
         />{' '}
-        Honeycombs lorentzians
+        Level-2 Lorentzian Hyperbolic Honeycombs
       </>
     ),
   },
@@ -1819,18 +2194,127 @@ export const presets = [
     name: '3-3-7',
     params: honeycomb([3, 3, 7], [1, 0, 0, 0], null, {
       grouper: 'toddcoxeter',
+      segments: 64,
     }),
   },
   {
     name: '3-4-7',
     params: honeycomb([3, 3, 7], [1, 0, 0, 0], null, {
       grouper: 'toddcoxeter',
+      segments: 64,
     }),
   },
   {
     name: '3-5-7',
     params: honeycomb([3, 5, 7], [1, 0, 0, 0], null, {
       grouper: 'toddcoxeter',
+      segments: 64,
+    }),
+  },
+  {
+    type: 'group',
+    content: (
+      <>
+        <Space type="hyperbolic" dimensions={5} /> Compact Hyperbolic
+        4-Honeycombs
+      </>
+    ),
+  },
+  {
+    name: 'Order-5 5-cell',
+    params: honeycomb([3, 3, 3, 5], [1, 0, 0, 0, 0]),
+  },
+  {
+    name: '120-cell',
+    params: honeycomb([5, 3, 3, 3], [1, 0, 0, 0, 0]),
+  },
+  {
+    name: 'Order-5 tesseratic',
+    params: honeycomb([4, 3, 3, 5], [1, 0, 0, 0, 0]),
+  },
+  {
+    name: 'Order-4 120-cell',
+    params: honeycomb([4, 3, 3, 5], [1, 0, 0, 0, 0]),
+  },
+  {
+    name: 'Order-5 120-cell',
+    params: honeycomb([5, 3, 3, 5], [1, 0, 0, 0, 0]),
+  },
+  {
+    name: 'Small stellated 120-cell',
+    params: honeycomb([5, 5, 3, 3], [1, 0, 0, 0, 0], [2, 1, 1, 1]),
+  },
+  {
+    name: 'Pentagrammic-order 600-cell',
+    params: honeycomb([3, 3, 5, 5], [1, 0, 0, 0, 0], [1, 1, 1, 2]),
+  },
+  {
+    name: 'Order-5 icosahedral 120-cell',
+    params: honeycomb([3, 5, 5, 5], [1, 0, 0, 0, 0], [1, 1, 2, 1]),
+  },
+  {
+    name: 'Great 120-cell',
+    params: honeycomb([5, 5, 5, 3], [1, 0, 0, 0, 0], [1, 2, 1, 1]),
+  },
+  {
+    type: 'group',
+    content: (
+      <>
+        <Space type="hyperbolic" subtype="paracompact" dimensions={5} />{' '}
+        Paracompact Hyperbolic 4-Honeycombs
+      </>
+    ),
+  },
+  {
+    name: 'Order-4 24-cell',
+    params: honeycomb([3, 4, 3, 4], [1, 0, 0, 0, 0], null, {
+      easing: 'quintic',
+      segments: 32,
+    }),
+  },
+  {
+    name: 'Cubic honeycomb',
+    params: honeycomb([4, 3, 4, 3], [1, 0, 0, 0, 0]),
+  },
+  {
+    type: 'group',
+    content: (
+      <>
+        <Space type="hyperbolic" subtype="paracompact" dimensions={6} />{' '}
+        Paracompact Hyperbolic 5-Honeycombs
+      </>
+    ),
+  },
+  {
+    name: '5-orthoplex',
+    params: honeycomb([3, 3, 3, 4, 3], [1, 0, 0, 0, 0, 0], null, {
+      easing: 'quintic',
+      segments: 32,
+    }),
+  },
+  {
+    name: '24-cell honeycomb',
+    params: honeycomb([3, 4, 3, 3, 3], [1, 0, 0, 0, 0, 0]),
+  },
+  {
+    name: '16-cell honeycomb',
+    params: honeycomb([3, 3, 4, 3, 3], [1, 0, 0, 0, 0, 0], null, {
+      easing: 'quintic',
+      segments: 32,
+    }),
+  },
+  {
+    name: 'Order-4 24-cell honeycomb',
+    params: honeycomb([3, 4, 3, 3, 4], [1, 0, 0, 0, 0, 0], null, {
+      easing: 'quintic',
+      segments: 32,
+    }),
+  },
+  {
+    name: 'Tesseratic honeycomb',
+    params: honeycomb([4, 3, 3, 4, 3], [1, 0, 0, 0, 0, 0], null, {
+      easing: 'quintic',
+      segments: 32,
     }),
   },
 ]
