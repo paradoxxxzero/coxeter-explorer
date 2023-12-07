@@ -56,7 +56,7 @@ const AppWithHistory = () => {
       // Check if there is one new newParams
       if (
         !Object.entries(newParams).filter(([k, v]) => {
-          if (Array.isArray(v)) {
+          if (Array.isArray(v) && !v._reset) {
             return !arrayEquals(v, params[k])
           }
           return params[k] !== v

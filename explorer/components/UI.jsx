@@ -16,7 +16,7 @@ import {
   rotationShiftIcon,
   unlockIcon,
 } from '../icons.jsx'
-import { diagonal, ident } from '../math/matrix'
+import { ident } from '../math/matrix'
 import Boolean from './Boolean'
 import CoxeterMatrix from './CoxeterMatrix'
 import Number from './Number'
@@ -193,15 +193,13 @@ export default function UI({
                   ? dampedRotationIcon
                   : '?'}
               </button>
-              {!diagonal(runtime.matrix) && (
-                <button
-                  className="button reset-view"
-                  onClick={handleMatrixReset}
-                  title="Reset View"
-                >
-                  {centerViewIcon}
-                </button>
-              )}
+              <button
+                className="button reset-view"
+                onClick={handleMatrixReset}
+                title="Reset View"
+              >
+                {centerViewIcon}
+              </button>
             </div>
           </aside>
         ) : null}
