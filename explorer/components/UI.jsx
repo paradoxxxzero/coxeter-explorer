@@ -1,7 +1,8 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   ambiances,
   defaultParams,
+  defaultProjection,
   easings,
   groupers,
   projections,
@@ -9,11 +10,14 @@ import {
 import { range } from '../../utils.js'
 import {
   centerViewIcon,
+  coxeterPlaneIcon,
+  cubeIcon,
   dampedRotationIcon,
   freeRotationIcon,
   lockIcon,
   presetsIcon,
   rotationShiftIcon,
+  squareIcon,
   unlockIcon,
 } from '../icons.jsx'
 import { ident } from '../math/matrix'
@@ -73,12 +77,46 @@ export default function UI({
     [updateParams, closePresets]
   )
 
-  const handleMatrixReset = useCallback(() => {
+  const handleCenter = useCallback(() => {
     const matrix = ident(runtime.dimensions)
     matrix._reset = true
     updateParams({
       matrix,
+      centered: true,
     })
+  }, [updateParams, runtime.dimensions])
+
+  const handleCoxeter = useCallback(() => {
+    const matrix = ident(runtime.dimensions)
+    matrix._reset = true
+    updateParams({
+      matrix,
+      centered: false,
+    })
+  }, [updateParams, runtime.dimensions])
+
+  const handleOrtho = useCallback(() => {
+    updateParams(
+      Object.fromEntries(
+        range(3, runtime.dimensions + 1)
+          .map(i => [
+            [`projection${i}`, 'orthographic'],
+            [`fov${i}`, 90],
+          ])
+          .flat()
+      )
+    )
+  }, [updateParams, runtime.dimensions])
+
+  const handleStereo = useCallback(() => {
+    updateParams(
+      Object.fromEntries(
+        range(3, runtime.dimensions + 1).map(i => [
+          `projection${i}`,
+          defaultProjection(i, runtime.dimensions),
+        ])
+      )
+    )
   }, [updateParams, runtime.dimensions])
 
   const handleShift = useCallback(
@@ -124,6 +162,28 @@ export default function UI({
       a.click()
     }
   }, [runtime])
+
+  const showProjectionButtons = useMemo(() => {
+    return {
+      square: range(3, runtime.dimensions + 1).some(
+        i => params[`projection${i}`] !== 'orthographic'
+      ),
+      cube: range(3, runtime.dimensions + 1).some(
+        i =>
+          params[`projection${i}`] !== defaultProjection(i, runtime.dimensions)
+      ),
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    params.projection3,
+    params.projection4,
+    params.projection5,
+    params.projection6,
+    params.projection7,
+    params.projection8,
+    params.projection9,
+    runtime.dimensions,
+  ])
 
   return (
     <>
@@ -194,12 +254,37 @@ export default function UI({
                   : '?'}
               </button>
               <button
-                className="button reset-view"
-                onClick={handleMatrixReset}
-                title="Reset View"
+                className="button"
+                onClick={handleCenter}
+                title="Center View"
               >
                 {centerViewIcon}
               </button>
+              <button
+                className="button"
+                onClick={handleCoxeter}
+                title="Coxeter View"
+              >
+                {coxeterPlaneIcon}
+              </button>
+              {showProjectionButtons.square && (
+                <button
+                  className="button"
+                  onClick={handleOrtho}
+                  title="Orthographic"
+                >
+                  {squareIcon}
+                </button>
+              )}
+              {showProjectionButtons.cube && (
+                <button
+                  className="button"
+                  onClick={handleStereo}
+                  title="Stereographic"
+                >
+                  {cubeIcon}
+                </button>
+              )}
             </div>
           </aside>
         ) : null}
@@ -234,15 +319,6 @@ export default function UI({
                 </select>
               </label>
             )}
-            <label className="boolean-label">
-              inCentered
-              <Boolean
-                name="centered"
-                allowNull
-                value={params.centered}
-                onChange={handleChange}
-              />
-            </label>
             {(showUI === 'full' || runtime.spaceType.curvature <= 0) && (
               <Number
                 name="order"
@@ -357,13 +433,15 @@ export default function UI({
             {params.dimensions >= 3
               ? range(3, params.dimensions + 1).map(i => (
                   <div key={i} className="projection">
-                    <Number
-                      label={`${i}D FOV`}
-                      name={`fov${i}`}
-                      step={1}
-                      value={params[`fov${i}`]}
-                      onChange={handleChange}
-                    />
+                    {showUI === 'full' && (
+                      <Number
+                        label={`${i}D FOV`}
+                        name={`fov${i}`}
+                        step={1}
+                        value={params[`fov${i}`]}
+                        onChange={handleChange}
+                      />
+                    )}
 
                     <label className="number">
                       <span className="number-label">{i}D Projection</span>

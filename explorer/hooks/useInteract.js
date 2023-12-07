@@ -123,6 +123,7 @@ export const useInteract = (
 
   useEffect(() => {
     local.current.zoom = runtime.zoom
+    animation.current.zoom = null
   }, [runtime.zoom])
 
   const quickUpdateMatrix = useCallback(() => {
@@ -172,7 +173,13 @@ export const useInteract = (
     // runtime.order,
     // runtime.passes,
     // runtime.processing,
-    runtime.projection,
+    runtime.projection3,
+    runtime.projection4,
+    runtime.projection5,
+    runtime.projection6,
+    runtime.projection7,
+    runtime.projection8,
+    runtime.projection9,
     // runtime.ranges,
     // runtime.rb,
     runtime.renderError,
@@ -231,7 +238,13 @@ export const useInteract = (
     // runtime.order,
     // runtime.passes,
     // runtime.processing,
-    runtime.projection,
+    runtime.projection3,
+    runtime.projection4,
+    runtime.projection5,
+    runtime.projection6,
+    runtime.projection7,
+    runtime.projection8,
+    runtime.projection9,
     // runtime.ranges,
     // runtime.rb,
     runtime.renderError,

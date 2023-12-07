@@ -135,7 +135,9 @@ export const plot = (rt, order = null) => {
 
 export const updateCamera = (rt, zoom = null) => {
   rt.camera.fov = rt.fov3 ? (PI * rt.fov3) / 180 : 1
-  rt.camera.position[2] = zoom === null ? -rt.zoom : -zoom
+  if (zoom !== null) {
+    rt.camera.position[2] = zoom === null ? -rt.zoom : -zoom
+  }
   rt.camera.update()
   rt.meshes.updateUniforms(rt, true, zoom)
 }

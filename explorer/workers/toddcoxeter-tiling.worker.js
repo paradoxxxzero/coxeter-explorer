@@ -1,3 +1,4 @@
+import { arrayEquals } from '../../utils'
 import { atoi } from '../math'
 import {
   getEdgesCosetsParams,
@@ -12,8 +13,30 @@ import { mirrorValue } from '../mirrors'
 let verticesParams = null
 let edgesParams = null
 let facesParams = null
+let current = null
 
 const initCosets = (dimensions, coxeter, stellation, mirrors) => {
+  if (
+    current &&
+    dimensions === current.dimensions &&
+    arrayEquals(coxeter, current.coxeter) &&
+    arrayEquals(stellation, current.stellation) &&
+    arrayEquals(mirrors, current.mirrors)
+  ) {
+    // Same group, no need to recompute, skip coset enumeration
+    verticesParams.lastDrawn = 0
+    verticesParams.done = false
+    edgesParams.forEach(edgeParams => {
+      edgeParams.lastDrawn = 0
+      edgeParams.done = false
+    })
+    facesParams.forEach(faceParams => {
+      faceParams.lastDrawn = 0
+      faceParams.done = false
+    })
+    return
+  }
+  current = { dimensions, coxeter, stellation, mirrors }
   const defaultParams = () => ({
     cosets: {
       normal: [],
@@ -103,7 +126,6 @@ onmessage = ({
     let edges = []
     let faces = []
     let partials = []
-
     if (!verticesParams.done) {
       verticesParams.limit = limit
 

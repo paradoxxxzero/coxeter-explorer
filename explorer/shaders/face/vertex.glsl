@@ -49,11 +49,11 @@ void main() {
   vecN next = trix(iPosition, iTarget, iCenter, t - vec2(DT, NOISE.y));
   vecN other = trix(iPosition, iTarget, iCenter, t - vec2(NOISE.x, DT));
 
-  if(segments > 1.f) {
-    pos = xnormalize(pos);
-    next = xnormalize(next);
-    other = xnormalize(other);
-  }
+  #if defined(SEGMENTS) && CURVATURE != 0
+  pos = xnormalize(pos);
+  next = xnormalize(next);
+  other = xnormalize(other);
+  #endif
 
   vec3 proj = xproject(pos);
 
@@ -64,10 +64,10 @@ void main() {
   // if(length(drdx) < 1e-4f || length(drdy) < 1e-4f) {
   //   next = trix(iPosition, iCenter, iTarget, t + vec2(DT / (1000.f * length(drdx)), 0.f));
   //   other = trix(iPosition, iCenter, iTarget, t + vec2(0.f, DT / (1000.f * length(drdy))));
-  //   if(segments > 1.f) {
+  // #if defined(SEGMENTS) && CURVATURE != 0
   //     next = xnormalize(next);
   //     other = xnormalize(other);
-  //   }
+  // #endif
 
   //   drdx = (xproject(next) - proj);
   //   drdy = (xproject(other) - proj);

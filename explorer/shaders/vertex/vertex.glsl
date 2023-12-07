@@ -36,10 +36,10 @@ out vec4 vColor;
 void main() {
   vecN pos = multiplyMatrix(matrix, adapt(position));
 
-  if(segments > 1.f) {
+  #if defined(SEGMENTS) && CURVATURE != 0
     // Normalization is done mainly to remove OOD points
-    pos = xnormalize(pos);
-  }
+  pos = xnormalize(pos);
+  #endif
 
   vec3 proj = xproject(pos);
   vec3 norm = normal;

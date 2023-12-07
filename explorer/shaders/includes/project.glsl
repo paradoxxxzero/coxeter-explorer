@@ -2,14 +2,32 @@
 #include ease
 #include complex
 
+#if DIMENSIONS >= 3
 vec3 project(in vec3 v, in float k) {
-  float nr = 1. / max(v.z + k, 1e-9);
+  float nr = 1. / (v.z + k);
+  if(nr < 1e-9 || nr > 4e2) {
+    nr = NaN;
+  }
   return vec3(v.xy * nr, v.z);
 }
+#endif
+#if DIMENSIONS >= 4
+// Duplicate to avoid useless function call
+vec3 project(in vec4 v, in float k) {
+  float nr = fov4 / (v.w + k);
+  if(nr < 1e-9 || nr > 4e2) {
+    nr = NaN;
+  }
+  return vec3(v.xyz * nr);
+}
+#endif
 
-#loopN4
+#loopN5
 vecN_1 project(in vecN v, in float k) {
-  float nr = fovN / max(nget(v, -1) + k, 1e-9);
+  float nr = fovN / (nget(v, -1) + k);
+  if(nr < 1e-9 || nr > 4e2) {
+    nr = NaN;
+  }
   return nmul(nonlast(v), nr);
 }
 #endloopN
@@ -44,20 +62,20 @@ vec3 xproject(in vec3 v) {
   #elif PROJECTION3 == 5 // HALF
   vec2 z = halfv(v);
   if(len(z) > 24.) {
-    return vec3(1. / 0.);
+    return vec3(NaN);
   }
   return xproject(z);
   #elif PROJECTION3 == 6 // UPPERHALF
   vec2 z = halfv(v);
   if(len(z) > 24.) {
-    return vec3(1. / 0.);
+    return vec3(NaN);
   }
   nset(z, -1, nget(z, -1) - 1.); // Lower the plane for better perspectize
   return xproject(z);
   #elif PROJECTION3 == 7 // HALFSPHERE
   v = halff(v, -1.);
   if(len(v.xy) > 24.) {
-    return vec3(1. / 0.);
+    return vec3(NaN);
   }
   v.y -= 1.;
   return v * .5;
@@ -120,6 +138,23 @@ vec3 xproject(in vec3 v) {
   return v;
   #endif
 }
+vec3 pureproject(in vec3 v) {
+  #if PROJECTION3 == 0 // STEREOGRAPHIC
+  return project(v, 1.);
+  #elif PROJECTION3 == 1 // ORTHOGRAPHIC
+  return vec3(v.xy, 0.);
+  #elif PROJECTION3 == 2 // KLEIN
+  return project(v, 0.);
+  #elif PROJECTION3 == 3 // INVERTED
+  return project(v, -1.);
+  #elif PROJECTION3 == 7 // HALFSPHERE
+  return halff(v, 0.);
+  #elif PROJECTION3 != -1
+  return project(v, 1.);
+  #else
+  return v;
+  #endif
+}
 #endif
 
 #loopN4
@@ -155,6 +190,21 @@ vec3 xproject(in vecN v) {
   return xproject(project(v, zoom));
   #endif
 }
+vec3 pureproject(in vecN v) {
+  #if PROJECTION_N == 0 // STEREOGRAPHIC
+  return pureproject(project(v, 1.));
+  #elif PROJECTION_N == 1 // ORTHOGRAPHIC
+  return pureproject(nmul(nonlast(v), fovN));
+  #elif PROJECTION_N == 2 // KLEIN
+  return pureproject(project(v, 0.));
+  #elif PROJECTION_N == 3 // INVERTED
+  return pureproject(project(v, -1.));
+  #elif PROJECTION_N != -1
+  return pureproject(project(v, 1.));
+  #else
+  return pureproject(project(v, zoom));
+  #endif
+}
 #endloopN
 
 vec3 inflate(in vec3 point, in vecN pos, in vec3 norm, in float size) {
@@ -167,7 +217,7 @@ vec3 inflate(in vec3 point, in vecN pos, in vec3 norm, in float size) {
   #else
   pos.v.xyz = vec3(1.);
   #endif
-  vec3 inv = clamp(abs(xproject(pos)), 0.01, 100.);
+  vec3 inv = clamp(abs(pureproject(pos)), 0.01, 16.);
 
   return size * SCALING * norm * inv + point;
 }

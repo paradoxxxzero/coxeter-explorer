@@ -74,6 +74,12 @@ const catpuccin = [
   [217 / 360, 0.92, 0.76],
   [232 / 360, 0.97, 0.85],
 ]
+export const defaultProjection = (dimension, dimensions) =>
+  dimension === 3
+    ? 'perspective'
+    : dimension === dimensions
+    ? 'stereographic'
+    : 'orthographic'
 
 const defaults = {
   background: [0, 0, 0, 1],
@@ -499,25 +505,20 @@ export const filterParams = (maybeBadParams, changed = [], oldParams) => {
     params.matrix = ident(params.dimensions)
   }
   for (let i = 3; i <= 9; i++) {
-    if (
-      i <= params.dimensions &&
-      !params[`fov${i}`] &&
-      !badParams.includes(`fov${i}`)
-    ) {
-      params[`fov${i}`] = 90
-    }
-    if (
-      i <= params.dimensions &&
-      !params[`projection${i}`] &&
-      !badParams.includes(`projection${i}`)
-    ) {
-      params[`projection${i}`] = 'perspective'
-    }
-    if (i > params.dimensions && `fov${i}` in params) {
-      delete params[`fov${i}`]
-    }
-    if (i > params.dimensions && `projection${i}` in params) {
-      delete params[`projection${i}`]
+    if (i <= params.dimensions) {
+      if (!params[`fov${i}`] && !badParams.includes(`fov${i}`)) {
+        params[`fov${i}`] = 90
+      }
+      if (!params[`projection${i}`] && !badParams.includes(`projection${i}`)) {
+        params[`projection${i}`] = 'perspective'
+      }
+    } else {
+      if (`fov${i}` in params) {
+        delete params[`fov${i}`]
+      }
+      if (`projection${i}` in params) {
+        delete params[`projection${i}`]
+      }
     }
   }
 
@@ -525,7 +526,8 @@ export const filterParams = (maybeBadParams, changed = [], oldParams) => {
     // Shift projections from smallest
     const s = sign(oldParams.dimensions - params.dimensions)
     for (let i = 4; i <= params.dimensions; i++) {
-      params[`projection${i}`] = oldParams[`projection${i + s}`]
+      params[`projection${i}`] =
+        i + s === 3 ? 'orthographic' : oldParams[`projection${i + s}`]
     }
     if (params.dimensions !== 3) {
       params.projection3 = 'perspective'

@@ -110,6 +110,10 @@ export const augment = (rt, vertex, fragment, type) => {
       projections.indexOf(rt[`projection${i}`]) - 1
     }\n`
   }
+  config += `#define CURVATURE ${rt.spaceType?.curvature || 0}\n`
+  if (rt.curve && rt.segments > 1) {
+    config += `#define SEGMENTS ${rt.segments}\n`
+  }
   config += `#define EASING ${easings.indexOf(easing)}\n`
   if (ambiance.opacity[type] < 1 && ambiance.transparency === 'oit') {
     config += `#define OIT\n`
@@ -474,19 +478,9 @@ export const mesh = (
       value: columnMajor(ident(rt.dimensions)),
     },
     {
-      name: 'curvature',
-      type: `1f`,
-      value: 0,
-    },
-    {
       name: 'zoom',
       type: '1f',
       value: 1,
-    },
-    {
-      name: 'segments',
-      type: '1f',
-      value: rt.curve ? rt.segments : 1,
     },
     {
       name: 'opacity',
@@ -512,7 +506,7 @@ export const mesh = (
           },
         ]
       : []),
-    ...range(4, rt.dimensions + 1, 1, true).map(i => ({
+    ...range(3, rt.dimensions + 1, 1, true).map(i => ({
       name: `fov${i}`,
       type: '1f',
       value: rt[`fov${i}`],

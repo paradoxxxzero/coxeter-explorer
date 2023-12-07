@@ -1,4 +1,4 @@
-import { defaultParams } from '../../statics'
+import { defaultParams, defaultProjection } from '../../statics'
 import { range } from '../../utils'
 import Space from '../components/Space'
 import { min } from '../math'
@@ -54,7 +54,7 @@ const polytope = (coxeterArgs, mirrors, stellationArgs, extra) => {
     ...Object.fromEntries(
       range(3, dimensions + 1).map(i => [
         `projection${i}`,
-        i === dimensions ? 'stereographic' : 'perspective',
+        defaultProjection(i, dimensions),
       ])
     ),
     ...(extra || {}),
@@ -271,6 +271,7 @@ export const presets = [
       curve: true,
       ambiance: 'neon',
       zoom: 4.2,
+      segments: 64,
     }),
   },
   {

@@ -164,7 +164,7 @@ export const getGeometry = (spaceType, centered) => {
   const eigens = spaceType.eigens
   const metric = spaceType.metric
 
-  if (centered === true) {
+  if (centered) {
     // Use cholesky LDL decomposition
     // J = Curvature tensor metric
     // G = L D L^T
@@ -241,25 +241,23 @@ export const getGeometry = (spaceType, centered) => {
   const eigenValues = eigens.values.slice()
   const eigenVectors = eigens.vectors.slice()
 
-  if (centered === false) {
-    // We want to align with the coxeter plane
-    // so we put the biggest eigenvalue first
-    // then the smallest positive eigenvalue
-    // then the rest as previously ordered
-    // The biggest is alread first
-    const smallest = min(...eigenValues.filter(v => v > 0))
-    const smallestIndex = eigenValues.indexOf(smallest)
+  // We want to align with the coxeter plane
+  // so we put the biggest eigenvalue first
+  // then the smallest positive eigenvalue
+  // then the rest as previously ordered
+  // The biggest is alread first
+  const smallest = min(...eigenValues.filter(v => v > 0))
+  const smallestIndex = eigenValues.indexOf(smallest)
 
-    ;[metric[smallestIndex][smallestIndex], metric[1][1]] = [
-      metric[1][1],
-      metric[smallestIndex][smallestIndex],
-    ]
+  ;[metric[smallestIndex][smallestIndex], metric[1][1]] = [
+    metric[1][1],
+    metric[smallestIndex][smallestIndex],
+  ]
 
-    eigenVectors.splice(1, 0, eigenVectors.splice(smallestIndex, 1)[0])
+  eigenVectors.splice(1, 0, eigenVectors.splice(smallestIndex, 1)[0])
 
-    eigenValues.splice(smallestIndex, 1)
-    eigenValues.splice(1, 0, smallest)
-  }
+  eigenValues.splice(smallestIndex, 1)
+  eigenValues.splice(1, 0, smallest)
 
   eigenValues.forEach((v, i) => {
     // For euclidean space, replace null eigenvalues with a zoom

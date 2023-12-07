@@ -7,15 +7,15 @@ const float ETA = PI / 2.;
 const float DT = .001;
 const float SCALING = .0005;
 const vec3 NOISE = vec3(.000003, -.000002, .000017);
+const float curvature = float(CURVATURE);
+const float NaN = intBitsToFloat(-1);
 
 #include dimensions
 
 // Global vertex uniforms
-uniform float segments;
 uniform mat4 viewProjection;
 uniform matN metric;
 uniform matN matrix;
-uniform float curvature;
 uniform float opacity;
 
 #if DIMENSIONS >= 4

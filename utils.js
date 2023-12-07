@@ -27,3 +27,10 @@ export const range = (start, end = null, step = 1, emptyIfReversed = false) => {
     return start + i * step
   })
 }
+
+export const arrayEquals = (a, b) => {
+  if (a.length !== b.length) return false
+  return a.every((v, i) =>
+    Array.isArray(v) ? arrayEquals(v, b[i]) : v === b[i]
+  )
+}

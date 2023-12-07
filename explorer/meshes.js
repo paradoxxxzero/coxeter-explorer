@@ -74,7 +74,6 @@ export default function getMeshes(rt) {
         const type = this.meshes[i]
         const mesh = this[type]
         if (!quick) {
-          mesh.uniforms.curvature.update(rt.spaceType.curvature)
           mesh.uniforms.metric.update(columnMajor(rt.spaceType.metric))
           mesh.uniforms.matrix.update(columnMajor(rt.matrix))
           for (let i = 4; i <= rt.dimensions; i++) {
@@ -82,9 +81,6 @@ export default function getMeshes(rt) {
               1 / tan((PI * rt[`fov${i}`] * 0.5) / 180)
             )
           }
-          mesh.uniforms.segments.update(
-            rt.spaceType.curvature && rt.curve ? rt.segments : 1
-          )
           if (type === 'vertex') {
             mesh.uniforms.thickness.update(rt.vertexThickness)
           } else if (type === 'edge') {

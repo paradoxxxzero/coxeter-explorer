@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './explorer/App.jsx'
 import './index.css'
 import { defaultParams, filterParams } from './statics.js'
+import { arrayEquals } from './utils.js'
 // import 'https://greggman.github.io/webgl-lint/webgl-lint.js'
 
 const parseParams = (def = null) => {
@@ -20,13 +21,6 @@ const parseParams = (def = null) => {
 }
 const syncParams = params => {
   window.history.pushState(null, null, '#' + btoa(JSON.stringify(params)))
-}
-
-const arrayEquals = (a, b) => {
-  if (a.length !== b.length) return false
-  return a.every((v, i) =>
-    Array.isArray(v) ? arrayEquals(v, b[i]) : v === b[i]
-  )
 }
 
 const AppWithHistory = () => {

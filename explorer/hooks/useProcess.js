@@ -30,18 +30,7 @@ const asyncProcess = async (runtime, running, setRuntime) => {
     setRuntime(runtime => {
       if (runtime.currentOrder !== order) {
         console.warn('Mismatched order, ignoring', runtime.currentOrder, order)
-        return {
-          ...runtime,
-          currentOrder: 0,
-          vertex: [],
-          edge: [],
-          face: [],
-          partial: [],
-          ranges: [],
-          renderError: null,
-          processing: true,
-          error: 'Mismatch Order',
-        }
+        return runtime
       }
       return {
         ...runtime,
@@ -145,6 +134,9 @@ export const useProcess = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
+      if (runtime.currentOrder === 0) {
+        return runtime
+      }
       if (runtime.order <= runtime.currentOrder) {
         return runtime
       }

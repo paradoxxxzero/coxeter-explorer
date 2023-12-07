@@ -5,10 +5,17 @@ import refreshTextures from '../textures'
 export const useRender = (runtime, setRuntime) => {
   useEffect(() => {
     setRuntime(runtime => {
+      updateCamera(runtime, runtime.zoom)
+      return runtime
+    })
+  }, [runtime.zoom, setRuntime])
+
+  useEffect(() => {
+    setRuntime(runtime => {
       updateCamera(runtime)
       return runtime
     })
-  }, [runtime.fov3, runtime.camera, runtime.zoom, setRuntime])
+  }, [runtime.fov3, runtime.camera, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => {
@@ -86,6 +93,8 @@ export const useRender = (runtime, setRuntime) => {
     runtime.ambiance,
     runtime.dimensions,
     runtime.easing,
+    runtime.curve,
+    runtime.segments,
     runtime.projection3,
     runtime.projection4,
     runtime.projection5,
@@ -93,7 +102,7 @@ export const useRender = (runtime, setRuntime) => {
     runtime.projection7,
     runtime.projection8,
     runtime.projection9,
-    runtime.spaceType, // For easing auto
+    runtime.spaceType,
     setRuntime,
   ])
 
@@ -126,10 +135,9 @@ export const useRender = (runtime, setRuntime) => {
     })
   }, [
     runtime.ambiance,
-    runtime.ambiance,
-    runtime.curve,
     runtime.dimensions,
     runtime.easing,
+    runtime.curve,
     runtime.edgeThickness,
     runtime.fov4,
     runtime.fov5,
@@ -146,8 +154,8 @@ export const useRender = (runtime, setRuntime) => {
     runtime.projection8,
     runtime.projection9,
     runtime.segments,
-    runtime.spaceType,
     runtime.vertexThickness,
+    runtime.spaceType,
     setRuntime,
   ])
 
