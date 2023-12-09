@@ -22,7 +22,13 @@ export const useRender = (runtime, setRuntime) => {
       runtime.meshes.updateGeometries(runtime)
       return runtime
     })
-  }, [runtime.spaceType, runtime.curve, runtime.segments, setRuntime])
+  }, [
+    runtime.spaceType,
+    runtime.curve,
+    runtime.segments,
+    runtime.detail,
+    setRuntime,
+  ])
 
   useEffect(() => {
     setRuntime(runtime => {
@@ -91,9 +97,10 @@ export const useRender = (runtime, setRuntime) => {
     })
   }, [
     runtime.ambiance,
+    runtime.curve,
     runtime.dimensions,
     runtime.easing,
-    runtime.curve,
+    runtime.detail,
     runtime.segments,
     runtime.projection3,
     runtime.projection4,
@@ -135,9 +142,9 @@ export const useRender = (runtime, setRuntime) => {
     })
   }, [
     runtime.ambiance,
+    runtime.curve,
     runtime.dimensions,
     runtime.easing,
-    runtime.curve,
     runtime.edgeThickness,
     runtime.fov4,
     runtime.fov5,
@@ -145,6 +152,7 @@ export const useRender = (runtime, setRuntime) => {
     runtime.fov7,
     runtime.fov8,
     runtime.fov9,
+    runtime.detail,
     runtime.matrix,
     runtime.projection3,
     runtime.projection4,
@@ -194,6 +202,7 @@ export const useRender = (runtime, setRuntime) => {
     runtime.fov9,
     // runtime.gl,
     runtime.grouper,
+    runtime.detail,
     runtime.matrix,
     // runtime.meshes,
     // runtime.mirrors,

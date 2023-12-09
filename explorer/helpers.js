@@ -115,8 +115,12 @@ export const augment = (rt, vertex, fragment, type) => {
     config += `#define SEGMENTS ${rt.segments}\n`
   }
   config += `#define EASING ${easings.indexOf(easing)}\n`
-  if (ambiance.opacity[type] < 1 && ambiance.transparency === 'oit') {
-    config += `#define OIT\n`
+  if (ambiance.opacity[type] < 1) {
+    config += `#define TRANSPARENT\n`
+
+    if (ambiance.transparency === 'oit') {
+      config += `#define OIT\n`
+    }
   }
   if (ambiance.gouraud[type]) {
     config += `#define GOURAUD\n`
@@ -455,7 +459,7 @@ export const mesh = (
   varying = ['position']
 ) => {
   const { gl } = rt
-  const geometry = geometryFunc(rt.curve ? rt.segments : 1)
+  const geometry = geometryFunc(rt.curve ? rt.segments : 1, rt.detail)
   const uniforms = rt => [
     {
       name: 'viewProjection',
@@ -562,7 +566,8 @@ export const mesh = (
     },
     updateGeometry(rt) {
       const geometry = geometryFunc(
-        rt.spaceType.curvature && rt.curve ? rt.segments : 1
+        rt.spaceType.curvature && rt.curve ? rt.segments : 1,
+        rt.detail
       )
       this.indices.update(new Uint16Array(geometry.indices))
       this.attributes.vertex.extend(3, new Float32Array(geometry.vertices))

@@ -1,7 +1,7 @@
 import { ambiances } from '../statics'
 import { sphere, tri, tube } from './geometries'
 import { mesh } from './helpers'
-import { PI, tan } from './math'
+import { PI, cbrt, floor, sqrt, tan } from './math'
 import { columnMajor } from './math/matrix'
 import { isDual, isHoloSnub, isSnub } from './mirrors'
 import { dual, holosnub, snub } from './operator'
@@ -14,9 +14,33 @@ import fragmentVertex from './shaders/vertex/fragment.glsl?raw'
 import vertexVertex from './shaders/vertex/vertex.glsl?raw'
 
 const geometries = {
-  vertex: () => sphere(),
-  edge: segments => tube({ segments }),
-  face: segments => tri({ segments }),
+  vertex: (_, detail) =>
+    sphere(
+      {
+        low: { widthSegments: 16, segments: 8 },
+        medium: { widthSegments: 32, segments: 16 },
+        high: { widthSegments: 64, segments: 32 },
+        ultra: { widthSegments: 128, segments: 64 },
+      }[detail || 'medium']
+    ),
+  edge: (segments, detail) =>
+    tube(
+      {
+        low: { segments, radialSegments: 4 },
+        medium: { segments, radialSegments: 8 },
+        high: { segments, radialSegments: 16 },
+        ultra: { segments, radialSegments: 32 },
+      }[detail || 'medium']
+    ),
+  face: (segments, detail) =>
+    tri(
+      {
+        low: { segments: ~~cbrt(segments) },
+        medium: { segments: ~~sqrt(segments) },
+        high: { segments },
+        ultra: { segments: 3 * segments },
+      }[detail || 'medium']
+    ),
 }
 
 export default function getMeshes(rt) {

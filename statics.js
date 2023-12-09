@@ -57,7 +57,9 @@ export const lightings = [
   'toon',
   'oren-nayar',
   'fresnel',
+  'reverse',
 ]
+export const details = ['low', 'medium', 'high', 'ultra']
 const catpuccin = [
   [10 / 360, 0.56, 0.91],
   [0 / 360, 0.59, 0.88],
@@ -212,6 +214,16 @@ export const ambiances = Object.fromEntries(
         edge: 1,
         face: 0.1,
       },
+      ambient: {
+        vertex: 0.2,
+        edge: 0.4,
+        face: 0.2,
+      },
+      shininess: {
+        vertex: 32,
+        edge: 256,
+        face: 32,
+      },
 
       transparency: 'oit',
       color: ({ word }) => hsl((word.length * 0.03) % 1, 1, 0.8),
@@ -308,6 +320,27 @@ export const ambiances = Object.fromEntries(
 
       color: ({ word }) => hsl((word.length * 0.03) % 1, 0.75, 0.7),
     },
+    monochrome: {
+      background: [0.12, 0.12, 0.12, 1],
+      lighting: {
+        vertex: 'reverse',
+        edge: 'reverse',
+        face: 'reverse',
+      },
+      opacity: {
+        vertex: 1,
+        edge: 1,
+        face: 0.1,
+      },
+      ambient: {
+        vertex: 0,
+        edge: 0,
+        face: 0,
+      },
+
+      transparency: 'oit',
+      color: () => [1, 1, 1],
+    },
     plain: {
       extended: true,
       background: [1, 1, 1, 1],
@@ -383,6 +416,7 @@ export const defaultParams = {
 
   order: 10,
   curve: true,
+  detail: 'medium',
   segments: 16,
   easing: 'linear',
   showVertices: false,

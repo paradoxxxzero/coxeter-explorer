@@ -317,6 +317,29 @@ export const presets = [
   {
     name: (
       <>
+        <Space type="hyperbolic" dimensions={4} /> Inverted honeycomb
+      </>
+    ),
+    params: honeycomb(
+      [
+        [1, 2, 3, 2],
+        [2, 1, 3, 2],
+        [3, 3, 1, 5],
+        [2, 2, 5, 1],
+      ],
+      [1, 0, 0, 0],
+      null,
+      {
+        projection4: 'inverted',
+        ambiance: 'disco',
+        zoom: 3,
+        segments: 32,
+      }
+    ),
+  },
+  {
+    name: (
+      <>
         <Space type="finite" dimensions={8} /> E6 (1<sub>22</sub>)
       </>
     ),

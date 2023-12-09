@@ -15,6 +15,7 @@ export const {
   max,
   round,
   sqrt,
+  cbrt,
   sign,
   ceil,
   floor,

@@ -3,6 +3,7 @@ import {
   ambiances,
   defaultParams,
   defaultProjection,
+  details,
   easings,
   groupers,
   projections,
@@ -420,6 +421,22 @@ export default function UI({
               togglerName="msaa"
               onChange={handleChange}
             />
+            <div className="projection">
+              <label className="number-label">
+                <span className="number-label">Detail</span>
+                <select
+                  name="detail"
+                  value={params.detail}
+                  onChange={handleRawChange}
+                >
+                  {details.map(a => (
+                    <option key={a} value={a}>
+                      {a.replace(/_/g, ' ').replace(/./, c => c.toUpperCase())}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
             {showUI === 'full' && (
               <Number
                 name="subsampling"
