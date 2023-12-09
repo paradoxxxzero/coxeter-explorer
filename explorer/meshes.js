@@ -1,7 +1,7 @@
 import { ambiances } from '../statics'
 import { sphere, tri, tube } from './geometries'
 import { mesh } from './helpers'
-import { PI, cbrt, floor, sqrt, tan } from './math'
+import { PI, cbrt, sqrt, tan } from './math'
 import { columnMajor } from './math/matrix'
 import { isDual, isHoloSnub, isSnub } from './mirrors'
 import { dual, holosnub, snub } from './operator'
@@ -110,15 +110,10 @@ export default function getMeshes(rt) {
           } else if (type === 'edge') {
             mesh.uniforms.thickness.update(rt.edgeThickness)
           }
-          mesh.uniforms.opacity.update(ambiances[rt.ambiance].opacity[type])
-          mesh.uniforms.ambient.update(ambiances[rt.ambiance].ambient[type])
-          mesh.uniforms.shininess.update(ambiances[rt.ambiance].shininess[type])
         }
         mesh.uniforms.viewProjection.update(rt.camera.viewProjection)
         mesh.uniforms.zoom.update(quick ? zoom : rt.zoom)
-        if (ambiances[rt.ambiance].lighting) {
-          mesh.uniforms.eye.update(rt.camera.eye)
-        }
+        mesh.uniforms.eye.update(rt.camera.eye)
       }
     },
     plotType(rt, type, range, vertex, objects = null) {

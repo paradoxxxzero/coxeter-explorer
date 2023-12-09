@@ -1,15 +1,21 @@
-import { ambiances, easings, lightings, projections } from '../statics'
-import ease from './shaders/includes/ease.glsl?raw'
-import globals from './shaders/includes/globals.glsl?raw'
-import dimensions from './shaders/includes/dimensions.glsl?raw'
-import helpers from './shaders/includes/helpers.glsl?raw'
-import project from './shaders/includes/project.glsl?raw'
-import complex from './shaders/includes/complex.glsl?raw'
-import lighting from './shaders/includes/lighting.glsl?raw'
-import { min } from './math'
+import {
+  ambiances,
+  diffuseLight,
+  easings,
+  projections,
+  specularLight,
+} from '../statics'
 import { range } from '../utils'
+import { min } from './math'
 import { columnMajor, ident } from './math/matrix'
 import { render } from './render'
+import complex from './shaders/includes/complex.glsl?raw'
+import dimensions from './shaders/includes/dimensions.glsl?raw'
+import ease from './shaders/includes/ease.glsl?raw'
+import globals from './shaders/includes/globals.glsl?raw'
+import helpers from './shaders/includes/helpers.glsl?raw'
+import lighting from './shaders/includes/lighting.glsl?raw'
+import project from './shaders/includes/project.glsl?raw'
 
 export const includes = {
   globals,
@@ -100,9 +106,34 @@ const preprocess = (source, dimensions) =>
 export const augment = (rt, vertex, fragment, type) => {
   const ambiance = ambiances[rt.ambiance]
   let config = ''
-  if (ambiance.lighting[type]) {
-    config += `#define LIGHTING ${lightings.indexOf(ambiance.lighting[type])}\n`
+  const float = v => (v.toString().includes('.') ? v : `${v}.`)
+  const ambienceDefines = {
+    diffuse: v => diffuseLight.indexOf(v),
+    specular: v => specularLight.indexOf(v),
+    ambient: v => float(v),
+    shininess: v => float(v),
+    roughness: v => float(v),
+    opacity: v => float(v),
+    gouraud: v => '',
   }
+  Object.entries(ambienceDefines).forEach(([key, getter]) => {
+    const value =
+      Object.keys(ambiance).includes(type) &&
+      Object.keys(ambiance[type]).includes(key)
+        ? ambiance[type][key]
+        : ambiance[key]
+    if (value !== false) {
+      config += `#define ${key.toUpperCase()} ${getter(value)}\n`
+    }
+    if (key === 'opacity' && value < 1) {
+      ambiance.transparent[type] = true
+      config += `#define TRANSPARENT\n`
+      if (ambiance.transparency === 'oit') {
+        config += `#define OIT\n`
+      }
+    }
+  })
+
   const easing = rt.easing
   config += `#define DIMENSIONS ${rt.dimensions}\n`
   for (let i = 3; i <= rt.dimensions; i++) {
@@ -115,16 +146,7 @@ export const augment = (rt, vertex, fragment, type) => {
     config += `#define SEGMENTS ${rt.segments}\n`
   }
   config += `#define EASING ${easings.indexOf(easing)}\n`
-  if (ambiance.opacity[type] < 1) {
-    config += `#define TRANSPARENT\n`
 
-    if (ambiance.transparency === 'oit') {
-      config += `#define OIT\n`
-    }
-  }
-  if (ambiance.gouraud[type]) {
-    config += `#define GOURAUD\n`
-  }
   Object.entries({ ...includes, config }).forEach(([key, value]) => {
     vertex = vertex.replace(`#include ${key}`, value)
     fragment = fragment.replace(`#include ${key}`, value)
@@ -485,21 +507,6 @@ export const mesh = (
       name: 'zoom',
       type: '1f',
       value: 1,
-    },
-    {
-      name: 'opacity',
-      type: '1f',
-      value: 0,
-    },
-    {
-      name: 'ambient',
-      type: '1f',
-      value: 0,
-    },
-    {
-      name: 'shininess',
-      type: '1f',
-      value: 0,
     },
     ...(['vertex', 'edge'].includes(type)
       ? [

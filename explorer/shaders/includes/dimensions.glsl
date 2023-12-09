@@ -1,3 +1,24 @@
+// Global vertex uniforms
+
+#if DIMENSIONS >= 4
+uniform float fov4;
+#endif
+#if DIMENSIONS >= 5
+uniform float fov5;
+#endif
+#if DIMENSIONS >= 6
+uniform float fov6;
+#endif
+#if DIMENSIONS >= 7
+uniform float fov7;
+#endif
+#if DIMENSIONS >= 8
+uniform float fov8;
+#endif
+#if DIMENSIONS >= 9
+uniform float fov9;
+#endif
+uniform float zoom;
 
 // Structures for >4 vec and mat
 #if DIMENSIONS >= 5

@@ -184,21 +184,21 @@ export const render = rt => {
   gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.base)
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-  if (ambiance.opacity.vertex === 1) {
+  if (!ambiance.transparent.vertex) {
     rt.meshes.vertex.render(rt)
   }
-  if (ambiance.opacity.edge === 1) {
+  if (!ambiance.transparent.edge) {
     rt.meshes.edge.render(rt)
   }
-  if (ambiance.opacity.face === 1) {
+  if (!ambiance.transparent.face) {
     rt.meshes.face.render(rt)
   }
 
   // TRANSPARENT
   if (
-    (rt.showVertices && ambiance.opacity.vertex < 1) ||
-    (rt.showEdges && ambiance.opacity.edge < 1) ||
-    (rt.showFaces && ambiance.opacity.face < 1)
+    (rt.showVertices && ambiance.transparent.vertex) ||
+    (rt.showEdges && ambiance.transparent.edge) ||
+    (rt.showFaces && ambiance.transparent.face)
   ) {
     if (ambiance.transparency === 'oit') {
       if (msaa) {
@@ -225,13 +225,13 @@ export const render = rt => {
       gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.oit)
       gl.clear(gl.COLOR_BUFFER_BIT)
 
-      if (ambiance.opacity.vertex < 1) {
+      if (ambiance.transparent.vertex) {
         rt.meshes.vertex.render(rt)
       }
-      if (ambiance.opacity.edge < 1) {
+      if (ambiance.transparent.edge) {
         rt.meshes.edge.render(rt)
       }
-      if (ambiance.opacity.face < 1) {
+      if (ambiance.transparent.face) {
         rt.meshes.face.render(rt)
       }
 
@@ -255,13 +255,13 @@ export const render = rt => {
       ambiance.culling && gl.disable(gl.CULL_FACE)
       gl.depthMask(false)
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-      if (ambiance.opacity.vertex < 1) {
+      if (ambiance.transparent.vertex) {
         rt.meshes.vertex.render(rt)
       }
-      if (ambiance.opacity.edge < 1) {
+      if (ambiance.transparent.edge) {
         rt.meshes.edge.render(rt)
       }
-      if (ambiance.opacity.face < 1) {
+      if (ambiance.transparent.face) {
         rt.meshes.face.render(rt)
       }
     }

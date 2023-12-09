@@ -1,9 +1,10 @@
-#version 300 es
-precision highp float;
-
 #include globals
+#include dimensions
 
 uniform float thickness;
+uniform mat4 viewProjection;
+uniform matN metric;
+uniform matN matrix;
 
 in vec2 uv;
 in vec3 normal;
@@ -19,17 +20,20 @@ in vec4 position;
 in mat3 position;
 #endif
 
-#ifdef LIGHTING
+#if defined(DIFFUSE) || defined(SPECULAR)
 #ifdef GOURAUD
 #include lighting
-#else
+#endif
+
 out vec3 vPosition;
 out vec3 vNormal;
+#endif
 
-flat 
-#endif
-#endif
+#if defined(GOURAUD)
 out vec4 vColor;
+#else
+flat out vec3 vColor;
+#endif
 
 #include project
 
@@ -47,15 +51,12 @@ void main() {
 
   gl_Position = viewProject(proj);
 
-  #ifndef LIGHTING
-  vColor = vec4(color, opacity);
+  #if (defined(DIFFUSE) || defined(SPECULAR)) && defined(GOURAUD)
+  vColor = light(proj, norm, color);
   #else
+  vColor = color;
 
-  #ifdef GOURAUD
-  vColor = light(proj, norm, vec4(color, opacity));
-  #else 
-  vColor = vec4(color, opacity);
-
+  #if defined(DIFFUSE) || defined(SPECULAR)
   vPosition = proj;
   vNormal = norm;
   #endif

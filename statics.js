@@ -50,15 +50,21 @@ export const easings = [
   'inverse_quintic',
 ]
 export const groupers = ['toddcoxeter', 'knuthbendix', 'fundamental']
-export const lightings = [
+export const diffuseLight = [
   'lambert',
-  'phong',
-  'blinn-phong',
-  'toon',
   'oren-nayar',
+  'minnaert',
+  'cel',
   'fresnel',
   'reverse',
 ]
+export const specularLight = [
+  'phong',
+  'blinn-phong',
+  'cook-torrance',
+  'ward-anisotropic',
+]
+
 export const details = ['low', 'medium', 'high', 'ultra']
 const catpuccin = [
   [10 / 360, 0.56, 0.91],
@@ -86,31 +92,13 @@ export const defaultProjection = (dimension, dimensions) =>
 const defaults = {
   background: [0, 0, 0, 1],
   glow: false,
-  lighting: {
-    vertex: 'lambert',
-    edge: 'lambert',
-    face: 'lambert',
-  },
-  gouraud: {
-    vertex: false,
-    edge: false,
-    face: true,
-  },
-  opacity: {
-    vertex: 1,
-    edge: 1,
-    face: 0.2,
-  },
-  shininess: {
-    vertex: 32,
-    edge: 32,
-    face: 32,
-  },
-  ambient: {
-    vertex: 0.2,
-    edge: 0.2,
-    face: 0.2,
-  },
+  diffuse: 'lambert',
+  specular: false,
+  shininess: 32,
+  opacity: 1,
+  ambient: 0.2,
+  roughness: 0.85,
+  gouraud: false,
   transparency: 'oit',
   color: ({ word }) => hsl((word.length * 0.03) % 1, 0.75, 0.7),
 }
@@ -129,17 +117,10 @@ export const ambiances = Object.fromEntries(
         steps: 3,
         pow: 2,
       },
-      lighting: {
-        vertex: false,
-        edge: false,
-        face: false,
+      diffuse: false,
+      face: {
+        opacity: 0.025,
       },
-      opacity: {
-        vertex: 1,
-        edge: 1,
-        face: 0.025,
-      },
-
       transparency: 'blend',
       color: ({ word }) => hsl((word.length * 0.17) % 1, 0.5, 0.6),
     },
@@ -155,17 +136,12 @@ export const ambiances = Object.fromEntries(
         steps: 4,
         pow: 2,
       },
-      lighting: {
-        vertex: 'lambert',
-        edge: 'lambert',
-        face: 'fresnel',
-      },
-      opacity: {
-        vertex: 1,
-        edge: 1,
-        face: 0.025,
-      },
 
+      face: {
+        gouraud: true,
+        diffuse: 'fresnel',
+        opacity: 0.025,
+      },
       transparency: 'blend',
       color: ({ word }) => hsl(...catpuccin[word.length % catpuccin.length]),
     },
@@ -181,15 +157,9 @@ export const ambiances = Object.fromEntries(
         steps: 3,
         pow: 2,
       },
-      lighting: {
-        vertex: false,
-        edge: false,
-        face: false,
-      },
-      opacity: {
-        vertex: 1,
-        edge: 1,
-        face: 0.15,
+      diffuse: false,
+      face: {
+        opacity: 0.015,
       },
 
       afterImage: 0.7,
@@ -199,50 +169,50 @@ export const ambiances = Object.fromEntries(
     },
     colorful: {
       background: [1, 1, 1, 1],
-      lighting: {
-        vertex: 'blinn-phong',
-        edge: 'blinn-phong',
-        face: 'fresnel',
-      },
-      gouraud: {
-        vertex: false,
-        edge: false,
-        face: true,
-      },
-      opacity: {
-        vertex: 1,
-        edge: 1,
-        face: 0.1,
-      },
-      ambient: {
-        vertex: 0.2,
-        edge: 0.4,
-        face: 0.2,
-      },
-      shininess: {
-        vertex: 32,
-        edge: 256,
-        face: 32,
+      diffuse: 'oren-nayar',
+      specular: 'cook-torrance',
+      shininess: 32,
+      opacity: 1,
+      ambient: 0.2,
+      gouraud: false,
+      face: {
+        gouraud: true,
+        opacity: 0.1,
+        diffuse: 'fresnel',
+        specular: false,
       },
 
       transparency: 'oit',
       color: ({ word }) => hsl((word.length * 0.03) % 1, 1, 0.8),
       // culling: true,
     },
-    shape: {
-      background: [1, 1, 1, 1],
-      lighting: {
-        vertex: 'lambert',
-        edge: 'lambert',
-        face: 'fresnel',
-      },
-      opacity: {
-        vertex: 1,
-        edge: 1,
-        face: 0.2,
+    shiny: {
+      background: [0, 0, 0, 1],
+      diffuse: 'lambert',
+      specular: 'blinn-phong',
+      shininess: 32,
+      opacity: 1,
+      ambient: 0.2,
+      gouraud: false,
+      face: {
+        gouraud: true,
+        opacity: 0.1,
+        diffuse: 'fresnel',
+        specular: false,
       },
 
       transparency: 'oit',
+      color: ({ word }) => hsl(-(word.length * 0.07) % 1, 1, 0.8),
+      // culling: true,
+    },
+    shape: {
+      background: [1, 1, 1, 1],
+      transparency: 'oit',
+      face: {
+        gouraud: true,
+        opacity: 0.1,
+        diffuse: 'fresnel',
+      },
       color: ({ word, len, vertices }, type) =>
         type === 'face'
           ? hsl((((len || vertices.length) - 2) * 0.21) % 1, 1, 0.8)
@@ -250,20 +220,10 @@ export const ambiances = Object.fromEntries(
     },
     reflection: {
       background: [1, 1, 1, 1],
-      lighting: {
-        vertex: 'toon',
-        edge: 'toon',
-        face: 'toon',
-      },
-      opacity: {
-        vertex: 1,
-        edge: 1,
-        face: 0.6,
-      },
-      gouraud: {
-        vertex: false,
-        edge: false,
-        face: false,
+      diffuse: 'cel',
+      face: {
+        opacity: 0.6,
+        gouraud: false,
       },
       transparency: 'blend',
       color: ({ word }, type, { dimensions, showFaces }) => {
@@ -273,15 +233,8 @@ export const ambiances = Object.fromEntries(
     },
     harlequin: {
       background: [...hsl(240 / 360, 0.23, 0.09), 1],
-      lighting: {
-        vertex: 'lambert',
-        edge: 'lambert',
-        face: 'lambert',
-      },
-      opacity: {
-        vertex: 1,
-        edge: 1,
-        face: 0.6,
+      face: {
+        opacity: 0.6,
       },
 
       transparency: 'oit',
@@ -302,40 +255,14 @@ export const ambiances = Object.fromEntries(
     },
     pure: {
       background: [0, 0, 0, 1],
-      lighting: {
-        vertex: 'lambert',
-        edge: 'lambert',
-        face: 'lambert',
-      },
-      opacity: {
-        vertex: 1,
-        edge: 1,
-        face: 1,
-      },
-      gouraud: {
-        vertex: false,
-        edge: false,
-        face: false,
-      },
-
       color: ({ word }) => hsl((word.length * 0.03) % 1, 0.75, 0.7),
     },
     monochrome: {
       background: [0.12, 0.12, 0.12, 1],
-      lighting: {
-        vertex: 'reverse',
-        edge: 'reverse',
-        face: 'reverse',
-      },
-      opacity: {
-        vertex: 1,
-        edge: 1,
-        face: 0.1,
-      },
-      ambient: {
-        vertex: 0,
-        edge: 0,
-        face: 0,
+      diffuse: 'reverse',
+      ambient: 0,
+      face: {
+        opacity: 0.1,
       },
 
       transparency: 'oit',
@@ -345,16 +272,7 @@ export const ambiances = Object.fromEntries(
       extended: true,
       background: [1, 1, 1, 1],
       glow: false,
-      lighting: {
-        vertex: false,
-        edge: false,
-        face: false,
-      },
-      opacity: {
-        vertex: 1,
-        edge: 1,
-        face: 1,
-      },
+      diffuse: false,
 
       color: ({ word }, type, { dimensions, showFaces }) => {
         return hsl(
@@ -367,16 +285,7 @@ export const ambiances = Object.fromEntries(
     plainblack: {
       extended: true,
       background: [1, 1, 1, 1],
-      lighting: {
-        vertex: false,
-        edge: false,
-        face: false,
-      },
-      opacity: {
-        vertex: 1,
-        edge: 1,
-        face: 1,
-      },
+      diffuse: false,
       color: ({ word }, type) =>
         type === 'face'
           ? new Array(3).fill(1 - pow(0.9, word.length + 1))
@@ -387,6 +296,7 @@ export const ambiances = Object.fromEntries(
     {
       ...defaults,
       ...ambiance,
+      transparent: {},
     },
   ])
 )
@@ -416,7 +326,7 @@ export const defaultParams = {
 
   order: 10,
   curve: true,
-  detail: 'medium',
+  detail: 'high',
   segments: 16,
   easing: 'linear',
   showVertices: false,

@@ -1,37 +1,36 @@
-#version 300 es
-precision highp float;
-
-#include config
+#include globals
 
 #ifdef OIT
 layout(location = 0) out vec4 accumColor;
 layout(location = 1) out float accumAlpha;
 
 float weight(float z, float a) {
-  float b = min(1.0f, a * 10.0f) + 0.01f;
-  float c = 1.0f - z * 0.9f;
-  return clamp(b * b * b * 1e8f * c * c * c, 1e-2f, 3e3f);
+  float b = min(1.0, a * 10.0) + 0.01;
+  float c = 1.0 - z * 0.9;
+  return clamp(b * b * b * 1e8 * c * c * c, 1e-2, 3e3);
 }
 
 #else
 out vec4 outColor;
 #endif
 
-#ifdef LIGHTING
-#ifndef GOURAUD
+#if (defined(DIFFUSE) || defined(SPECULAR)) && !defined(GOURAUD)
 #include lighting
 in vec3 vNormal;
 in vec3 vPosition;
-
-flat
 #endif
-#endif 
+
+#if defined(GOURAUD)
 in vec4 vColor;
+#else
+flat in vec3 vColor;
+#endif
 
 void main() {
-
-  #if !defined(LIGHTING) || defined(GOURAUD)
+  #ifdef GOURAUD
   vec4 color = vColor;
+  #elif !defined(DIFFUSE) && !defined(SPECULAR)
+  vec4 color = vec4(vColor, OPACITY);
   #else
   vec4 color = light(vPosition, vNormal, vColor);
   #endif
