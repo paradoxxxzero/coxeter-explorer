@@ -4,7 +4,7 @@ const float shininess = SHININESS;
 const float roughness = ROUGHNESS;
 const float opacity = OPACITY;
 
-float getDiffuse(in vec3 normal, in vec3 lightDirection, in vec3 eyeDirection, in vec4 color) {
+float getDiffuse(in vec3 normal, in vec3 lightDirection, in vec3 eyeDirection, inout vec4 color) {
   #ifdef DIFFUSE
   // Diffuse
   #if DIFFUSE == 0
