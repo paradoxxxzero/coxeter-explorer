@@ -89,11 +89,12 @@ float getSpecular(in vec3 normal, in vec3 lightDirection, in vec3 eyeDirection, 
   return 0.;
 }
 
-vec4 light(vec3 position, vec3 normal, vec3 rgb) {
-  #if !defined(DIFFUSE) && !defined(SPECULAR)
-  return vec4(rgb, opacity);
-  #else 
+vec4 light(vec3 position, vec3 normal, vec3 rgb, vec2 uv) {
+  #if SHADING == 0
   vec4 color = vec4(rgb, opacity);
+  #if !defined(DIFFUSE) && !defined(SPECULAR)
+  return color;
+  #else 
   float diffuse = 0.;
   float specular = 0.;
 
@@ -101,9 +102,20 @@ vec4 light(vec3 position, vec3 normal, vec3 rgb) {
   eyeDirection = normalize(eyeDirection);
   vec3 lightDirection = eyeDirection;
 
+  // ADS Ambient, Diffuse, Specular
   diffuse = getDiffuse(normal, lightDirection, eyeDirection, color);
   specular = getSpecular(normal, lightDirection, eyeDirection, color);
 
   return vec4((ambient + diffuse + specular) * color.rgb, color.a);
+  #endif
+  #elif SHADING == 1
+  // Normal
+  return vec4(normal * .5 + .5, opacity);
+  #elif SHADING == 2
+  // Position
+  return vec4(position * .5 + .5, opacity);
+  #elif SHADING == 3
+  // Uvs
+  return vec4(uv, .5, opacity);
   #endif
 }

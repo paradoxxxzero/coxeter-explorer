@@ -24,30 +24,16 @@ in mat3 position;
 in mat3 target;
 #endif
 
-#if defined(DIFFUSE) || defined(SPECULAR)
-#ifdef GOURAUD
-#include lighting
-#endif
-
-out vec3 vPosition;
-out vec3 vNormal;
-#endif
-
-#if defined(GOURAUD)
-out vec4 vColor;
-#else
-flat out vec3 vColor;
-#endif
-
+#include vertexouthead
 #include project
 
 void main() {
-  vecN iPosition = multiplyMatrix(matrix, adapt(position));
-  vecN iTarget = multiplyMatrix(matrix, adapt(target));
+  vecN positionN = multiplyMatrix(matrix, adapt(position));
+  vecN targetN = multiplyMatrix(matrix, adapt(target));
 
   float t = ease(uv.y);
-  vecN pos = mix(iPosition, iTarget, t);
-  vecN next = mix(iPosition, iTarget, t + DT);
+  vecN pos = mix(positionN, targetN, t);
+  vecN next = mix(positionN, targetN, t + DT);
   // Position segments on hypersurface
 
   #if defined(SEGMENTS) && CURVATURE != 0
@@ -62,10 +48,10 @@ void main() {
   vec3 norm = cross(nextProj, proj);
 
   // // Find a stable norm for the whole tube
-  // vecN mid = mix(iPosition, iTarget, .5f);
+  // vecN mid = mix(positionN, targetN, .5f);
 
-  // vec3 start = xproject(iPosition);
-  // vec3 end = xproject(iTarget);
+  // vec3 start = xproject(positionN);
+  // vec3 end = xproject(targetN);
   // vec3 middle = xproject(xnormalize(mid));
   // vec3 norm = cross(end - start, middle - start);
 
@@ -80,17 +66,5 @@ void main() {
   norm = normalize(norm * cos(r) + cross(tangent, norm) * sin(r));
 
   proj = inflate(proj, pos, norm, thickness);
-
-  gl_Position = viewProject(proj);
-
-  #if (defined(DIFFUSE) || defined(SPECULAR)) && defined(GOURAUD)
-  vColor = light(proj, norm, color);
-  #else
-  vColor = color;
-
-  #if defined(DIFFUSE) || defined(SPECULAR)
-  vPosition = proj;
-  vNormal = norm;
-  #endif
-  #endif
+  #include vertexout
 }

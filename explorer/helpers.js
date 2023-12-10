@@ -3,6 +3,7 @@ import {
   diffuseLight,
   easings,
   projections,
+  shadings,
   specularLight,
 } from '../statics'
 import { range } from '../utils'
@@ -16,6 +17,9 @@ import globals from './shaders/includes/globals.glsl?raw'
 import helpers from './shaders/includes/helpers.glsl?raw'
 import lighting from './shaders/includes/lighting.glsl?raw'
 import project from './shaders/includes/project.glsl?raw'
+import fragment from './shaders/includes/fragment.glsl?raw'
+import vertexout from './shaders/includes/vertexout.glsl?raw'
+import vertexouthead from './shaders/includes/vertexouthead.glsl?raw'
 
 export const includes = {
   globals,
@@ -24,7 +28,10 @@ export const includes = {
   helpers,
   complex,
   ease,
+  fragment,
+  vertexouthead,
   lighting,
+  vertexout,
 }
 
 export const hueToRgb = (p, q, t) => {
@@ -108,6 +115,7 @@ export const augment = (rt, vertex, fragment, type) => {
   let config = ''
   const float = v => (v.toString().includes('.') ? v : `${v}.`)
   const ambienceDefines = {
+    shading: v => shadings.indexOf(v),
     diffuse: v => diffuseLight.indexOf(v),
     specular: v => specularLight.indexOf(v),
     ambient: v => float(v),
@@ -703,5 +711,17 @@ if (import.meta.hot) {
   import.meta.hot.accept(
     './shaders/includes/complex.glsl?raw',
     updateIncludeShader('complex')
+  )
+  import.meta.hot.accept(
+    './shaders/includes/fragment.glsl?raw',
+    updateIncludeShader('fragment')
+  )
+  import.meta.hot.accept(
+    './shaders/includes/vertexout.glsl?raw',
+    updateIncludeShader('vertexout')
+  )
+  import.meta.hot.accept(
+    './shaders/includes/vertexouthead.glsl?raw',
+    updateIncludeShader('vertexouthead')
   )
 }

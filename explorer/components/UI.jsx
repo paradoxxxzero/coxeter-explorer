@@ -239,6 +239,7 @@ export default function UI({
                 axis={1}
               />
             </button>
+
             <div className="subcontrols">
               <button className="button" onClick={handleLock}>
                 {rotations.lock ? lockIcon : unlockIcon}
@@ -254,38 +255,43 @@ export default function UI({
                   ? dampedRotationIcon
                   : '?'}
               </button>
-              <button
-                className="button"
-                onClick={handleCenter}
-                title="Center View"
-              >
-                {centerViewIcon}
-              </button>
-              <button
-                className="button"
-                onClick={handleCoxeter}
-                title="Coxeter View"
-              >
-                {coxeterPlaneIcon}
-              </button>
-              {showProjectionButtons.square && (
-                <button
-                  className="button"
-                  onClick={handleOrtho}
-                  title="Orthographic"
-                >
-                  {squareIcon}
-                </button>
-              )}
-              {showProjectionButtons.cube && (
-                <button
-                  className="button"
-                  onClick={handleStereo}
-                  title="Stereographic"
-                >
-                  {cubeIcon}
-                </button>
-              )}
+
+              {['advanced', 'full'].includes(showUI) ? (
+                <>
+                  <button
+                    className="button"
+                    onClick={handleCenter}
+                    title="Center View"
+                  >
+                    {centerViewIcon}
+                  </button>
+                  <button
+                    className="button"
+                    onClick={handleCoxeter}
+                    title="Coxeter View"
+                  >
+                    {coxeterPlaneIcon}
+                  </button>
+                  {showProjectionButtons.square && (
+                    <button
+                      className="button"
+                      onClick={handleOrtho}
+                      title="Orthographic"
+                    >
+                      {squareIcon}
+                    </button>
+                  )}
+                  {showProjectionButtons.cube && (
+                    <button
+                      className="button"
+                      onClick={handleStereo}
+                      title="Stereographic"
+                    >
+                      {cubeIcon}
+                    </button>
+                  )}
+                </>
+              ) : null}
             </div>
           </aside>
         ) : null}

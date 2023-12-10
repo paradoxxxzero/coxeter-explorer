@@ -50,6 +50,7 @@ export const easings = [
   'inverse_quintic',
 ]
 export const groupers = ['toddcoxeter', 'knuthbendix', 'fundamental']
+export const shadings = ['ads', 'normal', 'position', 'uv']
 export const diffuseLight = [
   'lambert',
   'oren-nayar',
@@ -92,6 +93,7 @@ export const defaultProjection = (dimension, dimensions) =>
 const defaults = {
   background: [0, 0, 0, 1],
   glow: false,
+  shading: 'ads',
   diffuse: 'lambert',
   specular: false,
   shininess: 32,
@@ -117,7 +119,7 @@ export const ambiances = Object.fromEntries(
         steps: 3,
         pow: 2,
       },
-      diffuse: false,
+      shading: false,
       face: {
         opacity: 0.025,
       },
@@ -157,7 +159,7 @@ export const ambiances = Object.fromEntries(
         steps: 3,
         pow: 2,
       },
-      diffuse: false,
+      shading: false,
       face: {
         opacity: 0.015,
       },
@@ -272,7 +274,7 @@ export const ambiances = Object.fromEntries(
       extended: true,
       background: [1, 1, 1, 1],
       glow: false,
-      diffuse: false,
+      shading: false,
 
       color: ({ word }, type, { dimensions, showFaces }) => {
         return hsl(
@@ -285,11 +287,23 @@ export const ambiances = Object.fromEntries(
     plainblack: {
       extended: true,
       background: [1, 1, 1, 1],
-      diffuse: false,
+      shading: false,
       color: ({ word }, type) =>
         type === 'face'
           ? new Array(3).fill(1 - pow(0.9, word.length + 1))
           : [0, 0, 0],
+    },
+    normals: {
+      extended: true,
+      background: [1, 1, 1, 1],
+      shading: 'normal',
+      color: type => [0, 0, 0],
+    },
+    uvs: {
+      extended: true,
+      background: [1, 1, 1, 1],
+      shading: 'uv',
+      color: type => [0, 0, 0],
     },
   }).map(([name, ambiance]) => [
     name,

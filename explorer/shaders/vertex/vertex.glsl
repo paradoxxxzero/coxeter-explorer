@@ -20,21 +20,7 @@ in vec4 position;
 in mat3 position;
 #endif
 
-#if defined(DIFFUSE) || defined(SPECULAR)
-#ifdef GOURAUD
-#include lighting
-#endif
-
-out vec3 vPosition;
-out vec3 vNormal;
-#endif
-
-#if defined(GOURAUD)
-out vec4 vColor;
-#else
-flat out vec3 vColor;
-#endif
-
+#include vertexouthead
 #include project
 
 void main() {
@@ -48,17 +34,5 @@ void main() {
   vec3 proj = xproject(pos);
   vec3 norm = normal;
   proj = inflate(proj, pos, normal, thickness);
-
-  gl_Position = viewProject(proj);
-
-  #if (defined(DIFFUSE) || defined(SPECULAR)) && defined(GOURAUD)
-  vColor = light(proj, norm, color);
-  #else
-  vColor = color;
-
-  #if defined(DIFFUSE) || defined(SPECULAR)
-  vPosition = proj;
-  vNormal = norm;
-  #endif
-  #endif
+  #include vertexout
 }
