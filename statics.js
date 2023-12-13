@@ -240,7 +240,7 @@ export const ambiances = Object.fromEntries(
       },
 
       transparency: 'oit',
-      color: ({ word, parity }, type, { dimensions, showFaces }) => {
+      color: ({ word, index }, type, { dimensions, showFaces }) => {
         const l = word
           .split('')
           .map(c => atoi(c))
@@ -248,7 +248,7 @@ export const ambiances = Object.fromEntries(
 
         const color = [...catpuccin[l % catpuccin.length]]
         if (type === 'face') {
-          if (parity) {
+          if (index % 2) {
             color[2] *= 0.5
           }
         }
@@ -258,6 +258,10 @@ export const ambiances = Object.fromEntries(
     pure: {
       background: [0, 0, 0, 1],
       color: ({ word }) => hsl((word.length * 0.03) % 1, 0.75, 0.7),
+    },
+    facets: {
+      background: [0, 0, 0, 1],
+      color: ({ word, index }) => hsl(((index || 0) * 0.13) % 1, 0.75, 0.7),
     },
     monochrome: {
       background: [0.12, 0.12, 0.12, 1],

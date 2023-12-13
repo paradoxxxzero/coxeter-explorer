@@ -1,11 +1,6 @@
 import { arrayEquals } from '../../utils'
 import { atoi } from '../math'
-import {
-  getEdgesCosetsParams,
-  getFacesCosetsParams,
-  getVerticesCosetsParams,
-  solve,
-} from '../math/coset'
+import { getShape, simpleSolve, solve } from '../math/coset'
 import { normalize, reflect } from '../math/hypermath'
 import { multiplyVector } from '../math/matrix'
 import { mirrorValue } from '../mirrors'
@@ -13,6 +8,7 @@ import { mirrorValue } from '../mirrors'
 let verticesParams = null
 let edgesParams = null
 let facesParams = null
+let volumesParams = null
 let current = null
 
 const initCosets = (dimensions, coxeter, stellation, mirrors) => {
@@ -48,29 +44,45 @@ const initCosets = (dimensions, coxeter, stellation, mirrors) => {
     lastDrawn: 0,
   })
 
-  verticesParams = {
-    ...getVerticesCosetsParams(dimensions, coxeter, stellation, mirrors),
-    ...defaultParams(),
+  const shape = getShape(dimensions, coxeter, stellation, mirrors)
+  verticesParams = null
+  edgesParams = []
+  facesParams = []
+  const visit = s => {
+    if (s.new) {
+      if (s['2-face']) {
+        facesParams.push({
+          gens: shape.gens,
+          rels: shape.rels,
+          subgens: s.subgens,
+          face: s['2-face'],
+          double: s.double,
+          ...defaultParams(),
+          toRetry: new Set(),
+        })
+      } else if (s['1-face']) {
+        edgesParams.push({
+          gens: shape.gens,
+          rels: shape.rels,
+          subgens: s.subgens,
+          edge: s['1-face'],
+          ...defaultParams(),
+        })
+      } else if (s['0-face']) {
+        verticesParams = {
+          gens: shape.gens,
+          rels: shape.rels,
+          subgens: s.subgens,
+          vertex: s['0-face'],
+          ...defaultParams(),
+        }
+      }
+    }
+    if (s.children) {
+      s.children.forEach(visit)
+    }
   }
-  edgesParams = getEdgesCosetsParams(
-    dimensions,
-    coxeter,
-    stellation,
-    mirrors
-  ).map(edgeParams => ({
-    ...edgeParams,
-    ...defaultParams(),
-  }))
-  facesParams = getFacesCosetsParams(
-    dimensions,
-    coxeter,
-    stellation,
-    mirrors
-  ).map(edgeParams => ({
-    ...edgeParams,
-    ...defaultParams(),
-    toRetry: new Set(),
-  }))
+  visit(shape)
 }
 
 const reflectWord = (state, word) => {
@@ -157,14 +169,15 @@ onmessage = ({
         solve(edgeParams)
       }
       // Get index of target vertex in base face
-      const target = reflectToVertex(edgeParams.target, 0)
+      const base = reflectToVertex(edgeParams.edge[0], 0)
+      const target = reflectToVertex(edgeParams.edge[1], 0)
       for (let j = edgeParams.lastDrawn; j < edgeParams.words.length; j++) {
         const word = edgeParams.words[j]
         if (word === undefined) {
           continue
         }
         // Get the origin vertex after reflections
-        const start = reflectToVertex(word, 0)
+        const start = reflectToVertex(word, base)
         // Get the target vertex after reflections
         const end = reflectToVertex(word, target)
 
@@ -183,6 +196,12 @@ onmessage = ({
 
     for (let i = 0; i < facesParams.length; i++) {
       const faceParams = facesParams[i]
+      if (faceParams.face.length === 1) {
+        faceParams.words = faceParams.face
+        faceParams.face = verticesParams.words
+        faceParams.double = mirrors.every(m => !!m)
+        faceParams.done = true
+      }
       if (!faceParams.done) {
         faceParams.limit =
           limit * (curvature > 0 ? 1 : curvature < 0 ? 1.5 : 2.5) // ???

@@ -37,32 +37,20 @@ void main() {
 
   vec2 t = ease(uv);
   vecN pos = trix(centerN, positionN, targetN, t);
-  vecN next = trix(centerN, positionN, targetN, t - vec2(DT, NOISE.y));
+  vecN next = trix(centerN, positionN, targetN, t - vec2(DT, NOISE.z));
   vecN other = trix(centerN, positionN, targetN, t - vec2(NOISE.x, DT));
 
   #if defined(SEGMENTS) && CURVATURE != 0
-  pos = xnormalize(pos);
+  if(ndot(pos, pos) > 1e-6) {
+    pos = xnormalize(pos);
+  }
   next = xnormalize(next);
   other = xnormalize(other);
   #endif
 
   vec3 proj = xproject(pos);
-
-  vec3 drdx = (xproject(next) - proj);
-  vec3 drdy = (xproject(other) - proj);
-
-  // // if |drdx| or |drdy| is too small the norm will vary too much, see horoball example
-  // if(length(drdx) < 1e-4f || length(drdy) < 1e-4f) {
-  //   next = trix(positionN, centerN, targetN, t + vec2(DT / (1000.f * length(drdx)), 0.f));
-  //   other = trix(positionN, centerN, targetN, t + vec2(0.f, DT / (1000.f * length(drdy))));
-  // #if defined(SEGMENTS) && CURVATURE != 0
-  //     next = xnormalize(next);
-  //     other = xnormalize(other);
-  // #endif
-
-  //   drdx = (xproject(next) - proj);
-  //   drdy = (xproject(other) - proj);
-  // }
+  vec3 drdx = xproject(next) - proj;
+  vec3 drdy = xproject(other) - proj;
 
   vec3 norm = normalize(cross(drdx, drdy));
   #include vertexout

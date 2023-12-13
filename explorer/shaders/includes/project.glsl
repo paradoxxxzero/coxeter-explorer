@@ -46,6 +46,10 @@ vec3 xproject(in vec2 v) {
   return vec3(v, 0.);
 }
 
+vec3 pureproject(in vec2 v) {
+  return vec3(v, 0.);
+}
+
 #if DIMENSIONS >= 3
 vec3 xproject(in vec3 v) {
   #if PROJECTION3 == 0 // STEREOGRAPHIC
@@ -138,6 +142,7 @@ vec3 xproject(in vec3 v) {
   return v;
   #endif
 }
+
 vec3 pureproject(in vec3 v) {
   #if PROJECTION3 == 0 // STEREOGRAPHIC
   return project(v, 1.);

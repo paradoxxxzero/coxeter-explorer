@@ -1,7 +1,7 @@
 import { ambiances } from '../statics'
 import { sphere, tri, tube } from './geometries'
 import { mesh } from './helpers'
-import { PI, cbrt, sqrt, tan } from './math'
+import { PI, abs, cbrt, sqrt, tan } from './math'
 import { columnMajor } from './math/matrix'
 import { isDual, isHoloSnub, isSnub } from './mirrors'
 import { dual, holosnub, snub } from './operator'
@@ -173,7 +173,7 @@ export default function getMeshes(rt) {
               position: vertex[object.vertices[0]].vertex,
               target: vertex[object.vertices[1]].vertex,
               center: vertex[object.vertices[2]].vertex,
-              parity: 0,
+              index: 0,
             })
           } else {
             const faceVertices = new Array(object.vertices.length)
@@ -196,7 +196,7 @@ export default function getMeshes(rt) {
                 position: faceVertices[j],
                 target: faceVertices[(j + 1) % faceVertices.length],
                 center,
-                parity: j % 2,
+                index: j,
               }
               if (
                 object.word.length % 2 ===

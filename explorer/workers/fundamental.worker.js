@@ -1,6 +1,6 @@
 import { range } from '../../utils'
 import { combinations, hash } from '../math'
-import { getVerticesCosetsParams, solve } from '../math/coset'
+import { getShape, solve } from '../math/coset'
 import { normalize, reflect } from '../math/hypermath'
 import { transpose } from '../math/matrix'
 
@@ -26,17 +26,30 @@ const initCosets = (dimensions, coxeter, stellation, rootVertices, metric) => {
   fundamentalVertices = range(dimensions).map(i =>
     normalize(rootVerticesT[i], metric)
   )
+  verticesParams = null
 
-  verticesParams = {
-    ...getVerticesCosetsParams(
-      dimensions,
-      coxeter,
-      stellation,
-      new Array(dimensions).fill(1),
-      metric
-    ),
-    ...defaultParams(),
+  const shape = getShape(
+    dimensions,
+    coxeter,
+    stellation,
+    new Array(dimensions).fill(1)
+  )
+  const visit = s => {
+    if (s.new && s['0-face']) {
+      verticesParams = {
+        gens: shape.gens,
+        rels: shape.rels,
+        subgens: s.subgens,
+        vertex: s['0-face'],
+        ...defaultParams(),
+      }
+    }
+    if (s.children) {
+      s.children.forEach(visit)
+    }
   }
+  visit(shape)
+
   vertexHashes = new Map()
   edgeHashes = new Set()
   faceHashes = new Set()

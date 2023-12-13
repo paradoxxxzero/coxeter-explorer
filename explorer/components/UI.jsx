@@ -256,22 +256,22 @@ export default function UI({
                   : '?'}
               </button>
 
+              <button
+                className="button"
+                onClick={handleCenter}
+                title="Center View"
+              >
+                {centerViewIcon}
+              </button>
+              <button
+                className="button"
+                onClick={handleCoxeter}
+                title="Coxeter View"
+              >
+                {coxeterPlaneIcon}
+              </button>
               {['advanced', 'full'].includes(showUI) ? (
                 <>
-                  <button
-                    className="button"
-                    onClick={handleCenter}
-                    title="Center View"
-                  >
-                    {centerViewIcon}
-                  </button>
-                  <button
-                    className="button"
-                    onClick={handleCoxeter}
-                    title="Coxeter View"
-                  >
-                    {coxeterPlaneIcon}
-                  </button>
                   {showProjectionButtons.square && (
                     <button
                       className="button"
