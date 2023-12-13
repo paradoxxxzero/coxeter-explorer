@@ -1,14 +1,14 @@
 import { arrayEquals } from '../../utils'
 import { atoi } from '../math'
-import { getShape, simpleSolve, solve } from '../math/coset'
+import { getShape, solve } from '../math/coset'
 import { normalize, reflect } from '../math/hypermath'
 import { multiplyVector } from '../math/matrix'
 import { mirrorValue } from '../mirrors'
 
+let allVertices = null
 let verticesParams = null
 let edgesParams = null
 let facesParams = null
-let volumesParams = null
 let current = null
 
 const initCosets = (dimensions, coxeter, stellation, mirrors) => {
@@ -30,9 +30,11 @@ const initCosets = (dimensions, coxeter, stellation, mirrors) => {
       faceParams.lastDrawn = 0
       faceParams.done = false
     })
+    allVertices = []
     return
   }
   current = { dimensions, coxeter, stellation, mirrors }
+  allVertices = []
   const defaultParams = () => ({
     cosets: {
       normal: [],
@@ -83,17 +85,6 @@ const initCosets = (dimensions, coxeter, stellation, mirrors) => {
     }
   }
   visit(shape)
-}
-
-const reflectWord = (state, word) => {
-  const { rootVertex, rootNormals, metric } = state
-
-  let v = rootVertex
-
-  for (let i = 0; i < word.length; i++) {
-    v = reflect(v, rootNormals[word.charCodeAt(i) - 97], metric)
-  }
-  return v
 }
 
 export const reflectToVertex = (word, index) => {
@@ -148,11 +139,16 @@ onmessage = ({
         i++
       ) {
         const word = verticesParams.words[i]
-        if (word === undefined) {
-          vertices.push({ vertex: new Array(dimensions).fill(NaN), word: '' })
-          continue
+        let vertex
+        if (word === '') {
+          vertex = rootVertex
+        } else {
+          const index = reflectToVertex(word.slice(0, -1), 0)
+          const normal = rootNormals[word.charCodeAt(word.length - 1) - 97]
+          vertex = reflect(allVertices[index], normal, metric)
         }
-        const vertex = reflectWord({ rootVertex, rootNormals, metric }, word)
+        allVertices.push(vertex)
+
         vertices.push({
           vertex,
           word,
