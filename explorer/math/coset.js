@@ -96,6 +96,7 @@ export const getShape = (
       }
       shape.children.push(subShape)
     } else {
+      // TODO: only if parent has no children
       shape.children.push(
         getShape(
           dimensions,

@@ -140,6 +140,7 @@ export default function UI({
   )
 
   const exportImage = useCallback(async () => {
+    closePresets()
     const res = window.prompt('Select image resolution', '5000x5000')
     if (!res || !res.includes('x')) {
       console.error('Invalid resolution')
@@ -162,7 +163,7 @@ export default function UI({
       a.download = `${document.title}-${width}x${height}`
       a.click()
     }
-  }, [runtime])
+  }, [closePresets, runtime])
 
   const showProjectionButtons = useMemo(() => {
     return {

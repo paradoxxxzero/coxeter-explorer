@@ -342,13 +342,13 @@ export const defaultParams = {
   mirrors: [1, 0, 0, 0],
   extended: false,
 
-  order: 10,
+  order: 25,
   curve: true,
-  detail: 'high',
+  detail: 'medium',
   segments: 16,
   easing: 'linear',
   showVertices: false,
-  vertexThickness: 75,
+  vertexThickness: 50,
   showEdges: true,
   edgeThickness: 25,
   showFaces: false,
@@ -502,5 +502,6 @@ export const filterParams = (maybeBadParams, changed = [], oldParams) => {
       params.projection4 = 'stereographic'
     }
   }
+
   return { params, badParams }
 }

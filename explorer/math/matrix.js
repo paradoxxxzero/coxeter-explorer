@@ -394,15 +394,15 @@ export const columnMajor = m => {
   throw new Error('Unsupported matrix size')
 }
 
-export const perspective = (fovy, aspect, near, far, zoom = 1) => {
-  const f = zoom / tan(fovy / 2)
-  const nf = 1 / (near - far)
+export const frustum = ({ left, right, top, bottom, near, far }) => {
   const out = ident(4)
-  out[0][0] = f / aspect
-  out[1][1] = f
-  out[2][2] = (far + near) * nf
+  out[0][0] = (2 * near) / (right - left)
+  out[0][2] = (right + left) / (right - left)
+  out[1][1] = (2 * near) / (top - bottom)
+  out[1][2] = (top + bottom) / (top - bottom)
+  out[2][2] = -(far + near) / (far - near)
+  out[2][3] = (-2 * near * far) / (far - near)
   out[3][2] = -1
-  out[2][3] = 2 * far * near * nf
   out[3][3] = 0
   return out
 }

@@ -552,3 +552,17 @@ select option {
 .presets-list .coxeter-diagram {
   font-size: 1.5em;
 }
+
+.export-progress {
+  position: fixed;
+  font-size: 6em;
+  color: rgba(255, 255, 255, 0.5);
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 0.5em;
+  padding: 0.5em;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  mix-blend-mode: difference;
+}

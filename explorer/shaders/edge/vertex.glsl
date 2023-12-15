@@ -32,8 +32,9 @@ void main() {
   vecN targetN = multiplyMatrix(matrix, adapt(target));
 
   float t = ease(uv.y);
+  float s = ease(uv.y - DT);
   vecN pos = mix(positionN, targetN, t);
-  vecN next = mix(positionN, targetN, t + DT);
+  vecN next = mix(positionN, targetN, s);
   // Position segments on hypersurface
 
   #if defined(SEGMENTS) && CURVATURE != 0

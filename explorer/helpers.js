@@ -65,17 +65,22 @@ export const hsl = (h, s, l) => {
   return [r, g, b]
 }
 
-export const resizeCanvasToDisplaySize = (canvas, multiplier) => {
-  multiplier = multiplier || 1
+export const resizeCanvasToDisplaySize = (canvas, multiplier, forceSize) => {
+  multiplier = forceSize ? 1 : multiplier || 1
   multiplier = Math.max(0, multiplier)
-  const width = (canvas.clientWidth * multiplier) | 0
-  const height = (canvas.clientHeight * multiplier) | 0
+
+  const width = forceSize
+    ? forceSize.width
+    : (canvas.clientWidth * multiplier) | 0
+  const height = forceSize
+    ? forceSize.height
+    : (canvas.clientHeight * multiplier) | 0
   if (canvas.width !== width || canvas.height !== height) {
     canvas.width = width
     canvas.height = height
     return true
   }
-  return false
+  return !!forceSize
 }
 
 const preprocessDimensions = (source, dimensions) =>

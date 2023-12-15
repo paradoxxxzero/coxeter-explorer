@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useRef } from 'react'
-import { PI, abs, hypot, log, max, pow } from '../math'
+import { PI, abs, hypot, log, min, pow } from '../math'
 import { rotate } from '../math/hypermath'
 import { columnMajor, multiply, set } from '../math/matrix'
 import { render, updateCamera } from '../render'
 // import { hyperMaterials } from '../shader/hyperMaterial'
 
-const zoomSpeed = 0.95
+const zoomSpeed = 0.9
 const dampSpeed = 0.95
-const autoSpeed = 10
 const speedSamples = 10
 
 const translate = (offset, shift, rotations, matrix, dimensions, metric) => {
@@ -110,11 +109,13 @@ export const useInteract = (
     pause: new Set(),
     speed: null,
     zoom: null,
+    t: null,
   })
 
   const local = useRef({
     matrix: runtime.matrix.map(x => x.slice()),
     zoom: runtime.zoom,
+    pointers: new Map(),
   })
 
   useEffect(() => {
@@ -276,6 +277,12 @@ export const useInteract = (
 
   const animate = useCallback(() => {
     const { pause, speed, zoom } = animation.current
+    if (!animation.current.t) {
+      animation.current.t = performance.now()
+    }
+
+    const dt = performance.now() - animation.current.t
+
     let changed = false
     for (let i = 0; i < speed.length; i++) {
       if (speed[i] === 0) {
@@ -285,7 +292,7 @@ export const useInteract = (
 
       if (rotations.auto === 'damp') {
         speed[i] *= dampSpeed
-        if (abs(speed[i]) < 1e-4) {
+        if (abs(speed[i]) < 1e-6) {
           speed[i] = 0
         }
       }
@@ -294,7 +301,7 @@ export const useInteract = (
           local.current.matrix,
           multiply(
             rotate(
-              speed[i],
+              speed[i] * dt,
               rotations.combinations[i],
               runtime.dimensions,
               runtime.spaceType.metric
@@ -312,7 +319,10 @@ export const useInteract = (
       const current = log(local.current.zoom) / log(zoomSpeed)
       const target = log(zoom) / log(zoomSpeed)
 
-      local.current.zoom *= pow(zoomSpeed, (target - current) * 0.05)
+      local.current.zoom *= pow(
+        zoomSpeed,
+        (target - current) * min(1, dt * 0.001 * 2)
+      )
 
       // Scale epsilon
       if (abs(zoom - local.current.zoom) < zoom * 1e-3) {
@@ -329,11 +339,13 @@ export const useInteract = (
     ) {
       updateParams({ matrix: local.current.matrix, zoom: local.current.zoom })
       loop.current = null
+      animation.current.t = null
       return
     }
     if (changed) {
       render(runtime)
     }
+    animation.current.t = performance.now()
     loop.current = requestAnimationFrame(animate)
   }, [
     quickUpdateMatrix,
@@ -348,13 +360,12 @@ export const useInteract = (
       loop.current = requestAnimationFrame(animate)
     }
 
-    const pointers = new Map()
     let distance = null
-    let times = []
+    let t = null
     let speeds = []
 
     const getDistance = () => {
-      const vals = pointers.values()
+      const vals = local.current.pointers.values()
       const p1 = vals.next().value
       const p2 = vals.next().value
 
@@ -366,33 +377,30 @@ export const useInteract = (
         return
       }
       if (rotations.auto) {
-        times.push(performance.now())
-        if (pointers.size === 1) {
+        t = performance.now()
+        if (local.current.pointers.size === 1) {
           animation.current.pause.delete(rotations.shift * 2)
           animation.current.pause.delete(rotations.shift * 2 + 1)
         } else {
           animation.current.pause.add(rotations.shift * 2)
           animation.current.pause.add(rotations.shift * 2 + 1)
         }
-        // animation.current.speed[rotations.shift * 2] = 0
-        // animation.current.speed[rotations.shift * 2 + 1] = 0
       }
-      pointers.set(e.pointerId, [e.clientX, e.clientY])
+      local.current.pointers.set(e.pointerId, [e.clientX, e.clientY])
     }
 
     const onMove = e => {
-      if (!pointers.has(e.pointerId)) {
+      if (!local.current.pointers.has(e.pointerId)) {
         return
       }
-      let last = pointers.get(e.pointerId)
+      let last = local.current.pointers.get(e.pointerId)
       const delta = [
         -(e.clientX - last[0]) / window.innerHeight, // height is intentional
         -(e.clientY - last[1]) / window.innerHeight,
       ]
 
-      pointers.set(e.pointerId, [e.clientX, e.clientY])
-
-      if (pointers.size === 2) {
+      local.current.pointers.set(e.pointerId, [e.clientX, e.clientY])
+      if (local.current.pointers.size > 1) {
         if (distance === null) {
           distance = getDistance()
           animation.current.zoom = local.current.zoom
@@ -400,9 +408,9 @@ export const useInteract = (
         }
         const newDistance = getDistance()
         local.current.zoom *= distance / newDistance
-        animation.current.zoom = local.current.zoom
         distance = newDistance
         updateCamera(runtime, local.current.zoom)
+        animation.current.zoom = null
         render(runtime)
         return
       }
@@ -427,16 +435,14 @@ export const useInteract = (
         runtime.spaceType.metric
       )
       if (rotations.auto) {
-        times.push(performance.now())
-        if (times.length > speedSamples) {
-          times.shift()
-        }
-        speeds.push([autoSpeed * PI * delta[0], autoSpeed * PI * delta[1]])
+        const dt = performance.now() - t
+        t = performance.now()
+        speeds.push([(delta[0] * 1.5) / dt, (delta[1] * 1.5) / dt])
+
         if (speeds.length > speedSamples) {
           speeds.shift()
         }
 
-        const dt = times.slice(-1)[0] - times[0]
         const deltas = speeds.reduce(
           (a, b) => [a[0] + b[0], a[1] + b[1]],
           [0, 0]
@@ -444,7 +450,7 @@ export const useInteract = (
 
         for (let k = 0; k < 2; k++) {
           for (let i = 0; i < couples[k].length; i++) {
-            animation.current.speed[couples[k][i]] = deltas[k] / dt
+            animation.current.speed[couples[k][i]] = deltas[k] / speeds.length
           }
         }
         if (!loop.current) {
@@ -455,13 +461,13 @@ export const useInteract = (
     }
 
     const onUp = e => {
-      if (!pointers.has(e.pointerId)) {
+      if (!local.current.pointers.has(e.pointerId)) {
         return
       }
       if (rotations.auto) {
-        if (pointers.size === 1) {
+        if (local.current.pointers.size === 1) {
           speeds = []
-          times = []
+          t = null
           animation.current.pause.delete(rotations.shift * 2)
           animation.current.pause.delete(rotations.shift * 2 + 1)
         } else {
@@ -470,7 +476,7 @@ export const useInteract = (
         }
       }
       distance = null
-      pointers.delete(e.pointerId)
+      local.current.pointers.delete(e.pointerId)
     }
 
     document.addEventListener('pointerdown', onDown)
@@ -484,6 +490,7 @@ export const useInteract = (
       if (loop.current) {
         cancelAnimationFrame(loop.current)
         loop.current = null
+        animation.current.t = null
       }
     }
   }, [

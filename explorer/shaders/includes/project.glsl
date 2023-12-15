@@ -223,6 +223,7 @@ vec3 inflate(in vec3 point, in vecN pos, in vec3 norm, in float size) {
   pos.v.xyz = vec3(1.);
   #endif
   vec3 inv = clamp(abs(pureproject(pos)), 0.01, 16.);
-
-  return size * SCALING * norm * inv + point;
+  size = size * .01;
+  size = size * size * size;
+  return size * norm * inv + point;
 }
