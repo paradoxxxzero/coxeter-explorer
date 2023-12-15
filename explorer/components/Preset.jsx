@@ -20,6 +20,7 @@ const match = (name, search) => {
 }
 export default memo(function Preset({
   name,
+  index,
   params,
   search,
   subforms = [],
@@ -55,7 +56,7 @@ export default memo(function Preset({
     <>
       <div
         className={`preset${sub ? ' sub' : ''}`}
-        onClick={() => onPreset(params)}
+        onClick={() => onPreset(params, index)}
       >
         <div
           className={`preset-header preset-name-${

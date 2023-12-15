@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ambiances,
   defaultParams,
@@ -28,6 +28,7 @@ import Number from './Number'
 import Presets from './Presets'
 import Rotation from './Rotation.jsx'
 import Space from './Space'
+import { presets } from '../presets/index.jsx'
 
 export default function UI({
   runtime,
@@ -37,10 +38,11 @@ export default function UI({
   updateRotations,
 }) {
   const [showUI, setShowUI] = useState('simple')
-  const [presets, setPresets] = useState(false)
+  const [showPresets, setShowPresets] = useState(false)
+  const [presetIndex, setPresetIndex] = useState(0)
 
   const closePresets = useCallback(() => {
-    setPresets(false)
+    setShowPresets(false)
   }, [])
 
   const handleRawChange = useCallback(
@@ -71,8 +73,9 @@ export default function UI({
   )
 
   const handlePreset = useCallback(
-    preset => {
+    (preset, index) => {
       updateParams(preset, true)
+      setPresetIndex(index)
       closePresets()
     },
     [updateParams, closePresets]
@@ -187,322 +190,372 @@ export default function UI({
     runtime.dimensions,
   ])
 
+  useEffect(() => {
+    const keydown = e => {
+      if (e.key === 'ArrowLeft' && e.ctrlKey && presetIndex > 0) {
+        let prevPreset = presetIndex - 1
+        while (presets[prevPreset].type) {
+          if (prevPreset < 2) {
+            return
+          }
+          prevPreset--
+        }
+        handlePreset(presets[prevPreset].params, prevPreset)
+      } else if (
+        e.key === 'ArrowRight' &&
+        e.ctrlKey &&
+        presetIndex < presets.length - 1
+      ) {
+        let nextPresets = presetIndex + 1
+        while (presets[nextPresets].type) {
+          if (nextPresets > presets.length - 2) {
+            return
+          }
+          nextPresets++
+        }
+
+        handlePreset(presets[nextPresets].params, nextPresets)
+      }
+    }
+    window.addEventListener('keydown', keydown)
+    return () => {
+      window.removeEventListener('keydown', keydown)
+    }
+  }, [handlePreset, presetIndex])
+
   return (
     <>
       <Presets
-        open={presets}
+        open={showPresets}
         onPreset={handlePreset}
         onExportImage={exportImage}
         closePresets={closePresets}
       />
-      <div className={runtime.error ? 'error' : ''} title={runtime.error}>
-        {runtime.currentOrder < runtime.order ? (
-          <aside className="processing-counter">
-            {runtime.currentOrder}/{runtime.order}
-          </aside>
-        ) : null}
-        {['simple', 'advanced', 'full'].includes(showUI) ? (
-          <button
-            className="preset-button button"
-            onClick={() => setPresets(presets => !presets)}
-            title="Presets"
-          >
-            {presetsIcon}
-          </button>
-        ) : null}
-        {['simple', 'advanced', 'full'].includes(showUI) ? (
-          <aside className="controls">
-            <button
-              className="rotation-button button"
-              onClick={handleShift}
-              title="Rotation Mode"
-            >
-              <div
-                className="rotation"
-                style={{
-                  transform: `rotate(${
-                    (rotations.shift / rotations.maxShift) * 360
-                  }deg)`,
-                }}
-              >
-                {rotationShiftIcon}
-              </div>
-              <sup>{rotations.shift + 1}</sup>
-              <Rotation
-                rotations={rotations}
-                spaceType={runtime.spaceType}
-                axis={0}
-              />
-
-              <Rotation
-                rotations={rotations}
-                spaceType={runtime.spaceType}
-                axis={1}
-              />
-            </button>
-
-            <div className="subcontrols">
-              <button className="button" onClick={handleLock}>
-                {rotations.lock ? lockIcon : unlockIcon}
-              </button>
+      <main
+        className={runtime.error || runtime.renderError ? 'error ui' : 'ui'}
+        title={runtime.error || runtime.renderError}
+      >
+        <div className="ui-row ui-row-top">
+          {['simple', 'advanced', 'full'].includes(showUI) ? (
+            <aside className="controls">
               <button
-                className="button anim-view"
-                onClick={handleAuto}
-                title="Animate rotations"
+                className="rotation-button button"
+                onClick={handleShift}
+                title="Rotation Mode"
               >
-                {rotations.auto === 'free'
-                  ? freeRotationIcon
-                  : rotations.auto === 'damp'
-                  ? dampedRotationIcon
-                  : '?'}
-              </button>
-
-              <button
-                className="button"
-                onClick={handleCenter}
-                title="Center View"
-              >
-                {centerViewIcon}
-              </button>
-              <button
-                className="button"
-                onClick={handleCoxeter}
-                title="Coxeter View"
-              >
-                {coxeterPlaneIcon}
-              </button>
-              {['advanced', 'full'].includes(showUI) ? (
-                <>
-                  {showProjectionButtons.square && (
-                    <button
-                      className="button"
-                      onClick={handleOrtho}
-                      title="Orthographic"
-                    >
-                      {squareIcon}
-                    </button>
-                  )}
-                  {showProjectionButtons.cube && (
-                    <button
-                      className="button"
-                      onClick={handleStereo}
-                      title="Stereographic"
-                    >
-                      {cubeIcon}
-                    </button>
-                  )}
-                </>
-              ) : null}
-            </div>
-          </aside>
-        ) : null}
-        <button
-          className={`space-button button${
-            runtime.processing ? ' processing' : ''
-          }${showUI === 'empty' ? ' empty' : ''}`}
-          onClick={handleUI}
-        >
-          <Space
-            {...(runtime.spaceType || {})}
-            dimensions={runtime.dimensions}
-          />
-        </button>
-        {['advanced', 'full'].includes(showUI) && (
-          <aside className="parameters">
-            {showUI === 'full' && (
-              <label className="select-label">
-                Grouper
-                <select
-                  name="grouper"
-                  value={params.grouper}
-                  onChange={handleRawChange}
+                <div
+                  className="rotation"
+                  style={{
+                    transform: `rotate(${
+                      (rotations.shift / rotations.maxShift) * 360
+                    }deg)`,
+                  }}
                 >
-                  {groupers.map(p => (
-                    <option key={p} value={p}>
-                      {p
-                        .replace(/_/g, ' ')
-                        .replace(/\b./g, c => c.toUpperCase())}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-            {(showUI === 'full' || runtime.spaceType.curvature <= 0) && (
+                  {rotationShiftIcon}
+                </div>
+                <sup>{rotations.shift + 1}</sup>
+                <Rotation
+                  rotations={rotations}
+                  spaceType={runtime.spaceType}
+                  axis={0}
+                />
+
+                <Rotation
+                  rotations={rotations}
+                  spaceType={runtime.spaceType}
+                  axis={1}
+                />
+              </button>
+
+              <div className="subcontrols">
+                <button className="button" onClick={handleLock}>
+                  {rotations.lock ? lockIcon : unlockIcon}
+                </button>
+                <button
+                  className="button anim-view"
+                  onClick={handleAuto}
+                  title="Animate rotations"
+                >
+                  {rotations.auto === 'free'
+                    ? freeRotationIcon
+                    : rotations.auto === 'damp'
+                    ? dampedRotationIcon
+                    : '?'}
+                </button>
+
+                <button
+                  className="button"
+                  onClick={handleCenter}
+                  title="Center View"
+                >
+                  {centerViewIcon}
+                </button>
+                <button
+                  className="button"
+                  onClick={handleCoxeter}
+                  title="Coxeter View"
+                >
+                  {coxeterPlaneIcon}
+                </button>
+                {['advanced', 'full'].includes(showUI) ? (
+                  <>
+                    {showProjectionButtons.square && (
+                      <button
+                        className="button"
+                        onClick={handleOrtho}
+                        title="Orthographic"
+                      >
+                        {squareIcon}
+                      </button>
+                    )}
+                    {showProjectionButtons.cube && (
+                      <button
+                        className="button"
+                        onClick={handleStereo}
+                        title="Stereographic"
+                      >
+                        {cubeIcon}
+                      </button>
+                    )}
+                  </>
+                ) : null}
+              </div>
+            </aside>
+          ) : null}
+          {['simple', 'advanced', 'full'].includes(showUI) && (
+            <CoxeterMatrix
+              dimensions={params.dimensions}
+              coxeter={params.coxeter}
+              mirrors={params.mirrors}
+              stellation={params.stellation}
+              extended={params.extended}
+              onChange={handleChange}
+            />
+          )}
+        </div>
+        <div className="ui-row ui-row-middle">
+          {['advanced', 'full'].includes(showUI) && (
+            <aside className="view">
               <Number
-                name="order"
-                label="Precision"
-                min={1}
+                name="msaaSamples"
+                label="MSAA"
+                min={0}
                 step={1}
-                value={params.order}
+                max={defaultParams.msaaSamples}
+                value={params.msaaSamples}
+                toggler={params.msaa}
+                togglerName="msaa"
                 onChange={handleChange}
               />
-            )}
-            <Number
-              name="segments"
-              label="Segments"
-              min={1}
-              step={1}
-              value={params.segments}
-              toggler={params.curve}
-              togglerName="curve"
-              onChange={handleChange}
-            />
-            <label className="select-label">
-              Easing
-              <select
-                name="easing"
-                value={params.easing}
-                onChange={handleRawChange}
-              >
-                {easings.map(p => (
-                  <option key={p} value={p}>
-                    {p.replace(/_/g, ' ').replace(/\b./g, c => c.toUpperCase())}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <Number
-              name="vertexThickness"
-              label="Vertices"
-              min={0}
-              step={1}
-              value={params.vertexThickness}
-              toggler={params.showVertices}
-              togglerName="showVertices"
-              onChange={handleChange}
-            />
-            <Number
-              name="edgeThickness"
-              label="Edges"
-              min={0}
-              step={1}
-              value={params.edgeThickness}
-              toggler={params.showEdges}
-              togglerName="showEdges"
-              onChange={handleChange}
-            />
-            {['toddcoxeter', 'fundamental'].includes(runtime.grouper) && (
-              <label className="boolean-label">
-                Faces
-                <Boolean
-                  name="showFaces"
-                  value={params.showFaces}
+              <div className="projection">
+                <label className="number-label">
+                  <span className="number-label">Detail</span>
+                  <select
+                    name="detail"
+                    value={params.detail}
+                    onChange={handleRawChange}
+                  >
+                    {details.map(a => (
+                      <option key={a} value={a}>
+                        {a
+                          .replace(/_/g, ' ')
+                          .replace(/./, c => c.toUpperCase())}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              {showUI === 'full' && (
+                <Number
+                  name="subsampling"
+                  label="subsampling"
+                  min={0.1}
+                  step={0.1}
+                  value={params.subsampling}
                   onChange={handleChange}
                 />
-              </label>
-            )}
-            <label className="select-label">
-              Ambiance
-              <select
-                name="ambiance"
-                value={params.ambiance}
-                onChange={handleRawChange}
-              >
-                {(showUI === 'full'
-                  ? Object.keys(ambiances)
-                  : Object.entries(ambiances)
-                      .filter(
-                        ([k, { extended }]) =>
-                          !extended || k === params.ambiance
-                      )
-                      .map(([k]) => k)
-                ).map(a => (
-                  <option key={a} value={a}>
-                    {a.replace(/_/g, ' ').replace(/./, c => c.toUpperCase())}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </aside>
-        )}
-        {['advanced', 'full'].includes(showUI) && (
-          <aside className="view">
-            <Number
-              name="msaaSamples"
-              label="MSAA"
-              min={0}
-              step={1}
-              max={defaultParams.msaaSamples}
-              value={params.msaaSamples}
-              toggler={params.msaa}
-              togglerName="msaa"
-              onChange={handleChange}
-            />
-            <div className="projection">
-              <label className="number-label">
-                <span className="number-label">Detail</span>
+              )}
+              {params.dimensions >= 3
+                ? range(3, params.dimensions + 1).map(i => (
+                    <div key={i} className="projection">
+                      {showUI === 'full' && (
+                        <Number
+                          label={`${i}D FOV`}
+                          name={`fov${i}`}
+                          step={1}
+                          value={params[`fov${i}`]}
+                          onChange={handleChange}
+                        />
+                      )}
+
+                      <label className="number">
+                        <span className="number-label">{i}D Projection</span>
+                        <select
+                          name={`projection${i}`}
+                          value={params[`projection${i}`]}
+                          onChange={handleRawChange}
+                        >
+                          {[
+                            ...projections.filter(
+                              (projection, n) => i === 3 || n < 8
+                            ),
+                          ].map(p => (
+                            <option key={p} value={p}>
+                              {p
+                                .replace(/_/g, ' ')
+                                .replace(/./, c => c.toUpperCase())}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                  ))
+                : null}
+            </aside>
+          )}
+        </div>
+        <div className="ui-row ui-row-bottom">
+          {['simple', 'advanced', 'full'].includes(showUI) ? (
+            <button
+              className="preset-button button"
+              onClick={() => setShowPresets(presets => !presets)}
+              title="Presets"
+            >
+              {presetsIcon}
+            </button>
+          ) : null}
+
+          {['advanced', 'full'].includes(showUI) && (
+            <aside className="parameters">
+              {showUI === 'full' && (
+                <label className="select-label">
+                  Grouper
+                  <select
+                    name="grouper"
+                    value={params.grouper}
+                    onChange={handleRawChange}
+                  >
+                    {groupers.map(p => (
+                      <option key={p} value={p}>
+                        {p
+                          .replace(/_/g, ' ')
+                          .replace(/\b./g, c => c.toUpperCase())}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {(showUI === 'full' || runtime.spaceType.curvature <= 0) && (
+                <Number
+                  name="order"
+                  label="Precision"
+                  min={1}
+                  step={1}
+                  value={params.order}
+                  onChange={handleChange}
+                />
+              )}
+              <Number
+                name="segments"
+                label="Segments"
+                min={1}
+                step={1}
+                value={params.segments}
+                toggler={params.curve}
+                togglerName="curve"
+                onChange={handleChange}
+              />
+              {showUI === 'full' && (
+                <label className="select-label">
+                  Easing
+                  <select
+                    name="easing"
+                    value={params.easing}
+                    onChange={handleRawChange}
+                  >
+                    {easings.map(p => (
+                      <option key={p} value={p}>
+                        {p
+                          .replace(/_/g, ' ')
+                          .replace(/\b./g, c => c.toUpperCase())}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              <Number
+                name="vertexThickness"
+                label="Vertices"
+                min={0}
+                step={1}
+                value={params.vertexThickness}
+                toggler={params.showVertices}
+                togglerName="showVertices"
+                onChange={handleChange}
+              />
+              <Number
+                name="edgeThickness"
+                label="Edges"
+                min={0}
+                step={1}
+                value={params.edgeThickness}
+                toggler={params.showEdges}
+                togglerName="showEdges"
+                onChange={handleChange}
+              />
+              {['toddcoxeter', 'fundamental'].includes(runtime.grouper) && (
+                <label className="boolean-label">
+                  Faces
+                  <Boolean
+                    name="showFaces"
+                    value={params.showFaces}
+                    onChange={handleChange}
+                  />
+                </label>
+              )}
+              <label className="select-label">
+                Ambiance
                 <select
-                  name="detail"
-                  value={params.detail}
+                  name="ambiance"
+                  value={params.ambiance}
                   onChange={handleRawChange}
                 >
-                  {details.map(a => (
+                  {(showUI === 'full'
+                    ? Object.keys(ambiances)
+                    : Object.entries(ambiances)
+                        .filter(
+                          ([k, { extended }]) =>
+                            !extended || k === params.ambiance
+                        )
+                        .map(([k]) => k)
+                  ).map(a => (
                     <option key={a} value={a}>
                       {a.replace(/_/g, ' ').replace(/./, c => c.toUpperCase())}
                     </option>
                   ))}
                 </select>
               </label>
-            </div>
-            {showUI === 'full' && (
-              <Number
-                name="subsampling"
-                label="subsampling"
-                min={0.1}
-                step={0.1}
-                value={params.subsampling}
-                onChange={handleChange}
-              />
-            )}
-            {params.dimensions >= 3
-              ? range(3, params.dimensions + 1).map(i => (
-                  <div key={i} className="projection">
-                    {showUI === 'full' && (
-                      <Number
-                        label={`${i}D FOV`}
-                        name={`fov${i}`}
-                        step={1}
-                        value={params[`fov${i}`]}
-                        onChange={handleChange}
-                      />
-                    )}
+            </aside>
+          )}
 
-                    <label className="number">
-                      <span className="number-label">{i}D Projection</span>
-                      <select
-                        name={`projection${i}`}
-                        value={params[`projection${i}`]}
-                        onChange={handleRawChange}
-                      >
-                        {[
-                          ...projections.filter(
-                            (projection, n) => i === 3 || n < 8
-                          ),
-                        ].map(p => (
-                          <option key={p} value={p}>
-                            {p
-                              .replace(/_/g, ' ')
-                              .replace(/./, c => c.toUpperCase())}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                ))
-              : null}
-          </aside>
-        )}
-        {['simple', 'advanced', 'full'].includes(showUI) && (
-          <CoxeterMatrix
-            dimensions={params.dimensions}
-            coxeter={params.coxeter}
-            mirrors={params.mirrors}
-            stellation={params.stellation}
-            extended={params.extended}
-            onChange={handleChange}
-          />
-        )}
-      </div>
+          <button
+            className={`space-button button${
+              runtime.processing ? ' processing' : ''
+            }${showUI === 'empty' ? ' empty' : ''}`}
+            onClick={handleUI}
+          >
+            <Space
+              {...(runtime.spaceType || {})}
+              dimensions={runtime.dimensions}
+            />
+            {/* {runtime.currentOrder < runtime.order ? ( */}
+            <aside className="processing-counter">
+              {runtime.currentOrder}/{runtime.order}
+            </aside>
+            {/* ) : null} */}
+          </button>
+        </div>
+      </main>
     </>
   )
 }

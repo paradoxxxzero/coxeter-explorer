@@ -88,10 +88,7 @@ export default function App({ params, updateParams }) {
   )
 
   return runtime.gl ? (
-    <div
-      className={runtime.error || runtime.renderError ? 'error' : ''}
-      title={runtime.error || runtime.renderError}
-    >
+    <>
       <UI
         runtime={runtime}
         params={params}
@@ -106,7 +103,7 @@ export default function App({ params, updateParams }) {
         updateRotations={updateRotations}
         updateParams={updateParams}
       />
-    </div>
+    </>
   ) : null
 }
 

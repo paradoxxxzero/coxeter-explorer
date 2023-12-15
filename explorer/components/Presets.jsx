@@ -97,6 +97,7 @@ export default function Presets({
                 ) : (
                   <Preset
                     name={name}
+                    index={i}
                     params={params}
                     search={search}
                     subforms={subforms}

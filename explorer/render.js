@@ -25,7 +25,7 @@ if (showStats) {
 export const initializeGl = rt => {
   const canvas = document.createElement('canvas')
   canvas.id = 'webgl2'
-  document.body.appendChild(canvas)
+  document.body.insertBefore(canvas, document.body.firstChild)
 
   const gl = canvas.getContext('webgl2', {
     alpha: true,

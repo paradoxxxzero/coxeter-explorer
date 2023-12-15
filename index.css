@@ -27,7 +27,8 @@ input {
 
 :root,
 body,
-canvas {
+canvas,
+#root {
   margin: 0;
   width: 100%;
   height: 100%;
@@ -71,15 +72,6 @@ select option {
   left: 20px !important;
 }
 
-.processing-counter {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  font-size: 1em;
-  color: rgba(255, 255, 255, 0.75);
-  mix-blend-mode: difference;
-}
-
 .button {
   font-size: 2.5em;
   line-height: 1;
@@ -97,18 +89,13 @@ select option {
 }
 
 .preset-button {
-  position: absolute;
-  bottom: 0.25em;
-  left: 0.25em;
   padding: 0.5em;
   font-size: 3em;
   color: rgba(33, 150, 243);
 }
 
 .space-button {
-  position: absolute;
-  bottom: 0.25em;
-  right: 0.25em;
+  position: relative;
   font-size: 3em;
 }
 
@@ -126,6 +113,15 @@ select option {
   font-size: 1.5em;
 }
 
+.space-button .processing-counter {
+  position: absolute;
+  bottom: -0.5em;
+  right: -0.5em;
+  font-size: 0.4em;
+  color: rgba(255, 255, 255, 0.75);
+  opacity: 1;
+}
+
 @keyframes processing {
   0% {
     opacity: 1;
@@ -137,13 +133,45 @@ select option {
     opacity: 1;
   }
 }
-
-.controls {
-  position: absolute;
-  top: 0.125em;
-  left: 0.125em;
+.ui {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  font-size: calc(min(1.75vw, 1em));
   display: flex;
   flex-direction: column;
+  mix-blend-mode: difference;
+  justify-content: space-between;
+  padding: 0.5em;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+.ui-row {
+  display: flex;
+  flex-wrap: nowrap;
+  flex-direction: row;
+  justify-content: space-between;
+}
+.ui-row > * {
+  pointer-events: all;
+}
+.ui-row-top {
+  align-items: flex-start;
+}
+.ui-row-middle {
+  flex: 1;
+  align-items: center;
+}
+.ui-row-bottom {
+  align-items: flex-end;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  /* align-self: flex-start; */
 }
 
 .rotation-button {
@@ -199,17 +227,11 @@ select option {
 }
 
 .parameters {
-  position: absolute;
-  bottom: 0;
-  left: 0;
   display: flex;
   flex-wrap: wrap;
   font-size: 0.9em;
   align-items: baseline;
   font-size: 0.75em;
-  margin: 1em 7rem;
-  font-size: calc(min(1.5vw, 0.75em));
-  mix-blend-mode: difference;
 }
 
 .parameters label {
@@ -220,22 +242,14 @@ select option {
 }
 
 .view {
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
   display: flex;
   flex-direction: column;
   flex-wrap: wrap;
   font-size: 0.9em;
   align-items: baseline;
   font-size: 0.75em;
-  margin: 1em;
-  margin-right: 4.5rem;
   display: flex;
   justify-content: center;
-  font-size: calc(min(1.5vw, 0.75em));
-  mix-blend-mode: difference;
 }
 .view label {
   margin: 0.2em 0.75em;
@@ -253,14 +267,10 @@ select option {
   display: block;
 }
 .coxeters {
-  position: absolute;
-  top: 0;
-  right: 0;
-  mix-blend-mode: difference;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  transform-origin: top right;
+  transform-origin: top left;
   font-size: 0.75em;
   transition: transform 0.5s;
 }
@@ -489,13 +499,13 @@ select option {
 .presets-list h2 {
   position: sticky;
   top: 0;
-  margin-left: 0.75em;
+  padding-left: 0.75em;
   background-color: black;
 }
 .presets-list h4 {
   position: sticky;
   top: 3.25em;
-  margin-left: 2em;
+  padding-left: 2em;
   background-color: black;
 }
 
