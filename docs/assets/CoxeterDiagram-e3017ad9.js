@@ -1085,6 +1085,9 @@ void nset(inout vec9 v, in int i, in float x) {
 }
 #endif
 `,Lp=`float ease(float t) {
+  if(t < 0. || t > 1.) {
+    return t;
+  }
   #if EASING == 0  // linear
   return t;
   #elif EASING == 1 // sine
@@ -1165,7 +1168,7 @@ const float segments = float(SEGMENTS);
 #else
 const float segments = 1.f;
 #endif
-const float DT = .5f / segments;
+const float DT = .1f / segments;
 `,Up=`#loopN2
 float len(in vecN v) {
   return sqrt(ndot(v, v));
