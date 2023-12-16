@@ -12,6 +12,7 @@ export default function App({ params, updateParams }) {
     currentOrder: 0,
     askedOrder: null,
     spaceType: null,
+    shape: null,
     rootNormals: null,
     rootVertices: null,
     vertex: [],
@@ -20,7 +21,6 @@ export default function App({ params, updateParams }) {
     face: [],
     processing: true,
     error: null,
-    renderError: null,
   })
 
   useEffect(() => {

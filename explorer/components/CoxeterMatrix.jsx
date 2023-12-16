@@ -98,7 +98,6 @@ export default memo(function CoxeterMatrix({
       if (!ref.current) {
         return
       }
-      console.log(ref.current.offsetLeft, ref.current.offsetWidth)
       const newScale = min(
         1,
         (window.innerWidth - ref.current.offsetLeft) / ref.current.offsetWidth

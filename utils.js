@@ -1,3 +1,5 @@
+export const MAX_UINT_32 = 0xffffffff
+
 export const debounce = (fn, delay) => {
   let timeout
   return (...args) => {

@@ -17,10 +17,12 @@ export default function Runtime({
   window.ro = rotations
 
   const handleError = useCallback(
-    error => {
+    type => error => {
       setRuntime(runtime => ({
         ...runtime,
-        renderError: error.message,
+        error: {
+          [type]: error.message,
+        },
       }))
     },
     [setRuntime]
@@ -40,20 +42,33 @@ export default function Runtime({
 
   return (
     <>
-      <ErrorBoundary error={runtime.renderError} onError={handleError}>
+      <ErrorBoundary
+        error={runtime.error?.process}
+        onError={handleError('process')}
+      >
         <Process runtime={runtime} setRuntime={setRuntime} />
-        {runtime.spaceType ? (
-          <>
+      </ErrorBoundary>
+      {runtime.spaceType ? (
+        <>
+          <ErrorBoundary
+            error={runtime.error?.render}
+            onError={handleError('render')}
+          >
             <Render runtime={runtime} setRuntime={setRuntime} />
+          </ErrorBoundary>
+          <ErrorBoundary
+            error={runtime.error?.interact}
+            onError={handleError('interact')}
+          >
             <Interact
               runtime={runtime}
               rotations={rotations}
               updateRotations={updateRotations}
               updateParams={updateParams}
             />
-          </>
-        ) : null}
-      </ErrorBoundary>
+          </ErrorBoundary>
+        </>
+      ) : null}
     </>
   )
 }

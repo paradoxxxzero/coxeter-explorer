@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { coxeterToGram, getGeometry, getSpaceType } from '../math/hypermath'
 import { killRunningWorkers, workers } from '../workers/worker'
+import { getShape } from '../math/coset'
 
 const asyncProcess = async (runtime, running, setRuntime) => {
   // Rules gets computed on non stellated coxeter group
@@ -10,7 +11,7 @@ const asyncProcess = async (runtime, running, setRuntime) => {
     running.current = false
   }
   if (running.current === runtime.currentOrder) {
-    console.log('already processing at ', runtime.currentOrder)
+    console.info('already processing at ', runtime.currentOrder)
     return
   }
   try {
@@ -90,11 +91,17 @@ export const useProcess = (runtime, setRuntime) => {
       // const cartan = multiplyScalar(gram, 2)
 
       const spaceType = getSpaceType(gram)
-
+      const shape = getShape(
+        runtime.dimensions,
+        runtime.coxeter,
+        runtime.stellation,
+        runtime.mirrors
+      )
       if (!spaceType) {
         return {
           ...runtime,
           spaceType,
+          shape,
         }
       }
 
@@ -112,9 +119,9 @@ export const useProcess = (runtime, setRuntime) => {
         partial: [],
         ranges: [],
         spaceType,
+        shape,
         rootNormals,
         rootVertices,
-        renderError: null,
         processing: true,
         error: null,
       }

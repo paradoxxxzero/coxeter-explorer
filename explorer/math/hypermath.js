@@ -148,7 +148,7 @@ export const getSpaceType = gram => {
       }
     }
   }
-  console.log('indefinite', subSignatures)
+  console.info('indefinite', subSignatures)
   return { ...common, type: 'indefinite', curvature: -1 }
 }
 
@@ -575,7 +575,7 @@ export const rotate = (offset, [i, j], dimensions, metric) => {
 
   // const L = logm(matrix)
   // ==> This should be null
-  // console.log(
+  // console.info(
   //   epsize(add(multiply(transpose(L), metric), multiply(metric, L)))
   //     .map(row => row.join(' '))
   //     .join('\n')

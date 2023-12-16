@@ -13,13 +13,6 @@ let baseIndex = 0
 
 const initCosets = (dimensions, coxeter, stellation, rootVertices, metric) => {
   const defaultParams = () => ({
-    cosets: {
-      normal: [],
-      reverse: [],
-    },
-    rows: [],
-    words: [],
-    done: false,
     lastDrawn: 0,
   })
   const rootVerticesT = transpose(rootVertices)

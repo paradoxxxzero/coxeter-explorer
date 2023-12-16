@@ -29,6 +29,7 @@ import Presets from './Presets'
 import Rotation from './Rotation.jsx'
 import Space from './Space'
 import { presets } from '../presets/index.jsx'
+import Shape from './Shape.jsx'
 
 export default function UI({
   runtime,
@@ -231,10 +232,7 @@ export default function UI({
         onExportImage={exportImage}
         closePresets={closePresets}
       />
-      <main
-        className={runtime.error || runtime.renderError ? 'error ui' : 'ui'}
-        title={runtime.error || runtime.renderError}
-      >
+      <main className={runtime.error ? 'error ui' : 'ui'} title={runtime.error}>
         <div className="ui-row ui-row-top">
           {['simple', 'advanced', 'full'].includes(showUI) ? (
             <aside className="controls">
@@ -413,6 +411,14 @@ export default function UI({
                 : null}
             </aside>
           )}
+          {['advanced', 'full'].includes(showUI) && (
+            <Shape
+              shape={runtime.shape}
+              spaceType={runtime.spaceType}
+              full={showUI === 'full'}
+              updateParams={updateParams}
+            />
+          )}
         </div>
         <div className="ui-row ui-row-bottom">
           {['simple', 'advanced', 'full'].includes(showUI) ? (
@@ -538,6 +544,7 @@ export default function UI({
             </aside>
           )}
 
+          {showUI === 'empty' ? <div className="spacer" /> : null}
           <button
             className={`space-button button${
               runtime.processing ? ' processing' : ''
@@ -548,11 +555,11 @@ export default function UI({
               {...(runtime.spaceType || {})}
               dimensions={runtime.dimensions}
             />
-            {/* {runtime.currentOrder < runtime.order ? ( */}
-            <aside className="processing-counter">
-              {runtime.currentOrder}/{runtime.order}
-            </aside>
-            {/* ) : null} */}
+            {runtime.currentOrder < runtime.order ? (
+              <aside className="processing-counter">
+                {runtime.currentOrder}/{runtime.order}
+              </aside>
+            ) : null}
           </button>
         </div>
       </main>

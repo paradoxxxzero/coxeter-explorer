@@ -221,7 +221,6 @@ export const useRender = (runtime, setRuntime) => {
     runtime.projection9,
     runtime.ranges,
     // runtime.rb,
-    runtime.renderError,
     // runtime.rootVertex,
     runtime.segments,
     runtime.showEdges,

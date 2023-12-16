@@ -5,7 +5,7 @@ import { circleSize, dotSize, mirrorSymbols } from './Node'
 const baseSize = 32
 const textSpacing = 18
 
-export default function CoxeterDiagram({ coxeter, mirrors, stellation }) {
+export default function CoxeterDiagram({ coxeter, stellation, mirrors }) {
   const dimensions = coxeter.length
 
   const nodes = mirrors.map((mirror, i) => {

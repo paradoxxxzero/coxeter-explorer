@@ -1,4 +1,4 @@
-import { arrayEquals } from '../../utils'
+import { MAX_UINT_32, arrayEquals } from '../../utils'
 import { atoi } from '../math'
 import { getShape, solve } from '../math/coset'
 import { normalize, reflect } from '../math/hypermath'
@@ -36,13 +36,6 @@ const initCosets = (dimensions, coxeter, stellation, mirrors) => {
   current = { dimensions, coxeter, stellation, mirrors }
   allVertices = []
   const defaultParams = () => ({
-    cosets: {
-      normal: [],
-      reverse: [],
-    },
-    rows: [],
-    words: [],
-    done: false,
     lastDrawn: 0,
   })
 
@@ -91,7 +84,7 @@ export const reflectToVertex = (word, index) => {
   for (let i = 0; i < word.length; i++) {
     const j = atoi(word[i])
     const newIndex = verticesParams.cosets.normal[index][j]
-    if (newIndex === undefined) {
+    if (newIndex === MAX_UINT_32) {
       return
     }
     index = newIndex

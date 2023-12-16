@@ -1,6 +1,7 @@
 import { getRels, itoa } from '.'
-import { range } from '../../utils'
+import { MAX_UINT_32, range } from '../../utils'
 import { isEnabled } from '../mirrors'
+import { submatrix, subvector } from './matrix'
 
 export const getGens = (mirrors, skips = []) =>
   mirrors.map((m, i) => (!skips.includes(i) ? itoa(i) : '')).join('')
@@ -40,10 +41,14 @@ export const getShape = (
     mirrors.map((m, i) => (isEnabled(m) ? null : i)).filter(x => x !== null)
   shape = shape || {
     new: true,
+    dimensions,
     gens: getGens(mirrors, skips),
     subgens: getSubGens(mirrors, skips),
     rels: getRels(dimensions, coxeter, stellation, skips),
     [`${dimensions}-face`]: [''],
+    coxeter,
+    stellation,
+    mirrors,
     skips,
     children: [],
   }
@@ -77,8 +82,13 @@ export const getShape = (
       }
       let subShape = {
         new: isnew,
+        dimensions: dimensions - subskips.length,
         subgens,
         [`${dimensions - subskips.length}-face`]: subwords,
+        coxeter: submatrix(coxeter, subskips),
+        stellation: submatrix(stellation, subskips),
+        mirrors: subvector(mirrors, subskips),
+        skips: subskips,
         // TOREMOVE:
         double: mirrors.filter((m, j) => !subskips.includes(j)).every(m => !!m),
         children: [],
@@ -95,8 +105,15 @@ export const getShape = (
         )
       }
       shape.children.push(subShape)
-    } else {
-      // TODO: only if parent has no children
+    }
+  }
+  if (shape.children.length === 0) {
+    console.info('No leaf found, digging deeper', skips)
+    for (let i = 0; i < dimensions; i++) {
+      if (skips.includes(i)) {
+        continue
+      }
+      const subskips = [...skips, i]
       shape.children.push(
         getShape(
           dimensions,
@@ -122,7 +139,7 @@ const learn = (cosets, row) => {
 
   while (row.left !== row.right) {
     const left_target = cosets.normal[row.left_coset][row.rel[row.left]]
-    if (left_target === undefined) {
+    if (left_target === MAX_UINT_32) {
       break
     }
 
@@ -132,7 +149,7 @@ const learn = (cosets, row) => {
 
   while (row.left !== row.right) {
     const right_coset = cosets.reverse[row.right_target][row.rel[row.right]]
-    if (right_coset === undefined) {
+    if (right_coset === MAX_UINT_32) {
       break
     }
 
@@ -162,34 +179,42 @@ export const simpleSolve = (
     gens,
     subgens,
     rels,
-    cosets: {
-      normal: [],
-      reverse: [],
-    },
-    rows: [],
-    words: [],
-    limit: 1000,
   }).words
 }
 
-export const solve = params => {
+function fillCosets(params) {
+  if (!params.cosets) {
+    params.cosets = {
+      normal: [],
+      reverse: [],
+    }
+  }
+  if (!params.rows) {
+    params.rows = []
+  }
+
+  if (!params.limit) {
+    params.limit = 1000
+  }
+
+  if (!params.done) {
+    params.done = false
+  }
   const {
     gens,
     subgens: strSubgens,
     rels: strRels,
     cosets,
     rows,
-    words,
     limit,
   } = params
-
   const dimensions = gens.length
   const rels = strRels.map(rel => [...rel].map(g => gens.indexOf(g)))
   const subgens = strSubgens.split('').map(g => gens.indexOf(g))
 
   if (cosets.normal.length === 0) {
-    cosets.normal.push(new Array(dimensions).fill())
-    cosets.reverse.push(new Array(dimensions).fill())
+    cosets.normal.push(new Uint32Array(dimensions).fill(MAX_UINT_32))
+    cosets.reverse.push(new Uint32Array(dimensions).fill(MAX_UINT_32))
 
     for (let i = 0; i < subgens.length; i++) {
       cosets.normal[0][subgens[i]] = 0
@@ -215,7 +240,8 @@ export const solve = params => {
       for (let i = rows.length - 1; i >= 0; i--) {
         if (learn(cosets, rows[i])) {
           learned = true
-          rows.splice(i, 1)
+          rows[i] = rows[rows.length - 1]
+          rows.pop()
         }
       }
       if (!learned) {
@@ -229,10 +255,10 @@ export const solve = params => {
       const coset = cosets.normal[i]
       for (let gen = 0; gen < coset.length; gen++) {
         let target = coset[gen]
-        if (target === undefined) {
+        if (target === MAX_UINT_32) {
           target = cosets.normal.length
-          cosets.normal.push(new Array(dimensions).fill())
-          cosets.reverse.push(new Array(dimensions).fill())
+          cosets.normal.push(new Uint32Array(dimensions).fill(MAX_UINT_32))
+          cosets.reverse.push(new Uint32Array(dimensions).fill(MAX_UINT_32))
 
           cosets.normal[i][gen] = target
           cosets.reverse[target][gen] = i
@@ -254,26 +280,45 @@ export const solve = params => {
       }
     }
   }
-  if (!rows.length) {
-    params.done = true
+  params.done = !rows.length
+}
+
+const remaining = (length, words) => {
+  for (let i = 0; i < length; i++) {
+    if (words[i] === undefined) {
+      return true
+    }
   }
+  return false
+}
+
+function wordify(params) {
+  if (!params.words) {
+    params.words = []
+  }
+  const {
+    gens,
+    cosets: { normal: cosets },
+    words,
+  } = params
+
   if (words.length === 0) {
     words[0] = ''
   }
   let change = true,
-    max = cosets.normal.length
-  while (remaining(cosets.normal.length, words) && change && --max) {
+    max = cosets.length
+  while (remaining(cosets.length, words) && change && --max) {
     change = false
     for (let i = 0; i < words.length; i++) {
       if (words[i] === undefined) {
         continue
       }
 
-      const coset = cosets.normal[i]
+      const coset = cosets[i]
       for (let gen = 0; gen < coset.length; gen++) {
         const target = coset[gen]
 
-        if (target === undefined || words[target] !== undefined) {
+        if (target === MAX_UINT_32 || words[target] !== undefined) {
           continue
         }
 
@@ -289,32 +334,23 @@ export const solve = params => {
   if (max === 0) {
     console.warn('Max iterations reached')
   }
-  // TODO:Clean snub
-  return { cosets, rows, words }
 }
 
-const remaining = (length, words) => {
-  for (let i = 0; i < length; i++) {
-    if (words[i] === undefined) {
-      return true
-    }
-  }
-  return false
+export const solve = params => {
+  fillCosets(params)
+  wordify(params)
+  return params
 }
 
-export const ToddCoxeter = (gens, subgens, rels, limit = 1000) => {
-  return solve({
+export const countCosets = (gens, subgens, rels, limit = 1000) => {
+  const params = {
     gens,
     subgens,
     rels,
-    cosets: {
-      normal: [],
-      reverse: [],
-    },
-    rows: [],
-    words: [],
     limit,
-  }).words
+  }
+  fillCosets(params)
+  return params.done ? params.cosets.normal.length : NaN
 }
 
 // Cube :
@@ -364,3 +400,52 @@ export const ToddCoxeter = (gens, subgens, rels, limit = 1000) => {
 // ToddCoxeter('abcd', 'abc', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 8
 // ToddCoxeter('abcd', 'bcd', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 8
 // ToddCoxeter('abcd', 'acd', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 8
+
+typeof window !== 'undefined' &&
+  (window.bench = () => {
+    const start = performance.now()
+    const res = countCosets(
+      'abcdefgh',
+      'abdefgh',
+      [
+        'aa',
+        'bb',
+        'cc',
+        'dd',
+        'ee',
+        'ff',
+        'gg',
+        'hh',
+        'ababab',
+        'acac',
+        'bcbcbc',
+        'adad',
+        'bdbd',
+        'cdcdcd',
+        'aeae',
+        'bebe',
+        'cecece',
+        'dede',
+        'afaf',
+        'bfbf',
+        'cfcf',
+        'dfdf',
+        'efefef',
+        'agag',
+        'bgbg',
+        'cgcg',
+        'dgdg',
+        'egeg',
+        'fgfgfg',
+        'ahah',
+        'bhbh',
+        'chch',
+        'dhdh',
+        'eheh',
+        'fhfh',
+        'ghghgh',
+      ],
+      5000
+    )
+    console.info(res, performance.now() - start)
+  })

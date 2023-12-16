@@ -111,6 +111,7 @@ select option {
 }
 .space-button.empty {
   font-size: 1.5em;
+  align-self: flex-end;
 }
 
 .space-button .processing-counter {
@@ -163,6 +164,7 @@ select option {
 .ui-row-middle {
   flex: 1;
   align-items: center;
+  min-height: 0;
 }
 .ui-row-bottom {
   align-items: flex-end;
@@ -266,6 +268,66 @@ select option {
 .projection label select {
   display: block;
 }
+
+.shape {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin: 0.5em 0;
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.shape-level {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin: 0.25em 0;
+}
+.shape-level > svg {
+  width: 1.5em;
+  height: 1.5em;
+  margin-right: 0.25em;
+}
+.shape-count {
+  min-width: 4ch;
+  text-align: center;
+}
+.shape-detail {
+  margin-left: 0.5em;
+  padding-left: 0.5em;
+}
+.shape-detail-split {
+  border-left: 1px solid rgba(255, 255, 255, 0.25);
+}
+.shape-detail-line {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.shape-detail-button {
+  background: none;
+  border: none;
+  font-size: 1em;
+  color: rgba(255, 255, 255, 1);
+}
+.shape-detail-button:not([disabled]) {
+  cursor: pointer;
+}
+.shape-detail-button:not([disabled]):hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+.shape-detail-button:not([disabled]):active {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+.shape .increase-limit {
+  font-size: 1em;
+  align-self: flex-end;
+}
+.shape-processing {
+  animation: processing 1s infinite;
+}
+
 .coxeters {
   display: flex;
   flex-direction: column;
