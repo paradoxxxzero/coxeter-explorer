@@ -321,7 +321,7 @@ select option {
   background-color: rgba(255, 255, 255, 0.15);
 }
 .shape .increase-limit {
-  font-size: 1em;
+  font-size: 1.25em;
   align-self: flex-end;
 }
 .shape-processing {

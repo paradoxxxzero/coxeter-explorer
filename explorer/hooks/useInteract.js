@@ -362,7 +362,7 @@ export const useInteract = (
 
     let distance = null
     let t = null
-    let speeds = []
+    const speeds = []
 
     const getDistance = () => {
       const vals = local.current.pointers.values()
@@ -393,7 +393,7 @@ export const useInteract = (
       if (!local.current.pointers.has(e.pointerId)) {
         return
       }
-      let last = local.current.pointers.get(e.pointerId)
+      const last = local.current.pointers.get(e.pointerId)
       const delta = [
         -(e.clientX - last[0]) / window.innerHeight, // height is intentional
         -(e.clientY - last[1]) / window.innerHeight,
@@ -461,27 +461,22 @@ export const useInteract = (
     }
 
     const onUp = e => {
-      if (!local.current.pointers.has(e.pointerId)) {
-        return
-      }
+      local.current.pointers.clear()
+
       if (rotations.auto) {
-        if (local.current.pointers.size === 1) {
-          speeds = []
-          t = null
-          animation.current.pause.delete(rotations.shift * 2)
-          animation.current.pause.delete(rotations.shift * 2 + 1)
-        } else {
-          animation.current.pause.add(rotations.shift * 2)
-          animation.current.pause.add(rotations.shift * 2 + 1)
-        }
+        speeds.length = 0
+        t = null
+        animation.current.pause.delete(rotations.shift * 2)
+        animation.current.pause.delete(rotations.shift * 2 + 1)
       }
       distance = null
-      local.current.pointers.delete(e.pointerId)
     }
 
     document.addEventListener('pointerdown', onDown)
     document.addEventListener('pointermove', onMove)
     document.addEventListener('pointerup', onUp)
+
+    const currentAnimation = animation.current
     return () => {
       document.removeEventListener('pointerdown', onDown)
       document.removeEventListener('pointermove', onMove)
@@ -490,7 +485,7 @@ export const useInteract = (
       if (loop.current) {
         cancelAnimationFrame(loop.current)
         loop.current = null
-        animation.current.t = null
+        currentAnimation.t = null
       }
     }
   }, [

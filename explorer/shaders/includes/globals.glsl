@@ -15,4 +15,4 @@ const float segments = float(SEGMENTS);
 #else
 const float segments = 1.f;
 #endif
-const float DT = .5f / segments;
+const float DT = .1f / segments;

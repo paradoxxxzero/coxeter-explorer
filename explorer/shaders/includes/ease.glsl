@@ -1,4 +1,7 @@
 float ease(float t) {
+  if(t < 0. || t > 1.) {
+    return t;
+  }
   #if EASING == 0  // linear
   return t;
   #elif EASING == 1 // sine

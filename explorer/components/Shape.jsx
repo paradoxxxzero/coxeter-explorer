@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { gearIcon } from '../icons'
-import CoxeterDiagram from './CoxeterDiagram'
+import { useCallback, useEffect, useState } from 'react'
+import { cogsIcon } from '../icons'
 import Shaper from '../workers/shape.worker?worker'
+import CoxeterDiagram from './CoxeterDiagram'
 const shaper = new Shaper()
 
 const icons = [
@@ -155,7 +155,7 @@ export default function Shape({ spaceType, shape, full, updateParams }) {
             2 ** (limit + 1)
           }`}
         >
-          {gearIcon}
+          {cogsIcon}
         </button>
       ) : null}
     </aside>
