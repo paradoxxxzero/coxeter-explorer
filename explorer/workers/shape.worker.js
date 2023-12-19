@@ -16,13 +16,18 @@ onmessage = ({ data: { shape, spaceType, limit } }) => {
           }
         }
         const eiqenvalues = spaceType.eigens.values
+        const params = {
+          ...shape,
+          subgens: subshape.quotient,
+          limit: 2 ** limit,
+        }
         let count = eiqenvalues.some(x => x <= 0)
           ? Infinity
           : shape.dimensions === subshape.dimensions
           ? 1
           : isNaN(visit[subshape.dimensions].count)
           ? NaN
-          : countCosets(shape.gens, subshape.subgens, shape.rels, 2 ** limit)
+          : countCosets(params)
 
         const existing = visit[subshape.dimensions].detail.find(
           ({ coxeter, stellation, mirrors }) =>

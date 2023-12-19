@@ -1,9 +1,9 @@
 import { MAX_UINT_32, arrayEquals } from '../../utils'
 import { atoi } from '../math'
-import { getShape, solve } from '../math/coset'
+import { getShape, ToddCoxeter } from '../math/coset'
 import { normalize, reflect } from '../math/hypermath'
 import { multiplyVector } from '../math/matrix'
-import { mirrorValue } from '../mirrors'
+import { isSnub, mirrorValue } from '../mirrors'
 
 let allVertices = null
 let verticesParams = null
@@ -21,69 +21,72 @@ const initCosets = (dimensions, coxeter, stellation, mirrors) => {
   ) {
     // Same group, no need to recompute, skip coset enumeration
     verticesParams.lastDrawn = 0
-    verticesParams.done = false
+    verticesParams.params.done = false
     edgesParams.forEach(edgeParams => {
       edgeParams.lastDrawn = 0
-      edgeParams.done = false
+      edgeParams.params.done = false
     })
     facesParams.forEach(faceParams => {
       faceParams.lastDrawn = 0
-      faceParams.done = false
+      faceParams.params.done = false
     })
     allVertices = []
     return
   }
   current = { dimensions, coxeter, stellation, mirrors }
   allVertices = []
-  const defaultParams = () => ({
-    lastDrawn: 0,
-  })
 
   const shape = getShape(dimensions, coxeter, stellation, mirrors)
   verticesParams = null
   edgesParams = []
   facesParams = []
-  const visit = s => {
-    if (s.new) {
-      if (s['2-face']) {
+  const visit = subShape => {
+    if (subShape.new) {
+      if (subShape.dimensions === 2) {
         facesParams.push({
-          gens: shape.gens,
-          rels: shape.rels,
-          subgens: s.subgens,
-          face: s['2-face'],
-          double: s.double,
-          ...defaultParams(),
+          shape,
+          subShape,
+          params: {
+            ...shape,
+            subgens: subShape.quotient,
+          },
+          lastDrawn: 0,
           toRetry: new Set(),
         })
-      } else if (s['1-face']) {
+      } else if (subShape.dimensions === 1) {
         edgesParams.push({
-          gens: shape.gens,
-          rels: shape.rels,
-          subgens: s.subgens,
-          edge: s['1-face'],
-          ...defaultParams(),
+          shape,
+          subShape,
+          params: {
+            ...shape,
+            subgens: subShape.quotient,
+          },
+          lastDrawn: 0,
         })
-      } else if (s['0-face']) {
+      } else if (subShape.dimensions === 0) {
         verticesParams = {
-          gens: shape.gens,
-          rels: shape.rels,
-          subgens: s.subgens,
-          vertex: s['0-face'],
-          ...defaultParams(),
+          shape,
+          subShape,
+          params: {
+            ...shape,
+            subgens: subShape.quotient,
+          },
+          lastDrawn: 0,
         }
       }
     }
-    if (s.children) {
-      s.children.forEach(visit)
+    if (subShape.children) {
+      subShape.children.forEach(visit)
     }
   }
   visit(shape)
+  // console.log(shape)
 }
 
-export const reflectToVertex = (word, index) => {
+export const reflectToVertex = (word, index, gens) => {
   for (let i = 0; i < word.length; i++) {
-    const j = atoi(word[i])
-    const newIndex = verticesParams.cosets.normal[index][j]
+    const j = gens.indexOf(word[i])
+    const newIndex = verticesParams.params.cosets.normal[index][j]
     if (newIndex === MAX_UINT_32) {
       return
     }
@@ -122,23 +125,34 @@ onmessage = ({
     let edges = []
     let faces = []
     let partials = []
-    if (!verticesParams.done) {
-      verticesParams.limit = limit
 
-      solve(verticesParams)
-      for (
-        let i = verticesParams.lastDrawn;
-        i < verticesParams.words.length;
-        i++
-      ) {
-        const word = verticesParams.words[i]
+    const params = verticesParams.params
+    if (!params.done) {
+      params.limit = limit
+      ToddCoxeter(params)
+      for (let i = verticesParams.lastDrawn; i < params.words.length; i++) {
+        const word = params.words[i]
         let vertex
         if (word === '') {
           vertex = rootVertex
         } else {
-          const index = reflectToVertex(word.slice(0, -1), 0)
-          const normal = rootNormals[word.charCodeAt(word.length - 1) - 97]
-          vertex = reflect(allVertices[index], normal, metric)
+          const index = reflectToVertex(
+            word.slice(0, -1),
+            0, // reflectToVertex(space[0], 0, shape.gens),
+            params.gens
+          )
+          const reflects = Object.entries(params.replacements || {})
+            .reduce(
+              (acc, [key, value]) => acc.replace(new RegExp(key, 'g'), value),
+              word.slice(-1)
+            )
+            .split('')
+          vertex = allVertices[index]
+          for (let i = 0; i < reflects.length; i++) {
+            const j = atoi(reflects[i])
+            const normal = rootNormals[j]
+            vertex = reflect(vertex, normal, metric)
+          }
         }
         allVertices.push(vertex)
 
@@ -150,25 +164,28 @@ onmessage = ({
         verticesParams.lastDrawn = i + 1
       }
     }
-
     for (let i = 0; i < edgesParams.length; i++) {
       const edgeParams = edgesParams[i]
-      if (!edgeParams.done) {
-        edgeParams.limit = limit * (curvature > 0 ? 1 : curvature < 0 ? 1.5 : 3) // ???
-        solve(edgeParams)
+      const params = edgeParams.params
+      const shape = edgeParams.shape
+      const subShape = edgeParams.subShape
+      if (!params.done) {
+        params.limit = limit * (curvature > 0 ? 1 : curvature < 0 ? 1.5 : 3) // ???
+        ToddCoxeter(params)
       }
       // Get index of target vertex in base face
-      const base = reflectToVertex(edgeParams.edge[0], 0)
-      const target = reflectToVertex(edgeParams.edge[1], 0)
-      for (let j = edgeParams.lastDrawn; j < edgeParams.words.length; j++) {
-        const word = edgeParams.words[j]
+      const base = reflectToVertex(subShape.space[0], 0, shape.gens)
+      const target = reflectToVertex(subShape.space[1], 0, shape.gens)
+
+      for (let j = edgeParams.lastDrawn; j < params.words.length; j++) {
+        const word = params.words[j]
         if (word === undefined) {
           continue
         }
         // Get the origin vertex after reflections
-        const start = reflectToVertex(word, base)
+        const start = reflectToVertex(word, base, params.gens)
         // Get the target vertex after reflections
-        const end = reflectToVertex(word, target)
+        const end = reflectToVertex(word, target, params.gens)
 
         if (start === undefined || end === undefined) {
           edgeParams.lastDrawn = j
@@ -185,35 +202,46 @@ onmessage = ({
 
     for (let i = 0; i < facesParams.length; i++) {
       const faceParams = facesParams[i]
-      if (faceParams.face.length === 1) {
-        faceParams.words = faceParams.face
-        faceParams.face = verticesParams.words
-        faceParams.double = mirrors.every(m => !!m)
-        faceParams.done = true
+      const params = faceParams.params
+      const shape = faceParams.shape
+      const subShape = faceParams.subShape
+      const double = subShape.mirrors.every(m => !!m)
+      // const snub = subShape.mirrors.some(m => isSnub(m))
+      // TODO: dimensions 2
+      if (shape.dimensions === 2) {
+        params.words = params.space
+        subShape.space = verticesParams.params.words
+        params.done = true
       }
-      if (!faceParams.done) {
-        faceParams.limit =
-          limit * (curvature > 0 ? 1 : curvature < 0 ? 1.5 : 2.5) // ???
-        solve(faceParams)
+      // if (faceParams.face.length === 1) {
+      //   faceParams.words = faceParams.face
+      //   faceParams.face = verticesParams.words
+      //   faceParams.double = mirrors.every(m => !!m)
+      //   faceParams.done = true
+      // }
+      if (!params.done) {
+        params.limit = limit * (curvature > 0 ? 1 : curvature < 0 ? 1.5 : 2.5) // ???
+        ToddCoxeter(params)
       }
-
       const face = []
       // Get vertices of the base face
-      for (let j = 0; j < faceParams.face.length; j++) {
+      for (let j = 0; j < subShape.space.length; j++) {
         // These vertices can be undefined if the face is not yet closed or ever
-        face.push(reflectToVertex(faceParams.face[j], 0))
+        face.push(
+          reflectToVertex(subShape.space[j], 0, verticesParams.params.gens)
+        )
       }
 
       // Start by retrying last partial faces
       for (const j of faceParams.toRetry) {
-        const word = faceParams.words[j]
+        const word = params.words[j]
         const vertices = []
         for (let k = 0; k < face.length; k++) {
-          const faceVertex = face[reorder(k, face.length, faceParams.double)]
+          const faceVertex = face[reorder(k, face.length, double)]
           if (faceVertex === undefined) {
             continue
           }
-          const vertex = reflectToVertex(word, faceVertex)
+          const vertex = reflectToVertex(word, faceVertex, params.gens)
           if (vertex === undefined) {
             continue
           }
@@ -236,17 +264,19 @@ onmessage = ({
       }
 
       // Get these vertices after reflections
-      for (let j = faceParams.lastDrawn; j < faceParams.words.length; j++) {
+      for (let j = faceParams.lastDrawn; j < params.words.length; j++) {
         let fail = false
-        const word = faceParams.words[j]
+        const word = params.words[j]
         const vertices = []
         for (let k = 0; k < face.length; k++) {
-          const faceVertex = face[reorder(k, face.length, faceParams.double)]
+          // const l = snub ? k : reorder(k, face.length, double)
+          const l = reorder(k, face.length, double)
+          const faceVertex = face[l]
           if (faceVertex === undefined) {
             fail = true
             continue
           }
-          const vertex = reflectToVertex(word, faceVertex)
+          const vertex = reflectToVertex(word, faceVertex, params.gens)
           if (vertex === undefined) {
             fail = true
             continue

@@ -31,6 +31,15 @@ import Space from './Space'
 import { presets } from '../presets/index.jsx'
 import Shape from './Shape.jsx'
 
+const getShowUI = () => {
+  try {
+    return localStorage.getItem('showUI') || 'simple'
+  } catch (e) {
+    console.error(e)
+    return 'simple'
+  }
+}
+
 export default function UI({
   runtime,
   params,
@@ -38,7 +47,7 @@ export default function UI({
   updateParams,
   updateRotations,
 }) {
-  const [showUI, setShowUI] = useState('simple')
+  const [showUI, setShowUI] = useState(getShowUI)
   const [showPresets, setShowPresets] = useState(false)
   const [presetIndex, setPresetIndex] = useState(0)
 
@@ -61,15 +70,20 @@ export default function UI({
   )
   const handleUI = useCallback(
     () =>
-      setShowUI(
-        showUI =>
-          ({
-            simple: 'advanced',
-            advanced: 'full',
-            full: 'empty',
-            empty: 'simple',
-          })[showUI]
-      ),
+      setShowUI(showUI => {
+        const newShowUI = {
+          simple: 'advanced',
+          advanced: 'full',
+          full: 'empty',
+          empty: 'simple',
+        }[showUI]
+        try {
+          localStorage.setItem('showUI', newShowUI)
+        } catch (e) {
+          console.error(e)
+        }
+        return newShowUI
+      }),
     []
   )
 

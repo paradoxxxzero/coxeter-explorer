@@ -1,6 +1,6 @@
-import { getRels, itoa } from '.'
+import { getRels, itoa, itor } from '.'
 import { MAX_UINT_32, range } from '../../utils'
-import { isEnabled } from '../mirrors'
+import { isEnabled, isSnub } from '../mirrors'
 import { submatrix, subvector } from './matrix'
 
 export const getGens = (mirrors, skips = []) =>
@@ -9,10 +9,17 @@ export const getGens = (mirrors, skips = []) =>
 export const getSubGens = (mirrors, skips = []) =>
   mirrors.map((m, i) => (skips.includes(i) || m ? '' : itoa(i))).join('')
 
-export const hasOrder = (word, order) => {
+export const hasOrder = (words, order) => {
   if (order === 0) {
     return true
   }
+  let word = words[words.length - 1]
+  // if (replacements) {
+  //   word = Object.entries(replacements).reduce(
+  //     (acc, [key, value]) => acc.replace(new RegExp(key, 'g'), value),
+  //     word
+  //   )
+  // }
   const seen = new Set()
   for (let i = 0; i < word.length; i++) {
     const c = word[i]
@@ -42,14 +49,20 @@ export const getShape = (
   shape = shape || {
     new: true,
     dimensions,
-    gens: getGens(mirrors, skips),
-    subgens: getSubGens(mirrors, skips),
-    rels: getRels(dimensions, coxeter, stellation, skips),
-    [`${dimensions}-face`]: [''],
     coxeter,
     stellation,
     mirrors,
+
     skips,
+
+    // For convenience:
+    gens: getGens(mirrors, skips),
+    subgens: getSubGens(mirrors, skips),
+    rels: getRels(dimensions, coxeter, stellation, skips),
+    quotient: '',
+    space: [''],
+    snub: mirrors.some(isSnub),
+
     children: [],
   }
   for (let i = 0; i < dimensions; i++) {
@@ -59,41 +72,60 @@ export const getShape = (
     const subskips = [...skips, i]
     const actives = range(dimensions).filter(j => !subskips.includes(j))
     const sortedSubskips = subskips.sort().join('-')
+
     let isnew = false
     if (!solved.has(sortedSubskips)) {
       isnew = true
-      solved.set(
-        sortedSubskips,
-        simpleSolve(dimensions, coxeter, stellation, mirrors, subskips)
-      )
-    }
-    const subwords = solved.get(sortedSubskips)
 
-    // If the coset generate a n-face
-    if (hasOrder(subwords[subwords.length - 1], dimensions - subskips.length)) {
-      let subgens = ''
-      for (let j = 0; j < dimensions; j++) {
-        if (
-          !subskips.includes(j) ||
-          (!mirrors[j] && !actives.some(k => coxeter[k][j] !== 2))
-        ) {
-          subgens += itoa(j)
+      const subParams = {
+        dimensions: dimensions - subskips.length,
+        coxeter: submatrix(coxeter, subskips),
+        stellation: submatrix(stellation, subskips),
+        mirrors: subvector(mirrors, subskips),
+
+        skips: subskips,
+
+        gens: getGens(mirrors, subskips),
+        subgens: getSubGens(mirrors, subskips),
+        rels: getRels(dimensions, coxeter, stellation, subskips),
+        snub: subvector(mirrors, subskips).some(isSnub),
+      }
+      ToddCoxeter(subParams)
+      solved.set(sortedSubskips, subParams)
+    }
+
+    const subParams = solved.get(sortedSubskips)
+    const space = subParams.words
+
+    // If the coset generate a space
+    if (hasOrder(space, subParams.dimensions)) {
+      let quotient = ''
+      if (subParams.snub && space.length <= subParams.dimensions) {
+        // New face from both rotation
+        console.warn('TODO')
+        space.push(...subskips.map(itoa))
+      } else {
+        for (let j = 0; j < dimensions; j++) {
+          if (
+            !subskips.includes(j) ||
+            (isEnabled(mirrors[j]) &&
+              !mirrors[j] &&
+              !actives.some(k => coxeter[k][j] !== 2))
+          ) {
+            quotient += itoa(j)
+          }
         }
       }
       let subShape = {
         new: isnew,
-        dimensions: dimensions - subskips.length,
-        subgens,
-        [`${dimensions - subskips.length}-face`]: subwords,
-        coxeter: submatrix(coxeter, subskips),
-        stellation: submatrix(stellation, subskips),
-        mirrors: subvector(mirrors, subskips),
-        skips: subskips,
-        // TOREMOVE:
-        double: mirrors.filter((m, j) => !subskips.includes(j)).every(m => !!m),
+        ...subParams,
+
+        quotient,
+        space,
+
         children: [],
       }
-      if (dimensions - subskips.length > 0) {
+      if (subParams.dimensions > 0) {
         subShape = getShape(
           dimensions,
           coxeter,
@@ -165,21 +197,135 @@ const learn = (cosets, row) => {
   return false
 }
 
-export const simpleSolve = (
-  dimensions,
-  coxeter,
-  stellation,
-  mirrors,
-  subskips
-) => {
-  const rels = getRels(dimensions, coxeter, stellation, subskips)
-  const gens = getGens(mirrors, subskips)
-  const subgens = getSubGens(mirrors, subskips)
-  return solve({
-    gens,
-    subgens,
-    rels,
-  }).words
+export const snub = params => {
+  // console.log(
+  //   '>',
+  //   params.gens,
+  //   params.subgens,
+  //   params.replacements,
+  //   params.rels
+  // )
+  if (params.mirrors.some(m => isSnub(m))) {
+    params.replacements = {}
+    let r = 0
+    const size = params.mirrors.length
+    const originalSubgens = params.subgens
+    for (let i = 0; i < size; i++) {
+      for (let j = 0; j < i; j++) {
+        if (
+          (params.skip &&
+            (params.skips.includes(i) || params.skips.includes(j))) ||
+          !(params.gens.includes(itoa(i)) && params.gens.includes(itoa(j)))
+        ) {
+          continue
+        }
+        if (isSnub(params.mirrors[i]) && isSnub(params.mirrors[j])) {
+          const R = itor(r)
+          params.replacements[R] = itoa(j) + itoa(i)
+          params.gens =
+            params.gens
+              .split('')
+              .filter(g => ![i, j].map(c => itoa(c)).includes(g))
+              .join('') + R
+          params.subgens = params.subgens
+            .replace(new RegExp(itoa(j) + itoa(i), 'g'), '')
+            .split('')
+            .filter(c => c !== itoa(j) && c !== itoa(i))
+            .join('')
+          params.rels = params.rels
+            .filter(rel => ![i, j].map(c => itoa(c).repeat(2)).includes(rel))
+            .map(rel => rel.replace(new RegExp(itoa(j) + itoa(i), 'g'), R))
+          r++
+        } else if (size < 3 && isSnub(params.mirrors[i])) {
+          const R = itor(r)
+          params.replacements[R] = itoa(i) + itoa(j) + itoa(i)
+          params.gens =
+            params.gens
+              .split('')
+              .filter(g => itoa(j) !== g)
+              .join('') + R
+          params.subgens = params.subgens
+            .replace(new RegExp(itoa(j) + itoa(i), 'g'), '')
+            .split('')
+            .filter(c => c !== itoa(j) && c !== itoa(i))
+            .join('')
+          params.rels = params.rels
+            .filter(rel => ![i, j].map(c => itoa(c).repeat(2)).includes(rel))
+            .map(rel => rel.replace(new RegExp(itoa(j) + itoa(i), 'g'), R))
+          r++
+        } else if (size < 3 && isSnub(params.mirrors[j])) {
+          const R = itor(r)
+          params.replacements[R] = itoa(j) + itoa(i) + itoa(j)
+          params.gens =
+            params.gens
+              .split('')
+              .filter(g => itoa(i) !== g)
+              .join('') + R
+          params.subgens = params.subgens
+            .replace(new RegExp(itoa(j) + itoa(i), 'g'), '')
+            .split('')
+            .filter(c => c !== itoa(j) && c !== itoa(i))
+            .join('')
+          params.rels = params.rels
+            .filter(rel => ![i, j].map(c => itoa(c).repeat(2)).includes(rel))
+            .map(rel => rel.replace(new RegExp(itoa(j) + itoa(i), 'g'), R))
+          r++
+        }
+      }
+    }
+
+    if (params.gens === 'rst') {
+      if (originalSubgens === 'c') {
+        params.subgens = 's'
+      }
+      params.rels.push('rst')
+    }
+    // console.log(
+    //   '>S',
+    //   params.gens,
+    //   params.subgens,
+    //   params.replacements,
+    //   params.rels
+    // )
+
+    // params.subgens = Object.entries(params.replacements).reduce(
+    //   (acc, [key, value]) => acc.replace(new RegExp(value, 'g'), key),
+    //   params.subgens
+    // )
+
+    // if (params.subgens === 'c') {
+    //   params.subgens = params.subgens.toUpperCase()
+    // }
+    // params.rels = params.rels.map(rel =>
+    //   Object.entries(params.replacements).reduce(
+    //     (acc, [key, value]) => acc.replace(new RegExp(value, 'g'), key),
+    //     rel
+    //   )
+    // )
+    // const replaced = [
+    //   ...new Set(
+    //     Object.values(params.replacements)
+    //       .map(w => w.split(''))
+    //       .flat()
+    //   ),
+    // ]
+    // params.rels = params.rels.filter(
+    //   rel => !replaced.some(c => rel === `${c}${c}`)
+    // )
+    // if (params.gens === 'ABC') {
+    //   params.rels.push('ABC')
+    // }
+  }
+}
+export const ToddCoxeter = params => {
+  fillCosets(params)
+  wordify(params)
+  return params.words
+}
+
+export const countCosets = params => {
+  fillCosets(params)
+  return params.done ? params.cosets.normal.length : NaN
 }
 
 function fillCosets(params) {
@@ -188,6 +334,7 @@ function fillCosets(params) {
       normal: [],
       reverse: [],
     }
+    // snub(params)
   }
   if (!params.rows) {
     params.rows = []
@@ -208,6 +355,9 @@ function fillCosets(params) {
     rows,
     limit,
   } = params
+  if (strSubgens.split('').some(c => !gens.includes(c))) {
+    throw new Error(`Invalid subgens "${strSubgens}" <- "${gens}"`)
+  }
   const dimensions = gens.length
   const rels = strRels.map(rel => [...rel].map(g => gens.indexOf(g)))
   const subgens = strSubgens.split('').map(g => gens.indexOf(g))
@@ -336,71 +486,58 @@ function wordify(params) {
   }
 }
 
-export const solve = params => {
-  fillCosets(params)
-  wordify(params)
-  return params
-}
-
-export const countCosets = (gens, subgens, rels, limit = 1000) => {
-  const params = {
-    gens,
-    subgens,
-    rels,
-    limit,
-  }
-  fillCosets(params)
-  return params.done ? params.cosets.normal.length : NaN
-}
-
 // Cube :
 // All vertices (all mirrors):
-// ToddCoxeter('abc', '', ['aa', 'bb', 'cc', 'abababab', 'bcbcbc', 'acac']) -> 48
+// TC('abc', '', ['aa', 'bb', 'cc', 'abababab', 'bcbcbc', 'acac']) -> 48
 
 // Vertices:
-// ToddCoxeter('abc', 'bc', ['aa', 'bb', 'cc', 'abababab', 'bcbcbc', 'acac']) -> 8
+// TC('abc', 'bc', ['aa', 'bb', 'cc', 'abababab', 'bcbcbc', 'acac']) -> 8
 // Edges:
-// ToddCoxeter('abc', 'ac', ['aa', 'bb', 'cc', 'abababab', 'bcbcbc', 'acac']) -> 12
+// TC('abc', 'ac', ['aa', 'bb', 'cc', 'abababab', 'bcbcbc', 'acac']) -> 12
 // Faces:
-// ToddCoxeter('abc', 'ab', ['aa', 'bb', 'cc', 'abababab', 'bcbcbc', 'acac']) -> 6
+// TC('abc', 'ab', ['aa', 'bb', 'cc', 'abababab', 'bcbcbc', 'acac']) -> 6
 
 // Tesseract:
 // Vertices:
-// ToddCoxeter('abcd', 'bcd', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 16
+// TC('abcd', 'bcd', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 16
 // Edges:
-// ToddCoxeter('abcd', 'acd', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 32
+// TC('abcd', 'acd', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 32
 // Faces:
-// ToddCoxeter('abcd', 'abd', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 24
+// TC('abcd', 'abd', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 24
 // Volumes:
-// ToddCoxeter('abcd', 'abc', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 8
+// TC('abcd', 'abc', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 8
 
 // Rhombicuboctahedron:
 // Vertices:
-// ToddCoxeter('abc', 'b', ['aa', 'bb', 'cc', 'abababab', 'bcbcbc', 'acac']) -> 24
+// TC('abc', 'b', ['aa', 'bb', 'cc', 'abababab', 'bcbcbc', 'acac']) -> 24
 // Edges:
-// ToddCoxeter('abc', 'a', ['aa', 'bb', 'cc', 'abababab', 'bcbcbc', 'acac']) -> 24
-// ToddCoxeter('abc', 'c', ['aa', 'bb', 'cc', 'abababab', 'bcbcbc', 'acac']) -> 24
+// TC('abc', 'a', ['aa', 'bb', 'cc', 'abababab', 'bcbcbc', 'acac']) -> 24
+// TC('abc', 'c', ['aa', 'bb', 'cc', 'abababab', 'bcbcbc', 'acac']) -> 24
 // Faces:
-// ToddCoxeter('abc', 'ab', ['aa', 'bb', 'cc', 'abababab', 'bcbcbc', 'acac']) -> 6
-// ToddCoxeter('abc', 'bc', ['aa', 'bb', 'cc', 'abababab', 'bcbcbc', 'acac']) -> 8
-// ToddCoxeter('abc', 'ac', ['aa', 'bb', 'cc', 'abababab', 'bcbcbc', 'acac']) -> 12
+// TC('abc', 'ab', ['aa', 'bb', 'cc', 'abababab', 'bcbcbc', 'acac']) -> 6
+// TC('abc', 'bc', ['aa', 'bb', 'cc', 'abababab', 'bcbcbc', 'acac']) -> 8
+// TC('abc', 'ac', ['aa', 'bb', 'cc', 'abababab', 'bcbcbc', 'acac']) -> 12
 
 // Cantellated 8-cell:
 // Vertices:
-// ToddCoxeter('abcd', 'bd', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 96
+// TC('abcd', 'bd', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 96
 // Edges:
-// ToddCoxeter('abcd', 'ad', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 96
-// ToddCoxeter('abcd', 'c', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 192
+// TC('abcd', 'ad', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 96
+// TC('abcd', 'c', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 192
 // Faces:
-// ToddCoxeter('abcd', 'abd', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 24
-// ToddCoxeter('abcd', 'bc', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 64
-// ToddCoxeter('abcd', 'ac', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 96
-// ToddCoxeter('abcd', 'cd', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 64
+// TC('abcd', 'abd', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 24
+// TC('abcd', 'bc', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 64
+// TC('abcd', 'ac', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 96
+// TC('abcd', 'cd', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 64
 // Volumes:
-// ToddCoxeter('abcd', 'abc', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 8
-// ToddCoxeter('abcd', 'bcd', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 8
-// ToddCoxeter('abcd', 'acd', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 8
+// TC('abcd', 'abc', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 8
+// TC('abcd', 'bcd', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 8
+// TC('abcd', 'acd', ['aa', 'bb', 'cc', 'dd', 'abababab', 'acac', 'bcbcbc', 'adad', 'bdbd', 'cdcdcd']) -> 8
 
+// SnubCube:
+// Vertices:
+// TC('ab', '', ['aaaa', 'bbb', 'abab']) -> 24
+// TC('AB', '', ['AAAA', 'BBB', 'ABAB']).words.map(w => w.replace(/A/g, 'ab').replace(/B/g, 'bc'))
 typeof window !== 'undefined' &&
   (window.bench = () => {
     const start = performance.now()
@@ -449,3 +586,6 @@ typeof window !== 'undefined' &&
     )
     console.info(res, performance.now() - start)
   })
+typeof window !== 'undefined' &&
+  (window.TC = (gens, subgens, rels) =>
+    ToddCoxeter({ gens, subgens, rels, mirrors: [] }))

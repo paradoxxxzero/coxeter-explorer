@@ -59,6 +59,9 @@ export default function Shape({ spaceType, shape, full, updateParams }) {
   }, [shape])
 
   useEffect(() => {
+    if (!shape) {
+      return
+    }
     setProcessing(true)
     shaper.postMessage({
       spaceType,
@@ -95,6 +98,7 @@ export default function Shape({ spaceType, shape, full, updateParams }) {
 
   const formatCount = count =>
     isNaN(count) ? '…' : isFinite(count) ? count.toLocaleString() : '∞'
+
   return (
     <aside className={`shape${processing ? ' shape-processing' : ''}`}>
       {Object.values(visit)

@@ -96,6 +96,7 @@ export const genPaths = (a, len) =>
     .map((_, i) => i.toString(a.length).replace(/./g, c => a[c]))
 
 export const itoa = i => String.fromCharCode(97 + i)
+export const itor = i => String.fromCharCode(114 + i)
 export const atoi = a => a.charCodeAt(0) - 97
 
 export const getRels = (dimensions, coxeter, stellation, skips = []) => {

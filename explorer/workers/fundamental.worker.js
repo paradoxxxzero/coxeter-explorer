@@ -1,6 +1,6 @@
 import { range } from '../../utils'
 import { combinations, hash } from '../math'
-import { getShape, solve } from '../math/coset'
+import { ToddCoxeter, getShape } from '../math/coset'
 import { normalize, reflect } from '../math/hypermath'
 import { transpose } from '../math/matrix'
 
@@ -12,9 +12,6 @@ let faceHashes = null
 let baseIndex = 0
 
 const initCosets = (dimensions, coxeter, stellation, rootVertices, metric) => {
-  const defaultParams = () => ({
-    lastDrawn: 0,
-  })
   const rootVerticesT = transpose(rootVertices)
   fundamentalVertices = range(dimensions).map(i =>
     normalize(rootVerticesT[i], metric)
@@ -27,18 +24,20 @@ const initCosets = (dimensions, coxeter, stellation, rootVertices, metric) => {
     stellation,
     new Array(dimensions).fill(1)
   )
-  const visit = s => {
-    if (s.new && s['0-face']) {
+  const visit = subShape => {
+    if (subShape.new && subShape.dimensions === 0) {
       verticesParams = {
-        gens: shape.gens,
-        rels: shape.rels,
-        subgens: s.subgens,
-        vertex: s['0-face'],
-        ...defaultParams(),
+        shape,
+        subShape,
+        params: {
+          ...shape,
+          subgens: subShape.quotient,
+        },
+        lastDrawn: 0,
       }
     }
-    if (s.children) {
-      s.children.forEach(visit)
+    if (subShape.children) {
+      subShape.children.forEach(visit)
     }
   }
   visit(shape)
@@ -86,15 +85,12 @@ onmessage = ({
     let vertices = []
     let edges = []
     let faces = []
-    if (!verticesParams.done) {
-      verticesParams.limit = limit
-      solve(verticesParams)
-      for (
-        let i = verticesParams.lastDrawn;
-        i < verticesParams.words.length;
-        i++
-      ) {
-        const word = verticesParams.words[i]
+    const params = verticesParams.params
+    if (!params.done) {
+      params.limit = limit
+      ToddCoxeter(params)
+      for (let i = verticesParams.lastDrawn; i < params.words.length; i++) {
+        const word = params.words[i]
         if (word === undefined) {
           continue
         }
