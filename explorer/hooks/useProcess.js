@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { coxeterToGram, getGeometry, getSpaceType } from '../math/hypermath'
 import { killRunningWorkers, workers } from '../workers/worker'
-import { getShape } from '../math/coset'
+import { getShape } from '../math/shape'
 
 const asyncProcess = async (runtime, running, setRuntime) => {
   // Rules gets computed on non stellated coxeter group

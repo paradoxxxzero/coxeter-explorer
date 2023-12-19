@@ -1,5 +1,5 @@
 import { arrayEquals } from '../../utils'
-import { countCosets } from '../math/coset'
+import { countCosets } from '../math/shape'
 
 onmessage = ({ data: { shape, spaceType, limit } }) => {
   try {

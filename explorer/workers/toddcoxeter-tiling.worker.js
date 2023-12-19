@@ -1,9 +1,10 @@
 import { MAX_UINT_32, arrayEquals } from '../../utils'
 import { atoi } from '../math'
-import { getShape, ToddCoxeter } from '../math/coset'
+import { getShape } from '../math/shape'
 import { normalize, reflect } from '../math/hypermath'
 import { multiplyVector } from '../math/matrix'
-import { isSnub, mirrorValue } from '../mirrors'
+import { ToddCoxeter } from '../math/toddcoxeter'
+import { mirrorValue } from '../mirrors'
 
 let allVertices = null
 let verticesParams = null

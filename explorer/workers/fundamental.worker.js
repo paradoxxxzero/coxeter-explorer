@@ -1,8 +1,9 @@
 import { range } from '../../utils'
 import { combinations, hash } from '../math'
-import { ToddCoxeter, getShape } from '../math/coset'
+import { getShape } from '../math/shape'
 import { normalize, reflect } from '../math/hypermath'
 import { transpose } from '../math/matrix'
+import { ToddCoxeter } from '../math/toddcoxeter'
 
 let verticesParams = null
 let fundamentalVertices = null
