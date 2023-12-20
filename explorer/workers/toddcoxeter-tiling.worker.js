@@ -98,8 +98,8 @@ const reflectWord = (state, word) => {
   const { rootVertex, rootNormals, metric } = state
 
   let v = rootVertex
-
-  for (let i = 0; i < word.length; i++) {
+  // abcbd => a(b(c(b(d(rootVertex)))))
+  for (let i = word.length - 1; i >= 0; i--) {
     v = reflect(v, rootNormals[word.charCodeAt(i) - 97], metric)
   }
   return v
@@ -194,10 +194,10 @@ onmessage = ({
           continue
         }
         // Get the origin vertex after reflections
-        const startWord = subShape.space[0] + word
+        const startWord = word + subShape.space[0]
         const start = vertexFromWord(startWord)
         // Get the target vertex after reflections
-        const endWord = subShape.space[1] + word
+        const endWord = word + subShape.space[1]
         const end = vertexFromWord(endWord)
 
         if (start === undefined || end === undefined) {
@@ -239,7 +239,7 @@ onmessage = ({
         const vertices = []
         for (let k = 0; k < subShape.space.length; k++) {
           const l = reorder(k, subShape.space.length, double)
-          const vertexWord = subShape.space[l] + word
+          const vertexWord = word + subShape.space[l]
           const vertex = vertexFromWord(vertexWord)
           if (vertex === undefined) {
             continue
@@ -272,7 +272,7 @@ onmessage = ({
         for (let k = 0; k < subShape.space.length; k++) {
           // const l = snub ? k : reorder(k, face.length, double)
           const l = reorder(k, subShape.space.length, double)
-          const vertexWord = subShape.space[l] + word
+          const vertexWord = word + subShape.space[l]
           const vertex = vertexFromWord(vertexWord)
           if (vertex === undefined) {
             fail = true

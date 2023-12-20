@@ -114,7 +114,7 @@ const words = function (params, gens) {
           // Might be a coincidence stop here
           return names
         }
-        names.set(nextCosetId, names.get(cosetId) + generator)
+        names.set(nextCosetId, generator + names.get(cosetId))
         remaining.push(nextCosetId)
       }
     }
@@ -125,7 +125,7 @@ const words = function (params, gens) {
 export const wordToCoset = (params, word) => {
   // Start at 1
   let cosetId = 1
-  for (let i = 0; i < word.length; i++) {
+  for (let i = word.length - 1; i >= 0; i--) {
     cosetId = quotient(params, cosetId)
     const coset = params.cosets.get(cosetId)
     if (coset.size < params.gens.length * 2) {
