@@ -72,13 +72,14 @@ export const getShape = (
     }
     const subskips = [...skips, i]
     const actives = range(dimensions).filter(j => !subskips.includes(j))
-    const sortedSubskips = subskips.sort().join('-')
+    const key = subskips.sort().join('-')
 
     let isnew = false
-    if (!solved.has(sortedSubskips)) {
+    if (!solved.has(key)) {
       isnew = true
 
       const subParams = {
+        key,
         dimensions: dimensions - subskips.length,
         coxeter: submatrix(coxeter, subskips),
         stellation: submatrix(stellation, subskips),
@@ -92,10 +93,10 @@ export const getShape = (
         snub: subvector(mirrors, subskips).some(isSnub),
       }
       ToddCoxeter(subParams)
-      solved.set(sortedSubskips, subParams)
+      solved.set(key, subParams)
     }
 
-    const subParams = solved.get(sortedSubskips)
+    const subParams = solved.get(key)
     const space = subParams.words
 
     // If the coset generate a space

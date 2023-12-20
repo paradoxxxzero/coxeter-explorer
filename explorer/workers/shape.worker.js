@@ -1,10 +1,16 @@
 import { arrayEquals } from '../../utils'
 import { countCosets } from '../math/toddcoxeter'
 
-onmessage = ({ data: { shape, spaceType, limit } }) => {
+let cache
+
+onmessage = ({ data: { shape, spaceType, first } }) => {
   try {
-    // TODO: reuse already computed cosets
+    // TODO: share these enumeration with the toddcoxeter-tiling worker
     const visit = {}
+    let allDone = true
+    if (first) {
+      cache = new Map()
+    }
 
     const visitShape = subshape => {
       if (subshape?.new) {
@@ -13,21 +19,33 @@ onmessage = ({ data: { shape, spaceType, limit } }) => {
             dimensions: subshape.dimensions,
             count: 0,
             detail: [],
+            done: true,
           }
         }
         const eiqenvalues = spaceType.eigens.values
-        const params = {
-          ...shape,
-          subgens: subshape.quotient,
-          limit: 2 ** limit,
+
+        let count
+        let done = true
+
+        if (eiqenvalues.some(x => x <= 0)) {
+          count = Infinity
+        } else if (shape.dimensions === subshape.dimensions) {
+          count = 1
+        } else {
+          if (!cache.has(subshape.key)) {
+            cache.set(subshape.key, {
+              ...shape,
+              subgens: subshape.quotient,
+              limit: 100,
+            })
+          }
+          const cached = cache.get(subshape.key)
+          if (!cached.done) {
+            cached.count = countCosets(cached)
+            done = cached.done
+          }
+          count = cached.count
         }
-        let count = eiqenvalues.some(x => x <= 0)
-          ? Infinity
-          : shape.dimensions === subshape.dimensions
-          ? 1
-          : isNaN(visit[subshape.dimensions].count)
-          ? NaN
-          : countCosets(params)
 
         const existing = visit[subshape.dimensions].detail.find(
           ({ coxeter, stellation, mirrors }) =>
@@ -36,20 +54,26 @@ onmessage = ({ data: { shape, spaceType, limit } }) => {
             arrayEquals(mirrors, subshape.mirrors)
         )
         if (existing) {
+          existing.done = existing.done && done
           existing.count += count
         } else {
           visit[subshape.dimensions].detail.push({
-            count,
             ...subshape,
+            count,
+            done,
           })
         }
         visit[subshape.dimensions].count += count
+        visit[subshape.dimensions].done =
+          visit[subshape.dimensions].done && done
+
+        allDone = allDone && done
       }
       subshape.children.forEach(visitShape)
     }
 
     shape.children.forEach(visitShape)
-    postMessage(visit)
+    postMessage({ visit, done: allDone })
   } catch (e) {
     postMessage({ error: e.message })
   }

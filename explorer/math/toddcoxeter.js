@@ -12,9 +12,9 @@ const quotient = (params, cosetId) => {
     minimalCosetId = params.quotientMap[minimalCosetId]
   }
   // Improve performance by caching but decrease memory efficiency
-  if (minimalCosetId !== cosetId) {
-    params.quotientMap[cosetId] = minimalCosetId
-  }
+  // if (minimalCosetId !== cosetId) {
+  //   params.quotientMap[cosetId] = minimalCosetId
+  // }
   return minimalCosetId
 }
 
@@ -192,7 +192,7 @@ const iter = params => {
 
 export const countCosets = params => {
   iter(params)
-  return params.done ? params.cosets.size : NaN
+  return params.cosets.size
 }
 
 export const ToddCoxeter = params => {

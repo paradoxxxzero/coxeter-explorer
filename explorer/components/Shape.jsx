@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
-import { cogsIcon } from '../icons'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { cogsIcon, stopIcon } from '../icons'
 import Shaper from '../workers/shape.worker?worker'
 import CoxeterDiagram from './CoxeterDiagram'
-const shaper = new Shaper()
 
 const icons = n => {
   if (n < 4) {
@@ -54,31 +53,36 @@ const icons = n => {
 }
 
 export default function Shape({ spaceType, shape, full, updateParams }) {
-  const [limit, setLimit] = useState(10)
+  const [iteration, setIteration] = useState(0)
   const [visit, setVisit] = useState({})
   const [processing, setProcessing] = useState(false)
+  const [shaper, setShaper] = useState(() => new Shaper())
 
   useEffect(() => {
-    setLimit(10)
+    setIteration(0)
   }, [shape])
 
   useEffect(() => {
-    if (!shape) {
+    if (!shape || iteration < 0) {
       return
     }
     setProcessing(true)
     shaper.postMessage({
       spaceType,
       shape,
-      limit,
+      first: iteration === 0,
     })
-  }, [limit, shape, spaceType])
+  }, [iteration, shape, shaper, spaceType])
 
   useEffect(() => {
     const handleShape = ({ data }) => {
-      setProcessing(false)
       if (!data.error) {
-        setVisit(data)
+        if (data.done) {
+          setProcessing(false)
+        } else {
+          setIteration(iteration => iteration + 1)
+        }
+        setVisit(data.visit)
       } else {
         console.error(data.error)
       }
@@ -87,21 +91,20 @@ export default function Shape({ spaceType, shape, full, updateParams }) {
     return () => {
       shaper.removeEventListener('message', handleShape)
     }
-  }, [])
+  }, [shaper])
 
-  const handleIncreaseLimit = useCallback(() => {
-    setLimit(limit => limit + 1)
-  }, [])
+  const handleStop = useCallback(() => {
+    shaper.terminate()
+    setProcessing(false)
+    setShaper(new Shaper())
+    setIteration(-1)
+  }, [shaper])
 
   const simple = Object.values(visit).every(
     subshape => subshape.detail.length < 2
   )
-  const needsOrder = Object.values(visit).some(subshape =>
-    subshape.detail.some(({ count }) => isNaN(count))
-  )
 
-  const formatCount = count =>
-    isNaN(count) ? '…' : isFinite(count) ? count.toLocaleString() : '∞'
+  const formatCount = count => (isFinite(count) ? count.toLocaleString() : '∞')
 
   return (
     <aside className={`shape${processing ? ' shape-processing' : ''}`}>
@@ -110,7 +113,10 @@ export default function Shape({ spaceType, shape, full, updateParams }) {
         .map(level => (
           <div key={`shape-${level.dimensions}`} className="shape-level">
             {icons(level.dimensions)}
-            <div className="shape-count">{formatCount(level.count)}</div>
+            <div className="shape-count">
+              {formatCount(level.count)}
+              {level.done ? null : '…'}
+            </div>
 
             {full && level.dimensions > 0 ? (
               <div
@@ -119,11 +125,13 @@ export default function Shape({ spaceType, shape, full, updateParams }) {
                 }`}
               >
                 {level.detail.map(
-                  ({ count, coxeter, stellation, mirrors }, i) => (
+                  ({ count, coxeter, stellation, mirrors, done }, i) => (
                     <div key={`detail-${i}`} className="shape-detail-line">
                       {simple ? null : (
                         <div className="shape-count">
-                          {level.detail.length > 1 ? formatCount(count) : null}
+                          {level.detail.length > 1
+                            ? formatCount(count) + (done ? '' : '…')
+                            : null}
                         </div>
                       )}
                       {level.dimensions > 0 ? (
@@ -153,15 +161,13 @@ export default function Shape({ spaceType, shape, full, updateParams }) {
             ) : null}
           </div>
         ))}
-      {needsOrder ? (
+      {processing ? (
         <button
-          className="increase-limit button"
-          onClick={handleIncreaseLimit}
-          title={`Increase limit in computation ${2 ** limit} → ${
-            2 ** (limit + 1)
-          }`}
+          className="stop-iterate button"
+          onClick={handleStop}
+          title="Stop enumeration"
         >
-          {cogsIcon}
+          {stopIcon}
         </button>
       ) : null}
     </aside>
