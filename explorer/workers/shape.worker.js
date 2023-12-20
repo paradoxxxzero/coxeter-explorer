@@ -1,5 +1,5 @@
 import { arrayEquals } from '../../utils'
-import { ToddCoxeter } from '../math/toddcoxeter'
+import { ToddCoxeter, countCosets } from '../math/toddcoxeter'
 
 onmessage = ({ data: { shape, spaceType, limit } }) => {
   try {
@@ -27,7 +27,7 @@ onmessage = ({ data: { shape, spaceType, limit } }) => {
           ? 1
           : isNaN(visit[subshape.dimensions].count)
           ? NaN
-          : ToddCoxeter(params).words.length
+          : countCosets(params)
 
         const existing = visit[subshape.dimensions].detail.find(
           ({ coxeter, stellation, mirrors }) =>

@@ -134,7 +134,6 @@ const honeycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
     centered: false,
     edgeThickness: dimensions > 4 ? 15 : 25,
     segments: 16,
-    order: dimensions > 4 ? 15 : 25,
     zoom: 1.5,
     ...extra,
   }
@@ -403,7 +402,7 @@ export const presets = [
         projection6: 'orthographic',
         projection7: 'orthographic',
         projection8: 'orthographic',
-        order: 14,
+        order: 8,
         zoom: 1,
         centered: false,
       }
@@ -439,7 +438,7 @@ export const presets = [
       showVertices: false,
       showFaces: true,
       curve: true,
-      order: 20,
+      order: 8,
       centered: false,
       ambiance: 'colorful',
     }),
@@ -1601,7 +1600,10 @@ export const presets = [
   },
   {
     name: 'Infinite Order triangular',
-    params: tiling([3, 0], [1, 0, 0]),
+    params: tiling([3, 0], [1, 0, 0], null, {
+      easing: 'quintic',
+      detail: 'high',
+    }),
   },
   {
     name: 'Order-5 square',

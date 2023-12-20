@@ -12,9 +12,9 @@ const quotient = (params, cosetId) => {
     minimalCosetId = params.quotientMap[minimalCosetId]
   }
   // Improve performance by caching but decrease memory efficiency
-  // if (minimalCosetId !== cosetId) {
-  //   params.quotientMap[cosetId] = minimalCosetId
-  // }
+  if (minimalCosetId !== cosetId) {
+    params.quotientMap[cosetId] = minimalCosetId
+  }
   return minimalCosetId
 }
 
@@ -104,7 +104,7 @@ const words = function (params, gens) {
 
       if (coset.size < params.gens.length * 2) {
         // Might be a coincidence stop here
-        return Array.from(names.values())
+        return names
       }
 
       const nextCosetId = quotient(params, coset.get(generator))
@@ -112,17 +112,35 @@ const words = function (params, gens) {
         const nextCoset = params.cosets.get(nextCosetId)
         if (nextCoset.size < params.gens.length * 2) {
           // Might be a coincidence stop here
-          return Array.from(names.values())
+          return names
         }
         names.set(nextCosetId, names.get(cosetId) + generator)
         remaining.push(nextCosetId)
       }
     }
   }
-  return Array.from(names.values())
+  return names
 }
 
-export const ToddCoxeter = params => {
+export const wordToCoset = (params, word) => {
+  // Start at 1
+  let cosetId = 1
+  for (let i = 0; i < word.length; i++) {
+    cosetId = quotient(params, cosetId)
+    const coset = params.cosets.get(cosetId)
+    if (coset.size < params.gens.length * 2) {
+      return
+    }
+    cosetId = quotient(params, coset.get(word[i]))
+    const nextCoset = params.cosets.get(cosetId)
+    if (nextCoset.size < params.gens.length * 2) {
+      return
+    }
+  }
+  return cosetId
+}
+
+const iter = params => {
   if (!params.cosets) {
     params.unvisited = [1]
     params.cosets = new Map([[1, new Map()]]) // id -> (gen -> id)
@@ -170,9 +188,16 @@ export const ToddCoxeter = params => {
       scan(params, params.rels[i], coset)
     }
   }
-  // Count : Object.keys(params.cosets).length
+}
 
-  params.tc = params
-  params.words = words(params, params.gens)
+export const countCosets = params => {
+  iter(params)
+  return params.done ? params.cosets.size : NaN
+}
+
+export const ToddCoxeter = params => {
+  iter(params)
+  params.verticesWords = words(params, params.gens)
+  params.words = Array.from(params.verticesWords.values())
   return params
 }

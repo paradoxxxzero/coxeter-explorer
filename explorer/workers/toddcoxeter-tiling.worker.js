@@ -1,9 +1,8 @@
 import { MAX_UINT_32, arrayEquals } from '../../utils'
-import { atoi } from '../math'
-import { getShape } from '../math/shape'
 import { normalize, reflect } from '../math/hypermath'
 import { multiplyVector } from '../math/matrix'
-import { ToddCoxeter } from '../math/toddcoxeter'
+import { getShape } from '../math/shape'
+import { ToddCoxeter, wordToCoset } from '../math/toddcoxeter'
 import { mirrorValue } from '../mirrors'
 
 let allVertices = null
@@ -21,7 +20,6 @@ const initCosets = (dimensions, coxeter, stellation, mirrors) => {
     arrayEquals(mirrors, current.mirrors)
   ) {
     // Same group, no need to recompute, skip coset enumeration
-    verticesParams.lastDrawn = 0
     verticesParams.params.done = false
     edgesParams.forEach(edgeParams => {
       edgeParams.lastDrawn = 0
@@ -31,11 +29,11 @@ const initCosets = (dimensions, coxeter, stellation, mirrors) => {
       faceParams.lastDrawn = 0
       faceParams.params.done = false
     })
-    allVertices = []
+    allVertices = new Map()
     return
   }
   current = { dimensions, coxeter, stellation, mirrors }
-  allVertices = []
+  allVertices = new Map()
 
   const shape = getShape(dimensions, coxeter, stellation, mirrors)
   verticesParams = null
@@ -131,7 +129,7 @@ onmessage = ({
     ),
     metric
   )
-  const limit = (order + 1) * (curvature > 0 ? 500 : 100)
+  const limit = (order + 1) * (curvature > 0 ? 200 : 100)
   try {
     let vertices = []
     let edges = []
@@ -141,8 +139,10 @@ onmessage = ({
     if (!params.done) {
       params.limit = limit
       ToddCoxeter(params)
-      for (let i = verticesParams.lastDrawn; i < params.words.length; i++) {
-        const word = params.words[i]
+      for (const [vertexId, word] of params.verticesWords) {
+        if (allVertices.has(vertexId)) {
+          continue
+        }
         let vertex
         if (word === '') {
           vertex = rootVertex
@@ -168,151 +168,134 @@ onmessage = ({
           // allVertices.push(vertex)
           vertex = reflectWord({ rootVertex, rootNormals, metric }, word)
         }
-
         vertices.push({
           vertex,
           word,
-          i,
         })
-        verticesParams.lastDrawn = i + 1
+        allVertices.set(vertexId, allVertices.size)
       }
     }
-    if (false) {
-      for (let i = 0; i < edgesParams.length; i++) {
-        const edgeParams = edgesParams[i]
-        const params = edgeParams.params
-        const shape = edgeParams.shape
-        const subShape = edgeParams.subShape
-        if (!params.done) {
-          params.limit = limit * (curvature > 0 ? 1 : curvature < 0 ? 1.5 : 3) // ???
-          ToddCoxeter(params)
-        }
-        // Get index of target vertex in base face
-        const base = reflectToVertex(subShape.space[0], 0, shape.gens)
-        const target = reflectToVertex(subShape.space[1], 0, shape.gens)
 
-        for (let j = edgeParams.lastDrawn; j < params.words.length; j++) {
-          const word = params.words[j]
-          if (word === undefined) {
+    const vertexFromWord = word => {
+      return allVertices.get(wordToCoset(verticesParams.params, word))
+    }
+
+    for (let i = 0; i < edgesParams.length; i++) {
+      const edgeParams = edgesParams[i]
+      const params = edgeParams.params
+      const subShape = edgeParams.subShape
+      if (!params.done) {
+        params.limit = limit
+        ToddCoxeter(params)
+      }
+      for (let j = edgeParams.lastDrawn; j < params.words.length; j++) {
+        const word = params.words[j]
+        if (word === undefined) {
+          continue
+        }
+        // Get the origin vertex after reflections
+        const startWord = subShape.space[0] + word
+        const start = vertexFromWord(startWord)
+        // Get the target vertex after reflections
+        const endWord = subShape.space[1] + word
+        const end = vertexFromWord(endWord)
+
+        if (start === undefined || end === undefined) {
+          edgeParams.lastDrawn = j
+          break
+        }
+        edges.push({
+          start,
+          end,
+          word,
+          subShape: i,
+        })
+        edgeParams.lastDrawn = j + 1
+      }
+    }
+    for (let i = 0; i < facesParams.length; i++) {
+      const faceParams = facesParams[i]
+      const params = faceParams.params
+      const shape = faceParams.shape
+      const subShape = faceParams.subShape
+      const double = subShape.mirrors.every(m => !!m)
+      // const snub = subShape.mirrors.some(m => isSnub(m))
+
+      // Draw face in dimension 2:
+      if (shape.dimensions === 2) {
+        params.words = params.space
+        subShape.space = verticesParams.params.words
+        params.done = true
+      }
+
+      if (!params.done) {
+        params.limit = limit
+        ToddCoxeter(params)
+      }
+
+      // Start by retrying last partial faces
+      for (const j of faceParams.toRetry) {
+        const word = params.words[j]
+        const vertices = []
+        for (let k = 0; k < subShape.space.length; k++) {
+          const l = reorder(k, subShape.space.length, double)
+          const vertexWord = subShape.space[l] + word
+          const vertex = vertexFromWord(vertexWord)
+          if (vertex === undefined) {
             continue
           }
-          // Get the origin vertex after reflections
-          const start = reflectToVertex(word, base, params.gens)
-          // Get the target vertex after reflections
-          const end = reflectToVertex(word, target, params.gens)
-
-          if (start === undefined || end === undefined) {
-            edgeParams.lastDrawn = j
-            break
-          }
-          edges.push({
-            start,
-            end,
+          vertices.push(vertex)
+        }
+        if (vertices.length === subShape.space.length) {
+          faces.push({
+            vertices,
             word,
+            len: subShape.space.length,
+            subShape: i,
           })
-          edgeParams.lastDrawn = j + 1
+          faceParams.toRetry.delete(j)
+        } else {
+          partials.push({
+            vertices,
+            word,
+            len: subShape.space.length,
+            subShape: i,
+          })
         }
       }
-      for (let i = 0; i < facesParams.length; i++) {
-        const faceParams = facesParams[i]
-        const params = faceParams.params
-        const shape = faceParams.shape
-        const subShape = faceParams.subShape
-        const double = subShape.mirrors.every(m => !!m)
-        // const snub = subShape.mirrors.some(m => isSnub(m))
-        // TODO: dimensions 2
-        if (shape.dimensions === 2) {
-          params.words = params.space
-          subShape.space = verticesParams.params.words
-          params.done = true
-        }
-        // if (faceParams.face.length === 1) {
-        //   faceParams.words = faceParams.face
-        //   faceParams.face = verticesParams.words
-        //   faceParams.double = mirrors.every(m => !!m)
-        //   faceParams.done = true
-        // }
-        if (!params.done) {
-          params.limit = limit * (curvature > 0 ? 1 : curvature < 0 ? 1.5 : 2.5) // ???
-          ToddCoxeter(params)
-        }
-        console.log(params.words)
-        const face = []
-        // Get vertices of the base face
-        for (let j = 0; j < subShape.space.length; j++) {
-          // These vertices can be undefined if the face is not yet closed or ever
-          face.push(
-            reflectToVertex(subShape.space[j], 0, verticesParams.params.gens)
-          )
-        }
 
-        // Start by retrying last partial faces
-        for (const j of faceParams.toRetry) {
-          const word = params.words[j]
-          const vertices = []
-          for (let k = 0; k < face.length; k++) {
-            const faceVertex = face[reorder(k, face.length, double)]
-            if (faceVertex === undefined) {
-              continue
-            }
-            const vertex = reflectToVertex(word, faceVertex, params.gens)
-            if (vertex === undefined) {
-              continue
-            }
-            vertices.push(vertex)
+      // Get these vertices after reflections
+      for (let j = faceParams.lastDrawn; j < params.words.length; j++) {
+        let fail = false
+        const word = params.words[j]
+        const vertices = []
+        for (let k = 0; k < subShape.space.length; k++) {
+          // const l = snub ? k : reorder(k, face.length, double)
+          const l = reorder(k, subShape.space.length, double)
+          const vertexWord = subShape.space[l] + word
+          const vertex = vertexFromWord(vertexWord)
+          if (vertex === undefined) {
+            fail = true
+            continue
           }
-          if (vertices.length === face.length) {
-            faces.push({
-              vertices,
-              word,
-              len: face.length,
-            })
-            faceParams.toRetry.delete(j)
-          } else {
-            partials.push({
-              vertices,
-              word,
-              len: face.length,
-            })
-          }
+          vertices.push(vertex)
         }
-
-        // Get these vertices after reflections
-        for (let j = faceParams.lastDrawn; j < params.words.length; j++) {
-          let fail = false
-          const word = params.words[j]
-          const vertices = []
-          for (let k = 0; k < face.length; k++) {
-            // const l = snub ? k : reorder(k, face.length, double)
-            const l = reorder(k, face.length, double)
-            const faceVertex = face[l]
-            if (faceVertex === undefined) {
-              fail = true
-              continue
-            }
-            const vertex = reflectToVertex(word, faceVertex, params.gens)
-            if (vertex === undefined) {
-              fail = true
-              continue
-            }
-            vertices.push(vertex)
-          }
-          if (fail) {
-            partials.push({
-              vertices,
-              word,
-              len: face.length,
-            })
-            faceParams.toRetry.add(j)
-          } else {
-            faces.push({
-              vertices,
-              word,
-              len: face.length,
-            })
-          }
-          faceParams.lastDrawn = j + 1
+        if (fail) {
+          partials.push({
+            vertices,
+            word,
+            len: subShape.space.length,
+          })
+          faceParams.toRetry.add(j)
+        } else {
+          faces.push({
+            vertices,
+            word,
+            len: subShape.space.length,
+            subShape: i,
+          })
         }
+        faceParams.lastDrawn = j + 1
       }
     }
 

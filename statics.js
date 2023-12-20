@@ -215,10 +215,21 @@ export const ambiances = Object.fromEntries(
         opacity: 0.1,
         diffuse: 'fresnel',
       },
-      color: ({ word, len, vertices }, type) =>
+      color: ({ len, vertices }, type) =>
         type === 'face'
           ? hsl((((len || vertices.length) - 2) * 0.21) % 1, 1, 0.8)
           : [1, 1, 1],
+    },
+    subShape: {
+      background: [1, 1, 1, 1],
+      transparency: 'oit',
+      face: {
+        gouraud: true,
+        opacity: 0.2,
+        diffuse: 'fresnel',
+      },
+      color: ({ subShape }, type) =>
+        type !== 'vertex' ? hsl((subShape * 0.21) % 1, 1, 0.8) : [1, 1, 1],
     },
     reflection: {
       background: [1, 1, 1, 1],
@@ -342,7 +353,7 @@ export const defaultParams = {
   mirrors: [1, 0, 0, 0],
   extended: false,
 
-  order: 25,
+  order: 10,
   curve: true,
   detail: 'medium',
   segments: 16,

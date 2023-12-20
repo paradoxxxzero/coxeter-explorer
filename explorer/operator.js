@@ -115,7 +115,7 @@ export const snub = (plot, mirrors, dimensions, metric) => {
     const vertex = plot.vertex[i]
     if (vertex.word.replace(snubRe, '').length % 2 === 1) {
       vertex.vertex = NaN // FIXME
-      snub.set(vertex.i, [])
+      snub.set(i, [])
     } else {
       vertices.push(vertex)
     }
