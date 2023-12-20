@@ -4,6 +4,7 @@ import App from './explorer/App.jsx'
 import './index.css'
 import { defaultParams, filterParams } from './statics.js'
 import { arrayEquals } from './utils.js'
+import { ToddCoxeter } from './explorer/math/toddcoxeter.js'
 // import 'https://greggman.github.io/webgl-lint/webgl-lint.js'
 
 const parseParams = (def = null) => {
@@ -90,3 +91,38 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <AppWithHistory />
   // </React.StrictMode>
 )
+
+window.ToddCoxeter = ToddCoxeter
+window.bench = () => {
+  const t = performance.now()
+  const p = ToddCoxeter({
+    gens: 'abcdef',
+    subgens: 'c',
+    rels: [
+      'aa',
+      'bb',
+      'cc',
+      'dd',
+      'ee',
+      'ff',
+      'abababab',
+      'acac',
+      'bcbcbc',
+      'adad',
+      'bdbd',
+      'cdcdcd',
+      'aeae',
+      'bebe',
+      'cece',
+      'dedede',
+      'afaf',
+      'bfbf',
+      'cfcf',
+      'dfdf',
+      'efefef',
+    ],
+    limit: 100000,
+  })
+  console.log(performance.now() - t, p.words.length)
+  return p.tc
+}

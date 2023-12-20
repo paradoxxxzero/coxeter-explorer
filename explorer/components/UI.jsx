@@ -465,7 +465,7 @@ export default function UI({
                   </select>
                 </label>
               )}
-              {(showUI === 'full' || runtime.spaceType.curvature <= 0) && (
+              {(showUI === 'full' || runtime.spaceType?.curvature <= 0) && (
                 <Number
                   name="order"
                   label="Precision"
