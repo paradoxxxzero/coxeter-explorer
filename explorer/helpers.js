@@ -154,7 +154,7 @@ export const augment = (rt, vertex, fragment, type) => {
       projections.indexOf(rt[`projection${i}`]) - 1
     }\n`
   }
-  config += `#define CURVATURE ${rt.spaceType?.curvature || 0}\n`
+  config += `#define CURVATURE ${rt.space?.curvature || 0}\n`
   if (rt.curve && rt.segments > 1) {
     config += `#define SEGMENTS ${rt.segments}\n`
   }
@@ -586,7 +586,7 @@ export const mesh = (
     },
     updateGeometry(rt) {
       const geometry = geometryFunc(
-        rt.spaceType.curvature && rt.curve ? rt.segments : 1,
+        rt.space.curvature && rt.curve ? rt.segments : 1,
         rt.detail
       )
       this.indices.update(new Uint16Array(geometry.indices))

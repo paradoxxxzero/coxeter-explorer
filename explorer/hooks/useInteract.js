@@ -189,7 +189,7 @@ export const useInteract = (
     runtime.showEdges,
     runtime.showFaces,
     runtime.showVertices,
-    runtime.spaceType,
+    runtime.space,
     runtime.shape,
     runtime.stellation,
     runtime.subsampling,
@@ -255,7 +255,7 @@ export const useInteract = (
     runtime.showEdges,
     runtime.showFaces,
     runtime.showVertices,
-    runtime.spaceType,
+    runtime.space,
     runtime.shape,
     runtime.stellation,
     runtime.subsampling,
@@ -304,7 +304,7 @@ export const useInteract = (
               speed[i] * dt,
               rotations.combinations[i],
               runtime.dimensions,
-              runtime.spaceType.metric
+              runtime.space.metric
             ),
             local.current.matrix
           )
@@ -352,7 +352,7 @@ export const useInteract = (
     rotations.auto,
     rotations.combinations,
     runtime.dimensions,
-    runtime.spaceType,
+    runtime.space,
   ])
 
   useEffect(() => {
@@ -432,7 +432,7 @@ export const useInteract = (
         rotations,
         local.current.matrix,
         runtime.dimensions,
-        runtime.spaceType.metric
+        runtime.space.metric
       )
       if (rotations.auto) {
         const dt = performance.now() - t
@@ -491,7 +491,7 @@ export const useInteract = (
   }, [
     rotations,
     runtime.dimensions,
-    runtime.spaceType,
+    runtime.space,
     runtime.camera,
 
     animate,
@@ -509,7 +509,7 @@ export const useInteract = (
           rotations,
           local.current.matrix,
           runtime.dimensions,
-          runtime.spaceType.metric,
+          runtime.space.metric,
           updateRotations
         )
       ) {
@@ -522,7 +522,7 @@ export const useInteract = (
   }, [
     quickUpdateMatrix,
     rotations,
-    runtime.spaceType,
+    runtime.space,
     runtime.dimensions,
     updateRotations,
   ])

@@ -87,7 +87,7 @@ export const getSubSignatures = (gram, sub = [], level = 0, maxLevel = 10) => {
   return sub
 }
 
-export const getSpaceType = gram => {
+export const getSpace = gram => {
   const signature = getSignature(gram)
   // Eigenvalues/eigenvectors of gram matrix
   const eigens = signature.eigens
@@ -160,9 +160,9 @@ export const nonzero = m =>
   )
 export const nonnegative = m => m.map(row => row.map(v => abs(v)))
 
-export const getGeometry = (spaceType, centered) => {
-  const eigens = spaceType.eigens
-  const metric = spaceType.metric
+export const getGeometry = (space, centered) => {
+  const eigens = space.eigens
+  const metric = space.metric
 
   if (centered) {
     // Use cholesky LDL decomposition
@@ -170,7 +170,7 @@ export const getGeometry = (spaceType, centered) => {
     // G = L D L^T
     // G = L sqrt(J D) sqrt(D J) L^T
     // W = L sqrt(J D)
-    const { L, D } = ldl(spaceType.gram)
+    const { L, D } = ldl(space.gram)
 
     let normals
     if (!D.some((_, i) => isNaN(D[i][i]))) {
@@ -185,7 +185,7 @@ export const getGeometry = (spaceType, centered) => {
       normals = multiply(L, sqrtJD)
     } else {
       console.warn('Can’t cholesky')
-      normals = analyticGeometry(spaceType, centered)
+      normals = analyticGeometry(space, centered)
     }
 
     if (normals) {
@@ -497,10 +497,10 @@ export const sortRotations = rotations =>
     return ai === bi ? bj - aj : bi - ai
   })
 
-export const getRotations = (dimensions, spaceType) => {
+export const getRotations = (dimensions, space) => {
   const rotations = sortRotations(combinations(range(dimensions), 2))
   if (
-    spaceType.metric.filter((_, i) => spaceType.metric[i][i] < 0).length === 1 // TODO: Ultrahyperbolic parabolic?
+    space.metric.filter((_, i) => space.metric[i][i] < 0).length === 1 // TODO: Ultrahyperbolic parabolic?
   ) {
     // Add parabolic rotations
     const parabolicRotations = [
@@ -600,10 +600,10 @@ export const getStellationSphericalOppositeAngle = (a, b, c, stellation) => {
   )
 }
 
-const analyticGeometry = (spaceType, centered) => {
-  const gram = spaceType.gram
+const analyticGeometry = (space, centered) => {
+  const gram = space.gram
   const dimensions = gram.length
-  const curvature = spaceType.curvature
+  const curvature = space.curvature
 
   // Hyperideal case like
   // o - ∞ - o

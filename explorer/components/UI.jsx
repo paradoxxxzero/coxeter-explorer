@@ -268,13 +268,13 @@ export default function UI({
                 <sup>{rotations.shift + 1}</sup>
                 <Rotation
                   rotations={rotations}
-                  spaceType={runtime.spaceType}
+                  space={runtime.space}
                   axis={0}
                 />
 
                 <Rotation
                   rotations={rotations}
-                  spaceType={runtime.spaceType}
+                  space={runtime.space}
                   axis={1}
                 />
               </button>
@@ -428,7 +428,7 @@ export default function UI({
           {['advanced', 'full'].includes(showUI) && (
             <Shape
               shape={runtime.shape}
-              spaceType={runtime.spaceType}
+              space={runtime.space}
               full={showUI === 'full'}
               updateParams={updateParams}
             />
@@ -465,7 +465,7 @@ export default function UI({
                   </select>
                 </label>
               )}
-              {(showUI === 'full' || runtime.spaceType?.curvature <= 0) && (
+              {(showUI === 'full' || runtime.space?.curvature <= 0) && (
                 <Number
                   name="order"
                   label="Precision"
@@ -565,10 +565,7 @@ export default function UI({
             }${showUI === 'empty' ? ' empty' : ''}`}
             onClick={handleUI}
           >
-            <Space
-              {...(runtime.spaceType || {})}
-              dimensions={runtime.dimensions}
-            />
+            <Space {...(runtime.space || {})} dimensions={runtime.dimensions} />
             {runtime.currentOrder < runtime.order ? (
               <aside className="processing-counter">
                 {runtime.currentOrder}/{runtime.order}

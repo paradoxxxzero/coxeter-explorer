@@ -11,7 +11,7 @@ export default function App({ params, updateParams }) {
 
     currentOrder: 0,
     askedOrder: null,
-    spaceType: null,
+    space: null,
     shape: null,
     rootNormals: null,
     rootVertices: null,
@@ -56,14 +56,14 @@ export default function App({ params, updateParams }) {
   }, [params])
 
   useEffect(() => {
-    if (runtime.spaceType) {
+    if (runtime.space) {
       setRotations(rotations => ({
         ...rotations,
         shift: 0,
-        ...getRotations(params.dimensions, runtime.spaceType),
+        ...getRotations(params.dimensions, runtime.space),
       }))
     }
-  }, [params.dimensions, runtime.spaceType])
+  }, [params.dimensions, runtime.space])
 
   useEffect(() => {
     setRuntime(rt => {

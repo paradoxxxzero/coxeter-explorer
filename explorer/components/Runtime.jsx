@@ -30,7 +30,7 @@ export default function Runtime({
 
   useEffect(() => {
     return () => {
-      if (runtime.spaceType && runtime.spaceType.curvature !== null) {
+      if (runtime.space && runtime.space.curvature !== null) {
         const matrix = ident(runtime.dimensions)
         matrix._reset = true
         updateParams({
@@ -38,7 +38,7 @@ export default function Runtime({
         })
       }
     }
-  }, [runtime.spaceType?.curvature])
+  }, [runtime.space?.curvature])
 
   return (
     <>
@@ -48,7 +48,7 @@ export default function Runtime({
       >
         <Process runtime={runtime} setRuntime={setRuntime} />
       </ErrorBoundary>
-      {runtime.spaceType ? (
+      {runtime.space ? (
         <>
           <ErrorBoundary
             error={runtime.error?.render}

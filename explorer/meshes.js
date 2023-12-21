@@ -98,7 +98,7 @@ export default function getMeshes(rt) {
         const type = this.meshes[i]
         const mesh = this[type]
         if (!quick) {
-          mesh.uniforms.metric.update(columnMajor(rt.spaceType.metric))
+          mesh.uniforms.metric.update(columnMajor(rt.space.metric))
           mesh.uniforms.matrix.update(columnMajor(rt.matrix))
           for (let i = 4; i <= rt.dimensions; i++) {
             mesh.uniforms[`fov${i}`].update(
@@ -198,10 +198,7 @@ export default function getMeshes(rt) {
                 center,
                 index: j,
               }
-              if (
-                object.word.length % 2 ===
-                (rt.spaceType.curvature > 0 ? 0 : 1)
-              ) {
+              if (object.word.length % 2 === (rt.space.curvature > 0 ? 0 : 1)) {
                 ;[vertex.position, vertex.target] = [
                   vertex.target,
                   vertex.position,
@@ -235,13 +232,13 @@ export default function getMeshes(rt) {
     },
     preprocess(rt, plot) {
       if (rt.mirrors.some(mirror => isSnub(mirror))) {
-        plot = snub(plot, rt.mirrors, rt.dimensions, rt.spaceType.metric)
+        plot = snub(plot, rt.mirrors, rt.dimensions, rt.space.metric)
       }
       if (rt.mirrors.some(mirror => isHoloSnub(mirror))) {
-        plot = holosnub(plot, rt.mirrors, rt.dimensions, rt.spaceType.metric)
+        plot = holosnub(plot, rt.mirrors, rt.dimensions, rt.space.metric)
       }
       if (rt.mirrors.some(mirror => isDual(mirror))) {
-        plot = dual(plot, rt.mirrors, rt.dimensions, rt.spaceType.metric)
+        plot = dual(plot, rt.mirrors, rt.dimensions, rt.space.metric)
       }
       return plot
     },

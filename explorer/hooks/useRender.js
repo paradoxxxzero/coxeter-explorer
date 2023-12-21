@@ -23,7 +23,7 @@ export const useRender = (runtime, setRuntime) => {
       return runtime
     })
   }, [
-    runtime.spaceType,
+    runtime.space,
     runtime.curve,
     runtime.segments,
     runtime.detail,
@@ -109,7 +109,7 @@ export const useRender = (runtime, setRuntime) => {
     runtime.projection7,
     runtime.projection8,
     runtime.projection9,
-    runtime.spaceType,
+    runtime.space,
     setRuntime,
   ])
 
@@ -163,7 +163,7 @@ export const useRender = (runtime, setRuntime) => {
     runtime.projection9,
     runtime.segments,
     runtime.vertexThickness,
-    runtime.spaceType,
+    runtime.space,
     setRuntime,
   ])
 
@@ -226,7 +226,7 @@ export const useRender = (runtime, setRuntime) => {
     runtime.showEdges,
     runtime.showFaces,
     runtime.showVertices,
-    runtime.spaceType,
+    runtime.space,
     runtime.stellation,
     runtime.subsampling,
     runtime.vertexThickness,

@@ -3,7 +3,7 @@ import { countCosets } from '../math/toddcoxeter'
 
 let cache
 
-onmessage = ({ data: { shape, spaceType, first } }) => {
+onmessage = ({ data: { shape, space, first } }) => {
   try {
     // TODO: share these enumeration with the toddcoxeter-tiling worker
     const visit = {}
@@ -22,7 +22,7 @@ onmessage = ({ data: { shape, spaceType, first } }) => {
             done: true,
           }
         }
-        const eiqenvalues = spaceType.eigens.values
+        const eiqenvalues = space.eigens.values
 
         let count
         let done = true

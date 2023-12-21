@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { coxeterToGram, getGeometry, getSpaceType } from '../math/hypermath'
+import { coxeterToGram, getGeometry, getSpace } from '../math/hypermath'
 import { killRunningWorkers, workers } from '../workers/worker'
 import { getShape } from '../math/shape'
 
@@ -20,8 +20,8 @@ const asyncProcess = async (runtime, running, setRuntime) => {
       order: runtime.currentOrder,
       coxeter: runtime.coxeter,
       stellation: runtime.stellation,
-      metric: runtime.spaceType.metric,
-      curvature: runtime.spaceType.curvature,
+      metric: runtime.space.metric,
+      curvature: runtime.space.curvature,
       mirrors: runtime.mirrors,
       rootNormals: runtime.rootNormals,
       rootVertices: runtime.rootVertices,
@@ -90,23 +90,23 @@ export const useProcess = (runtime, setRuntime) => {
       const gram = coxeterToGram(runtime.coxeter, runtime.stellation)
       // const cartan = multiplyScalar(gram, 2)
 
-      const spaceType = getSpaceType(gram)
+      const space = getSpace(gram)
       const shape = getShape(
         runtime.dimensions,
         runtime.coxeter,
         runtime.stellation,
         runtime.mirrors
       )
-      if (!spaceType) {
+      if (!space) {
         return {
           ...runtime,
-          spaceType,
+          space,
           shape,
         }
       }
 
       const { vertices: rootVertices, normals: rootNormals } = getGeometry(
-        spaceType,
+        space,
         runtime.centered
       )
 
@@ -118,7 +118,7 @@ export const useProcess = (runtime, setRuntime) => {
         face: [],
         partial: [],
         ranges: [],
-        spaceType,
+        space,
         shape,
         rootNormals,
         rootVertices,

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { cogsIcon, stopIcon } from '../icons'
+import { useCallback, useEffect, useState } from 'react'
+import { stopIcon } from '../icons'
 import Shaper from '../workers/shape.worker?worker'
 import CoxeterDiagram from './CoxeterDiagram'
 
@@ -52,7 +52,7 @@ const icons = n => {
   )
 }
 
-export default function Shape({ spaceType, shape, full, updateParams }) {
+export default function Shape({ space, shape, full, updateParams }) {
   const [iteration, setIteration] = useState(0)
   const [visit, setVisit] = useState({})
   const [processing, setProcessing] = useState(false)
@@ -68,11 +68,11 @@ export default function Shape({ spaceType, shape, full, updateParams }) {
     }
     setProcessing(true)
     shaper.postMessage({
-      spaceType,
+      space,
       shape,
       first: iteration === 0,
     })
-  }, [iteration, shape, shaper, spaceType])
+  }, [iteration, shape, shaper, space])
 
   useEffect(() => {
     const handleShape = ({ data }) => {
