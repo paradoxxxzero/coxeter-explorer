@@ -12,6 +12,7 @@ const float TAU = 2.f * PI;
 const float ETA = PI / 2.f;
 const vec3 NOISE = vec3(.000003f, -.000002f, .000017f);
 const float NaN = intBitsToFloat(-1);
+const float SCALE = TAU;
 const float curvature = float(CURVATURE);
 #ifdef SEGMENTS
 const float segments = float(SEGMENTS);

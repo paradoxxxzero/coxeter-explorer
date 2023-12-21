@@ -33,7 +33,7 @@ vecN_1 project(in vecN v, in float k) {
 #endloopN
 
 vec4 viewProject(vec3 position) {
-  #if DIMENSIONS == 3 && PROJECTION3 != -1 && PROJECTION3 != 7
+  #if DIMENSIONS == 3 && PROJECTION3 != -1 && PROJECTION3 != 8
   vec4 normalProjection = viewProjection * vec4(position, 1.);
   vec4 flatProjection = viewProjection * vec4(position.xy, 0., 1.);
   return vec4(flatProjection.xy / flatProjection.w, normalProjection.z / normalProjection.w, 1.);
@@ -60,46 +60,48 @@ vec3 xproject(in vec3 v) {
   return project(v, 0.);
   #elif PROJECTION3 == 3 // INVERTED
   return project(v, -1.);
-  #elif PROJECTION3 == 4 // JOUKOWSKY
+  #elif PROJECTION3 == 4 // SCALE
+  return SCALE * project(v, SCALE);
+  #elif PROJECTION3 == 5 // JOUKOWSKY
   vec2 z = project(v, 1.).xy;
   return vec3(.5 * (z + cinv(z)), 0.);
-  #elif PROJECTION3 == 5 // HALF
+  #elif PROJECTION3 == 6 // HALF
   vec2 z = halfv(v);
   if(len(z) > 24.) {
     return vec3(NaN);
   }
   return xproject(z);
-  #elif PROJECTION3 == 6 // UPPERHALF
+  #elif PROJECTION3 == 7 // UPPERHALF
   vec2 z = halfv(v);
   if(len(z) > 24.) {
     return vec3(NaN);
   }
   nset(z, -1, nget(z, -1) - 1.); // Lower the plane for better perspectize
   return xproject(z);
-  #elif PROJECTION3 == 7 // HALFSPHERE
+  #elif PROJECTION3 == 8 // HALFSPHERE
   v = halff(v, -1.);
   if(len(v.xy) > 24.) {
     return vec3(NaN);
   }
   v.y -= 1.;
   return v * .5;
-  #elif PROJECTION3 == 8 // BAND
+  #elif PROJECTION3 == 9 // BAND
   vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
   return vec3((2. / PI) * ((clog(cone + z)) - clog(cone - z)), v.z);
-  #elif PROJECTION3 == 9 // CROSS
+  #elif PROJECTION3 == 10 // CROSS
   vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
   // Sum of angles
   // float o = -.5 * PI;
   // vec2 a = vec2(cos(o), sin(o));
   return vec3((2. / PI) * .5 * (clog(cone + z) - clog(cone - z) + cmul(ci, clog(cone - cmul(ci, z))) + cmul(-ci, clog(cone - cmul(-ci, z)))), v.z);
-  #elif PROJECTION3 == 10 // HEART
+  #elif PROJECTION3 == 11 // HEART
   vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
   return vec3(-z.y * z.x + z.x, -.5 * (z.y * z.y - z.x * z.x - 2. * z.y - 0.75), v.z);
-  #elif PROJECTION3 == 11 // TEARDROP
+  #elif PROJECTION3 == 12 // TEARDROP
   vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
   return vec3(sign(z.x) *
     sqrt((sqrt((1. - z.y) * (1. - z.y) + z.x * z.x) - (1. - z.y)) / 2.), -(sqrt((sqrt((1. - z.y) * (1. - z.y) + z.x * z.x) + (1. - z.y)) / 2.) - 0.75), v.z);
-  #elif PROJECTION3 == 12 // SQUARE
+  #elif PROJECTION3 == 13 // SQUARE
   float Ke = 1.854;
   vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
   z = cmul(conei / sqrt(2.), z);
@@ -110,23 +112,23 @@ vec3 xproject(in vec3 v) {
   }
   w = cmul(vec2(1., -1.) / -Ke, w) + vec2(1., -1.);
   return vec3(w, v.z);
-  #elif PROJECTION3 == 13 // RING
+  #elif PROJECTION3 == 14 // RING
   vec2 z = project(v, 1.).xy;
   z = (2. / PI) * ((clog(cone + z)) - clog(cone - z));
   float k = 4.;
   float P = 1.1393;
   return vec3(cexp(TAU * cmul(ci, (z.xy + ci)) / (k * P)), v.z);
-  #elif PROJECTION3 == 14 // SINUSOIDAL
+  #elif PROJECTION3 == 15 // SINUSOIDAL
   vec2 z = project(v, 1.).xy;
   return vec3(csin(1.5 * z), v.z);
-  #elif PROJECTION3 == 15 // SPIRAL
+  #elif PROJECTION3 == 16 // SPIRAL
   vec2 z = project(v, 1.).xy;
   z = ((clog(cone + z)) - clog(cone - z));
   z = cmul(z, conei);
   return vec3(cexp(z), 0.);
-  #elif PROJECTION3 >= 16 // TRIANGLE
+  #elif PROJECTION3 >= 17 // TRIANGLE
   vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
-  vec2 w = sc(z, PROJECTION3 - 13);
+  vec2 w = sc(z, PROJECTION3 - 14);
   // Rotate by PI / 4
   #if PROJECTION3 == 17
   w = cmul(w, cexp(ci * PI / 4.));
@@ -152,7 +154,9 @@ vec3 pureproject(in vec3 v) {
   return project(v, 0.);
   #elif PROJECTION3 == 3 // INVERTED
   return project(v, -1.);
-  #elif PROJECTION3 == 7 // HALFSPHERE
+  #elif PROJECTION3 == 4 // SCALE
+  return SCALE * project(v, SCALE);
+  #elif PROJECTION3 == 8 // HALFSPHERE
   return halff(v, 0.);
   #elif PROJECTION3 != -1
   return project(v, 1.);
@@ -172,7 +176,9 @@ vec3 xproject(in vecN v) {
   return xproject(project(v, 0.));
   #elif PROJECTION_N == 3 // INVERTED
   return xproject(project(v, -1.));
-  #elif PROJECTION_N == 4 // JOUKOWSKY
+  #elif PROJECTION_N == 4 // SCALE
+  return xproject(nmul(project(v, SCALE), SCALE));
+  #elif PROJECTION_N == 5 // JOUKOWSKY
   vecN_1 z = project(v, 1.);
   float r = len(z);
   float nr = 1. / (r * r);
@@ -180,9 +186,9 @@ vec3 xproject(in vecN v) {
   nset(z, 1, nget(z, 1) * (nr - r) / (r / (_Nf_ - 2.) + nr));
   z = nmul(z, k * (r / (_Nf_ - 2.) + nr));
   return xproject(z);
-  #elif PROJECTION_N == 5 // HALF
+  #elif PROJECTION_N == 6 // HALF
   return xproject(halfv(v));
-  #elif PROJECTION_N == 6 // UPPERHALF
+  #elif PROJECTION_N == 7 // UPPERHALF
   vecN_1 z = halfv(v);
   nset(z, -1, nget(z, -1) - 1.); // Lower the plane for better perspectize
   for(int i = 1; i < _N_ / 2; i++) {
@@ -204,6 +210,8 @@ vec3 pureproject(in vecN v) {
   return pureproject(project(v, 0.));
   #elif PROJECTION_N == 3 // INVERTED
   return pureproject(project(v, -1.));
+  #elif PROJECTION_N == 4 // SCALE
+  return pureproject(nmul(project(v, SCALE), SCALE));
   #elif PROJECTION_N != -1
   return pureproject(project(v, 1.));
   #else

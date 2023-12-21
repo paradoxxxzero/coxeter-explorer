@@ -14,6 +14,7 @@ export const projections = [
   'orthographic',
   'klein',
   'inverted',
+  'scale',
   'joukowsky',
   'half',
   'upperhalf',
@@ -88,7 +89,7 @@ export const defaultProjection = (dimension, dimensions) =>
     ? 'perspective'
     : dimension === dimensions
     ? 'stereographic'
-    : 'orthographic'
+    : 'scale'
 
 const defaults = {
   background: [0, 0, 0, 1],
@@ -500,7 +501,7 @@ export const filterParams = (maybeBadParams, changed = [], oldParams) => {
     const s = sign(oldParams.dimensions - params.dimensions)
     for (let i = 4; i <= params.dimensions; i++) {
       params[`projection${i}`] =
-        i + s === 3 ? 'orthographic' : oldParams[`projection${i + s}`]
+        i + s === 3 ? 'scale' : oldParams[`projection${i + s}`]
     }
     if (params.dimensions !== 3) {
       params.projection3 = 'perspective'
