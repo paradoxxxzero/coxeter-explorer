@@ -223,12 +223,12 @@ export default function getMeshes(rt) {
           mesh.attributes.color.data[idx * 3 + 2] = c[2]
           idx++
         }
-        for (let l = 0; l < mesh.varying.length; l++) {
-          const attr = mesh.varying[l]
-          mesh.attributes[attr].update(startIdx, stopIdx)
-        }
-        mesh.attributes.color.update(startIdx, stopIdx)
       }
+      for (let l = 0; l < mesh.varying.length; l++) {
+        const attr = mesh.varying[l]
+        mesh.attributes[attr].update(startIdx, stopIdx)
+      }
+      mesh.attributes.color.update(startIdx, stopIdx)
     },
     preprocess(rt, plot) {
       if (rt.mirrors.some(mirror => isSnub(mirror))) {

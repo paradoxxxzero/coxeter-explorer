@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
-import { PI, abs, hypot, log, min, pow } from '../math'
+import { PI, abs, hypot, log, max, min, pow } from '../math'
 import { rotate } from '../math/hypermath'
 import { columnMajor, multiply, set } from '../math/matrix'
 import { render, updateCamera } from '../render'
@@ -281,7 +281,7 @@ export const useInteract = (
       animation.current.t = performance.now()
     }
 
-    const dt = performance.now() - animation.current.t
+    const dt = min(performance.now() - animation.current.t, 10)
 
     let changed = false
     for (let i = 0; i < speed.length; i++) {
@@ -397,7 +397,7 @@ export const useInteract = (
       const delta = [
         -(e.clientX - last[0]) / window.innerHeight, // height is intentional
         -(e.clientY - last[1]) / window.innerHeight,
-      ]
+      ].map(x => max(min(x, 0.01), -0.01))
 
       local.current.pointers.set(e.pointerId, [e.clientX, e.clientY])
       if (local.current.pointers.size > 1) {
