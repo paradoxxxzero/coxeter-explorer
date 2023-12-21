@@ -2,7 +2,6 @@
 #include dimensions
 
 uniform float thickness;
-uniform mat4 viewProjection;
 uniform matN metric;
 uniform matN matrix;
 

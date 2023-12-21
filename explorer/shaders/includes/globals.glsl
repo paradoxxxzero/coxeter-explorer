@@ -1,6 +1,9 @@
 #version 300 es
 precision highp float;
 
+uniform mat4 viewProjection;
+uniform vec3 eye;
+
 #include config
 
 // Constants

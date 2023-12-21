@@ -1,7 +1,6 @@
 #include globals
 #include dimensions
 
-uniform mat4 viewProjection;
 uniform matN metric;
 uniform matN matrix;
 
