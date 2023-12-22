@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { stopIcon } from '../icons'
+import { pauseIcon, playIcon, stopIcon } from '../icons'
 import Shaper from '../workers/shape.worker?worker'
 import CoxeterDiagram from './CoxeterDiagram'
 
@@ -56,6 +56,7 @@ export default function Shape({ space, shape, full, updateParams }) {
   const [iteration, setIteration] = useState(0)
   const [visit, setVisit] = useState({})
   const [processing, setProcessing] = useState(false)
+  const [paused, setPaused] = useState(false)
   const [shaper, setShaper] = useState(() => new Shaper())
 
   useEffect(() => {
@@ -79,7 +80,7 @@ export default function Shape({ space, shape, full, updateParams }) {
       if (!data.error) {
         if (data.done) {
           setProcessing(false)
-        } else {
+        } else if (!paused) {
           setIteration(iteration => iteration + 1)
         }
         setVisit(data.visit)
@@ -91,7 +92,17 @@ export default function Shape({ space, shape, full, updateParams }) {
     return () => {
       shaper.removeEventListener('message', handleShape)
     }
-  }, [shaper])
+  }, [shaper, paused])
+
+  const handlePause = useCallback(() => {
+    setPaused(paused => !paused)
+  }, [])
+
+  useEffect(() => {
+    if (!paused) {
+      setIteration(iteration => iteration + 1)
+    }
+  }, [paused])
 
   const handleStop = useCallback(() => {
     shaper.terminate()
@@ -107,7 +118,9 @@ export default function Shape({ space, shape, full, updateParams }) {
   const formatCount = count => (isFinite(count) ? count.toLocaleString() : '∞')
 
   return (
-    <aside className={`shape${processing ? ' shape-processing' : ''}`}>
+    <aside
+      className={`shape${processing && !paused ? ' shape-processing' : ''}`}
+    >
       {Object.values(visit)
         .reverse()
         .map(level => (
@@ -162,13 +175,32 @@ export default function Shape({ space, shape, full, updateParams }) {
           </div>
         ))}
       {processing ? (
-        <button
-          className="stop-iterate button"
-          onClick={handleStop}
-          title="Stop enumeration"
-        >
-          {stopIcon}
-        </button>
+        <div className="buttons">
+          {paused ? (
+            <button
+              className="iterate button"
+              onClick={handlePause}
+              title="Resume enumeration"
+            >
+              {playIcon}
+            </button>
+          ) : (
+            <button
+              className="iterate button"
+              onClick={handlePause}
+              title="Pause enumeration"
+            >
+              {pauseIcon}
+            </button>
+          )}
+          <button
+            className="iterate button"
+            onClick={handleStop}
+            title="Stop enumeration"
+          >
+            {stopIcon}
+          </button>
+        </div>
       ) : null}
     </aside>
   )

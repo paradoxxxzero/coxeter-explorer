@@ -331,8 +331,10 @@ select option {
 .shape-detail-button:not([disabled]):active {
   background-color: rgba(255, 255, 255, 0.15);
 }
-.shape .stop-iterate {
+.shape .iterate {
   font-size: 1.25em;
+}
+.shape .buttons {
   align-self: flex-end;
 }
 .shape-processing {
