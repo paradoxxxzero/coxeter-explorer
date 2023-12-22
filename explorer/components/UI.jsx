@@ -409,7 +409,11 @@ export default function UI({
                         >
                           {[
                             ...projections.filter(
-                              (projection, n) => i === 3 || n < 8
+                              (projection, n) =>
+                                (i === 3 &&
+                                  runtime.dimensions === 3 &&
+                                  runtime.space?.curvature < 0) ||
+                                n < 8
                             ),
                           ].map(p => (
                             <option key={p} value={p}>

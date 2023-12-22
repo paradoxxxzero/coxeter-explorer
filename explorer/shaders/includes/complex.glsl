@@ -213,7 +213,7 @@ float binomial(float a, int n) {
 vec2 sc(vec2 w, int K) {
   // https://fr.scribd.com/document/480603019/circletopolygon 2.14
   vec2 sum = vec2(0.);
-  for(int n = 0; n <= 6; n++) {
+  for(int n = 0; n < 10; n++) {
     sum += binomial(float(n) - 1.0 + 2.0 / float(K), n) / float(1 + n * K) * cpow(w, float(n * K));
   }
   return cmul(w, sum);

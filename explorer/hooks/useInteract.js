@@ -281,7 +281,7 @@ export const useInteract = (
       animation.current.t = performance.now()
     }
 
-    const dt = min(performance.now() - animation.current.t, 10)
+    const dt = min(performance.now() - animation.current.t, 100)
 
     let changed = false
     for (let i = 0; i < speed.length; i++) {

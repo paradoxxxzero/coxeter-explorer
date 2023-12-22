@@ -97,11 +97,7 @@ vec4 light(vec3 position, vec3 normal, vec3 rgb, vec2 uv) {
   float diffuse = 0.;
   float specular = 0.;
 
-  #if !defined(PROJECTION3) || PROJECTION3 == 1
-  vec3 eyeDirection = vec3(0., 0., -1.);
-  #else
   vec3 eyeDirection = eye - position;
-  #endif
 
   eyeDirection = normalize(eyeDirection);
   vec3 lightDirection = eyeDirection;

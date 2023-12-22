@@ -8,7 +8,7 @@ vec3 project(in vec3 v, in float k) {
   if(nr < 1e-9 || nr > 4e2) {
     nr = NaN;
   }
-  return vec3(v.xy * nr, v.z);
+  return vec3(v.xy * nr, 0.);
 }
 #endif
 #if DIMENSIONS >= 4
@@ -33,13 +33,7 @@ vecN_1 project(in vecN v, in float k) {
 #endloopN
 
 vec4 viewProject(vec3 position) {
-  #if DIMENSIONS == 3 && PROJECTION3 != -1 && PROJECTION3 != 8
-  vec4 normalProjection = viewProjection * vec4(position, 1.);
-  vec4 flatProjection = viewProjection * vec4(position.xy, 0., 1.);
-  return vec4(flatProjection.xy / flatProjection.w, normalProjection.z / normalProjection.w, 1.);
-  #else
   return viewProjection * vec4(position, 1.);
-  #endif
 }
 
 vec3 xproject(in vec2 v) {
@@ -47,7 +41,7 @@ vec3 xproject(in vec2 v) {
 }
 
 vec3 pureproject(in vec2 v) {
-  return vec3(v, 0.);
+  return vec3(v, 1.);
 }
 
 #if DIMENSIONS >= 3
@@ -85,25 +79,23 @@ vec3 xproject(in vec3 v) {
   }
   v.y -= 1.;
   return v * .5;
-  #elif PROJECTION3 == 9 // BAND
-  vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
-  return vec3((2. / PI) * ((clog(cone + z)) - clog(cone - z)), v.z);
+  #elif PROJECTION3 >= 9 // Transforms
+  vec2 z = project(v, 1.).xy;
+
+  #if PROJECTION3 == 9 // BAND
+  return vec3((2. / PI) * ((clog(cone + z)) - clog(cone - z)), 0.);
   #elif PROJECTION3 == 10 // CROSS
-  vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
   // Sum of angles
   // float o = -.5 * PI;
   // vec2 a = vec2(cos(o), sin(o));
-  return vec3((2. / PI) * .5 * (clog(cone + z) - clog(cone - z) + cmul(ci, clog(cone - cmul(ci, z))) + cmul(-ci, clog(cone - cmul(-ci, z)))), v.z);
+  return vec3((2. / PI) * .5 * (clog(cone + z) - clog(cone - z) + cmul(ci, clog(cone - cmul(ci, z))) + cmul(-ci, clog(cone - cmul(-ci, z)))), 0.);
   #elif PROJECTION3 == 11 // HEART
-  vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
-  return vec3(-z.y * z.x + z.x, -.5 * (z.y * z.y - z.x * z.x - 2. * z.y - 0.75), v.z);
+  return vec3(-z.y * z.x + z.x, -.5 * (z.y * z.y - z.x * z.x - 2. * z.y - 0.75), 0.);
   #elif PROJECTION3 == 12 // TEARDROP
-  vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
   return vec3(sign(z.x) *
-    sqrt((sqrt((1. - z.y) * (1. - z.y) + z.x * z.x) - (1. - z.y)) / 2.), -(sqrt((sqrt((1. - z.y) * (1. - z.y) + z.x * z.x) + (1. - z.y)) / 2.) - 0.75), v.z);
+    sqrt((sqrt((1. - z.y) * (1. - z.y) + z.x * z.x) - (1. - z.y)) / 2.), -(sqrt((sqrt((1. - z.y) * (1. - z.y) + z.x * z.x) + (1. - z.y)) / 2.) - 0.75), 0.);
   #elif PROJECTION3 == 13 // SQUARE
   float Ke = 1.854;
-  vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
   z = cmul(conei / sqrt(2.), z);
   z = cacos(z);
   vec2 w = ellipticFi(z, .5);
@@ -111,31 +103,40 @@ vec3 xproject(in vec3 v) {
     w.x = 2. * Ke - w.x;
   }
   w = cmul(vec2(1., -1.) / -Ke, w) + vec2(1., -1.);
-  return vec3(w, v.z);
+  return vec3(w, 0.);
   #elif PROJECTION3 == 14 // RING
-  vec2 z = project(v, 1.).xy;
   z = (2. / PI) * ((clog(cone + z)) - clog(cone - z));
   float k = 4.;
   float P = 1.1393;
-  return vec3(cexp(TAU * cmul(ci, (z.xy + ci)) / (k * P)), v.z);
+  return vec3(cexp(TAU * cmul(ci, (z.xy + ci)) / (k * P)), 0.);
   #elif PROJECTION3 == 15 // SINUSOIDAL
-  vec2 z = project(v, 1.).xy;
-  return vec3(csin(1.5 * z), v.z);
+  return vec3(csin(1.5 * z), 0.);
   #elif PROJECTION3 == 16 // SPIRAL
-  vec2 z = project(v, 1.).xy;
   z = ((clog(cone + z)) - clog(cone - z));
   z = cmul(z, conei);
   return vec3(cexp(z), 0.);
   #elif PROJECTION3 >= 17 // TRIANGLE
-  vec2 z = curvature < 0. ? project(v, 1.).xy : v.xy;
-  vec2 w = sc(z, PROJECTION3 - 14);
-  // Rotate by PI / 4
   #if PROJECTION3 == 17
-  w = cmul(w, cexp(ci * PI / 4.));
+  z = cmul(z, cexp(-ci * PI / 2.));
   #elif PROJECTION3 == 18
+  z = cmul(z, cexp(-ci * PI / 4.));
+  #elif PROJECTION3 == 19
+  z = cmul(z, cexp(-ci * PI / 10.));
+  #endif
+
+  vec2 w = sc(z, PROJECTION3 - 14);
+
+  #if PROJECTION3 == 17
+  w = cmul(w, cexp(ci * PI / 2.));
+  #elif PROJECTION3 == 18
+  w = cmul(w, cexp(ci * PI / 4.));
+  #elif PROJECTION3 == 19
   w = cmul(w, cexp(ci * PI / 10.));
   #endif
-  return vec3(w, v.z);
+
+  #endif
+
+  return vec3(w, 0.);
 
   // LAMBERT
   // float nr = sqrt(2. / (1. + v.z));
