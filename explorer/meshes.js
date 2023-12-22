@@ -118,106 +118,40 @@ export default function getMeshes(rt) {
     },
     plotType(rt, type, range, vertex, objects = null) {
       const mesh = this[type]
-      objects = objects || vertex
       const { dimensions } = rt
-      const ambiance = ambiances[rt.ambiance]
-
-      const [start, stop] = range
-
-      let startIdx = start
-      let stopIdx = stop
-      if (type === 'face') {
-        let idx = 0
-        for (let i = 0; i < start; i++) {
-          const vertices = objects[i].vertices.length
-          idx += vertices < 3 ? 0 : vertices === 3 ? 1 : vertices
-        }
-        startIdx = idx
-        for (let i = start; i < stop; i++) {
-          const vertices = objects[i].vertices.length
-          idx += vertices < 3 ? 0 : vertices === 3 ? 1 : vertices
-        }
-        stopIdx = idx
-      }
-
-      if (mesh.instances < stopIdx) {
-        mesh.extendAttributes(stopIdx)
-      }
-      mesh.count = stopIdx
       const arity = dimensions > 4 ? 9 : dimensions
+      const ambiance = ambiances[rt.ambiance]
+      const index = ['vertex', 'edge', 'face'].indexOf(type)
+      const count = rt.visit[index].detail.reduce(
+        (acc, visit) => acc + visit.objects.length,
+        0
+      )
+      if (mesh.instances < count) {
+        mesh.extendAttributes(count)
+      }
 
-      let idx = startIdx
-      for (let i = start; i < stop; i++) {
-        let vertices = []
-        const object = objects[i]
-        if (type === 'vertex') {
-          vertices.push({
-            ...object,
-            position: object.vertex,
-            type,
-          })
-        } else if (type === 'edge') {
-          vertices.push({
-            ...object,
-            position: vertex[object.start].vertex,
-            target: vertex[object.end].vertex,
-            type,
-          })
-        } else {
-          if (object.vertices.length < 3) {
-            continue
-          }
-          if (object.vertices.length === 3) {
-            vertices.push({
-              ...object,
-              position: vertex[object.vertices[0]].vertex,
-              target: vertex[object.vertices[1]].vertex,
-              center: vertex[object.vertices[2]].vertex,
-              index: 0,
-            })
-          } else {
-            const faceVertices = new Array(object.vertices.length)
-            for (let j = 0; j < object.vertices.length; j++) {
-              faceVertices[j] = vertex[object.vertices[j]].vertex
-            }
-            const center = new Array(dimensions).fill(0)
-            for (let j = 0; j < faceVertices.length; j++) {
-              const vertices = faceVertices[j]
-              for (let k = 0; k < dimensions; k++) {
-                center[k] += vertices[k]
-              }
-            }
-            for (let j = 0; j < dimensions; j++) {
-              center[j] /= faceVertices.length
-            }
-            for (let j = 0; j < faceVertices.length; j++) {
-              const vertex = {
-                ...object,
-                position: faceVertices[j],
-                target: faceVertices[(j + 1) % faceVertices.length],
-                center,
-                index: j,
-              }
-              if (object.word.length % 2 === (rt.space.curvature > 0 ? 0 : 1)) {
-                ;[vertex.position, vertex.target] = [
-                  vertex.target,
-                  vertex.position,
-                ]
-              }
-              vertices.push(vertex)
-            }
-          }
-        }
-
-        for (let j = 0; j < vertices.length; j++) {
-          const vertex = vertices[j]
+      let idx = 0
+      for (let i = 0; i < rt.visit[index].detail.length; i++) {
+        const visit = rt.visit[index].detail[i]
+        for (let j = 0; j < visit.objects.length; j++) {
+          const object = visit.objects[j]
           for (let k = 0; k < dimensions; k++) {
-            for (let l = 0; l < mesh.varying.length; l++) {
+            for (let l = 0; l < object.vertices.length; l++) {
+              const vertex = object.vertices[l]
               const attr = mesh.varying[l]
-              mesh.attributes[attr].data[idx * arity + k] = vertex[attr][k]
+              mesh.attributes[attr].data[idx * arity + k] = vertex[k]
             }
           }
-          const c = ambiance.color(vertex, type, rt)
+          const c = ambiance.color(
+            {
+              vertex,
+              word: object.word,
+              key: visit.key,
+              subShape: i,
+            },
+            type,
+            rt
+          )
           mesh.attributes.color.data[idx * 3 + 0] = c[0]
           mesh.attributes.color.data[idx * 3 + 1] = c[1]
           mesh.attributes.color.data[idx * 3 + 2] = c[2]
@@ -226,9 +160,10 @@ export default function getMeshes(rt) {
       }
       for (let l = 0; l < mesh.varying.length; l++) {
         const attr = mesh.varying[l]
-        mesh.attributes[attr].update(startIdx, stopIdx)
+        mesh.attributes[attr].update(0, idx)
       }
-      mesh.attributes.color.update(startIdx, stopIdx)
+      mesh.attributes.color.update(0, idx)
+      mesh.count = idx
     },
     preprocess(rt, plot) {
       if (rt.mirrors.some(mirror => isSnub(mirror))) {
@@ -242,34 +177,23 @@ export default function getMeshes(rt) {
       }
       return plot
     },
-    plot(rt, ranges_) {
-      let face_extended = rt.face
-      let ranges_extended = ranges_
-      if (ranges_.face[1] === rt.face.length && rt.partial) {
-        face_extended = face_extended.concat(rt.partial)
-        ranges_extended = {
-          ...ranges_,
-          face: [ranges_.face[0], ranges_.face[1] + rt.partial.length],
-        }
-      }
-      const plot = {
-        vertex: rt.vertex,
-        edge: rt.edge,
-        face: face_extended,
-        ranges: ranges_extended,
-      }
-      const { vertex, edge, face, ranges } = this.preprocess(rt, plot)
+    plot(rt) {
+      // let face_extended = rt.face
+      // let ranges_extended = ranges_
+      // if (ranges_.face[1] === rt.face.length && rt.partial) {
+      //   face_extended = face_extended.concat(rt.partial)
+      //   ranges_extended = {
+      //     ...ranges_,
+      //     face: [ranges_.face[0], ranges_.face[1] + rt.partial.length],
+      //   }
+      // }
+
+      // const { vertex, edge, face, ranges } = this.preprocess(rt, plot)
       for (let i = 0; i < this.meshes.length; i++) {
         const type = this.meshes[i]
         const mesh = this[type]
         if (mesh.visible) {
-          this.plotType(
-            rt,
-            type,
-            ranges[type],
-            vertex,
-            type !== 'vertex' ? (type === 'face' ? face : edge) : null
-          )
+          this.plotType(rt, type)
         }
       }
     },

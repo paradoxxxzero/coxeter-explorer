@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { changeAmbiance, plot, render, show, updateCamera } from '../render'
+import { changeAmbiance, render, show, updateCamera } from '../render'
 import refreshTextures from '../textures'
 
 export const useRender = (runtime, setRuntime) => {
@@ -63,35 +63,6 @@ export const useRender = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
-      // Order plot
-      if (runtime.currentOrder < 0) {
-        return
-      }
-      try {
-        plot(runtime, runtime.currentOrder - 1)
-        return runtime
-      } catch (e) {
-        console.error(e)
-        return {
-          ...runtime,
-          error: e.message,
-        }
-      }
-    })
-  }, [
-    runtime.currentOrder,
-    runtime.edge,
-    runtime.face,
-    runtime.ranges,
-    runtime.showEdges,
-    runtime.showFaces,
-    runtime.showVertices,
-    runtime.vertex,
-    setRuntime,
-  ])
-
-  useEffect(() => {
-    setRuntime(runtime => {
       runtime.meshes.recompilePrograms(runtime)
       return runtime
     })
@@ -117,7 +88,9 @@ export const useRender = (runtime, setRuntime) => {
     setRuntime(runtime => {
       // Full plot
       try {
-        plot(runtime)
+        if (runtime.visit.length) {
+          runtime.meshes.plot(runtime)
+        }
         return runtime
       } catch (e) {
         console.error(e)
@@ -132,6 +105,7 @@ export const useRender = (runtime, setRuntime) => {
     runtime.showEdges,
     runtime.showFaces,
     runtime.showVertices,
+    runtime.visit,
     setRuntime,
   ])
 
@@ -178,12 +152,10 @@ export const useRender = (runtime, setRuntime) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     runtime.ambiance,
-    // runtime.askedOrder,
     runtime.camera,
     runtime.centered,
     // runtime.controls,
     runtime.coxeter,
-    runtime.currentOrder,
     runtime.curve,
     runtime.dimensions,
     runtime.easing,
@@ -202,6 +174,7 @@ export const useRender = (runtime, setRuntime) => {
     runtime.fov9,
     // runtime.gl,
     runtime.grouper,
+    runtime.iteration,
     runtime.detail,
     runtime.matrix,
     // runtime.meshes,
@@ -209,7 +182,6 @@ export const useRender = (runtime, setRuntime) => {
     // runtime.rootNormals,
     runtime.msaa,
     runtime.msaaSamples,
-    // runtime.order,
     // runtime.passes,
     // runtime.processing,
     runtime.projection3,
@@ -231,6 +203,7 @@ export const useRender = (runtime, setRuntime) => {
     runtime.subsampling,
     runtime.vertexThickness,
     runtime.vertex,
+    runtime.visit, // FIXME : only for dimension 1-3
     runtime.zoom,
   ])
 }

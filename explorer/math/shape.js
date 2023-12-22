@@ -10,11 +10,10 @@ export const getGens = (mirrors, skips = []) =>
 export const getSubGens = (mirrors, skips = []) =>
   mirrors.map((m, i) => (skips.includes(i) || m ? '' : itoa(i))).join('')
 
-export const hasOrder = (words, order) => {
-  if (order === 0) {
+export const hasOrder = params => {
+  if (params.dimensions === 0) {
     return true
   }
-  let word = words[words.length - 1]
   // if (replacements) {
   //   word = Object.entries(replacements).reduce(
   //     (acc, [key, value]) => acc.replace(new RegExp(key, 'g'), value),
@@ -22,13 +21,13 @@ export const hasOrder = (words, order) => {
   //   )
   // }
   const seen = new Set()
-  for (let i = 0; i < word.length; i++) {
-    const c = word[i]
+  for (let i = 0; i < params.lastWord.length; i++) {
+    const c = params.lastWord[i]
     if (!c || seen.has(c)) {
       continue
     }
     seen.add(c)
-    if (seen.size === order) {
+    if (seen.size === params.dimensions) {
       return true
     }
   }
@@ -97,10 +96,10 @@ export const getShape = (
     }
 
     const subParams = solved.get(key)
-    const space = subParams.words
+    const space = Array.from(subParams.words.values())
 
     // If the coset generate a space
-    if (hasOrder(space, subParams.dimensions)) {
+    if (hasOrder(subParams)) {
       let quotient = ''
       if (subParams.snub && space.length <= subParams.dimensions) {
         // New face from both rotation

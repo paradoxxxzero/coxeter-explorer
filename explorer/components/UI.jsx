@@ -44,6 +44,7 @@ export default function UI({
   runtime,
   params,
   rotations,
+  setRuntime,
   updateParams,
   updateRotations,
 }) {
@@ -429,14 +430,13 @@ export default function UI({
                 : null}
             </aside>
           )}
-          {['advanced', 'full'].includes(showUI) && (
-            <Shape
-              shape={runtime.shape}
-              space={runtime.space}
-              full={showUI === 'full'}
-              updateParams={updateParams}
-            />
-          )}
+
+          <Shape
+            runtime={runtime}
+            setRuntime={setRuntime}
+            showUI={showUI}
+            updateParams={updateParams}
+          />
         </div>
         <div className="ui-row ui-row-bottom">
           {['simple', 'advanced', 'full'].includes(showUI) ? (
@@ -468,16 +468,6 @@ export default function UI({
                     ))}
                   </select>
                 </label>
-              )}
-              {(showUI === 'full' || runtime.space?.curvature <= 0) && (
-                <Number
-                  name="order"
-                  label="Precision"
-                  min={1}
-                  step={1}
-                  value={params.order}
-                  onChange={handleChange}
-                />
               )}
               <Number
                 name="segments"
@@ -565,16 +555,11 @@ export default function UI({
           {showUI === 'empty' ? <div className="spacer" /> : null}
           <button
             className={`space-button button${
-              runtime.processing ? ' processing' : ''
+              runtime.processing && !runtime.paused ? ' processing' : ''
             }${showUI === 'empty' ? ' empty' : ''}`}
             onClick={handleUI}
           >
             <Space {...(runtime.space || {})} dimensions={runtime.dimensions} />
-            {runtime.currentOrder < runtime.order ? (
-              <aside className="processing-counter">
-                {runtime.currentOrder}/{runtime.order}
-              </aside>
-            ) : null}
           </button>
         </div>
       </main>

@@ -52,99 +52,53 @@ const icons = n => {
   )
 }
 
-export default function Shape({ space, shape, full, updateParams }) {
-  const [iteration, setIteration] = useState(0)
-  const [visit, setVisit] = useState({})
-  const [processing, setProcessing] = useState(false)
-  const [paused, setPaused] = useState(false)
-  const [shaper, setShaper] = useState(() => new Shaper())
-
-  useEffect(() => {
-    setIteration(0)
-  }, [shape])
-
-  useEffect(() => {
-    if (!shape || iteration < 0) {
-      return
-    }
-    setProcessing(true)
-    shaper.postMessage({
-      space,
-      shape,
-      first: iteration === 0,
-    })
-  }, [iteration, shape, shaper, space])
-
-  useEffect(() => {
-    const handleShape = ({ data }) => {
-      if (!data.error) {
-        if (data.done) {
-          setProcessing(false)
-        } else if (!paused) {
-          setIteration(iteration => iteration + 1)
-        }
-        setVisit(data.visit)
-      } else {
-        console.error(data.error)
-      }
-    }
-    shaper.addEventListener('message', handleShape)
-    return () => {
-      shaper.removeEventListener('message', handleShape)
-    }
-  }, [shaper, paused])
-
+export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
   const handlePause = useCallback(() => {
-    setPaused(paused => !paused)
-  }, [])
+    setRuntime(runtime => ({
+      ...runtime,
+      paused: !runtime.paused,
+    }))
+  }, [setRuntime])
 
-  useEffect(() => {
-    if (!paused) {
-      setIteration(iteration => iteration + 1)
-    }
-  }, [paused])
-
-  const handleStop = useCallback(() => {
-    shaper.terminate()
-    setProcessing(false)
-    setShaper(new Shaper())
-    setIteration(-1)
-  }, [shaper])
-
-  const simple = Object.values(visit).every(
-    subshape => subshape.detail.length < 2
-  )
+  const simple = runtime.visit.every(subshape => subshape.detail.length < 2)
 
   const formatCount = count => (isFinite(count) ? count.toLocaleString() : '∞')
-
+  if (showUI === 'empty') {
+    return null
+  }
+  const detail = showUI === 'full' ? 'detail' : 'aggregated'
   return (
     <aside
-      className={`shape${processing && !paused ? ' shape-processing' : ''}`}
+      className={`shape${
+        runtime.processing && !runtime.paused ? ' shape-processing' : ''
+      }`}
     >
-      {Object.values(visit)
+      {[...runtime.visit]
         .reverse()
+        .filter(level => level)
         .map(level => (
           <div key={`shape-${level.dimensions}`} className="shape-level">
             {icons(level.dimensions)}
             <div className="shape-count">
+              {level.done || level.processing === undefined
+                ? null
+                : `${level.processing} / `}
+
               {formatCount(level.count)}
-              {level.done ? null : '…'}
             </div>
 
-            {full && level.dimensions > 0 ? (
+            {['advanced', 'full'].includes(showUI) && level.dimensions > 0 ? (
               <div
                 className={`shape-detail${
-                  level.detail.length > 1 ? ' shape-detail-split' : ''
+                  level[detail].length > 1 ? ' shape-detail-split' : ''
                 }`}
               >
-                {level.detail.map(
-                  ({ count, coxeter, stellation, mirrors, done }, i) => (
-                    <div key={`detail-${i}`} className="shape-detail-line">
+                {level[detail].map(
+                  ({ count, coxeter, stellation, mirrors, done, key }, i) => (
+                    <div key={key} className="shape-detail-line" title={key}>
                       {simple ? null : (
                         <div className="shape-count">
-                          {level.detail.length > 1
-                            ? formatCount(count) + (done ? '' : '…')
-                            : null}
+                          {level[detail].length > 1 ? formatCount(count) : null}
                         </div>
                       )}
                       {level.dimensions > 0 ? (
@@ -174,9 +128,9 @@ export default function Shape({ space, shape, full, updateParams }) {
             ) : null}
           </div>
         ))}
-      {processing ? (
+      {runtime.processing ? (
         <div className="buttons">
-          {paused ? (
+          {runtime.paused ? (
             <button
               className="iterate button"
               onClick={handlePause}
@@ -193,13 +147,13 @@ export default function Shape({ space, shape, full, updateParams }) {
               {pauseIcon}
             </button>
           )}
-          <button
+          {/* <button
             className="iterate button"
             onClick={handleStop}
             title="Stop enumeration"
           >
             {stopIcon}
-          </button>
+          </button> */}
         </div>
       ) : null}
     </aside>

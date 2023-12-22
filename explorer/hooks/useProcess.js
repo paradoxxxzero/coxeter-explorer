@@ -1,89 +1,18 @@
-import { useEffect, useRef } from 'react'
-import { coxeterToGram, getGeometry, getSpace } from '../math/hypermath'
-import { killRunningWorkers, workers } from '../workers/worker'
+import { useEffect, useRef, useState } from 'react'
+import {
+  coxeterToGram,
+  getGeometry,
+  getSpace,
+  normalize,
+} from '../math/hypermath'
+import { multiplyVector } from '../math/matrix'
 import { getShape } from '../math/shape'
-
-const asyncProcess = async (runtime, running, setRuntime) => {
-  // Rules gets computed on non stellated coxeter group
-  const worker = workers[runtime.grouper.replace(/^auto-/, '')]
-  if (runtime.currentOrder === 0) {
-    killRunningWorkers()
-    running.current = false
-  }
-  if (running.current === runtime.currentOrder) {
-    console.info('already processing at ', runtime.currentOrder)
-    return
-  }
-  try {
-    running.current = runtime.currentOrder
-    const { vertices, edges, faces, partials, order } = await worker.process({
-      order: runtime.currentOrder,
-      coxeter: runtime.coxeter,
-      stellation: runtime.stellation,
-      metric: runtime.space.metric,
-      curvature: runtime.space.curvature,
-      mirrors: runtime.mirrors,
-      rootNormals: runtime.rootNormals,
-      rootVertices: runtime.rootVertices,
-      dimensions: runtime.dimensions,
-    })
-    running.current = false
-    setRuntime(runtime => {
-      if (runtime.currentOrder !== order) {
-        console.warn('Mismatched order, ignoring', runtime.currentOrder, order)
-        return runtime
-      }
-      return {
-        ...runtime,
-        ranges: [
-          ...runtime.ranges,
-          {
-            vertex: [
-              runtime.vertex.length,
-              runtime.vertex.length + vertices.length,
-            ],
-            edge: [runtime.edge.length, runtime.edge.length + edges.length],
-            face: [runtime.face.length, runtime.face.length + faces.length],
-          },
-        ],
-        vertex: runtime.vertex.concat(vertices),
-        edge: runtime.edge.concat(edges),
-        face: runtime.face.concat(faces),
-        partial: partials,
-        currentOrder: order + 1,
-        processing: false,
-        error: null,
-      }
-    })
-  } catch (e) {
-    // Change current order to allow user to retry
-    running.current = false
-    console.error(e)
-    const newRuntime = {
-      ...runtime,
-
-      currentOrder: runtime.order,
-      error: e.message,
-      processing: false,
-    }
-    setRuntime(newRuntime)
-  }
-}
+import { mirrorValue } from '../mirrors'
+import Shaper from '../workers/shape.worker?worker'
 
 export const useProcess = (runtime, setRuntime) => {
+  const [shaper, setShaper] = useState(() => new Shaper())
   const running = useRef(false)
-
-  useEffect(() => {
-    setRuntime(runtime => {
-      if (runtime.order < runtime.currentOrder) {
-        return {
-          ...runtime,
-          currentOrder: runtime.order,
-        }
-      }
-      return runtime
-    })
-  }, [runtime.order, runtime.currentOrder, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => {
@@ -91,43 +20,35 @@ export const useProcess = (runtime, setRuntime) => {
       // const cartan = multiplyScalar(gram, 2)
 
       const space = getSpace(gram)
+
+      const { vertices: rootVertices, normals: rootNormals } = getGeometry(
+        space,
+        runtime.centered
+      )
+      const rootVertex = normalize(
+        multiplyVector(
+          rootVertices,
+          runtime.mirrors.map(v => mirrorValue(v))
+        ),
+        space.metric
+      )
+      space.rootVertex = rootVertex
+      space.rootVertices = rootVertices
+      space.rootNormals = rootNormals
+
       const shape = getShape(
         runtime.dimensions,
         runtime.coxeter,
         runtime.stellation,
         runtime.mirrors
       )
-      if (!space) {
-        return {
-          ...runtime,
-          space,
-          shape,
-        }
-      }
 
-      const { vertices: rootVertices, normals: rootNormals } = getGeometry(
-        space,
-        runtime.centered
-      )
-
-      const newRuntime = {
+      return {
         ...runtime,
-        currentOrder: 0,
-        vertex: [],
-        edge: [],
-        face: [],
-        partial: [],
-        ranges: [],
         space,
         shape,
-        rootNormals,
-        rootVertices,
-        processing: true,
         error: null,
       }
-
-      asyncProcess(newRuntime, running, setRuntime)
-      return newRuntime
     })
   }, [
     runtime.dimensions,
@@ -140,29 +61,74 @@ export const useProcess = (runtime, setRuntime) => {
   ])
 
   useEffect(() => {
+    setRuntime(runtime => ({
+      ...runtime,
+      iteration: 0,
+    }))
+  }, [runtime.shape, setRuntime])
+
+  useEffect(() => {
     setRuntime(runtime => {
-      if (runtime.currentOrder === 0) {
+      if (!runtime.shape || runtime.iteration < 0) {
         return runtime
       }
-      if (runtime.order <= runtime.currentOrder) {
-        return runtime
-      }
-      if (runtime.ranges?.[runtime.order]) {
-        return {
-          ...runtime,
-          currentOrder: runtime.order,
-          askedOrder: null,
-        }
-      }
-      asyncProcess(runtime, running, setRuntime)
+
+      shaper.postMessage({
+        space: runtime.space,
+        shape: runtime.shape,
+        first: runtime.iteration === 0,
+      })
       return {
         ...runtime,
-        error: null,
         processing: true,
       }
     })
+  }, [runtime.iteration, runtime.shape, shaper, runtime.space, setRuntime])
 
-    // Can't have ranges here
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setRuntime, runtime.order, runtime.currentOrder])
+  useEffect(() => {
+    setRuntime(runtime => ({
+      ...runtime,
+      iteration: runtime.paused ? runtime.iteration : runtime.iteration + 1,
+    }))
+
+    const handleShape = ({ data }) => {
+      if (!data.error) {
+        setRuntime(runtime => ({
+          ...runtime,
+          processing: !data.done,
+          iteration:
+            runtime.paused || data.done
+              ? runtime.iteration
+              : runtime.iteration + 1,
+          visit: data,
+        }))
+      } else {
+        console.error(data.error)
+      }
+    }
+
+    shaper.addEventListener('message', handleShape)
+    return () => {
+      shaper.removeEventListener('message', handleShape)
+    }
+  }, [shaper, runtime.paused, setRuntime])
+
+  useEffect(() => {
+    setRuntime(runtime => {
+      const newRuntime = {
+        ...runtime,
+      }
+      if (Object.values(runtime.visit).some(x => x.processing > 10000)) {
+        newRuntime.paused = true
+      }
+      return newRuntime
+    })
+  }, [runtime.visit, setRuntime])
+
+  // const handleStop = useCallback(() => {
+  //   shaper.terminate()
+  //   setProcessing(false)
+  //   setShaper(new Shaper())
+  //   setIteration(-1)
+  // }, [shaper])
 }

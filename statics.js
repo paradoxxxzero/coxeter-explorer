@@ -354,7 +354,6 @@ export const defaultParams = {
   mirrors: [1, 0, 0, 0],
   extended: false,
 
-  order: 10,
   curve: true,
   detail: 'medium',
   segments: 16,

@@ -139,7 +139,7 @@ onmessage = ({
     if (!params.done) {
       params.limit = limit
       ToddCoxeter(params)
-      for (const [vertexId, word] of params.verticesWords) {
+      for (const [vertexId, word] of params.words) {
         if (allVertices.has(vertexId)) {
           continue
         }
@@ -188,8 +188,9 @@ onmessage = ({
         params.limit = limit
         ToddCoxeter(params)
       }
-      for (let j = edgeParams.lastDrawn; j < params.words.length; j++) {
-        const word = params.words[j]
+      const words = Array.from(params.words.values())
+      for (let j = edgeParams.lastDrawn; j < words.length; j++) {
+        const word = words[j]
         if (word === undefined) {
           continue
         }
@@ -219,23 +220,25 @@ onmessage = ({
       const shape = faceParams.shape
       const subShape = faceParams.subShape
       const double = subShape.mirrors.every(m => !!m)
+      let words = []
       // const snub = subShape.mirrors.some(m => isSnub(m))
 
       // Draw face in dimension 2:
       if (shape.dimensions === 2) {
-        params.words = params.space
-        subShape.space = verticesParams.params.words
+        words = params.space
+        subShape.space = Array.from(verticesParams.params.words.values())
         params.done = true
       }
 
       if (!params.done) {
         params.limit = limit
         ToddCoxeter(params)
+        words = Array.from(params.words.values())
       }
 
       // Start by retrying last partial faces
       for (const j of faceParams.toRetry) {
-        const word = params.words[j]
+        const word = words[j]
         const vertices = []
         for (let k = 0; k < subShape.space.length; k++) {
           const l = reorder(k, subShape.space.length, double)
@@ -265,9 +268,9 @@ onmessage = ({
       }
 
       // Get these vertices after reflections
-      for (let j = faceParams.lastDrawn; j < params.words.length; j++) {
+      for (let j = faceParams.lastDrawn; j < words.length; j++) {
         let fail = false
-        const word = params.words[j]
+        const word = words[j]
         const vertices = []
         for (let k = 0; k < subShape.space.length; k++) {
           // const l = snub ? k : reorder(k, face.length, double)

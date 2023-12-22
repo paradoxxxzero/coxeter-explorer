@@ -9,17 +9,12 @@ export default function App({ params, updateParams }) {
   const [runtime, setRuntime] = useState({
     ...params,
 
-    currentOrder: 0,
-    askedOrder: null,
     space: null,
     shape: null,
-    rootNormals: null,
-    rootVertices: null,
-    vertex: [],
-    edge: [],
-    ranges: [],
-    face: [],
     processing: true,
+    iteration: 0,
+    visit: [],
+    paused: false,
     error: null,
   })
 
@@ -93,6 +88,7 @@ export default function App({ params, updateParams }) {
         runtime={runtime}
         params={params}
         rotations={rotations}
+        setRuntime={setRuntime}
         updateRotations={updateRotations}
         updateParams={updateParams}
       />
