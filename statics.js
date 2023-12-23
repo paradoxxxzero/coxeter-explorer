@@ -378,7 +378,6 @@ export const defaultParams = {
   msaa: window.devicePixelRatio <= 1,
   msaaSamples: MSAA_MAX,
   subsampling: window.devicePixelRatio,
-  limit: 1000,
 }
 
 export const normalizeCoxeter = params => {

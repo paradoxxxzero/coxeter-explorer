@@ -12,6 +12,7 @@ export default function App({ params, updateParams }) {
     space: null,
     shape: null,
     processing: true,
+    limit: 1000,
     iteration: 0,
     visit: [],
     paused: false,

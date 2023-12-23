@@ -125,7 +125,6 @@ export default function getMeshes(rt) {
         return
       }
       let idx = objects.start
-
       const count = idx + objects.size
       if (mesh.instances < count) {
         mesh.extendAttributes(count)

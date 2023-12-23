@@ -66,7 +66,7 @@ export const useProcess = (runtime, setRuntime) => {
       paused: false,
       limit: 1000,
     }))
-  }, [runtime.shape, setRuntime])
+  }, [runtime.shape, runtime.ambiance, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => {
@@ -101,14 +101,13 @@ export const useProcess = (runtime, setRuntime) => {
 
     const handleShape = ({ data }) => {
       if (!data.error) {
-        runtime.meshes.plot(runtime, data.objects)
-
         setRuntime(runtime => {
+          runtime.meshes.plot(runtime, data.objects)
           return {
             ...runtime,
-            processing: !data.done,
+            processing: !data.visit.done,
             iteration:
-              runtime.paused || data.done
+              runtime.paused || data.visit.done
                 ? runtime.iteration
                 : runtime.iteration + 1,
             visit: data.visit,

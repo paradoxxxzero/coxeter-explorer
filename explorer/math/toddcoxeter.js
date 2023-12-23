@@ -10,11 +10,13 @@ const invertCase = c => {
 
 const quotient = (params, cosetId) => {
   let minimalCosetId = cosetId
+  let indirections = 0
   while (params.quotientMap[minimalCosetId]) {
+    indirections++
     minimalCosetId = params.quotientMap[minimalCosetId]
   }
   // Improve performance by caching but decrease memory efficiency
-  if (minimalCosetId !== cosetId) {
+  if (indirections > 1) {
     params.quotientMap[cosetId] = minimalCosetId
   }
   return minimalCosetId

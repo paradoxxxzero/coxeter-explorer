@@ -50,7 +50,10 @@ onmessage = ({ data: { shape, space, first } }) => {
             space: subshape.space,
             subdimensions: subshape.dimensions,
             mirrors: subshape.mirrors,
-            limit: subshape.dimensions < 3 ? 200 : 50,
+            limit:
+              // Priorize low dimensional facets
+              // TODO: increase again when we have a better way to handle
+              subshape.dimensions < 3 ? (3 - subshape.dimensions) * 250 : 50,
             ...(subshape.dimensions === 0
               ? {
                   rootVertex: space.rootVertex,
@@ -146,7 +149,7 @@ onmessage = ({ data: { shape, space, first } }) => {
       lasts[i] += parts.size
     }
 
-    visit.top = visit[0].start + visit[0].size
+    visit.top = objects[0].start + objects[0].size
     visit.done = allDone
 
     postMessage({ visit, objects })
