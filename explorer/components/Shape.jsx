@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { Fragment, useCallback, useEffect, useState } from 'react'
 import { pauseIcon, playIcon, stopIcon } from '../icons'
 import Shaper from '../workers/shape.worker?worker'
 import CoxeterDiagram from './CoxeterDiagram'
@@ -72,66 +72,7 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
   }
   const detail = showUI === 'full' ? 'detail' : 'aggregated'
   return (
-    <aside
-      className={`shape${
-        runtime.processing && !runtime.paused ? ' shape-processing' : ''
-      }`}
-    >
-      {[...runtime.visit]
-        .reverse()
-        .filter(level => level)
-        .map(level => (
-          <div key={`shape-${level.dimensions}`} className="shape-level">
-            {icons(level.dimensions)}
-            <div className="shape-count">
-              {level.done || level.processing === undefined
-                ? null
-                : `${level.processing} / `}
-
-              {formatCount(level.count)}
-            </div>
-
-            {['advanced', 'full'].includes(showUI) && level.dimensions > 0 ? (
-              <div
-                className={`shape-detail${
-                  level[detail].length > 1 ? ' shape-detail-split' : ''
-                }`}
-              >
-                {level[detail].map(
-                  ({ count, coxeter, stellation, mirrors, done, key }, i) => (
-                    <div key={key} className="shape-detail-line" title={key}>
-                      {simple ? null : (
-                        <div className="shape-count">
-                          {level[detail].length > 1 ? formatCount(count) : null}
-                        </div>
-                      )}
-                      {level.dimensions > 0 ? (
-                        <button
-                          className="shape-detail-button"
-                          disabled={level.dimensions < 2}
-                          onClick={() =>
-                            updateParams({
-                              coxeter,
-                              stellation,
-                              mirrors,
-                              dimensions: level.dimensions,
-                            })
-                          }
-                        >
-                          <CoxeterDiagram
-                            coxeter={coxeter}
-                            stellation={stellation}
-                            mirrors={mirrors}
-                          />
-                        </button>
-                      ) : null}
-                    </div>
-                  )
-                )}
-              </div>
-            ) : null}
-          </div>
-        ))}
+    <aside className="shape">
       {runtime.processing ? (
         <div className="buttons">
           {runtime.paused ? (
@@ -152,14 +93,82 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
             </button>
           )}
           {/* <button
-            className="iterate button"
-            onClick={handleStop}
-            title="Stop enumeration"
-          >
-            {stopIcon}
-          </button> */}
+          className="iterate button"
+          onClick={handleStop}
+          title="Stop enumeration"
+        >
+          {stopIcon}
+        </button> */}
         </div>
       ) : null}
+      <div
+        className={`shape-info${
+          runtime.processing && !runtime.paused ? ' shape-processing' : ''
+        }`}
+      >
+        {[...runtime.visit]
+          .reverse()
+          .filter(level => level)
+          .map(level => (
+            <Fragment key={`shape-${level.dimensions}`}>
+              <div className="shape-count">
+                {icons(level.dimensions)}
+                {level.done || level.processing === undefined
+                  ? null
+                  : `${level.processing} / `}
+
+                {formatCount(level.count)}
+              </div>
+
+              <div
+                className={`shape-detail${
+                  level.dimensions > 0 && ['advanced', 'full'].includes(showUI)
+                    ? ' shape-detail-split'
+                    : ''
+                }`}
+              >
+                {['advanced', 'full'].includes(showUI) && level.dimensions > 0
+                  ? level[detail].map(
+                      (
+                        { count, coxeter, stellation, mirrors, done, key },
+                        i
+                      ) => (
+                        <div
+                          key={key}
+                          className="shape-detail-line"
+                          title={key}
+                        >
+                          <div className="shape-count">
+                            {!simple ? formatCount(count) : null}
+                          </div>
+                          {level.dimensions > 0 ? (
+                            <button
+                              className="shape-detail-button"
+                              disabled={level.dimensions < 2}
+                              onClick={() =>
+                                updateParams({
+                                  coxeter,
+                                  stellation,
+                                  mirrors,
+                                  dimensions: level.dimensions,
+                                })
+                              }
+                            >
+                              <CoxeterDiagram
+                                coxeter={coxeter}
+                                stellation={stellation}
+                                mirrors={mirrors}
+                              />
+                            </button>
+                          ) : null}
+                        </div>
+                      )
+                    )
+                  : null}
+              </div>
+            </Fragment>
+          ))}
+      </div>
     </aside>
   )
 }

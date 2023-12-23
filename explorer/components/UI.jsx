@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  ambiances,
   defaultParams,
   defaultProjection,
   details,
@@ -30,6 +29,7 @@ import Rotation from './Rotation.jsx'
 import Space from './Space'
 import { presets } from '../presets/index.jsx'
 import Shape from './Shape.jsx'
+import { ambiances } from '../ambiances.js'
 
 const getShowUI = () => {
   try {
@@ -347,6 +347,12 @@ export default function UI({
           )}
         </div>
         <div className="ui-row ui-row-middle">
+          <Shape
+            runtime={runtime}
+            setRuntime={setRuntime}
+            showUI={showUI}
+            updateParams={updateParams}
+          />
           {['advanced', 'full'].includes(showUI) && (
             <aside className="view">
               <Number
@@ -430,13 +436,6 @@ export default function UI({
                 : null}
             </aside>
           )}
-
-          <Shape
-            runtime={runtime}
-            setRuntime={setRuntime}
-            showUI={showUI}
-            updateParams={updateParams}
-          />
         </div>
         <div className="ui-row ui-row-bottom">
           {['simple', 'advanced', 'full'].includes(showUI) ? (

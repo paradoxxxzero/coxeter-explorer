@@ -1,4 +1,5 @@
 import { arrayEquals, range } from '../../utils'
+import { ambiances } from '../ambiances'
 import { ToddCoxeter, countCosets, wordToCoset } from '../math/toddcoxeter'
 
 let cache, lasts
@@ -17,14 +18,13 @@ const reorder = (i, n, double = false) => {
   return 2 * i
 }
 
-onmessage = ({ data: { shape, space, first } }) => {
+onmessage = ({ data: { shape, space, first, ambiance } }) => {
   try {
     const visit = new Array(shape.dimensions)
     let allDone = true
     if (first) {
       cache = new Map()
       lasts = [0, 0, 0]
-      console.log('Reset shape')
     }
 
     const visitShape = subshape => {
@@ -53,7 +53,7 @@ onmessage = ({ data: { shape, space, first } }) => {
             limit:
               // Priorize low dimensional facets
               // TODO: increase again when we have a better way to handle
-              subshape.dimensions < 3 ? (3 - subshape.dimensions) * 250 : 50,
+              subshape.dimensions < 3 ? (3 - subshape.dimensions) * 250 : 10,
             ...(subshape.dimensions === 0
               ? {
                   rootVertex: space.rootVertex,
@@ -128,6 +128,12 @@ onmessage = ({ data: { shape, space, first } }) => {
 
     shape.children.forEach(visitShape)
 
+    if (visit[0].done && visit[1]?.done && visit[2]?.done) {
+      for (let cached of cache.values()) {
+        cached.limit = 200
+      }
+    }
+
     const objects = []
     for (let i = 0; i < visit.length && i < 3; i++) {
       const parts = {
@@ -149,10 +155,56 @@ onmessage = ({ data: { shape, space, first } }) => {
       lasts[i] += parts.size
     }
 
+    const data = []
+    const infos = []
+    const arity = shape.dimensions > 4 ? 9 : shape.dimensions
+    for (let i = 0; i < objects.length; i++) {
+      const parts = objects[i]
+      const buffers = [new Float32Array(parts.size * 3)]
+      for (let j = 0; j < i + 1; j++) {
+        buffers.push(new Float32Array(parts.size * arity))
+      }
+      let idx = 0
+      for (let j = 0; j < parts.objects.length; j++) {
+        const objects = parts.objects[j]
+
+        for (let k = 0; k < objects.length; k++) {
+          const object = objects[k]
+
+          for (let l = 0; l < object.vertices.length; l++) {
+            const vertex = object.vertices[l]
+            for (let m = 0; m < vertex.length; m++) {
+              buffers[l + 1][idx * arity + m] = vertex[m]
+            }
+          }
+          const c = ambiances[ambiance].color(
+            {
+              word: object.word,
+              key: object.key,
+              subShape: j,
+            },
+            i
+          )
+          buffers[0][idx * 3 + 0] = c[0]
+          buffers[0][idx * 3 + 1] = c[1]
+          buffers[0][idx * 3 + 2] = c[2]
+          idx++
+        }
+      }
+      data.push(buffers)
+      infos.push({
+        start: parts.start,
+        size: parts.size,
+      })
+    }
+
     visit.top = objects[0].start + objects[0].size
     visit.done = allDone
 
-    postMessage({ visit, objects })
+    postMessage(
+      { visit, infos, data },
+      { options: { transfer: [data.flat(1)] } }
+    )
   } catch (e) {
     postMessage({ error: e.message })
   }

@@ -1,4 +1,4 @@
-import { ambiances } from '../statics'
+import { ambiances } from './ambiances'
 import { sphere, tri, tube } from './geometries'
 import { mesh } from './helpers'
 import { PI, cbrt, sqrt, tan } from './math'
@@ -116,52 +116,6 @@ export default function getMeshes(rt) {
         mesh.uniforms.eye.update(rt.camera.eye)
       }
     },
-    plotType(rt, type, objects) {
-      const mesh = this[type]
-      const { dimensions } = rt
-      const arity = dimensions > 4 ? 9 : dimensions
-      const ambiance = ambiances[rt.ambiance]
-      if (!objects) {
-        return
-      }
-      let idx = objects.start
-      const count = idx + objects.size
-      if (mesh.instances < count) {
-        mesh.extendAttributes(count)
-      }
-
-      for (let i = 0; i < objects.objects.length; i++) {
-        for (let j = 0; j < objects.objects[i].length; j++) {
-          const object = objects.objects[i][j]
-          for (let k = 0; k < dimensions; k++) {
-            for (let l = 0; l < object.vertices.length; l++) {
-              const vertex = object.vertices[l]
-              const attr = mesh.varying[l]
-              mesh.attributes[attr].data[idx * arity + k] = vertex[k]
-            }
-          }
-          const c = ambiance.color(
-            {
-              word: object.word,
-              key: object.key,
-              subShape: i,
-            },
-            type,
-            rt
-          )
-          mesh.attributes.color.data[idx * 3 + 0] = c[0]
-          mesh.attributes.color.data[idx * 3 + 1] = c[1]
-          mesh.attributes.color.data[idx * 3 + 2] = c[2]
-          idx++
-        }
-      }
-      for (let l = 0; l < mesh.varying.length; l++) {
-        const attr = mesh.varying[l]
-        mesh.attributes[attr].update(objects.start, idx)
-      }
-      mesh.attributes.color.update(objects.start, idx)
-      mesh.count = idx
-    },
     preprocess(rt, plot) {
       if (rt.mirrors.some(mirror => isSnub(mirror))) {
         plot = snub(plot, rt.mirrors, rt.dimensions, rt.space.metric)
@@ -173,26 +127,6 @@ export default function getMeshes(rt) {
         plot = dual(plot, rt.mirrors, rt.dimensions, rt.space.metric)
       }
       return plot
-    },
-    plot(rt, objects) {
-      // let face_extended = rt.face
-      // let ranges_extended = ranges_
-      // if (ranges_.face[1] === rt.face.length && rt.partial) {
-      //   face_extended = face_extended.concat(rt.partial)
-      //   ranges_extended = {
-      //     ...ranges_,
-      //     face: [ranges_.face[0], ranges_.face[1] + rt.partial.length],
-      //   }
-      // }
-
-      // const { vertex, edge, face, ranges } = this.preprocess(rt, plot)
-      for (let i = 0; i < this.meshes.length; i++) {
-        const type = this.meshes[i]
-        // const mesh = this[type]
-        // if (mesh.visible) {
-        this.plotType(rt, type, objects[i])
-        // }
-      }
     },
   }
 }

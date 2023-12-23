@@ -111,7 +111,6 @@ select option {
 }
 .space-button.empty {
   font-size: 1.5em;
-  align-self: flex-end;
 }
 
 .space-button .processing-counter {
@@ -176,6 +175,7 @@ select option {
   flex: 1;
   align-items: center;
   min-height: 0;
+  flex-direction: row-reverse;
 }
 .ui-row-bottom {
   align-items: flex-end;
@@ -284,43 +284,47 @@ select option {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  margin: 0.5em 0;
   max-height: 100%;
+}
+.shape-info {
+  display: grid;
+  grid-template-columns: max-content 1fr;
   overflow-y: auto;
   overflow-x: hidden;
+  font-size: 0.9em;
 }
-.shape-level {
+.shape-count {
+  margin: 0.5em 0;
+  min-width: 4ch;
   display: flex;
-  flex-direction: row;
   align-items: center;
-  margin: 0.25em 0;
+  justify-content: space-between;
 }
-.shape-level > svg {
+.shape-count > svg {
   width: 1.5em;
   height: 1.5em;
   margin-right: 0.25em;
 }
-.shape-count {
-  min-width: 4ch;
-  text-align: center;
-}
-.shape-detail {
-  margin-left: 0.5em;
-  padding-left: 0.5em;
+.shape-detail:not(:empty) {
+  margin: 0.5em;
 }
 .shape-detail-split {
   border-left: 1px solid rgba(255, 255, 255, 0.25);
 }
 .shape-detail-line {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
+  display: grid;
+  grid-template-columns: auto 1fr;
+}
+.shape-detail-line .shape-count {
+  margin: 0 0.5em;
+  justify-content: center;
 }
 .shape-detail-button {
   background: none;
   border: none;
   font-size: 1em;
   color: rgba(255, 255, 255, 1);
+  justify-self: flex-start;
 }
 .shape-detail-button:not([disabled]) {
   cursor: pointer;

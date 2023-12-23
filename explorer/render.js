@@ -1,11 +1,11 @@
 import Stats from 'stats.js'
-import { ambiances } from '../statics'
 import { resizeCanvasToDisplaySize } from './helpers'
 import { PI, min, tan } from './math'
 import { columnMajor, frustum, ident, inverse, multiply } from './math/matrix'
 import getMeshes from './meshes'
 import getPasses from './passes'
 import refreshTextures from './textures'
+import { ambiances } from './ambiances'
 
 const showStats = window.location.search.includes('stats')
 let stats

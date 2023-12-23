@@ -78,6 +78,7 @@ export const useProcess = (runtime, setRuntime) => {
         space: runtime.space,
         shape: runtime.shape,
         first: runtime.iteration === 0,
+        ambiance: runtime.ambiance,
       })
       return {
         ...runtime,
@@ -102,7 +103,27 @@ export const useProcess = (runtime, setRuntime) => {
     const handleShape = ({ data }) => {
       if (!data.error) {
         setRuntime(runtime => {
-          runtime.meshes.plot(runtime, data.objects)
+          for (let i = 0; i < data.infos.length; i++) {
+            const mesh = runtime.meshes[runtime.meshes.meshes[i]]
+            const info = data.infos[i]
+
+            mesh.count = info.start + info.size
+            if (mesh.instances < mesh.count) {
+              mesh.extendAttributes(mesh.count)
+            }
+
+            mesh.attributes.color.update(data.data[i][0], info.start, info.size)
+
+            for (let j = 0; j < mesh.varying.length; j++) {
+              const attr = mesh.varying[j]
+              mesh.attributes[attr].update(
+                data.data[i][j + 1],
+                info.start,
+                info.size
+              )
+            }
+          }
+
           return {
             ...runtime,
             processing: !data.visit.done,
