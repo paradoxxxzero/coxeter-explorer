@@ -79,6 +79,7 @@ vec3 xproject(in vec3 v) {
   }
   v.y -= 1.;
   return v * .5;
+
   #elif PROJECTION3 >= 9 // Transforms
   vec2 z = project(v, 1.).xy;
 
@@ -116,6 +117,7 @@ vec3 xproject(in vec3 v) {
   z = cmul(z, conei);
   return vec3(cexp(z), 0.);
   #elif PROJECTION3 >= 17 // TRIANGLE
+
   #if PROJECTION3 == 17
   z = cmul(z, cexp(-ci * PI / 2.));
   #elif PROJECTION3 == 18
@@ -134,9 +136,9 @@ vec3 xproject(in vec3 v) {
   w = cmul(w, cexp(ci * PI / 10.));
   #endif
 
-  #endif
-
   return vec3(w, 0.);
+
+  #endif
 
   // LAMBERT
   // float nr = sqrt(2. / (1. + v.z));

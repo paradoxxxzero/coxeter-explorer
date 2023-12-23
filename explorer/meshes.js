@@ -1,7 +1,7 @@
 import { ambiances } from '../statics'
 import { sphere, tri, tube } from './geometries'
 import { mesh } from './helpers'
-import { PI, abs, cbrt, sqrt, tan } from './math'
+import { PI, cbrt, sqrt, tan } from './math'
 import { columnMajor } from './math/matrix'
 import { isDual, isHoloSnub, isSnub } from './mirrors'
 import { dual, holosnub, snub } from './operator'
@@ -116,25 +116,24 @@ export default function getMeshes(rt) {
         mesh.uniforms.eye.update(rt.camera.eye)
       }
     },
-    plotType(rt, type, range, vertex, objects = null) {
+    plotType(rt, type, objects) {
       const mesh = this[type]
       const { dimensions } = rt
       const arity = dimensions > 4 ? 9 : dimensions
       const ambiance = ambiances[rt.ambiance]
-      const index = ['vertex', 'edge', 'face'].indexOf(type)
-      const count = rt.visit[index].detail.reduce(
-        (acc, visit) => acc + visit.objects.length,
-        0
-      )
+      if (!objects) {
+        return
+      }
+      let idx = objects.start
+
+      const count = idx + objects.size
       if (mesh.instances < count) {
         mesh.extendAttributes(count)
       }
 
-      let idx = 0
-      for (let i = 0; i < rt.visit[index].detail.length; i++) {
-        const visit = rt.visit[index].detail[i]
-        for (let j = 0; j < visit.objects.length; j++) {
-          const object = visit.objects[j]
+      for (let i = 0; i < objects.objects.length; i++) {
+        for (let j = 0; j < objects.objects[i].length; j++) {
+          const object = objects.objects[i][j]
           for (let k = 0; k < dimensions; k++) {
             for (let l = 0; l < object.vertices.length; l++) {
               const vertex = object.vertices[l]
@@ -144,9 +143,8 @@ export default function getMeshes(rt) {
           }
           const c = ambiance.color(
             {
-              vertex,
               word: object.word,
-              key: visit.key,
+              key: object.key,
               subShape: i,
             },
             type,
@@ -160,9 +158,9 @@ export default function getMeshes(rt) {
       }
       for (let l = 0; l < mesh.varying.length; l++) {
         const attr = mesh.varying[l]
-        mesh.attributes[attr].update(0, idx)
+        mesh.attributes[attr].update(objects.start, idx)
       }
-      mesh.attributes.color.update(0, idx)
+      mesh.attributes.color.update(objects.start, idx)
       mesh.count = idx
     },
     preprocess(rt, plot) {
@@ -177,7 +175,7 @@ export default function getMeshes(rt) {
       }
       return plot
     },
-    plot(rt) {
+    plot(rt, objects) {
       // let face_extended = rt.face
       // let ranges_extended = ranges_
       // if (ranges_.face[1] === rt.face.length && rt.partial) {
@@ -191,10 +189,10 @@ export default function getMeshes(rt) {
       // const { vertex, edge, face, ranges } = this.preprocess(rt, plot)
       for (let i = 0; i < this.meshes.length; i++) {
         const type = this.meshes[i]
-        const mesh = this[type]
-        if (mesh.visible) {
-          this.plotType(rt, type)
-        }
+        // const mesh = this[type]
+        // if (mesh.visible) {
+        this.plotType(rt, type, objects[i])
+        // }
       }
     },
   }

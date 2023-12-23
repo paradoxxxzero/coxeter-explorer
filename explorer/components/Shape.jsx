@@ -56,6 +56,10 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
   const handlePause = useCallback(() => {
     setRuntime(runtime => ({
       ...runtime,
+      limit:
+        runtime.paused && runtime.visit.top > runtime.limit
+          ? 2 * runtime.limit
+          : runtime.limit,
       paused: !runtime.paused,
     }))
   }, [setRuntime])

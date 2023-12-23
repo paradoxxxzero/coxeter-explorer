@@ -1,7 +1,7 @@
 import { arrayEquals, range } from '../../utils'
 import { ToddCoxeter, countCosets, wordToCoset } from '../math/toddcoxeter'
 
-let cache
+let cache, lasts
 
 const reorder = (i, n, double = false) => {
   if (double) {
@@ -23,6 +23,8 @@ onmessage = ({ data: { shape, space, first } }) => {
     let allDone = true
     if (first) {
       cache = new Map()
+      lasts = [0, 0, 0]
+      console.log('Reset shape')
     }
 
     const visitShape = subshape => {
@@ -45,7 +47,10 @@ onmessage = ({ data: { shape, space, first } }) => {
           cache.set(subshape.key, {
             ...shape,
             subgens: subshape.quotient,
-            limit: 100,
+            space: subshape.space,
+            subdimensions: subshape.dimensions,
+            mirrors: subshape.mirrors,
+            limit: subshape.dimensions < 3 ? 200 : 50,
             ...(subshape.dimensions === 0
               ? {
                   rootVertex: space.rootVertex,
@@ -64,82 +69,6 @@ onmessage = ({ data: { shape, space, first } }) => {
               cached.count = Infinity
             } else {
               cached.count = cached.cosets.size
-            }
-            cached.objects = []
-            if (subshape.dimensions === 0) {
-              for (const [vertexId, vertex] of cached.vertices) {
-                cached.objects.push({
-                  word: cached.words.get(vertexId),
-                  vertexId,
-                  vertices: [vertex],
-                })
-              }
-            } else if (subshape.dimensions === 1) {
-              const verticeCached = cache.get(range(shape.dimensions).join('-'))
-
-              for (const [, word] of cached.words) {
-                const vertex = { word, vertices: [] }
-                for (let i = 0; i < subshape.space.length; i++) {
-                  const vertexId = wordToCoset(
-                    verticeCached,
-                    word + subshape.space[i]
-                  )
-                  if (!vertexId || !verticeCached.vertices.has(vertexId)) {
-                    break
-                  }
-                  vertex.vertices.push(verticeCached.vertices.get(vertexId))
-                }
-                cached.objects.push(vertex)
-              }
-            } else if (subshape.dimensions === 2) {
-              const verticeCached = cache.get(range(shape.dimensions).join('-'))
-
-              for (const [, word] of cached.words) {
-                const faceVertices = []
-                for (let h = 0; h < subshape.space.length; h++) {
-                  const i = reorder(h, subshape.space.length, subshape.double)
-                  const vertexId = wordToCoset(
-                    verticeCached,
-                    word + subshape.space[i]
-                  )
-                  if (!vertexId || !verticeCached.vertices.has(vertexId)) {
-                    break
-                  }
-                  faceVertices.push(verticeCached.vertices.get(vertexId))
-                }
-                if (faceVertices.length < 3) {
-                  continue
-                }
-                if (faceVertices.length === 3) {
-                  const vertex = { word, vertices: faceVertices }
-                  cached.objects.push(vertex)
-                  continue
-                }
-
-                const center = new Array(shape.dimensions).fill(0)
-                for (let j = 0; j < faceVertices.length; j++) {
-                  const vertices = faceVertices[j]
-                  for (let k = 0; k < vertices.length; k++) {
-                    center[k] += vertices[k]
-                  }
-                }
-                for (let j = 0; j < shape.dimensions; j++) {
-                  center[j] /= faceVertices.length
-                }
-                for (let j = 0; j < faceVertices.length; j++) {
-                  const p = word.length % 2 === space.curvature > 0 ? 0 : 1
-                  const vertex = {
-                    word,
-                    vertices: [
-                      faceVertices[(j + p) % faceVertices.length],
-                      faceVertices[(j + (1 - p)) % faceVertices.length],
-                      center,
-                    ],
-                    index: j,
-                  }
-                  cached.objects.push(vertex)
-                }
-              }
             }
           } else {
             if (eiqenvalues.some(x => x <= 0)) {
@@ -196,10 +125,111 @@ onmessage = ({ data: { shape, space, first } }) => {
 
     shape.children.forEach(visitShape)
 
+    const objects = []
+    for (let i = 0; i < visit.length && i < 3; i++) {
+      const parts = {
+        start: lasts[i],
+        size: 0,
+        objects: [],
+      }
+      for (let j = 0; j < visit[i].detail.length; j++) {
+        const detail = visit[i].detail[j]
+        const cached = cache.get(detail.key)
+
+        if (cached.currentWords.size) {
+          const objects = getObjects(cached, shape, space)
+          parts.objects.push(objects)
+          parts.size += objects.length
+        }
+      }
+      objects.push(parts)
+      lasts[i] += parts.size
+    }
+
+    visit.top = visit[0].start + visit[0].size
     visit.done = allDone
 
-    postMessage(visit)
+    postMessage({ visit, objects })
   } catch (e) {
     postMessage({ error: e.message })
   }
+}
+
+function getObjects(cached, shape, space) {
+  const objects = []
+  if (cached.subdimensions === 0) {
+    for (const [cosetId, word] of cached.currentWords) {
+      objects.push({
+        word,
+        cosetId,
+        vertices: [cached.vertices.get(cosetId)],
+      })
+      cached.currentCosetId = cosetId
+      cached.currentWords.delete(cosetId)
+    }
+  } else if (cached.subdimensions === 1) {
+    const verticeCached = cache.get(range(shape.dimensions).join('-'))
+    for (const [cosetId, word] of cached.currentWords) {
+      const vertex = { word, vertices: [] }
+      for (let i = 0; i < cached.space.length; i++) {
+        const vertexId = wordToCoset(verticeCached, word + cached.space[i])
+        if (vertexId && verticeCached.vertices.has(vertexId)) {
+          vertex.vertices.push(verticeCached.vertices.get(vertexId))
+        }
+      }
+      if (vertex.vertices.length === 2) {
+        objects.push(vertex)
+        cached.currentWords.delete(cosetId)
+      }
+    }
+  } else if (cached.subdimensions === 2) {
+    const verticeCached = cache.get(range(shape.dimensions).join('-'))
+
+    for (const [cosetId, word] of cached.currentWords) {
+      const faceVertices = []
+      for (let h = 0; h < cached.space.length; h++) {
+        const double = cached.mirrors.every(m => !!m)
+        const i = reorder(h, cached.space.length, double)
+        const vertexId = wordToCoset(verticeCached, word + cached.space[i])
+        if (vertexId && verticeCached.vertices.has(vertexId)) {
+          faceVertices.push(verticeCached.vertices.get(vertexId))
+        }
+      }
+      if (faceVertices.length < cached.space.length) {
+        continue
+      }
+      if (faceVertices.length === 3) {
+        const vertex = { word, vertices: faceVertices }
+        objects.push(vertex)
+        cached.currentWords.delete(cosetId)
+        continue
+      }
+
+      const center = new Array(shape.dimensions).fill(0)
+      for (let j = 0; j < faceVertices.length; j++) {
+        const vertices = faceVertices[j]
+        for (let k = 0; k < vertices.length; k++) {
+          center[k] += vertices[k]
+        }
+      }
+      for (let j = 0; j < shape.dimensions; j++) {
+        center[j] /= faceVertices.length
+      }
+      for (let j = 0; j < faceVertices.length; j++) {
+        const p = word.length % 2 === space.curvature > 0 ? 0 : 1
+        const vertex = {
+          word,
+          vertices: [
+            faceVertices[(j + p) % faceVertices.length],
+            faceVertices[(j + (1 - p)) % faceVertices.length],
+            center,
+          ],
+          index: j,
+        }
+        objects.push(vertex)
+        cached.currentWords.delete(cosetId)
+      }
+    }
+  }
+  return objects
 }

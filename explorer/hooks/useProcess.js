@@ -12,7 +12,6 @@ import Shaper from '../workers/shape.worker?worker'
 
 export const useProcess = (runtime, setRuntime) => {
   const [shaper, setShaper] = useState(() => new Shaper())
-  const running = useRef(false)
 
   useEffect(() => {
     setRuntime(runtime => {
@@ -64,6 +63,8 @@ export const useProcess = (runtime, setRuntime) => {
     setRuntime(runtime => ({
       ...runtime,
       iteration: 0,
+      paused: false,
+      limit: 1000,
     }))
   }, [runtime.shape, setRuntime])
 
@@ -83,7 +84,14 @@ export const useProcess = (runtime, setRuntime) => {
         processing: true,
       }
     })
-  }, [runtime.iteration, runtime.shape, shaper, runtime.space, setRuntime])
+  }, [
+    runtime.iteration,
+    runtime.limit,
+    runtime.shape,
+    shaper,
+    runtime.space,
+    setRuntime,
+  ])
 
   useEffect(() => {
     setRuntime(runtime => ({
@@ -93,15 +101,19 @@ export const useProcess = (runtime, setRuntime) => {
 
     const handleShape = ({ data }) => {
       if (!data.error) {
-        setRuntime(runtime => ({
-          ...runtime,
-          processing: !data.done,
-          iteration:
-            runtime.paused || data.done
-              ? runtime.iteration
-              : runtime.iteration + 1,
-          visit: data,
-        }))
+        runtime.meshes.plot(runtime, data.objects)
+
+        setRuntime(runtime => {
+          return {
+            ...runtime,
+            processing: !data.done,
+            iteration:
+              runtime.paused || data.done
+                ? runtime.iteration
+                : runtime.iteration + 1,
+            visit: data.visit,
+          }
+        })
       } else {
         console.error(data.error)
       }
@@ -118,12 +130,12 @@ export const useProcess = (runtime, setRuntime) => {
       const newRuntime = {
         ...runtime,
       }
-      if (Object.values(runtime.visit).some(x => x.processing > 10000)) {
+      if (runtime.visit.top > runtime.limit) {
         newRuntime.paused = true
       }
       return newRuntime
     })
-  }, [runtime.visit, setRuntime])
+  }, [runtime.visit, runtime.limit, setRuntime])
 
   // const handleStop = useCallback(() => {
   //   shaper.terminate()

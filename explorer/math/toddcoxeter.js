@@ -14,9 +14,9 @@ const quotient = (params, cosetId) => {
     minimalCosetId = params.quotientMap[minimalCosetId]
   }
   // Improve performance by caching but decrease memory efficiency
-  // if (minimalCosetId !== cosetId) {
-  //   params.quotientMap[cosetId] = minimalCosetId
-  // }
+  if (minimalCosetId !== cosetId) {
+    params.quotientMap[cosetId] = minimalCosetId
+  }
   return minimalCosetId
 }
 
@@ -95,6 +95,8 @@ const words = function (params) {
     const start = quotient(params, 1)
     params.words = new Map()
     params.words.set(start, '')
+    params.currentWords = new Map()
+    params.currentWords.set(start, '')
     params.lastWord = ''
     params.lastCoset = start
     params.remaining = [start]
@@ -105,17 +107,17 @@ const words = function (params) {
   }
 
   while (params.remaining.length > 0) {
-    const rawCosetId = params.remaining.shift()
+    const rawCosetId = params.remaining[0]
     const cosetId = quotient(params, rawCosetId)
+    const coset = params.cosets.get(cosetId)
+
+    if (coset.size < params.gens.length * 2) {
+      // Might be a coincidence stop here
+      return
+    }
 
     for (let i = 0; i < params.gens.length; i++) {
       const generator = params.gens[i]
-      const coset = params.cosets.get(cosetId)
-
-      if (coset.size < params.gens.length * 2) {
-        // Might be a coincidence stop here
-        return
-      }
 
       const nextCosetId = quotient(params, coset.get(generator))
       if (!params.words.has(nextCosetId)) {
@@ -124,19 +126,31 @@ const words = function (params) {
           // Might be a coincidence stop here
           return
         }
-        const newWord = generator + params.words.get(cosetId)
-        params.words.set(nextCosetId, newWord)
-        params.lastCoset = nextCosetId
-        params.lastWord = newWord
-        params.remaining.push(nextCosetId)
-        if (params.vertices) {
-          const vertex = reflect(
-            params.vertices.get(cosetId),
-            params.rootNormals[i],
-            params.metric
-          )
-          params.vertices.set(nextCosetId, vertex)
-        }
+      }
+    }
+
+    params.remaining.shift()
+
+    for (let i = 0; i < params.gens.length; i++) {
+      const generator = params.gens[i]
+
+      const nextCosetId = quotient(params, coset.get(generator))
+      if (params.words.has(nextCosetId)) {
+        continue
+      }
+      const newWord = generator + params.words.get(cosetId)
+      params.words.set(nextCosetId, newWord)
+      params.currentWords.set(nextCosetId, newWord)
+      params.lastCoset = nextCosetId
+      params.lastWord = newWord
+      params.remaining.push(nextCosetId)
+      if (params.vertices) {
+        const vertex = reflect(
+          params.vertices.get(cosetId),
+          params.rootNormals[i],
+          params.metric
+        )
+        params.vertices.set(nextCosetId, vertex)
       }
     }
   }
@@ -146,7 +160,6 @@ export const wordToCoset = (params, word) => {
   // Start at 1
   let cosetId = 1
   for (let i = word.length - 1; i >= 0; i--) {
-    cosetId = quotient(params, cosetId)
     const coset = params.cosets.get(cosetId)
     if (coset.size < params.gens.length * 2) {
       return

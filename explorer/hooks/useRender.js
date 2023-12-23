@@ -84,30 +84,30 @@ export const useRender = (runtime, setRuntime) => {
     setRuntime,
   ])
 
-  useEffect(() => {
-    setRuntime(runtime => {
-      // Full plot
-      try {
-        if (runtime.visit.length) {
-          runtime.meshes.plot(runtime)
-        }
-        return runtime
-      } catch (e) {
-        console.error(e)
-        return {
-          ...runtime,
-          error: e.message,
-        }
-      }
-    })
-  }, [
-    runtime.ambiance,
-    runtime.showEdges,
-    runtime.showFaces,
-    runtime.showVertices,
-    runtime.visit,
-    setRuntime,
-  ])
+  // useEffect(() => {
+  //   setRuntime(runtime => {
+  //     // Full plot
+  //     try {
+  //       if (runtime.visit.length) {
+  //         runtime.meshes.plot(runtime)
+  //       }
+  //       return runtime
+  //     } catch (e) {
+  //       console.error(e)
+  //       return {
+  //         ...runtime,
+  //         error: e.message,
+  //       }
+  //     }
+  //   })
+  // }, [
+  //   runtime.ambiance,
+  //   runtime.showEdges,
+  //   runtime.showFaces,
+  //   runtime.showVertices,
+  //   runtime.visit,
+  //   setRuntime,
+  // ])
 
   useEffect(() => {
     setRuntime(runtime => {
