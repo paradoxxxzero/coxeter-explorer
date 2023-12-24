@@ -173,7 +173,7 @@ export const ambiances = Object.fromEntries(
         opacity: 0.1,
         diffuse: 'fresnel',
       },
-      color: ({ len, vertices }, type) =>
+      color: ({ len, vertices, type }) =>
         type === 'face'
           ? hsl((((len || vertices.length) - 2) * 0.21) % 1, 1, 0.8)
           : [1, 1, 1],
@@ -186,7 +186,7 @@ export const ambiances = Object.fromEntries(
         opacity: 0.2,
         diffuse: 'fresnel',
       },
-      color: ({ subShape }, type) =>
+      color: ({ subShape, type }) =>
         type !== 'vertex' ? hsl((subShape * 0.21) % 1, 1, 0.8) : [1, 1, 1],
     },
     reflection: {
@@ -197,9 +197,9 @@ export const ambiances = Object.fromEntries(
         gouraud: false,
       },
       transparency: 'blend',
-      color: ({ word }, type, { dimensions, showFaces }) => {
+      color: ({ word, type, dimensions, draw }) => {
         const h = word.length ? atoi(word[word.length - 1]) / dimensions : 0
-        return hsl(h % 1, 1, type === 'face' ? 0.6 : showFaces ? 0 : 0.8)
+        return hsl(h % 1, 1, type === 'face' ? 0.6 : draw.face ? 0 : 0.8)
       },
     },
     harlequin: {
@@ -209,7 +209,7 @@ export const ambiances = Object.fromEntries(
       },
 
       transparency: 'oit',
-      color: ({ word, index }, type, { dimensions, showFaces }) => {
+      color: ({ word, index, type }) => {
         const l = word
           .split('')
           .map(c => atoi(c))
@@ -230,7 +230,7 @@ export const ambiances = Object.fromEntries(
     },
     facets: {
       background: [0, 0, 0, 1],
-      color: ({ word, index }) => hsl(((index || 0) * 0.13) % 1, 0.75, 0.7),
+      color: ({ index }) => hsl(((index || 0) * 0.13) % 1, 0.75, 0.7),
     },
     monochrome: {
       background: [0.12, 0.12, 0.12, 1],
@@ -249,11 +249,11 @@ export const ambiances = Object.fromEntries(
       glow: false,
       shading: false,
 
-      color: ({ word }, type, { dimensions, showFaces }) => {
+      color: ({ word, type, draw }) => {
         return hsl(
           (word.length * 0.06) % 1,
           1,
-          type === 'face' ? 0.6 : showFaces ? 0.05 : 0.5
+          type === 'face' ? 0.6 : draw.face ? 0.05 : 0.5
         )
       },
     },
@@ -261,7 +261,7 @@ export const ambiances = Object.fromEntries(
       extended: true,
       background: [1, 1, 1, 1],
       shading: false,
-      color: ({ word }, type) =>
+      color: ({ word, type }) =>
         type === 'face'
           ? new Array(3).fill(1 - pow(0.9, word.length + 1))
           : [0, 0, 0],
@@ -270,13 +270,13 @@ export const ambiances = Object.fromEntries(
       extended: true,
       background: [1, 1, 1, 1],
       shading: 'normal',
-      color: type => [0, 0, 0],
+      color: () => [0, 0, 0],
     },
     uvs: {
       extended: true,
       background: [1, 1, 1, 1],
       shading: 'uv',
-      color: type => [0, 0, 0],
+      color: () => [0, 0, 0],
     },
   }).map(([name, ambiance]) => [
     name,

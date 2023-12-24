@@ -1,12 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import {
-  defaultParams,
-  defaultProjection,
-  details,
-  easings,
-  groupers,
-  projections,
-} from '../../statics'
+
 import { range } from '../../utils.js'
 import {
   centerViewIcon,
@@ -30,6 +23,9 @@ import Space from './Space'
 import { presets } from '../presets/index.jsx'
 import Shape from './Shape.jsx'
 import { ambiances } from '../ambiances.js'
+import { defaultProjection } from '../params.js'
+import { details, easings, groupers, projections } from '../../statics.js'
+import { defaultParams } from '../default.js'
 
 const getShowUI = () => {
   try {
@@ -497,31 +493,31 @@ export default function UI({
                 </label>
               )}
               <Number
-                name="vertexThickness"
+                name="sizeVertex"
                 label="Vertices"
                 min={0}
                 step={1}
-                value={params.vertexThickness}
-                toggler={params.showVertices}
-                togglerName="showVertices"
+                value={params.sizeVertex}
+                toggler={params.drawVertex}
+                togglerName="drawVertex"
                 onChange={handleChange}
               />
               <Number
-                name="edgeThickness"
+                name="sizeEdge"
                 label="Edges"
                 min={0}
                 step={1}
-                value={params.edgeThickness}
-                toggler={params.showEdges}
-                togglerName="showEdges"
+                value={params.sizeEdge}
+                toggler={params.drawEdge}
+                togglerName="drawEdge"
                 onChange={handleChange}
               />
               {['toddcoxeter', 'fundamental'].includes(runtime.grouper) && (
                 <label className="boolean-label">
                   Faces
                   <Boolean
-                    name="showFaces"
-                    value={params.showFaces}
+                    name="drawFace"
+                    value={params.drawFace}
                     onChange={handleChange}
                   />
                 </label>

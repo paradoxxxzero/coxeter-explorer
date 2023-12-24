@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { filterParams } from '../statics'
+import { filterParams } from './params'
 import Runtime from './components/Runtime'
 import UI from './components/UI'
 import { getRotations } from './math/hypermath'
@@ -15,6 +15,7 @@ export default function App({ params, updateParams }) {
     limit: 1000,
     iteration: 0,
     visit: [],
+    shaper: null,
     paused: false,
     error: null,
   })

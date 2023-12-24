@@ -460,7 +460,6 @@ export const mesh = (
   geometryFunc,
   size,
   arity,
-  visible = true,
   varying = ['position']
 ) => {
   const { gl } = rt
@@ -565,7 +564,7 @@ export const mesh = (
       this.attributes.normal.extend(3, new Float32Array(geometry.normals))
     },
     render(rt) {
-      if (!this.count || !this.visible) {
+      if (!this.count) {
         return
       }
       gl.useProgram(this.program)
@@ -579,7 +578,6 @@ export const mesh = (
       )
     },
   }
-  mesh.visible = visible
   mesh.vao = gl.createVertexArray()
   mesh.indices = indices(rt, mesh.vao, new Uint16Array(geometry.indices))
 

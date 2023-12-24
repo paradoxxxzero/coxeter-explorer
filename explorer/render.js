@@ -117,17 +117,6 @@ export const initializeGl = rt => {
   }
 }
 
-export const show = (rt, name) => {
-  rt.meshes[name].visible =
-    rt[
-      name === 'vertex'
-        ? 'showVertices'
-        : name === 'edge'
-        ? 'showEdges'
-        : 'showFaces'
-    ]
-}
-
 export const updateCamera = (rt, zoom = null) => {
   rt.camera.fov = rt.fov3 ? (PI * rt.fov3) / 180 : 1
   if (zoom !== null) {
@@ -191,9 +180,9 @@ export const render = (rt, forceSize) => {
 
   // TRANSPARENT
   if (
-    (rt.showVertices && ambiance.transparent.vertex) ||
-    (rt.showEdges && ambiance.transparent.edge) ||
-    (rt.showFaces && ambiance.transparent.face)
+    (rt.drawVertex && ambiance.transparent.vertex) ||
+    (rt.drawEdge && ambiance.transparent.edge) ||
+    (rt.drawFace && ambiance.transparent.face)
   ) {
     if (ambiance.transparency === 'oit') {
       if (msaa) {

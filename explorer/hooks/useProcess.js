@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   coxeterToGram,
   getGeometry,
@@ -11,8 +11,6 @@ import { mirrorValue } from '../mirrors'
 import Shaper from '../workers/shape.worker?worker'
 
 export const useProcess = (runtime, setRuntime) => {
-  const [shaper, setShaper] = useState(() => new Shaper())
-
   useEffect(() => {
     setRuntime(runtime => {
       const gram = coxeterToGram(runtime.coxeter, runtime.stellation)
@@ -60,13 +58,27 @@ export const useProcess = (runtime, setRuntime) => {
   ])
 
   useEffect(() => {
-    setRuntime(runtime => ({
-      ...runtime,
-      iteration: 0,
-      paused: false,
-      limit: 1000,
-    }))
-  }, [runtime.shape, runtime.ambiance, setRuntime])
+    setRuntime(runtime => {
+      const newRuntime = {
+        ...runtime,
+        iteration: 0,
+        paused: false,
+        limit: 1000,
+      }
+      if (runtime.processing) {
+        runtime.shaper?.terminate()
+        newRuntime.shaper = new Shaper()
+      }
+      return newRuntime
+    })
+  }, [
+    runtime.shape,
+    runtime.ambiance,
+    runtime.drawVertex,
+    runtime.drawEdge,
+    runtime.drawFace,
+    setRuntime,
+  ])
 
   useEffect(() => {
     setRuntime(runtime => {
@@ -74,11 +86,16 @@ export const useProcess = (runtime, setRuntime) => {
         return runtime
       }
 
-      shaper.postMessage({
+      runtime.shaper.postMessage({
         space: runtime.space,
         shape: runtime.shape,
         first: runtime.iteration === 0,
         ambiance: runtime.ambiance,
+        draw: {
+          vertex: runtime.drawVertex,
+          edge: runtime.drawEdge,
+          face: runtime.drawFace,
+        },
       })
       return {
         ...runtime,
@@ -89,7 +106,11 @@ export const useProcess = (runtime, setRuntime) => {
     runtime.iteration,
     runtime.limit,
     runtime.shape,
-    shaper,
+    runtime.ambiance,
+    runtime.drawVertex,
+    runtime.drawEdge,
+    runtime.drawFace,
+    runtime.shaper,
     runtime.space,
     setRuntime,
   ])
@@ -99,13 +120,22 @@ export const useProcess = (runtime, setRuntime) => {
       ...runtime,
       iteration: runtime.paused ? runtime.iteration : runtime.iteration + 1,
     }))
+  }, [runtime.paused, setRuntime])
 
+  useEffect(() => {
+    if (!runtime.shaper) {
+      return
+    }
     const handleShape = ({ data }) => {
       if (!data.error) {
         setRuntime(runtime => {
           for (let i = 0; i < data.infos.length; i++) {
             const mesh = runtime.meshes[runtime.meshes.meshes[i]]
             const info = data.infos[i]
+            if (!info) {
+              mesh.count = 0
+              continue
+            }
 
             mesh.count = info.start + info.size
             if (mesh.instances < mesh.count) {
@@ -139,11 +169,11 @@ export const useProcess = (runtime, setRuntime) => {
       }
     }
 
-    shaper.addEventListener('message', handleShape)
+    runtime.shaper.addEventListener('message', handleShape)
     return () => {
-      shaper.removeEventListener('message', handleShape)
+      runtime.shaper.removeEventListener('message', handleShape)
     }
-  }, [shaper, runtime.paused, setRuntime])
+  }, [runtime.shaper, runtime.paused, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => {
@@ -156,11 +186,4 @@ export const useProcess = (runtime, setRuntime) => {
       return newRuntime
     })
   }, [runtime.visit, runtime.limit, setRuntime])
-
-  // const handleStop = useCallback(() => {
-  //   shaper.terminate()
-  //   setProcessing(false)
-  //   setShaper(new Shaper())
-  //   setIteration(-1)
-  // }, [shaper])
 }

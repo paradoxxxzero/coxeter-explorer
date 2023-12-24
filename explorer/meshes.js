@@ -1,4 +1,4 @@
-import { ambiances } from './ambiances'
+import { types } from '../statics'
 import { sphere, tri, tube } from './geometries'
 import { mesh } from './helpers'
 import { PI, cbrt, sqrt, tan } from './math'
@@ -45,7 +45,7 @@ const geometries = {
 
 export default function getMeshes(rt) {
   return {
-    meshes: ['vertex', 'edge', 'face'],
+    meshes: types,
     ...mesh(
       rt,
       'vertex',
@@ -53,8 +53,7 @@ export default function getMeshes(rt) {
       fragmentVertex,
       geometries.vertex,
       1024,
-      rt.dimensions,
-      rt.showVertices
+      rt.dimensions
     ),
     ...mesh(
       rt,
@@ -64,7 +63,6 @@ export default function getMeshes(rt) {
       geometries.edge,
       1024,
       rt.dimensions,
-      rt.showEdges,
       ['position', 'target']
     ),
     ...mesh(
@@ -75,7 +73,6 @@ export default function getMeshes(rt) {
       geometries.face,
       1024,
       rt.dimensions,
-      rt.showFaces,
       ['position', 'target', 'center']
     ),
     changeArity(arity) {
@@ -106,9 +103,9 @@ export default function getMeshes(rt) {
             )
           }
           if (type === 'vertex') {
-            mesh.uniforms.thickness.update(rt.vertexThickness)
+            mesh.uniforms.thickness.update(rt.sizeVertex)
           } else if (type === 'edge') {
-            mesh.uniforms.thickness.update(rt.edgeThickness)
+            mesh.uniforms.thickness.update(rt.sizeEdge)
           }
         }
         mesh.uniforms.viewProjection.update(rt.camera.viewProjection)
