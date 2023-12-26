@@ -1,26 +1,12 @@
 import { types } from '../../statics'
 import { arrayEquals, range } from '../../utils'
 import { ambiances } from '../ambiances'
-import { normalize, reflect } from '../math/hypermath'
-import { transpose } from '../math/matrix'
 import { getShape } from '../math/shape'
-import { ToddCoxeter, countCosets, wordToCoset } from '../math/toddcoxeter'
+import { ToddCoxeter, countCosets } from '../math/toddcoxeter'
+import { getFundamentalObjects } from './fundamentalObjects'
+import { getObjects } from './objects'
 
 let cache, lasts, shape
-
-const reorder = (i, n, double = false) => {
-  if (double) {
-    const parity = i > 0 ? 1 - (i % 2) : 0
-    if (i >= n / 2 + parity) {
-      return 2 * (n - i) - 1 + parity
-    }
-    return 2 * i - parity
-  }
-  if (i >= n / 2) {
-    return 2 * (n - i) - 1
-  }
-  return 2 * i
-}
 
 onmessage = ({
   data: {
@@ -41,7 +27,7 @@ onmessage = ({
       lasts = [0, 0, 0]
       shape = getShape(dimensions, coxeter, stellation, mirrors)
     }
-
+    const rootKey = range(shape.dimensions).join('-')
     const visit = new Array(shape.dimensions)
     const fundamental = mirrors.every(m => !m)
 
@@ -162,13 +148,11 @@ onmessage = ({
       }
     }
 
+    const rootCached = cache.get(rootKey)
+
     const objects = []
     if (fundamental) {
-      const fundamentalObjects = getFundamentalObjects(
-        cache.get(range(shape.dimensions).join('-')),
-        shape,
-        space
-      )
+      const fundamentalObjects = getFundamentalObjects(rootCached, shape, space)
       for (let i = 0; i < fundamentalObjects.length; i++) {
         if (draw[types[i]]) {
           objects.push({
@@ -199,7 +183,12 @@ onmessage = ({
           const cached = cache.get(detail.key)
 
           if (cached.currentWords.size) {
-            const { objects, partials } = getObjects(cached, shape, space)
+            const { objects, partials } = getObjects(
+              cached,
+              shape,
+              space,
+              rootCached
+            )
             parts.objects.push(objects)
             parts.size += objects.length + partials.length
             lasts[i] += objects.length
@@ -261,9 +250,7 @@ onmessage = ({
       })
     }
 
-    visit.top = fundamental
-      ? cache.get(range(shape.dimensions).join('-')).words.size
-      : cache.get(range(shape.dimensions).join('-')).vertices.size
+    visit.top = fundamental ? rootCached.words.size : rootCached.vertices.size
     visit.done = allDone
 
     postMessage(
@@ -273,171 +260,4 @@ onmessage = ({
   } catch (e) {
     postMessage({ error: e.message })
   }
-}
-
-function getFundamentalObjects(cached, shape, space) {
-  const vertices = []
-  const edges = []
-  const faces = []
-  for (const [cosetId, word] of cached.currentWords) {
-    if (word === '') {
-      // Add all fundamental mirrors
-      const rootVerticesT = transpose(space.rootVertices)
-      cached.fundamentalVertices = new Map()
-      cached.rootVertices = range(shape.dimensions).map(i =>
-        normalize(rootVerticesT[i], space.metric)
-      )
-      for (let i = 0; i < cached.rootVertices.length; i++) {
-        const vertex = cached.rootVertices[i]
-        vertices.push({
-          word,
-          cosetId,
-          vertices: [vertex],
-        })
-        // edges.push({
-        //   word,
-        //   cosetId,
-        //   vertices: [
-        //     vertex,
-        //     cached.rootVertices[(i + 1) % cached.rootVertices.length],
-        //   ],
-        // })
-      }
-      // faces.push({
-      //   word,
-      //   cosetId,
-      //   vertices: cached.rootVertices,
-      // })
-      cached.fundamentalVertices.set('', cached.rootVertices)
-    } else {
-      const simplex = [...cached.fundamentalVertices.get(word.slice(1))]
-      const reflectIndex = cached.gens.indexOf(word[0])
-
-      for (let i = 0; i < simplex.length; i++) {
-        simplex[i] = reflect(
-          simplex[i],
-          space.rootNormals[reflectIndex],
-          space.metric
-        )
-      }
-      for (let i = 0; i < simplex.length; i++) {
-        vertices.push({
-          word,
-          cosetId,
-          vertices: [simplex[i]],
-        })
-
-        for (let j = i + 1; j < simplex.length; j++) {
-          edges.push({
-            word,
-            cosetId,
-            vertices: [simplex[i], simplex[j]],
-          })
-
-          for (let k = j + 1; k < simplex.length; k++) {
-            faces.push({
-              word,
-              cosetId,
-              vertices: [simplex[i], simplex[j], simplex[k]],
-            })
-          }
-        }
-      }
-
-      cached.fundamentalVertices.set(word, simplex)
-    }
-    cached.currentWords.delete(cosetId)
-  }
-  return [vertices, edges, faces]
-}
-
-function getObjects(cached, shape, space) {
-  const objects = []
-  const partials = []
-  if (cached.subdimensions === 0) {
-    for (const [cosetId, word] of cached.currentWords) {
-      objects.push({
-        word,
-        cosetId,
-        vertices: [cached.vertices.get(cosetId)],
-      })
-      cached.currentWords.delete(cosetId)
-    }
-  } else if (cached.subdimensions === 1) {
-    const verticeCached = cache.get(range(shape.dimensions).join('-'))
-    for (const [cosetId, word] of cached.currentWords) {
-      const vertex = { word, vertices: [] }
-      for (let i = 0; i < cached.space.length; i++) {
-        const vertexId = wordToCoset(verticeCached, word + cached.space[i])
-        if (vertexId && verticeCached.vertices.has(vertexId)) {
-          vertex.vertices.push(verticeCached.vertices.get(vertexId))
-        }
-      }
-      if (vertex.vertices.length < 2) {
-        continue
-      }
-      objects.push(vertex)
-      cached.currentWords.delete(cosetId)
-    }
-  } else if (cached.subdimensions === 2) {
-    const verticeCached = cache.get(range(shape.dimensions).join('-'))
-
-    for (const [cosetId, word] of cached.currentWords) {
-      const faceVertices = []
-      for (let h = 0; h < cached.space.length; h++) {
-        const double = cached.mirrors.every(m => !!m)
-        const i = reorder(h, cached.space.length, double)
-        const vertexId = wordToCoset(verticeCached, word + cached.space[i])
-        if (vertexId && verticeCached.vertices.has(vertexId)) {
-          faceVertices.push(verticeCached.vertices.get(vertexId))
-        }
-      }
-      if (faceVertices.length < 3) {
-        continue
-      }
-      const partial = faceVertices.length < cached.space.length
-
-      if (faceVertices.length === 3) {
-        const vertex = { word, vertices: faceVertices, index: 0, partial }
-        if (partial) {
-          partials.push(vertex)
-        } else {
-          objects.push(vertex)
-          cached.currentWords.delete(cosetId)
-        }
-        continue
-      }
-
-      const center = new Array(shape.dimensions).fill(0)
-      for (let j = 0; j < faceVertices.length; j++) {
-        const vertices = faceVertices[j]
-        for (let k = 0; k < vertices.length; k++) {
-          center[k] += vertices[k]
-        }
-      }
-      for (let j = 0; j < shape.dimensions; j++) {
-        center[j] /= faceVertices.length
-      }
-      for (let j = 0; j < faceVertices.length; j++) {
-        const p = word.length % 2 === space.curvature > 0 ? 0 : 1
-        const vertex = {
-          word,
-          vertices: [
-            faceVertices[(j + p) % faceVertices.length],
-            faceVertices[(j + (1 - p)) % faceVertices.length],
-            center,
-          ],
-          index: j,
-          partial,
-        }
-        if (partial) {
-          partials.push(vertex)
-        } else {
-          objects.push(vertex)
-          cached.currentWords.delete(cosetId)
-        }
-      }
-    }
-  }
-  return { objects, partials }
 }
