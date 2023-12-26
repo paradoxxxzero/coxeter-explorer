@@ -42,7 +42,6 @@ export const easings = [
   'inverse_quartic',
   'inverse_quintic',
 ]
-export const groupers = ['toddcoxeter', 'knuthbendix', 'fundamental']
 export const shadings = ['ads', 'normal', 'position', 'uv']
 export const diffuseLight = [
   'lambert',

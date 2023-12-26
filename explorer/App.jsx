@@ -62,18 +62,6 @@ export default function App({ params, updateParams }) {
     }
   }, [params.dimensions, runtime.space])
 
-  useEffect(() => {
-    setRuntime(rt => {
-      if (params.grouper === '' && rt.grouper.startsWith('auto-')) {
-        return rt
-      }
-      return {
-        ...rt,
-        grouper: params.grouper,
-      }
-    })
-  }, [params.grouper])
-
   const updateRotations = useCallback(
     (key, value) => {
       setRotations(rotations => ({

@@ -1,9 +1,12 @@
 import { types } from '../../statics'
 import { arrayEquals, range } from '../../utils'
 import { ambiances } from '../ambiances'
+import { normalize, reflect } from '../math/hypermath'
+import { transpose } from '../math/matrix'
+import { getShape } from '../math/shape'
 import { ToddCoxeter, countCosets, wordToCoset } from '../math/toddcoxeter'
 
-let cache, lasts
+let cache, lasts, shape
 
 const reorder = (i, n, double = false) => {
   if (double) {
@@ -19,24 +22,45 @@ const reorder = (i, n, double = false) => {
   return 2 * i
 }
 
-onmessage = ({ data: { shape, space, first, ambiance, draw } }) => {
+onmessage = ({
+  data: {
+    first,
+    space,
+    dimensions,
+    coxeter,
+    stellation,
+    mirrors,
+    ambiance,
+    draw,
+  },
+}) => {
   try {
-    const visit = new Array(shape.dimensions)
     let allDone = true
     if (first) {
       cache = new Map()
       lasts = [0, 0, 0]
+      shape = getShape(dimensions, coxeter, stellation, mirrors)
+    }
+
+    const visit = new Array(shape.dimensions)
+    const fundamental = mirrors.every(m => !m)
+
+    const computeWords = {
+      0: true,
+      1: draw.edge && !fundamental,
+      2: draw.face && !fundamental,
     }
 
     const visitShape = subshape => {
       subshape.children.forEach(visitShape)
+      const compute = computeWords[subshape.dimensions]
       const type = types[subshape.dimensions]
 
       if (subshape?.new) {
         if (!visit[subshape.dimensions]) {
           visit[subshape.dimensions] = {
             dimensions: subshape.dimensions,
-            processing: draw[type] ? 0 : undefined,
+            processing: compute ? 0 : undefined,
             count: 0,
             detail: [],
             aggregated: [],
@@ -54,7 +78,7 @@ onmessage = ({ data: { shape, space, first, ambiance, draw } }) => {
             subdimensions: subshape.dimensions,
             mirrors: subshape.mirrors,
             limit,
-            ...(subshape.dimensions === 0
+            ...(subshape.dimensions === 0 && !fundamental
               ? {
                   rootVertex: space.rootVertex,
                   rootNormals: space.rootNormals,
@@ -65,7 +89,7 @@ onmessage = ({ data: { shape, space, first, ambiance, draw } }) => {
         }
         const cached = cache.get(subshape.key)
         if (!cached.done) {
-          if (draw[type] || subshape.dimensions === 0) {
+          if (compute) {
             // Also extract words to generate the shape
             ToddCoxeter(cached)
             if (eiqenvalues.some(x => x <= 0)) {
@@ -139,30 +163,51 @@ onmessage = ({ data: { shape, space, first, ambiance, draw } }) => {
     }
 
     const objects = []
-    for (let i = 0; i < visit.length && i < 3; i++) {
-      if (!draw[types[i]]) {
-        objects.push(null)
-        continue
-      }
-      const parts = {
-        start: lasts[i],
-        size: 0,
-        objects: [],
-        partials: [],
-      }
-      for (let j = 0; j < visit[i].detail.length; j++) {
-        const detail = visit[i].detail[j]
-        const cached = cache.get(detail.key)
-
-        if (cached.currentWords.size) {
-          const { objects, partials } = getObjects(cached, shape, space)
-          parts.objects.push(objects)
-          parts.size += objects.length + partials.length
-          lasts[i] += objects.length
-          parts.partials.push(partials)
+    if (fundamental) {
+      const fundamentalObjects = getFundamentalObjects(
+        cache.get(range(shape.dimensions).join('-')),
+        shape,
+        space
+      )
+      for (let i = 0; i < fundamentalObjects.length; i++) {
+        if (draw[types[i]]) {
+          objects.push({
+            start: lasts[i],
+            size: fundamentalObjects[i].length,
+            objects: [fundamentalObjects[i]],
+            partials: [],
+          })
+          lasts[i] += fundamentalObjects[i].length
+        } else {
+          objects.push(null)
         }
       }
-      objects.push(parts)
+    } else {
+      for (let i = 0; i < visit.length && i < 3; i++) {
+        if (!draw[types[i]]) {
+          objects.push(null)
+          continue
+        }
+        const parts = {
+          start: lasts[i],
+          size: 0,
+          objects: [],
+          partials: [],
+        }
+        for (let j = 0; j < visit[i].detail.length; j++) {
+          const detail = visit[i].detail[j]
+          const cached = cache.get(detail.key)
+
+          if (cached.currentWords.size) {
+            const { objects, partials } = getObjects(cached, shape, space)
+            parts.objects.push(objects)
+            parts.size += objects.length + partials.length
+            lasts[i] += objects.length
+            parts.partials.push(partials)
+          }
+        }
+        objects.push(parts)
+      }
     }
 
     const data = []
@@ -216,7 +261,9 @@ onmessage = ({ data: { shape, space, first, ambiance, draw } }) => {
       })
     }
 
-    visit.top = cache.get(range(shape.dimensions).join('-')).vertices.size
+    visit.top = fundamental
+      ? cache.get(range(shape.dimensions).join('-')).words.size
+      : cache.get(range(shape.dimensions).join('-')).vertices.size
     visit.done = allDone
 
     postMessage(
@@ -226,6 +273,82 @@ onmessage = ({ data: { shape, space, first, ambiance, draw } }) => {
   } catch (e) {
     postMessage({ error: e.message })
   }
+}
+
+function getFundamentalObjects(cached, shape, space) {
+  const vertices = []
+  const edges = []
+  const faces = []
+  for (const [cosetId, word] of cached.currentWords) {
+    if (word === '') {
+      // Add all fundamental mirrors
+      const rootVerticesT = transpose(space.rootVertices)
+      cached.fundamentalVertices = new Map()
+      cached.rootVertices = range(shape.dimensions).map(i =>
+        normalize(rootVerticesT[i], space.metric)
+      )
+      for (let i = 0; i < cached.rootVertices.length; i++) {
+        const vertex = cached.rootVertices[i]
+        vertices.push({
+          word,
+          cosetId,
+          vertices: [vertex],
+        })
+        // edges.push({
+        //   word,
+        //   cosetId,
+        //   vertices: [
+        //     vertex,
+        //     cached.rootVertices[(i + 1) % cached.rootVertices.length],
+        //   ],
+        // })
+      }
+      // faces.push({
+      //   word,
+      //   cosetId,
+      //   vertices: cached.rootVertices,
+      // })
+      cached.fundamentalVertices.set('', cached.rootVertices)
+    } else {
+      const simplex = [...cached.fundamentalVertices.get(word.slice(1))]
+      const reflectIndex = cached.gens.indexOf(word[0])
+
+      for (let i = 0; i < simplex.length; i++) {
+        simplex[i] = reflect(
+          simplex[i],
+          space.rootNormals[reflectIndex],
+          space.metric
+        )
+      }
+      for (let i = 0; i < simplex.length; i++) {
+        vertices.push({
+          word,
+          cosetId,
+          vertices: [simplex[i]],
+        })
+
+        for (let j = i + 1; j < simplex.length; j++) {
+          edges.push({
+            word,
+            cosetId,
+            vertices: [simplex[i], simplex[j]],
+          })
+
+          for (let k = j + 1; k < simplex.length; k++) {
+            faces.push({
+              word,
+              cosetId,
+              vertices: [simplex[i], simplex[j], simplex[k]],
+            })
+          }
+        }
+      }
+
+      cached.fundamentalVertices.set(word, simplex)
+    }
+    cached.currentWords.delete(cosetId)
+  }
+  return [vertices, edges, faces]
 }
 
 function getObjects(cached, shape, space) {
@@ -238,7 +361,6 @@ function getObjects(cached, shape, space) {
         cosetId,
         vertices: [cached.vertices.get(cosetId)],
       })
-      cached.currentCosetId = cosetId
       cached.currentWords.delete(cosetId)
     }
   } else if (cached.subdimensions === 1) {

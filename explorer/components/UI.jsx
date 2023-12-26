@@ -24,7 +24,7 @@ import { presets } from '../presets/index.jsx'
 import Shape from './Shape.jsx'
 import { ambiances } from '../ambiances.js'
 import { defaultProjection } from '../params.js'
-import { details, easings, groupers, projections } from '../../statics.js'
+import { details, easings, projections } from '../../statics.js'
 import { defaultParams } from '../default.js'
 
 const getShowUI = () => {
@@ -446,24 +446,6 @@ export default function UI({
 
           {['advanced', 'full'].includes(showUI) && (
             <aside className="parameters">
-              {showUI === 'full' && (
-                <label className="select-label">
-                  Grouper
-                  <select
-                    name="grouper"
-                    value={params.grouper}
-                    onChange={handleRawChange}
-                  >
-                    {groupers.map(p => (
-                      <option key={p} value={p}>
-                        {p
-                          .replace(/_/g, ' ')
-                          .replace(/\b./g, c => c.toUpperCase())}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
               <Number
                 name="segments"
                 label="Segments"
@@ -512,16 +494,14 @@ export default function UI({
                 togglerName="drawEdge"
                 onChange={handleChange}
               />
-              {['toddcoxeter', 'fundamental'].includes(runtime.grouper) && (
-                <label className="boolean-label">
-                  Faces
-                  <Boolean
-                    name="drawFace"
-                    value={params.drawFace}
-                    onChange={handleChange}
-                  />
-                </label>
-              )}
+              <label className="boolean-label">
+                Faces
+                <Boolean
+                  name="drawFace"
+                  value={params.drawFace}
+                  onChange={handleChange}
+                />
+              </label>
               <label className="select-label">
                 Ambiance
                 <select

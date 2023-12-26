@@ -43,6 +43,9 @@ export const getShape = (
   shape = null,
   solved = new Map()
 ) => {
+  if (mirrors.every(m => !m)) {
+    mirrors = mirrors.map(() => 1)
+  }
   skips =
     skips ||
     mirrors.map((m, i) => (isEnabled(m) ? null : i)).filter(x => x !== null)

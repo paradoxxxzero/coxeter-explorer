@@ -134,7 +134,6 @@ export const useRender = (runtime, setRuntime) => {
     runtime.fov7,
     runtime.fov8,
     runtime.fov9,
-    runtime.grouper,
     runtime.iteration,
     runtime.detail,
     runtime.matrix,

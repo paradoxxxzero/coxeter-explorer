@@ -34,7 +34,6 @@ export const defaultParams = {
   drawVertex: true,
   drawEdge: true,
   drawFace: false,
-  grouper: 'toddcoxeter',
   controls: 'space',
   ambiance: 'neon',
   centered: false,

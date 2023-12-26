@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import {
   coxeterToGram,
   getGeometry,
@@ -6,7 +6,6 @@ import {
   normalize,
 } from '../math/hypermath'
 import { multiplyVector } from '../math/matrix'
-import { getShape } from '../math/shape'
 import { mirrorValue } from '../mirrors'
 import Shaper from '../workers/shape.worker?worker'
 
@@ -22,28 +21,21 @@ export const useProcess = (runtime, setRuntime) => {
         space,
         runtime.centered
       )
+      // Handle no mirrors = fundamental
+      const mirrors = runtime.mirrors.every(m => !m)
+        ? runtime.mirrors.map(() => 1)
+        : runtime.mirrors.map(v => mirrorValue(v))
       const rootVertex = normalize(
-        multiplyVector(
-          rootVertices,
-          runtime.mirrors.map(v => mirrorValue(v))
-        ),
+        multiplyVector(rootVertices, mirrors),
         space.metric
       )
       space.rootVertex = rootVertex
       space.rootVertices = rootVertices
       space.rootNormals = rootNormals
 
-      const shape = getShape(
-        runtime.dimensions,
-        runtime.coxeter,
-        runtime.stellation,
-        runtime.mirrors
-      )
-
       return {
         ...runtime,
         space,
-        shape,
         error: null,
       }
     })
@@ -53,7 +45,6 @@ export const useProcess = (runtime, setRuntime) => {
     runtime.mirrors,
     runtime.stellation,
     runtime.centered,
-    runtime.grouper,
     setRuntime,
   ])
 
@@ -72,7 +63,7 @@ export const useProcess = (runtime, setRuntime) => {
       return newRuntime
     })
   }, [
-    runtime.shape,
+    runtime.space,
     runtime.ambiance,
     runtime.drawVertex,
     runtime.drawEdge,
@@ -82,14 +73,17 @@ export const useProcess = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
-      if (!runtime.shape || runtime.iteration < 0) {
+      if (!runtime.iteration < 0) {
         return runtime
       }
 
       runtime.shaper.postMessage({
-        space: runtime.space,
-        shape: runtime.shape,
         first: runtime.iteration === 0,
+        space: runtime.space,
+        dimensions: runtime.dimensions,
+        coxeter: runtime.coxeter,
+        stellation: runtime.stellation,
+        mirrors: runtime.mirrors,
         ambiance: runtime.ambiance,
         draw: {
           vertex: runtime.drawVertex,
@@ -105,7 +99,6 @@ export const useProcess = (runtime, setRuntime) => {
   }, [
     runtime.iteration,
     runtime.limit,
-    runtime.shape,
     runtime.ambiance,
     runtime.drawVertex,
     runtime.drawEdge,
