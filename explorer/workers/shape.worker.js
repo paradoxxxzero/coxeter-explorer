@@ -57,7 +57,7 @@ onmessage = ({
 
         if (!cache.has(subshape.key)) {
           const limit = subshape.dimensions === 0 ? 500 : draw[type] ? 250 : 10
-          cache.set(subshape.key, {
+          const cached = {
             ...shape,
             subgens: subshape.quotient,
             space: subshape.space,
@@ -71,7 +71,8 @@ onmessage = ({
                   metric: space.metric,
                 }
               : {}),
-          })
+          }
+          cache.set(subshape.key, cached)
         }
         const cached = cache.get(subshape.key)
         if (!cached.done) {
@@ -101,7 +102,6 @@ onmessage = ({
 
           count: cached.count,
           done: cached.done,
-          objects: cached.objects,
         })
 
         const aggregated = visit[subshape.dimensions].aggregated.find(
@@ -138,6 +138,40 @@ onmessage = ({
 
     shape.children.forEach(visitShape)
 
+    const rootCached = cache.get(rootKey)
+    if (shape.dimensions === 2) {
+      shape.currentWords = new Map([[1, shape.space]])
+      shape.space = Array.from(rootCached.words.values())
+      shape.done = true
+      cache.set('', {
+        ...shape,
+        subgens: shape.subgens,
+        space: shape.space,
+        subdimensions: shape.dimensions,
+        mirrors: shape.mirrors,
+      })
+      visit[2] = {
+        dimensions: 2,
+        processing: 1,
+        count: 0,
+        detail: [
+          {
+            key: '',
+            coxeter: shape.coxeter,
+            stellation: shape.stellation,
+            mirrors: shape.mirrors,
+
+            count: 1,
+            done: true,
+          },
+        ],
+        aggregated: [],
+        done: true,
+      }
+    }
+
+    console.log(cache, shape)
+
     if (
       visit[0].done &&
       (!draw.edge || visit[1]?.done) &&
@@ -147,8 +181,6 @@ onmessage = ({
         cached.limit = 200
       }
     }
-
-    const rootCached = cache.get(rootKey)
 
     const objects = []
     if (fundamental) {
@@ -231,10 +263,12 @@ onmessage = ({
             word: object.word,
             key: object.key,
             subShape: j,
-            index: k,
-            len: objects.length,
+            faceIndex: object.faceIndex,
+            faceSize: object.faceSize,
             dimensions: shape.dimensions,
             draw,
+            idx,
+            size: parts.size,
             type: types[i],
           })
           buffers[0][idx * 3 + 0] = c[0]

@@ -1,33 +1,23 @@
-import { getRels, itoa, itor } from '.'
+import { getParams, itoa, itor } from '.'
 import { range } from '../../utils'
 import { isEnabled, isSnub } from '../mirrors'
 import { submatrix, subvector } from './matrix'
 import { ToddCoxeter } from './toddcoxeter'
 
-export const getGens = (mirrors, skips = []) =>
-  mirrors.map((m, i) => (!skips.includes(i) ? itoa(i) : '')).join('')
-
-export const getSubGens = (mirrors, skips = []) =>
-  mirrors.map((m, i) => (skips.includes(i) || m ? '' : itoa(i))).join('')
-
 export const hasOrder = params => {
   if (params.dimensions === 0) {
     return true
   }
-  // if (replacements) {
-  //   word = Object.entries(replacements).reduce(
-  //     (acc, [key, value]) => acc.replace(new RegExp(key, 'g'), value),
-  //     word
-  //   )
-  // }
   const seen = new Set()
   for (let i = 0; i < params.lastWord.length; i++) {
     const c = params.lastWord[i]
     if (!c || seen.has(c)) {
       continue
     }
-    seen.add(c)
-    if (seen.size === params.dimensions) {
+    for (let i = 0; i < params.transforms[c].length; i++) {
+      seen.add(itoa(params.transforms[c][i]))
+    }
+    if (seen.size >= params.dimensions) {
       return true
     }
   }
@@ -58,13 +48,9 @@ export const getShape = (
 
     skips,
 
-    // For convenience:
-    gens: getGens(mirrors, skips),
-    subgens: getSubGens(mirrors, skips),
-    rels: getRels(dimensions, coxeter, stellation, skips),
+    ...getParams(dimensions, coxeter, stellation, mirrors, skips),
     quotient: '',
     space: [''],
-    snub: mirrors.some(isSnub),
 
     children: [],
   }
@@ -89,10 +75,14 @@ export const getShape = (
 
         skips: subskips,
 
-        gens: getGens(mirrors, subskips),
-        subgens: getSubGens(mirrors, subskips),
-        rels: getRels(dimensions, coxeter, stellation, subskips),
-        snub: subvector(mirrors, subskips).some(isSnub),
+        ...getParams(
+          dimensions,
+          coxeter,
+          stellation,
+          mirrors,
+          subskips,
+          shape.transforms
+        ),
       }
       ToddCoxeter(subParams)
       solved.set(key, subParams)
@@ -103,11 +93,21 @@ export const getShape = (
 
     // If the coset generate a space
     if (hasOrder(subParams)) {
+      const snub = subvector(mirrors, subskips).some(m => isSnub(m))
       let quotient = ''
-      if (subParams.snub && space.length <= subParams.dimensions) {
-        // New face from both rotation
-        console.warn('TODO')
-        space.push(...subskips.map(itoa))
+      if (snub) {
+        if (subskips.length === 1) {
+          const transforms = range(dimensions).filter(
+            i => !subskips.includes(i)
+          )
+          const gen = Object.entries(shape.transforms).find(
+            ([gen, transform]) => transform.every(t => transforms.includes(t))
+          )[0]
+          const m = coxeter[transforms[0]][transforms[1]]
+          if (m > 2) {
+            quotient += gen
+          }
+        }
       } else {
         for (let j = 0; j < dimensions; j++) {
           if (
@@ -158,6 +158,25 @@ export const getShape = (
           mirrors,
           subskips,
           {
+            new: false,
+            key: subskips.sort().join('-'),
+
+            dimensions: dimensions - subskips.length,
+            coxeter: submatrix(coxeter, subskips),
+            stellation: submatrix(stellation, subskips),
+            mirrors: subvector(mirrors, subskips),
+            quotient: '',
+            space: [''],
+            skips: subskips,
+
+            ...getParams(
+              dimensions,
+              coxeter,
+              stellation,
+              mirrors,
+              subskips,
+              shape.transforms
+            ),
             children: [],
           },
           solved

@@ -104,7 +104,7 @@ const words = function (params) {
     params.remaining = [start]
     if (params.rootVertex && params.rootNormals && params.metric) {
       params.vertices = new Map()
-      params.vertices.set(1, params.rootVertex)
+      params.vertices.set(start, params.rootVertex)
     }
   }
 
@@ -130,14 +130,14 @@ const words = function (params) {
           // Might be a coincidence stop here
           return
         }
-        genCoset.push([i, generator, nextCosetId])
+        genCoset.push([generator, nextCosetId])
       }
     }
 
     params.remaining.shift()
 
     for (let i = 0; i < genCoset.length; i++) {
-      const [index, generator, nextCosetId] = genCoset[i]
+      const [generator, nextCosetId] = genCoset[i]
 
       const newWord = generator + word
       params.words.set(nextCosetId, newWord)
@@ -146,11 +146,11 @@ const words = function (params) {
       params.lastWord = newWord
       params.remaining.push(nextCosetId)
       if (params.vertices) {
-        const vertex = reflect(
-          params.vertices.get(cosetId),
-          params.rootNormals[index],
-          params.metric
-        )
+        let vertex = params.vertices.get(cosetId)
+        for (let j = 0; j < params.transforms[generator].length; j++) {
+          const idx = params.transforms[generator][j]
+          vertex = reflect(vertex, params.rootNormals[idx], params.metric)
+        }
         params.vertices.set(nextCosetId, vertex)
       }
     }
@@ -159,7 +159,7 @@ const words = function (params) {
 
 export const wordToCoset = (params, word) => {
   // Start at 1
-  let cosetId = 1
+  let cosetId = quotient(params, 1)
   for (let i = word.length - 1; i >= 0; i--) {
     const coset = params.cosets.get(cosetId)
     if (coset.size < params.gens.length * 2) {

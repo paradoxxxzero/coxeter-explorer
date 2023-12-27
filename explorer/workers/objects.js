@@ -1,4 +1,5 @@
 import { wordToCoset } from '../math/toddcoxeter'
+import { isSnub } from '../mirrors'
 
 const reorder = (i, n, double = false) => {
   if (double) {
@@ -21,7 +22,6 @@ export const getObjects = (cached, shape, space, rootCached) => {
     for (const [cosetId, word] of cached.currentWords) {
       objects.push({
         word,
-        cosetId,
         vertices: [cached.vertices.get(cosetId)],
       })
       cached.currentWords.delete(cosetId)
@@ -46,7 +46,8 @@ export const getObjects = (cached, shape, space, rootCached) => {
       const faceVertices = []
       for (let h = 0; h < cached.space.length; h++) {
         const double = cached.mirrors.every(m => !!m)
-        const i = reorder(h, cached.space.length, double)
+        const snub = cached.mirrors.some(m => isSnub(m))
+        const i = snub ? h : reorder(h, cached.space.length, double)
         const vertexId = wordToCoset(rootCached, word + cached.space[i])
         if (vertexId && rootCached.vertices.has(vertexId)) {
           faceVertices.push(rootCached.vertices.get(vertexId))
@@ -58,7 +59,13 @@ export const getObjects = (cached, shape, space, rootCached) => {
       const partial = faceVertices.length < cached.space.length
 
       if (faceVertices.length === 3) {
-        const vertex = { word, vertices: faceVertices, index: 0, partial }
+        const vertex = {
+          word,
+          vertices: faceVertices,
+          faceIndex: 0,
+          faceSize: 3,
+          partial,
+        }
         if (partial) {
           partials.push(vertex)
         } else {
@@ -87,7 +94,8 @@ export const getObjects = (cached, shape, space, rootCached) => {
             faceVertices[(j + (1 - p)) % faceVertices.length],
             center,
           ],
-          index: j,
+          faceIndex: j,
+          faceSize: faceVertices.length,
           partial,
         }
         if (partial) {

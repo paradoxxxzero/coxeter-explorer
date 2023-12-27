@@ -170,13 +170,13 @@ export const ambiances = Object.fromEntries(
       transparency: 'oit',
       face: {
         gouraud: true,
-        opacity: 0.1,
+        opacity: 0.2,
         diffuse: 'fresnel',
       },
-      color: ({ len, vertices, type }) =>
+      color: ({ faceSize, type, idx, size }) =>
         type === 'face'
-          ? hsl((((len || vertices.length) - 2) * 0.21) % 1, 1, 0.8)
-          : [1, 1, 1],
+          ? hsl(((faceSize - 2) * 0.21) % 1, 1, 0.8)
+          : hsl(idx / size, 0.75, 0.5),
     },
     subShape: {
       background: [1, 1, 1, 1],
@@ -209,17 +209,15 @@ export const ambiances = Object.fromEntries(
       },
 
       transparency: 'oit',
-      color: ({ word, index, type }) => {
+      color: ({ word, idx, type }) => {
         const l = word
           .split('')
           .map(c => atoi(c))
           .reduce((a, b) => a + b, 0)
 
         const color = [...catpuccin[l % catpuccin.length]]
-        if (type === 'face') {
-          if (index % 2) {
-            color[2] *= 0.5
-          }
+        if (idx % 2) {
+          color[2] *= 0.5
         }
         return hsl(...color)
       },
@@ -230,7 +228,7 @@ export const ambiances = Object.fromEntries(
     },
     facets: {
       background: [0, 0, 0, 1],
-      color: ({ index }) => hsl(((index || 0) * 0.13) % 1, 0.75, 0.7),
+      color: ({ faceIndex, faceSize }) => hsl(faceIndex / faceSize, 0.75, 0.7),
     },
     monochrome: {
       background: [0.12, 0.12, 0.12, 1],
