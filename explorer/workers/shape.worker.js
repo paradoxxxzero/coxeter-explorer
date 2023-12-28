@@ -26,6 +26,7 @@ onmessage = ({
       cache = new Map()
       lasts = [0, 0, 0]
       shape = getShape(dimensions, coxeter, stellation, mirrors)
+      console.log(shape)
     }
     const rootKey = range(shape.dimensions).join('-')
     const visit = new Array(shape.dimensions)
@@ -170,8 +171,6 @@ onmessage = ({
       }
     }
 
-    console.log(cache, shape)
-
     if (
       visit[0].done &&
       (!draw.edge || visit[1]?.done) &&
@@ -262,7 +261,7 @@ onmessage = ({
           const c = ambiances[ambiance].color({
             word: object.word,
             key: object.key,
-            subShape: j,
+            subShape: j % parts.objects.length, // For partials
             faceIndex: object.faceIndex,
             faceSize: object.faceSize,
             dimensions: shape.dimensions,

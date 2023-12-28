@@ -1,12 +1,15 @@
 import { getParams, itoa, itor } from '.'
 import { range } from '../../utils'
 import { isEnabled, isSnub } from '../mirrors'
-import { submatrix, subvector } from './matrix'
+import { ident, submatrix, subvector } from './matrix'
 import { ToddCoxeter } from './toddcoxeter'
 
 export const hasOrder = params => {
   if (params.dimensions === 0) {
     return true
+  }
+  if (params.words.size <= params.dimensions) {
+    return false
   }
   const seen = new Set()
   for (let i = 0; i < params.lastWord.length; i++) {
@@ -54,6 +57,7 @@ export const getShape = (
 
     children: [],
   }
+  // Try subgroups by removing a mirror to the coxeter diagram:
   for (let i = 0; i < dimensions; i++) {
     if (skips.includes(i)) {
       continue
@@ -93,8 +97,8 @@ export const getShape = (
 
     // If the coset generate a space
     if (hasOrder(subParams)) {
-      const snub = subvector(mirrors, subskips).some(m => isSnub(m))
       let quotient = ''
+      const snub = subvector(mirrors, subskips).some(m => isSnub(m))
       if (snub) {
         if (subskips.length === 1) {
           const transforms = range(dimensions).filter(
@@ -107,6 +111,16 @@ export const getShape = (
           if (m > 2) {
             quotient += gen
           }
+        } else if (subskips.length === 2) {
+          const transforms = subskips
+          const gen = Object.entries(shape.transforms).find(
+            ([gen, transform]) => transform.every(t => transforms.includes(t))
+          )[0]
+          const m = coxeter[transforms[0]][transforms[1]]
+          if (m === 2) {
+            quotient += gen
+          }
+          console.log(quotient)
         }
       } else {
         for (let j = 0; j < dimensions; j++) {
@@ -143,6 +157,44 @@ export const getShape = (
       shape.children.push(subShape)
     }
   }
+
+  // Snubs generate one more simplex facet
+  if (skips.length === 0 && mirrors.some(m => isSnub(m))) {
+    const key = 's'
+    const snubCoxeter = ident(dimensions - 1).map((row, i) =>
+      row.map((_, j) => (i === j + 1 || i === j - 1 ? 3 : 2))
+    )
+    const snubStellation = ident(dimensions - 1).map(row => row.map(() => 1))
+    const snubMirrors = range(dimensions - 1).map(() => 's')
+    const subskips = ['s']
+    let subShape = {
+      new: true,
+      key,
+      dimensions: dimensions - 1,
+      coxeter: snubCoxeter,
+      stellation: snubStellation,
+      mirrors: snubMirrors,
+
+      skips: subskips,
+
+      ...getParams(
+        dimensions,
+        snubCoxeter,
+        snubStellation,
+        snubMirrors,
+        subskips,
+        shape.transforms
+      ),
+
+      quotient: '',
+      space: ['', 'b', 'c'],
+
+      children: [],
+    }
+
+    shape.children.push(subShape)
+  }
+
   if (shape.children.length === 0) {
     console.info('No leaf found, digging deeper', skips)
     for (let i = 0; i < dimensions; i++) {
@@ -187,126 +239,6 @@ export const getShape = (
   return shape
 }
 
-export const snub = params => {
-  // console.log(
-  //   '>',
-  //   params.gens,
-  //   params.subgens,
-  //   params.replacements,
-  //   params.rels
-  // )
-  if (params.mirrors.some(m => isSnub(m))) {
-    params.replacements = {}
-    let r = 0
-    const size = params.mirrors.length
-    const originalSubgens = params.subgens
-    for (let i = 0; i < size; i++) {
-      for (let j = 0; j < i; j++) {
-        if (
-          (params.skip &&
-            (params.skips.includes(i) || params.skips.includes(j))) ||
-          !(params.gens.includes(itoa(i)) && params.gens.includes(itoa(j)))
-        ) {
-          continue
-        }
-        if (isSnub(params.mirrors[i]) && isSnub(params.mirrors[j])) {
-          const R = itor(r)
-          params.replacements[R] = itoa(j) + itoa(i)
-          params.gens =
-            params.gens
-              .split('')
-              .filter(g => ![i, j].map(c => itoa(c)).includes(g))
-              .join('') + R
-          params.subgens = params.subgens
-            .replace(new RegExp(itoa(j) + itoa(i), 'g'), '')
-            .split('')
-            .filter(c => c !== itoa(j) && c !== itoa(i))
-            .join('')
-          params.rels = params.rels
-            .filter(rel => ![i, j].map(c => itoa(c).repeat(2)).includes(rel))
-            .map(rel => rel.replace(new RegExp(itoa(j) + itoa(i), 'g'), R))
-          r++
-        } else if (size < 3 && isSnub(params.mirrors[i])) {
-          const R = itor(r)
-          params.replacements[R] = itoa(i) + itoa(j) + itoa(i)
-          params.gens =
-            params.gens
-              .split('')
-              .filter(g => itoa(j) !== g)
-              .join('') + R
-          params.subgens = params.subgens
-            .replace(new RegExp(itoa(j) + itoa(i), 'g'), '')
-            .split('')
-            .filter(c => c !== itoa(j) && c !== itoa(i))
-            .join('')
-          params.rels = params.rels
-            .filter(rel => ![i, j].map(c => itoa(c).repeat(2)).includes(rel))
-            .map(rel => rel.replace(new RegExp(itoa(j) + itoa(i), 'g'), R))
-          r++
-        } else if (size < 3 && isSnub(params.mirrors[j])) {
-          const R = itor(r)
-          params.replacements[R] = itoa(j) + itoa(i) + itoa(j)
-          params.gens =
-            params.gens
-              .split('')
-              .filter(g => itoa(i) !== g)
-              .join('') + R
-          params.subgens = params.subgens
-            .replace(new RegExp(itoa(j) + itoa(i), 'g'), '')
-            .split('')
-            .filter(c => c !== itoa(j) && c !== itoa(i))
-            .join('')
-          params.rels = params.rels
-            .filter(rel => ![i, j].map(c => itoa(c).repeat(2)).includes(rel))
-            .map(rel => rel.replace(new RegExp(itoa(j) + itoa(i), 'g'), R))
-          r++
-        }
-      }
-    }
-
-    if (params.gens === 'rst') {
-      if (originalSubgens === 'c') {
-        params.subgens = 's'
-      }
-      params.rels.push('rst')
-    }
-    // console.log(
-    //   '>S',
-    //   params.gens,
-    //   params.subgens,
-    //   params.replacements,
-    //   params.rels
-    // )
-
-    // params.subgens = Object.entries(params.replacements).reduce(
-    //   (acc, [key, value]) => acc.replace(new RegExp(value, 'g'), key),
-    //   params.subgens
-    // )
-
-    // if (params.subgens === 'c') {
-    //   params.subgens = params.subgens.toUpperCase()
-    // }
-    // params.rels = params.rels.map(rel =>
-    //   Object.entries(params.replacements).reduce(
-    //     (acc, [key, value]) => acc.replace(new RegExp(value, 'g'), key),
-    //     rel
-    //   )
-    // )
-    // const replaced = [
-    //   ...new Set(
-    //     Object.values(params.replacements)
-    //       .map(w => w.split(''))
-    //       .flat()
-    //   ),
-    // ]
-    // params.rels = params.rels.filter(
-    //   rel => !replaced.some(c => rel === `${c}${c}`)
-    // )
-    // if (params.gens === 'ABC') {
-    //   params.rels.push('ABC')
-    // }
-  }
-}
 // Cube :
 // All vertices (all mirrors):
 // TC('abc', '', ['aa', 'bb', 'cc', 'abababab', 'bcbcbc', 'acac']) -> 48

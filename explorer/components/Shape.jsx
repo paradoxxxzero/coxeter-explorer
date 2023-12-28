@@ -144,7 +144,10 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                 ? level[detail].map(
                     ({ count, coxeter, stellation, mirrors, key }) => (
                       <Fragment key={key}>
-                        <div className="shape-count shape-detail-count">
+                        <div
+                          className="shape-count shape-detail-count"
+                          title={key}
+                        >
                           {!simple && level[detail].length > 1
                             ? formatCount(count)
                             : null}

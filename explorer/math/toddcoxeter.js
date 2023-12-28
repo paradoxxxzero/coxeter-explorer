@@ -37,7 +37,20 @@ const resolveCoincidence = (params, cosetId, otherCosetId) => {
       }
       const coset = params.cosets.get(cosetId)
       const otherCoset = params.cosets.get(otherCosetId)
+
       params.cosets.delete(otherCosetId)
+      if (params.currentWords?.has(otherCosetId)) {
+        params.currentWords.set(cosetId, params.currentWords.get(otherCosetId))
+        params.currentWords.delete(otherCosetId)
+      }
+      if (params.words?.has(otherCosetId)) {
+        params.words.set(cosetId, params.words.get(otherCosetId))
+        params.words.delete(otherCosetId)
+      }
+      if (params.vertices?.has(otherCosetId)) {
+        params.vertices.set(cosetId, params.vertices.get(otherCosetId))
+        params.vertices.delete(otherCosetId)
+      }
 
       for (const [generator, otherCosetTargetCosetId] of otherCoset) {
         if (coset.has(generator)) {

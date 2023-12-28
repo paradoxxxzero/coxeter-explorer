@@ -146,7 +146,6 @@ export const getParams = (
         }
       }
     }
-    console.log(skips, rels)
   } else {
     for (let i = 0; i < dimensions; i++) {
       if (!skips.includes(i)) {
