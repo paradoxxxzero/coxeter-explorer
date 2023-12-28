@@ -120,9 +120,6 @@ export const snub = (plot, mirrors, dimensions, metric) => {
       vertices.push(vertex)
     }
   }
-  ij = k
-  jk = i
-  ki = j
   for (let i = 0; i < plot.ranges.edge[1]; i++) {
     if (snub.has(plot.edge[i].start)) {
       const kern = snub.get(plot.edge[i].start)

@@ -8,9 +8,7 @@ export const hasOrder = params => {
   if (params.dimensions === 0) {
     return true
   }
-  if (params.words.size <= params.dimensions) {
-    return false
-  }
+
   const seen = new Set()
   for (let i = 0; i < params.lastWord.length; i++) {
     const c = params.lastWord[i]
@@ -100,27 +98,13 @@ export const getShape = (
       let quotient = ''
       const snub = subvector(mirrors, subskips).some(m => isSnub(m))
       if (snub) {
-        if (subskips.length === 1) {
-          const transforms = range(dimensions).filter(
-            i => !subskips.includes(i)
-          )
-          const gen = Object.entries(shape.transforms).find(
-            ([gen, transform]) => transform.every(t => transforms.includes(t))
-          )[0]
-          const m = coxeter[transforms[0]][transforms[1]]
-          if (m > 2) {
+        if (subParams.gens.length === 1) {
+          const gen = subParams.gens
+
+          const m = coxeter[shape.transforms[gen][0]][shape.transforms[gen][1]]
+          if (subParams.dimensions === 1 ? m === 2 : m > 2) {
             quotient += gen
           }
-        } else if (subskips.length === 2) {
-          const transforms = subskips
-          const gen = Object.entries(shape.transforms).find(
-            ([gen, transform]) => transform.every(t => transforms.includes(t))
-          )[0]
-          const m = coxeter[transforms[0]][transforms[1]]
-          if (m === 2) {
-            quotient += gen
-          }
-          console.log(quotient)
         }
       } else {
         for (let j = 0; j < dimensions; j++) {
@@ -142,6 +126,9 @@ export const getShape = (
         space,
 
         children: [],
+      }
+      if (subParams.words.size <= subParams.dimensions) {
+        subShape.new = false
       }
       if (subParams.dimensions > 0) {
         subShape = getShape(
