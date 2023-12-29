@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
-import { pauseIcon, playIcon, stopIcon } from '../icons'
-import Shaper from '../workers/shape.worker?worker'
+import { Fragment, useCallback } from 'react'
+import { eyeIcon, pauseIcon, playIcon, eyeOffIcon } from '../icons'
 import CoxeterDiagram from './CoxeterDiagram'
 
 const icons = n => {
@@ -52,131 +51,52 @@ const icons = n => {
   )
 }
 
-export default function Shape({ space, shape, full, updateParams }) {
-  const [iteration, setIteration] = useState(0)
-  const [visit, setVisit] = useState({})
-  const [processing, setProcessing] = useState(false)
-  const [paused, setPaused] = useState(false)
-  const [shaper, setShaper] = useState(() => new Shaper())
-
-  useEffect(() => {
-    setIteration(0)
-  }, [shape])
-
-  useEffect(() => {
-    if (!shape || iteration < 0) {
-      return
-    }
-    setProcessing(true)
-    shaper.postMessage({
-      space,
-      shape,
-      first: iteration === 0,
-    })
-  }, [iteration, shape, shaper, space])
-
-  useEffect(() => {
-    const handleShape = ({ data }) => {
-      if (!data.error) {
-        if (data.done) {
-          setProcessing(false)
-        } else if (!paused) {
-          setIteration(iteration => iteration + 1)
-        }
-        setVisit(data.visit)
-      } else {
-        console.error(data.error)
-      }
-    }
-    shaper.addEventListener('message', handleShape)
-    return () => {
-      shaper.removeEventListener('message', handleShape)
-    }
-  }, [shaper, paused])
-
+export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
   const handlePause = useCallback(() => {
-    setPaused(paused => !paused)
-  }, [])
-
-  useEffect(() => {
-    if (!paused) {
-      setIteration(iteration => iteration + 1)
+    if (runtime.paused && runtime.polytope.size > runtime.limit) {
+      updateParams({
+        limit: runtime.limit + runtime.start,
+      })
     }
-  }, [paused])
+    setRuntime(runtime => ({
+      ...runtime,
+      paused: !runtime.paused,
+    }))
+  }, [
+    runtime.paused,
+    runtime.polytope.size,
+    runtime.limit,
+    runtime.start,
+    setRuntime,
+    updateParams,
+  ])
 
-  const handleStop = useCallback(() => {
-    shaper.terminate()
-    setProcessing(false)
-    setShaper(new Shaper())
-    setIteration(-1)
-  }, [shaper])
-
-  const simple = Object.values(visit).every(
-    subshape => subshape.detail.length < 2
+  const handleHiddenChange = useCallback(
+    event => {
+      const key = event.target.closest('button').dataset.key
+      const keys = key.split(',')
+      const shown = !keys.some(k => runtime.hidden.includes(k))
+      const hidden = runtime.hidden.filter(v => !keys.includes(v))
+      updateParams({
+        hidden: shown ? [...hidden, ...keys] : hidden,
+      })
+    },
+    [runtime.hidden, updateParams]
   )
 
+  const simple = runtime.polytope.every(subshape => subshape.detail.length < 2)
+
   const formatCount = count => (isFinite(count) ? count.toLocaleString() : '∞')
+  if (showUI === 'empty') {
+    return null
+  }
 
+  const detail = showUI === 'full' ? 'detail' : 'aggregated'
   return (
-    <aside
-      className={`shape${processing && !paused ? ' shape-processing' : ''}`}
-    >
-      {Object.values(visit)
-        .reverse()
-        .map(level => (
-          <div key={`shape-${level.dimensions}`} className="shape-level">
-            {icons(level.dimensions)}
-            <div className="shape-count">
-              {formatCount(level.count)}
-              {level.done ? null : '…'}
-            </div>
-
-            {full && level.dimensions > 0 ? (
-              <div
-                className={`shape-detail${
-                  level.detail.length > 1 ? ' shape-detail-split' : ''
-                }`}
-              >
-                {level.detail.map(
-                  ({ count, coxeter, stellation, mirrors, done }, i) => (
-                    <div key={`detail-${i}`} className="shape-detail-line">
-                      {simple ? null : (
-                        <div className="shape-count">
-                          {level.detail.length > 1
-                            ? formatCount(count) + (done ? '' : '…')
-                            : null}
-                        </div>
-                      )}
-                      {level.dimensions > 0 ? (
-                        <button
-                          className="shape-detail-button"
-                          disabled={level.dimensions < 2}
-                          onClick={() =>
-                            updateParams({
-                              coxeter,
-                              stellation,
-                              mirrors,
-                              dimensions: level.dimensions,
-                            })
-                          }
-                        >
-                          <CoxeterDiagram
-                            coxeter={coxeter}
-                            stellation={stellation}
-                            mirrors={mirrors}
-                          />
-                        </button>
-                      ) : null}
-                    </div>
-                  )
-                )}
-              </div>
-            ) : null}
-          </div>
-        ))}
-      {processing ? (
+    <aside className="shape">
+      {runtime.processing ? (
         <div className="buttons">
-          {paused ? (
+          {runtime.paused ? (
             <button
               className="iterate button"
               onClick={handlePause}
@@ -193,15 +113,109 @@ export default function Shape({ space, shape, full, updateParams }) {
               {pauseIcon}
             </button>
           )}
-          <button
-            className="iterate button"
-            onClick={handleStop}
-            title="Stop enumeration"
-          >
-            {stopIcon}
-          </button>
         </div>
       ) : null}
+      <div
+        className={`shape-info${
+          runtime.processing && !runtime.paused ? ' shape-processing' : ''
+        }${
+          ['advanced', 'full'].includes(showUI) ? ' shape-info-expanded' : ''
+        }`}
+      >
+        {[...runtime.polytope]
+          .reverse()
+          .filter(level => level)
+          .map(level => (
+            <Fragment key={`shape-${level.dimensions}`}>
+              <div
+                className="shape-icon"
+                style={{
+                  gridRow: `span ${level[detail].length}`,
+                }}
+              >
+                {icons(level.dimensions)}
+              </div>
+              <div
+                className="shape-count"
+                style={{
+                  gridRow: `span ${level[detail].length}`,
+                }}
+              >
+                {level.done || level.processing === undefined
+                  ? null
+                  : `${level.processing} / `}
+
+                {formatCount(level.count)}
+              </div>
+
+              <div
+                className={
+                  level.dimensions > 0 &&
+                  ['advanced', 'full'].includes(showUI) &&
+                  level[detail].length > 1
+                    ? ' shape-split'
+                    : ''
+                }
+                style={{
+                  gridRow: `span ${level[detail].length}`,
+                }}
+              />
+
+              {['advanced', 'full'].includes(showUI)
+                ? level[detail].map(
+                    ({ count, coxeter, stellation, mirrors, key }) => (
+                      <Fragment key={key}>
+                        <div
+                          className="shape-count shape-detail-count"
+                          title={key}
+                        >
+                          {!simple && level[detail].length > 1
+                            ? formatCount(count)
+                            : null}
+                        </div>
+                        {level.dimensions > 0 ? (
+                          <div>
+                            {[1, 2].includes(level.dimensions) ? (
+                              <button
+                                className="shape-hidden button"
+                                data-key={key}
+                                title={key}
+                                onClick={handleHiddenChange}
+                              >
+                                {key
+                                  .split(',')
+                                  .some(k => runtime.hidden.includes(k))
+                                  ? eyeOffIcon
+                                  : eyeIcon}
+                              </button>
+                            ) : null}
+                            <button
+                              className="shape-detail-button"
+                              disabled={level.dimensions < 2}
+                              onClick={() =>
+                                updateParams({
+                                  coxeter,
+                                  stellation,
+                                  mirrors,
+                                  dimensions: level.dimensions,
+                                })
+                              }
+                            >
+                              <CoxeterDiagram
+                                coxeter={coxeter}
+                                stellation={stellation}
+                                mirrors={mirrors}
+                              />
+                            </button>
+                          </div>
+                        ) : null}
+                      </Fragment>
+                    )
+                  )
+                : null}
+            </Fragment>
+          ))}
+      </div>
     </aside>
   )
 }

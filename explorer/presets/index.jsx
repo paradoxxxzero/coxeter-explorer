@@ -1,8 +1,9 @@
-import { defaultParams, defaultProjection } from '../../statics'
 import { range } from '../../utils'
 import Space from '../components/Space'
 import { min } from '../math'
 import { ident } from '../math/matrix'
+import { defaultProjection } from '../params'
+import { defaultParams } from '../default'
 
 const coxeter_ = (...args) => {
   // Simple coxeter shortcut
@@ -43,10 +44,9 @@ const polytope = (coxeterArgs, mirrors, stellationArgs, extra) => {
     ...defaultParams,
     ...coxeterParams,
     detail: dimensions > 4 ? 'medium' : 'high',
-    showVertices: dimensions <= 3,
-    showFaces: dimensions <= 4,
+    drawVertex: dimensions <= 3,
+    drawFace: dimensions <= 4,
     curve: dimensions > 3,
-    grouper: 'toddcoxeter',
     ambiance: 'colorful',
     segments: 32,
     matrix: ident(dimensions),
@@ -98,7 +98,7 @@ const tiling = (coxeterArgs, mirrors, stellationArgs, extra) => {
   return {
     ...polytope(coxeterArgs, mirrors, stellationArgs),
     ambiance: 'plain',
-    showVertices: false,
+    drawVertex: false,
     curve: true,
     detail: 'medium',
     zoom: 1,
@@ -110,11 +110,10 @@ const ehoneycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
   return {
     ...polytope(coxeterArgs, mirrors, stellationArgs),
     ambiance: 'neon',
-    showFaces: false,
-    showVertices: false,
-    grouper: 'toddcoxeter',
+    drawFace: false,
+    drawVertex: false,
     centered: false,
-    edgeThickness: 15,
+    sizeEdge: 15,
     segments: 16,
     zoom: 2,
     ...extra,
@@ -127,12 +126,11 @@ const honeycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
     ...poly,
     ambiance: 'neon',
     detail: 'medium',
-    showFaces: false,
-    showVertices: false,
+    drawFace: false,
+    drawVertex: false,
     curve: true,
-    grouper: 'toddcoxeter',
     centered: false,
-    edgeThickness: dimensions > 4 ? 15 : 25,
+    sizeEdge: dimensions > 4 ? 15 : 25,
     segments: 16,
     zoom: 1.5,
     ...extra,
@@ -267,9 +265,9 @@ export const presets = [
       </>
     ),
     params: polytope([4, 3, 3], [1, 0, 0, 0], null, {
-      showVertices: true,
-      vertexThickness: 40,
-      showFaces: true,
+      drawVertex: true,
+      sizeVertex: 40,
+      drawFace: true,
       curve: true,
       ambiance: 'neon',
       zoom: 4.2,
@@ -283,8 +281,8 @@ export const presets = [
       </>
     ),
     params: tiling([7, 3], [1, 0, 0], null, {
-      showVertices: false,
-      showFaces: true,
+      drawVertex: false,
+      drawFace: true,
       curve: true,
       ambiance: 'neon',
     }),
@@ -302,12 +300,11 @@ export const presets = [
         [0, 1, 0],
         [0, 0, 1],
       ],
-      [1, 1, 1],
+      [0, 0, 0],
       null,
       {
-        grouper: 'fundamental',
-        showVertices: false,
-        showFaces: true,
+        drawVertex: false,
+        drawFace: true,
         curve: true,
         segments: 64,
         easing: 'quintic',
@@ -357,10 +354,10 @@ export const presets = [
       [0, 0, 0, 1, 0, 0],
       null,
       {
-        vertexThickness: 25,
-        edgeThickness: 15,
+        sizeVertex: 25,
+        sizeEdge: 15,
         ambiance: 'colorful',
-        showVertices: true,
+        drawVertex: true,
         projection3: 'orthographic',
         projection4: 'orthographic',
         projection5: 'orthographic',
@@ -390,11 +387,11 @@ export const presets = [
       [0, 0, 0, 0, 0, 0, 0, 1],
       null,
       {
-        vertexThickness: 20,
-        edgeThickness: 6,
+        sizeVertex: 20,
+        sizeEdge: 6,
         curve: false,
         ambiance: 'neon',
-        showVertices: true,
+        drawVertex: true,
         detail: 'low',
         projection3: 'orthographic',
         projection4: 'orthographic',
@@ -402,7 +399,6 @@ export const presets = [
         projection6: 'orthographic',
         projection7: 'orthographic',
         projection8: 'orthographic',
-        order: 8,
         zoom: 1,
         centered: false,
       }
@@ -416,10 +412,9 @@ export const presets = [
       </>
     ),
     params: tiling([3, 3, 6], [1, 0, 0, ''], null, {
-      showVertices: false,
-      showFaces: true,
+      drawVertex: false,
+      drawFace: true,
       curve: true,
-      order: 1,
       centered: true,
       segments: 64,
       detail: 'high',
@@ -435,10 +430,9 @@ export const presets = [
       </>
     ),
     params: tiling([6, 3, 4], [1, 0, 0, ''], null, {
-      showVertices: false,
-      showFaces: true,
+      drawVertex: false,
+      drawFace: true,
       curve: true,
-      order: 8,
       centered: false,
       ambiance: 'colorful',
     }),
@@ -467,8 +461,8 @@ export const presets = [
     ),
     params: honeycomb([7, 3, 3], [1, 0, 0, 0], null, {
       zoom: 1.5,
-      showFaces: true,
-      showVertices: true,
+      drawFace: true,
+      drawVertex: true,
     }),
   },
   {
@@ -479,10 +473,9 @@ export const presets = [
       </>
     ),
     params: tiling([5, 3, 6], [1, 0, 0, ''], null, {
-      showVertices: false,
-      showFaces: true,
+      drawVertex: false,
+      drawFace: true,
       curve: true,
-      order: 1,
       centered: true,
       detail: 'high',
       segments: 32,
@@ -498,12 +491,12 @@ export const presets = [
       </>
     ),
     params: polytope([32, 2, 32], [1, 0, 0, 1], null, {
-      showVertices: false,
-      showFaces: false,
+      drawVertex: false,
+      drawFace: false,
       curve: true,
       ambiance: 'neon',
       zoom: 3,
-      edgeThickness: 10,
+      sizeEdge: 10,
     }),
   },
   {
@@ -523,10 +516,10 @@ export const presets = [
       [1, 1, 1, 1, 0],
       null,
       {
-        showVertices: false,
-        showFaces: true,
+        drawVertex: false,
+        drawFace: true,
         ambiance: 'neon',
-        edgeThickness: 20,
+        sizeEdge: 20,
         projection4: 'sterographic',
       }
     ),
@@ -539,12 +532,12 @@ export const presets = [
       </>
     ),
     params: polytope([-1, 2, -1], [1, 0, 0, 1], null, {
-      showVertices: false,
-      showFaces: false,
+      drawVertex: false,
+      drawFace: false,
       curve: true,
       ambiance: 'neon',
       centered: false,
-      edgeThickness: 15,
+      sizeEdge: 15,
       zoom: 1,
     }),
   },
@@ -556,8 +549,8 @@ export const presets = [
       </>
     ),
     params: polytope([-1, 3, 3, -1], [1, 0, 0, 0, 1], null, {
-      showVertices: false,
-      showFaces: false,
+      drawVertex: false,
+      drawFace: false,
       curve: true,
       ambiance: 'neon',
       centered: false,
@@ -676,10 +669,10 @@ export const presets = [
     name: 'Great Stellated Dodecahedron',
     params: polytope([5, 3], [1, 0, 0], [2, 1]),
   },
-  {
-    name: 'Stellated Octahedron',
-    params: polytope([2, 2], ['ß', 'ß', 'ß']),
-  },
+  // {
+  //   name: 'Stellated Octahedron',
+  //   params: polytope([2, 2], ['ß', 'ß', 'ß']),
+  // },
   {
     type: 'group',
     content: (
@@ -1015,7 +1008,7 @@ export const presets = [
         [2, 2, 2, 2, 2, 3, 1, 3],
         [2, 2, 2, 2, 2, 2, 3, 1],
       ],
-      [0, 0, 1, 0, 0, 0, 0, 0]
+      [0, 0, 0, 1, 0, 0, 0, 0]
     ),
   },
   {
@@ -1178,15 +1171,11 @@ export const presets = [
   },
   {
     name: '16-cellic',
-    params: ehoneycomb([3, 3, 4, 3], [1, 0, 0, 0, 0], null, {
-      grouper: 'toddcoxeter',
-    }),
+    params: ehoneycomb([3, 3, 4, 3], [1, 0, 0, 0, 0], null, {}),
   },
   {
     name: '24-cellic',
-    params: ehoneycomb([3, 4, 3, 3], [1, 0, 0, 0, 0], null, {
-      grouper: 'toddcoxeter',
-    }),
+    params: ehoneycomb([3, 4, 3, 3], [1, 0, 0, 0, 0], null, {}),
   },
   {
     name: '4-simpletic',
@@ -1198,9 +1187,7 @@ export const presets = [
         [2, 2, 3, 1, 3],
         [3, 2, 2, 3, 1],
       ],
-      [1, 0, 0, 0, 0],
-      null,
-      { grouper: 'toddcoxeter' }
+      [1, 0, 0, 0, 0]
     ),
   },
   {
@@ -1213,9 +1200,7 @@ export const presets = [
         [2, 2, 3, 1, 2],
         [2, 2, 3, 2, 1],
       ],
-      [1, 0, 0, 1, 0],
-      null,
-      { grouper: 'toddcoxeter' }
+      [1, 0, 0, 1, 0]
     ),
   },
   {
@@ -1776,9 +1761,7 @@ export const presets = [
   },
   {
     name: 'Order-5 dodecahedral',
-    params: honeycomb([5, 3, 5], [1, 0, 0, 0], null, {
-      grouper: 'toddcoxeter',
-    }),
+    params: honeycomb([5, 3, 5], [1, 0, 0, 0], null, {}),
   },
   {
     name: 'Alternated Order-5 cubic',
@@ -1803,9 +1786,7 @@ export const presets = [
       ],
       [1, 0, 0, 0],
       null,
-      {
-        grouper: 'toddcoxeter',
-      }
+      {}
     ),
   },
   {
@@ -1819,9 +1800,7 @@ export const presets = [
       ],
       [1, 0, 0, 0],
       null,
-      {
-        grouper: 'toddcoxeter',
-      }
+      {}
     ),
   },
   {
@@ -1835,9 +1814,7 @@ export const presets = [
       ],
       [1, 0, 0, 0],
       null,
-      {
-        grouper: 'toddcoxeter',
-      }
+      {}
     ),
   },
   {
@@ -1851,9 +1828,7 @@ export const presets = [
       ],
       [1, 0, 0, 0],
       null,
-      {
-        grouper: 'toddcoxeter',
-      }
+      {}
     ),
   },
   {
@@ -1867,9 +1842,7 @@ export const presets = [
       ],
       [1, 0, 0, 0],
       null,
-      {
-        grouper: 'toddcoxeter',
-      }
+      {}
     ),
   },
   {
@@ -1884,21 +1857,17 @@ export const presets = [
   {
     name: 'Triangular',
     params: honeycomb([3, 6, 3], [1, 0, 0, 0], null, {
-      grouper: 'toddcoxeter',
       easing: 'quintic',
       segments: 32,
     }),
   },
   {
     name: 'Hexagonal',
-    params: honeycomb([6, 3, 3], [1, 0, 0, 0], null, {
-      grouper: 'toddcoxeter',
-    }),
+    params: honeycomb([6, 3, 3], [1, 0, 0, 0], null, {}),
   },
   {
     name: 'Order-6 tetrahedral',
     params: honeycomb([3, 3, 6], [1, 0, 0, 0], null, {
-      grouper: 'toddcoxeter',
       easing: 'quintic',
       segments: 32,
     }),
@@ -1915,7 +1884,6 @@ export const presets = [
       [1, 0, 0, 0],
       null,
       {
-        grouper: 'toddcoxeter',
         easing: 'quintic',
         segments: 32,
       }
@@ -1923,9 +1891,7 @@ export const presets = [
   },
   {
     name: 'Order-5 hexagonal',
-    params: honeycomb([6, 3, 5], [1, 0, 0, 0], null, {
-      grouper: 'toddcoxeter',
-    }),
+    params: honeycomb([6, 3, 5], [1, 0, 0, 0], null, {}),
   },
   {
     name: 'Alternated Order-5 hexagonal',
@@ -1938,24 +1904,19 @@ export const presets = [
       ],
       [1, 0, 0, 0],
       null,
-      {
-        grouper: 'toddcoxeter',
-      }
+      {}
     ),
   },
   {
     name: 'Order-6 hexagonal',
     params: honeycomb([6, 3, 6], [0, 0, 0, 1], null, {
-      grouper: 'toddcoxeter',
       easing: 'quintic',
       segments: 32,
     }),
   },
   {
     name: 'Square',
-    params: honeycomb([4, 4, 3], [1, 0, 0, 0], null, {
-      grouper: 'toddcoxeter',
-    }),
+    params: honeycomb([4, 4, 3], [1, 0, 0, 0], null, {}),
   },
   {
     name: 'Alternated square',
@@ -1968,16 +1929,12 @@ export const presets = [
       ],
       [1, 0, 0, 0],
       null,
-      {
-        grouper: 'toddcoxeter',
-      }
+      {}
     ),
   },
   {
     name: 'Order-4 square',
-    params: honeycomb([4, 4, 4], [0, 1, 0, 0], null, {
-      grouper: 'toddcoxeter',
-    }),
+    params: honeycomb([4, 4, 4], [0, 1, 0, 0], null, {}),
   },
   {
     name: 'Tetrahedral square',
@@ -1990,9 +1947,7 @@ export const presets = [
       ],
       [0, 1, 0, 0],
       null,
-      {
-        grouper: 'toddcoxeter',
-      }
+      {}
     ),
   },
   {
@@ -2006,9 +1961,7 @@ export const presets = [
       ],
       [1, 0, 0, 0],
       null,
-      {
-        grouper: 'toddcoxeter',
-      }
+      {}
     ),
   },
   // {
@@ -2023,7 +1976,6 @@ export const presets = [
   //     [1, 0, 0, 0, 1],
   //     null,
   //     {
-  //       grouper: 'toddcoxeter',
   //       easing: 'quintic'
   //     }
   //   ),
@@ -2040,7 +1992,6 @@ export const presets = [
       [1, 0, 0, 0],
       null,
       {
-        grouper: 'toddcoxeter',
         easing: 'quintic',
         segments: 32,
       }
@@ -2057,9 +2008,7 @@ export const presets = [
       ],
       [1, 0, 0, 0],
       null,
-      {
-        grouper: 'toddcoxeter',
-      }
+      {}
     ),
   },
   {
@@ -2073,9 +2022,7 @@ export const presets = [
       ],
       [1, 0, 0, 0],
       null,
-      {
-        grouper: 'toddcoxeter',
-      }
+      {}
     ),
   },
   {
@@ -2089,9 +2036,7 @@ export const presets = [
       ],
       [1, 0, 0, 0],
       null,
-      {
-        grouper: 'toddcoxeter',
-      }
+      {}
     ),
   },
   {
@@ -2106,7 +2051,6 @@ export const presets = [
       [0, 0, 0, 1],
       null,
       {
-        grouper: 'toddcoxeter',
         easing: 'quintic',
         segments: 32,
       }
@@ -2123,9 +2067,7 @@ export const presets = [
       ],
       [1, 0, 0, 0],
       null,
-      {
-        grouper: 'toddcoxeter',
-      }
+      {}
     ),
   },
   {
@@ -2139,9 +2081,7 @@ export const presets = [
       ],
       [1, 0, 0, 0],
       null,
-      {
-        grouper: 'toddcoxeter',
-      }
+      {}
     ),
   },
   {
@@ -2155,9 +2095,7 @@ export const presets = [
       ],
       [1, 0, 0, 0],
       null,
-      {
-        grouper: 'toddcoxeter',
-      }
+      {}
     ),
   },
   {
@@ -2171,9 +2109,7 @@ export const presets = [
       ],
       [1, 0, 0, 1],
       null,
-      {
-        grouper: 'toddcoxeter',
-      }
+      {}
     ),
   },
   {
@@ -2187,9 +2123,7 @@ export const presets = [
       ],
       [1, 1, 0, 0],
       null,
-      {
-        grouper: 'toddcoxeter',
-      }
+      {}
     ),
   },
   {
@@ -2203,9 +2137,7 @@ export const presets = [
       ],
       [1, 1, 1, 1],
       null,
-      {
-        grouper: 'toddcoxeter',
-      }
+      {}
     ),
   },
   {
@@ -2225,21 +2157,18 @@ export const presets = [
   {
     name: '3-3-7',
     params: honeycomb([3, 3, 7], [1, 0, 0, 0], null, {
-      grouper: 'toddcoxeter',
       segments: 64,
     }),
   },
   {
     name: '3-4-7',
     params: honeycomb([3, 3, 7], [1, 0, 0, 0], null, {
-      grouper: 'toddcoxeter',
       segments: 64,
     }),
   },
   {
     name: '3-5-7',
     params: honeycomb([3, 5, 7], [1, 0, 0, 0], null, {
-      grouper: 'toddcoxeter',
       segments: 64,
     }),
   },

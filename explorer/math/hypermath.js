@@ -584,10 +584,11 @@ export const rotate = (offset, [i, j], dimensions, metric) => {
   return matrix
 }
 
-export const getStellationSphericalOppositeAngle = (a, b, c, stellation) => {
+export const getStellationOppositeAngle = (a, b, c, stellation) => {
   const A = PI / a
   const B = PI / b
   const C = PI / c
+  // Spherical triangle rules
   return round(
     PI /
       acos(

@@ -1,13 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import {
-  ambiances,
-  defaultParams,
-  defaultProjection,
-  details,
-  easings,
-  groupers,
-  projections,
-} from '../../statics'
+
 import { range } from '../../utils.js'
 import {
   centerViewIcon,
@@ -30,6 +22,10 @@ import Rotation from './Rotation.jsx'
 import Space from './Space'
 import { presets } from '../presets/index.jsx'
 import Shape from './Shape.jsx'
+import { ambiances } from '../ambiances.js'
+import { defaultProjection } from '../params.js'
+import { details, easings, projections } from '../../statics.js'
+import { defaultParams } from '../default.js'
 
 const getShowUI = () => {
   try {
@@ -44,6 +40,7 @@ export default function UI({
   runtime,
   params,
   rotations,
+  setRuntime,
   updateParams,
   updateRotations,
 }) {
@@ -346,6 +343,12 @@ export default function UI({
           )}
         </div>
         <div className="ui-row ui-row-middle">
+          <Shape
+            runtime={runtime}
+            setRuntime={setRuntime}
+            showUI={showUI}
+            updateParams={updateParams}
+          />
           {['advanced', 'full'].includes(showUI) && (
             <aside className="view">
               <Number
@@ -429,14 +432,6 @@ export default function UI({
                 : null}
             </aside>
           )}
-          {['advanced', 'full'].includes(showUI) && (
-            <Shape
-              shape={runtime.shape}
-              space={runtime.space}
-              full={showUI === 'full'}
-              updateParams={updateParams}
-            />
-          )}
         </div>
         <div className="ui-row ui-row-bottom">
           {['simple', 'advanced', 'full'].includes(showUI) ? (
@@ -451,34 +446,6 @@ export default function UI({
 
           {['advanced', 'full'].includes(showUI) && (
             <aside className="parameters">
-              {showUI === 'full' && (
-                <label className="select-label">
-                  Grouper
-                  <select
-                    name="grouper"
-                    value={params.grouper}
-                    onChange={handleRawChange}
-                  >
-                    {groupers.map(p => (
-                      <option key={p} value={p}>
-                        {p
-                          .replace(/_/g, ' ')
-                          .replace(/\b./g, c => c.toUpperCase())}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
-              {(showUI === 'full' || runtime.space?.curvature <= 0) && (
-                <Number
-                  name="order"
-                  label="Precision"
-                  min={1}
-                  step={1}
-                  value={params.order}
-                  onChange={handleChange}
-                />
-              )}
               <Number
                 name="segments"
                 label="Segments"
@@ -508,35 +475,33 @@ export default function UI({
                 </label>
               )}
               <Number
-                name="vertexThickness"
+                name="sizeVertex"
                 label="Vertices"
                 min={0}
                 step={1}
-                value={params.vertexThickness}
-                toggler={params.showVertices}
-                togglerName="showVertices"
+                value={params.sizeVertex}
+                toggler={params.drawVertex}
+                togglerName="drawVertex"
                 onChange={handleChange}
               />
               <Number
-                name="edgeThickness"
+                name="sizeEdge"
                 label="Edges"
                 min={0}
                 step={1}
-                value={params.edgeThickness}
-                toggler={params.showEdges}
-                togglerName="showEdges"
+                value={params.sizeEdge}
+                toggler={params.drawEdge}
+                togglerName="drawEdge"
                 onChange={handleChange}
               />
-              {['toddcoxeter', 'fundamental'].includes(runtime.grouper) && (
-                <label className="boolean-label">
-                  Faces
-                  <Boolean
-                    name="showFaces"
-                    value={params.showFaces}
-                    onChange={handleChange}
-                  />
-                </label>
-              )}
+              <label className="boolean-label">
+                Faces
+                <Boolean
+                  name="drawFace"
+                  value={params.drawFace}
+                  onChange={handleChange}
+                />
+              </label>
               <label className="select-label">
                 Ambiance
                 <select
@@ -565,16 +530,11 @@ export default function UI({
           {showUI === 'empty' ? <div className="spacer" /> : null}
           <button
             className={`space-button button${
-              runtime.processing ? ' processing' : ''
+              runtime.processing && !runtime.paused ? ' processing' : ''
             }${showUI === 'empty' ? ' empty' : ''}`}
             onClick={handleUI}
           >
             <Space {...(runtime.space || {})} dimensions={runtime.dimensions} />
-            {runtime.currentOrder < runtime.order ? (
-              <aside className="processing-counter">
-                {runtime.currentOrder}/{runtime.order}
-              </aside>
-            ) : null}
           </button>
         </div>
       </main>

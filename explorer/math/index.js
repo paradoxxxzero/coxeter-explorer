@@ -1,4 +1,6 @@
-import { getStellationSphericalOppositeAngle } from './hypermath'
+import { range } from '../../utils'
+import { isSnub } from '../mirrors'
+import { getStellationOppositeAngle } from './hypermath'
 
 export const {
   abs,
@@ -99,28 +101,159 @@ export const itoa = i => String.fromCharCode(97 + i)
 export const itor = i => String.fromCharCode(114 + i)
 export const atoi = a => a.charCodeAt(0) - 97
 
-export const getRels = (dimensions, coxeter, stellation, skips = []) => {
-  const rules = []
+export const getParams = (
+  dimensions,
+  coxeter,
+  stellation,
+  mirrors,
+  space,
+  skips = [],
+  superTransforms
+) => {
+  let gens = ''
 
-  for (let i = 0; i < dimensions; i++) {
-    if (!skips.includes(i)) {
-      rules.push(itoa(i).repeat(2))
+  const subgens = mirrors
+    .map((m, i) => (skips.includes(i) || m ? '' : itoa(i)))
+    .join('')
+
+  const transforms = superTransforms || {}
+
+  const rels = []
+
+  if (mirrors.every(m => isSnub(m))) {
+    // a = 01
+    // b = 02
+    // c = 12
+    // a^p = b^r = c^q = aBc (b = ac)
+    if (skips.length === dimensions - 1) {
+      const i =
+        dimensions === 2 ? 0 : range(dimensions).find(i => !skips.includes(i))
+      gens = itoa(i)
+      rels.push(gens.repeat(2))
+    } else {
+      let k = 0
+      for (let i = 0; i < dimensions; i++) {
+        for (let j = i + 1; j < dimensions; j++) {
+          const c = itoa(k)
+          if (!skips.includes(i) && !skips.includes(j)) {
+            gens += c
+            rels.push(c.repeat(coxeter[i][j]))
+            transforms[c] = [i, j]
+            if (i > 0 && !skips.includes(i - 1) && !skips.includes(j - 1)) {
+              rels.push(itoa(i - 1) + itoa(j - 1).toUpperCase() + c)
+            }
+          }
+          k++
+        }
+      }
     }
-  }
-  for (let i = 1; i < dimensions; i++) {
-    for (let j = 0; j < i; j++) {
-      if (!skips.includes(i) && !skips.includes(j)) {
-        const m = coxeter[i][j]
-        if (m > 1) {
-          rules.push((itoa(j) + itoa(i)).repeat(coxeter[i][j]))
+  } else if (mirrors.filter(m => isSnub(m)).length === 2) {
+    // a = 01, b = 2
+    const snubbeds = mirrors
+      .map((m, i) => (isSnub(m) ? i : null))
+      .filter(i => i !== null)
+
+    for (let i = 0; i < dimensions - 1; i++) {
+      if (!skips.includes(i)) {
+        const c = itoa(i)
+        gens += c
+        if (i === snubbeds[0]) {
+          transforms[c] = snubbeds
+          rels.push(c.repeat(coxeter[snubbeds[0]][snubbeds[1]]))
+        } else {
+          rels.push(c.repeat(2))
+          transforms[c] = [i]
+        }
+      }
+    }
+    if (skips.length === dimensions - 1) {
+      const i =
+        dimensions === 2 ? 0 : range(dimensions).find(i => !skips.includes(i))
+      gens = itoa(i)
+      rels.push(gens.repeat(2))
+    } else {
+      for (let i = 0; i < dimensions; i++) {
+        for (let j = i + 1; j < dimensions; j++) {
+          if (!skips.includes(i - 1) && !skips.includes(j - 1)) {
+            let m = coxeter[i][j]
+            if (i === snubbeds[0] || j === snubbeds[1] || j - i > 1 || m < 2) {
+              continue
+            }
+            if (m % 2 === 0) {
+              m /= 2
+            }
+            rels.push(
+              (
+                itoa(i - 1).toUpperCase() +
+                itoa(j - 1) +
+                itoa(i - 1) +
+                itoa(j - 1)
+              ).repeat(m)
+            )
+          }
+        }
+      }
+    }
+  } else if (mirrors.filter(m => isSnub(m)).length === 1) {
+    // Same group but with the snubbed generator making reverse mirror transform:
+    const snubbed = mirrors.findIndex(m => isSnub(m))
+    const pair = (snubbed + 1) % dimensions
+    for (let i = 0; i < dimensions; i++) {
+      if (!skips.includes(i)) {
+        const c = itoa(i)
+        gens += c
+        rels.push(c.repeat(2))
+        if (i === snubbed) {
+          transforms[c] = [snubbed, pair, snubbed]
+        } else {
+          transforms[c] = [i]
+        }
+      }
+    }
+    for (let i = 0; i < dimensions; i++) {
+      for (let j = i + 1; j < dimensions; j++) {
+        if (!skips.includes(i) && !skips.includes(j)) {
+          let m = coxeter[i][j]
+          if (m < 2) {
+            continue
+          }
+          if ((i === snubbed && j === pair) || (i === pair && j === snubbed)) {
+            if (m % 2 === 0) {
+              m /= 2
+            }
+            rels.push((itoa(i) + itoa(j)).repeat(m))
+          } else {
+            if (j - i > 1) {
+              m = coxeter[j - 1][j]
+            }
+            rels.push((itoa(i) + itoa(j)).repeat(m))
+          }
+        }
+      }
+    }
+  } else {
+    for (let i = 0; i < dimensions; i++) {
+      if (!skips.includes(i)) {
+        const c = itoa(i)
+        gens += c
+        rels.push(c.repeat(2))
+        transforms[c] = [i]
+      }
+    }
+    for (let i = 0; i < dimensions; i++) {
+      for (let j = i + 1; j < dimensions; j++) {
+        if (!skips.includes(i) && !skips.includes(j)) {
+          const m = coxeter[i][j]
+          if (m > 1) {
+            rels.push((itoa(i) + itoa(j)).repeat(m))
+          }
         }
       }
     }
   }
   if (
-    !skips.length && // TODO: Fix skips
-    stellation &&
-    !stellation.every(row => row.every(x => x === 1))
+    !stellation.every(row => row.every(x => x === 1)) &&
+    space.curvature > 0
   ) {
     // TODO: Improve generalization
     if (
@@ -130,73 +263,79 @@ export const getRels = (dimensions, coxeter, stellation, skips = []) => {
       coxeter[2][3] > 3
     ) {
       /// ?????????
-      if (stellation[0][1] > 1) {
-        rules.push(
-          'abcdcb'.repeat(
-            getStellationSphericalOppositeAngle(
-              coxeter[0][1],
-              coxeter[1][2],
-              coxeter[0][2],
-              stellation[0][1]
+      if (![0, 1, 2, 3].some(i => skips.includes(i))) {
+        if (stellation[0][1] > 1) {
+          rels.push(
+            'abcdcb'.repeat(
+              getStellationOppositeAngle(
+                coxeter[0][1],
+                coxeter[1][2],
+                coxeter[0][2],
+                stellation[0][1]
+              )
             )
           )
-        )
-      }
-      if (stellation[2][3] > 1) {
-        rules.push(
-          'abcdcb'.repeat(
-            getStellationSphericalOppositeAngle(
-              coxeter[2][3],
-              coxeter[1][2],
-              coxeter[1][3],
-              stellation[2][3]
+        }
+        if (stellation[2][3] > 1) {
+          rels.push(
+            'abcdcb'.repeat(
+              getStellationOppositeAngle(
+                coxeter[2][3],
+                coxeter[1][2],
+                coxeter[1][3],
+                stellation[2][3]
+              )
             )
           )
-        )
+        }
       }
     } else {
       for (let i = 1; i < dimensions; i++) {
         for (let j = 0; j < i; j++) {
           if (stellation[j][i] > 1) {
             if (j + 2 < dimensions) {
-              const angle = getStellationSphericalOppositeAngle(
+              const angle = getStellationOppositeAngle(
                 coxeter[j + 1][i + 1],
                 coxeter[j][i],
                 coxeter[j][i + 1],
                 stellation[j][i]
               )
-              rules.push(
-                (itoa(j) + itoa(i) + itoa(j + 2) + itoa(i)).repeat(angle)
-              )
+              if (
+                angle &&
+                !skips.includes(j) &&
+                !skips.includes(i) &&
+                !skips.includes(j + 2)
+              ) {
+                rels.push(
+                  (itoa(j) + itoa(i) + itoa(j + 2) + itoa(i)).repeat(angle)
+                )
+              }
             }
             if (j - 1 >= 0) {
-              const angle = getStellationSphericalOppositeAngle(
+              const angle = getStellationOppositeAngle(
                 coxeter[j - 1][i - 1],
                 coxeter[j][i],
                 coxeter[j - 1][i],
                 stellation[j][i]
               )
-              rules.push(
-                (itoa(j) + itoa(i) + itoa(j) + itoa(j - 1)).repeat(angle)
-              )
+              if (
+                angle &&
+                !skips.includes(j) &&
+                !skips.includes(i) &&
+                !skips.includes(j - 1)
+              ) {
+                rels.push(
+                  (itoa(j) + itoa(i) + itoa(j) + itoa(j - 1)).repeat(angle)
+                )
+              }
             }
           }
         }
       }
     }
   }
-  return rules
+  return { gens, subgens, rels, transforms }
 }
-
-export const getBaseRules = (dimensions, coxeter, stellation, mirrors) =>
-  Object.fromEntries(
-    getRels(
-      dimensions,
-      coxeter,
-      /*stellation,*/
-      null
-    ).map(r => [r, ''])
-  )
 
 export const factorial = n => (n ? n * factorial(n - 1) : 1)
 export const binomial = (n, k) =>

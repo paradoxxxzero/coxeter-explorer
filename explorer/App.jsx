@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { filterParams } from '../statics'
+import { filterParams } from './params'
 import Runtime from './components/Runtime'
 import UI from './components/UI'
 import { getRotations } from './math/hypermath'
@@ -9,17 +9,14 @@ export default function App({ params, updateParams }) {
   const [runtime, setRuntime] = useState({
     ...params,
 
-    currentOrder: 0,
-    askedOrder: null,
     space: null,
     shape: null,
-    rootNormals: null,
-    rootVertices: null,
-    vertex: [],
-    edge: [],
-    ranges: [],
-    face: [],
     processing: true,
+
+    iteration: 0,
+    polytope: [],
+    shaper: null,
+    paused: false,
     error: null,
   })
 
@@ -65,18 +62,6 @@ export default function App({ params, updateParams }) {
     }
   }, [params.dimensions, runtime.space])
 
-  useEffect(() => {
-    setRuntime(rt => {
-      if (params.grouper === '' && rt.grouper.startsWith('auto-')) {
-        return rt
-      }
-      return {
-        ...rt,
-        grouper: params.grouper,
-      }
-    })
-  }, [params.grouper])
-
   const updateRotations = useCallback(
     (key, value) => {
       setRotations(rotations => ({
@@ -93,6 +78,7 @@ export default function App({ params, updateParams }) {
         runtime={runtime}
         params={params}
         rotations={rotations}
+        setRuntime={setRuntime}
         updateRotations={updateRotations}
         updateParams={updateParams}
       />

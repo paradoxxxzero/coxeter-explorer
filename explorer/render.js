@@ -1,18 +1,11 @@
 import Stats from 'stats.js'
-import { ambiances } from '../statics'
 import { resizeCanvasToDisplaySize } from './helpers'
 import { PI, min, tan } from './math'
-import {
-  columnMajor,
-  frustum,
-  ident,
-  inverse,
-  lookAt,
-  multiply,
-} from './math/matrix'
+import { columnMajor, frustum, ident, inverse, multiply } from './math/matrix'
 import getMeshes from './meshes'
 import getPasses from './passes'
 import refreshTextures from './textures'
+import { ambiances } from './ambiances'
 
 const showStats = window.location.search.includes('stats')
 let stats
@@ -124,49 +117,6 @@ export const initializeGl = rt => {
   }
 }
 
-export const show = (rt, name) => {
-  rt.meshes[name].visible =
-    rt[
-      name === 'vertex'
-        ? 'showVertices'
-        : name === 'edge'
-        ? 'showEdges'
-        : 'showFaces'
-    ]
-}
-
-export const plot = (rt, order = null) => {
-  if (rt.currentOrder === 0) {
-    return
-  }
-  if (
-    (order === null && rt.ranges.length === 0) ||
-    (order !== null && order >= rt.ranges.length)
-  ) {
-    return
-  }
-  const ranges =
-    order !== null
-      ? rt.ranges[order]
-      : {
-          vertex: [
-            rt.ranges[0].vertex[0],
-            rt.ranges[rt.currentOrder - 1].vertex[1],
-          ],
-          edge: [rt.ranges[0].edge[0], rt.ranges[rt.currentOrder - 1].edge[1]],
-          face: [rt.ranges[0].face[0], rt.ranges[rt.currentOrder - 1].face[1]],
-        }
-  rt.meshes.plot(rt, ranges)
-
-  document.title = `Coxeter Explorer - ${
-    rt.space.type === 'finite' ? 'S' : rt.space.type === 'affine' ? 'E' : 'H'
-  }^${rt.dimensions} ${
-    rt.currentOrder < rt.order ? `(${rt.currentOrder}/${rt.order})…` : ''
-  }- ${rt.vertex.length} vertices, ${rt.edge.length} edges, ${
-    rt.face.length
-  } faces`
-}
-
 export const updateCamera = (rt, zoom = null) => {
   rt.camera.fov = rt.fov3 ? (PI * rt.fov3) / 180 : 1
   if (zoom !== null) {
@@ -230,9 +180,9 @@ export const render = (rt, forceSize) => {
 
   // TRANSPARENT
   if (
-    (rt.showVertices && ambiance.transparent.vertex) ||
-    (rt.showEdges && ambiance.transparent.edge) ||
-    (rt.showFaces && ambiance.transparent.face)
+    (rt.drawVertex && ambiance.transparent.vertex) ||
+    (rt.drawEdge && ambiance.transparent.edge) ||
+    (rt.drawFace && ambiance.transparent.face)
   ) {
     if (ambiance.transparency === 'oit') {
       if (msaa) {

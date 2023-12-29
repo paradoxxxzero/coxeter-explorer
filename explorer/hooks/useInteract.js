@@ -3,6 +3,7 @@ import { PI, abs, hypot, log, max, min, pow } from '../math'
 import { rotate } from '../math/hypermath'
 import { columnMajor, multiply, set } from '../math/matrix'
 import { render, updateCamera } from '../render'
+import { types } from '../../statics'
 // import { hyperMaterials } from '../shader/hyperMaterial'
 
 const zoomSpeed = 0.9
@@ -127,142 +128,59 @@ export const useInteract = (
     animation.current.zoom = null
   }, [runtime.zoom])
 
-  const quickUpdateMatrix = useCallback(() => {
-    if (runtime.matrix._reset) {
-      return
-    }
-    const meshes = ['vertex', 'edge', 'face']
-    for (let i = 0; i < meshes.length; i++) {
-      runtime.meshes[meshes[i]].uniforms.matrix.update(
-        columnMajor(local.current.matrix)
-      )
-    }
+  const quickUpdate = useCallback(
+    ({ matrix, zoom } = { matrix: true, zoom: true }) => {
+      if (runtime.matrix._reset) {
+        return
+      }
+      if (matrix) {
+        for (let i = 0; i < types.length; i++) {
+          runtime.meshes[types[i]].uniforms.matrix.update(
+            columnMajor(local.current.matrix)
+          )
+        }
+      }
+      if (zoom) {
+        updateCamera(runtime, local.current.zoom)
+      }
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    // Stop rendering when these change
-    runtime.ambiance,
-    // runtime.askedOrder,
-    runtime.camera,
-    runtime.centered,
-    // runtime.controls,
-    runtime.coxeter,
-    // runtime.currentOrder,
-    runtime.curve,
-    runtime.dimensions,
-    runtime.easing,
-    // runtime.edge,
-    runtime.edgeThickness,
-    runtime.error,
-    // runtime.extended,
-    // runtime.face,
-    // runtime.fb,
-    runtime.fov3,
-    runtime.fov4,
-    runtime.fov5,
-    runtime.fov6,
-    runtime.fov7,
-    runtime.fov8,
-    runtime.fov9,
-    // runtime.gl,
-    runtime.grouper,
-    // runtime.detail,
-    // runtime.matrix,
-    // runtime.meshes,
-    // runtime.mirrors,
-    // runtime.rootNormals,
-    runtime.msaa,
-    runtime.msaaSamples,
-    // runtime.order,
-    // runtime.passes,
-    // runtime.processing,
-    runtime.projection3,
-    runtime.projection4,
-    runtime.projection5,
-    runtime.projection6,
-    runtime.projection7,
-    runtime.projection8,
-    runtime.projection9,
-    // runtime.ranges,
-    // runtime.rb,
-    // runtime.rootVertices,
-    runtime.segments,
-    runtime.showEdges,
-    runtime.showFaces,
-    runtime.showVertices,
-    runtime.space,
-    runtime.shape,
-    runtime.stellation,
-    runtime.subsampling,
-    runtime.vertexThickness,
-    // runtime.vertex,
-    runtime.zoom,
-  ])
-
-  const quickUpdateZoom = useCallback(() => {
-    if (runtime.matrix._reset) {
-      return
-    }
-    updateCamera(runtime, local.current.zoom)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    // Stop rendering when these change
-    runtime.ambiance,
-    // runtime.askedOrder,
-    runtime.camera,
-    runtime.centered,
-    // runtime.controls,
-    runtime.coxeter,
-    // runtime.currentOrder,
-    runtime.curve,
-    runtime.dimensions,
-    runtime.easing,
-    // runtime.edge,
-    runtime.edgeThickness,
-    runtime.error,
-    // runtime.extended,
-    // runtime.face,
-    // runtime.fb,
-    runtime.fov3,
-    runtime.fov4,
-    runtime.fov5,
-    runtime.fov6,
-    runtime.fov7,
-    runtime.fov8,
-    runtime.fov9,
-    // runtime.gl,
-    runtime.grouper,
-    // runtime.detail,
-    // runtime.matrix,
-    // runtime.meshes,
-    // runtime.mirrors,
-    // runtime.rootNormals,
-    runtime.msaa,
-    runtime.msaaSamples,
-    // runtime.order,
-    // runtime.passes,
-    // runtime.processing,
-    runtime.projection3,
-    runtime.projection4,
-    runtime.projection5,
-    runtime.projection6,
-    runtime.projection7,
-    runtime.projection8,
-    runtime.projection9,
-    // runtime.ranges,
-    // runtime.rb,
-    // runtime.rootVertices,
-    runtime.segments,
-    runtime.showEdges,
-    runtime.showFaces,
-    runtime.showVertices,
-    runtime.space,
-    runtime.shape,
-    runtime.stellation,
-    runtime.subsampling,
-    runtime.vertexThickness,
-    // runtime.vertex,
-    runtime.zoom,
-  ])
+    [
+      // Stop rendering when these change
+      runtime.ambiance,
+      runtime.camera,
+      runtime.centered,
+      runtime.coxeter,
+      runtime.curve,
+      runtime.dimensions,
+      runtime.drawVertex,
+      runtime.drawEdge,
+      runtime.drawFace,
+      runtime.easing,
+      runtime.error,
+      runtime.fov3,
+      runtime.fov4,
+      runtime.fov5,
+      runtime.fov6,
+      runtime.fov7,
+      runtime.fov8,
+      runtime.fov9,
+      runtime.msaa,
+      runtime.msaaSamples,
+      runtime.projection3,
+      runtime.projection4,
+      runtime.projection5,
+      runtime.projection6,
+      runtime.projection7,
+      runtime.projection8,
+      runtime.projection9,
+      runtime.segments,
+      runtime.space,
+      runtime.stellation,
+      runtime.subsampling,
+      runtime.zoom,
+    ]
+  )
 
   useEffect(() => {
     animation.current.speed = new Array(rotations.combinations.length).fill(0)
@@ -312,7 +230,7 @@ export const useInteract = (
       }
     }
     if (changed) {
-      quickUpdateMatrix()
+      quickUpdate({ matrix: true })
     }
 
     if (zoom) {
@@ -330,7 +248,7 @@ export const useInteract = (
         animation.current.zoom = null
       }
       changed = true
-      quickUpdateZoom()
+      quickUpdate({ zoom: true })
     }
     if (
       speed.reduce((a, b) => abs(a) + abs(b), 0) === 0 &&
@@ -348,7 +266,7 @@ export const useInteract = (
     animation.current.t = performance.now()
     loop.current = requestAnimationFrame(animate)
   }, [
-    quickUpdateMatrix,
+    quickUpdate,
     rotations.auto,
     rotations.combinations,
     runtime.dimensions,
@@ -457,7 +375,7 @@ export const useInteract = (
           loop.current = requestAnimationFrame(animate)
         }
       }
-      quickUpdateMatrix()
+      quickUpdate({ matrix: true })
     }
 
     const onUp = e => {
@@ -495,7 +413,7 @@ export const useInteract = (
     runtime.camera,
 
     animate,
-    quickUpdateMatrix,
+    quickUpdate,
   ])
 
   useEffect(() => {
@@ -513,14 +431,14 @@ export const useInteract = (
           updateRotations
         )
       ) {
-        quickUpdateMatrix()
+        quickUpdate({ matrix: true })
         render(runtime)
       }
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [
-    quickUpdateMatrix,
+    quickUpdate,
     rotations,
     runtime.space,
     runtime.dimensions,

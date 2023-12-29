@@ -1,4 +1,4 @@
-import { ambiances } from '../statics'
+import { ambiances } from './ambiances'
 import { storage, texture } from './helpers'
 import { min } from './math'
 

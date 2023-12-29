@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import CoxeterDiagram from '../explorer/components/CoxeterDiagram'
 import CoxeterMatrix from '../explorer/components/CoxeterMatrix'
-import { normalizeCoxeter } from '../statics'
+import { normalizeCoxeter } from '../explorer/params'
 
 export default function CoxeterDiagramGenerator() {
   const [params, setParams] = useState({

@@ -1,6 +1,8 @@
 // From https://pi.math.cornell.edu/~kbrown/7350/toddcox.pdf
 // (https://math.berkeley.edu/~kmill/tools/tc.html)
 
+import { reflect } from './hypermath'
+
 const invertCase = c => {
   const C = c.toUpperCase()
   return c === C ? c.toLowerCase() : C
@@ -8,13 +10,15 @@ const invertCase = c => {
 
 const quotient = (params, cosetId) => {
   let minimalCosetId = cosetId
+  let indirections = 0
   while (params.quotientMap[minimalCosetId]) {
+    indirections++
     minimalCosetId = params.quotientMap[minimalCosetId]
   }
   // Improve performance by caching but decrease memory efficiency
-  // if (minimalCosetId !== cosetId) {
-  //   params.quotientMap[cosetId] = minimalCosetId
-  // }
+  if (indirections > 1) {
+    params.quotientMap[cosetId] = minimalCosetId
+  }
   return minimalCosetId
 }
 
@@ -23,6 +27,9 @@ const resolveCoincidence = (params, cosetId, otherCosetId) => {
   const remaining = [[cosetId, otherCosetId]]
   while (remaining.length > 0) {
     ;[cosetId, otherCosetId] = remaining.pop()
+    if (cosetId > otherCosetId) {
+      ;[cosetId, otherCosetId] = [otherCosetId, cosetId]
+    }
     cosetId = quotient(params, cosetId)
     otherCosetId = quotient(params, otherCosetId)
 
@@ -33,6 +40,7 @@ const resolveCoincidence = (params, cosetId, otherCosetId) => {
       }
       const coset = params.cosets.get(cosetId)
       const otherCoset = params.cosets.get(otherCosetId)
+
       params.cosets.delete(otherCosetId)
 
       for (const [generator, otherCosetTargetCosetId] of otherCoset) {
@@ -88,45 +96,75 @@ const scan = function (params, relators, cosetId) {
   follow(params, currentCosetId, relators[0], cosetId)
 }
 
-const words = function (params, gens) {
-  const start = quotient(params, 1)
-  const names = new Map()
-  names.set(start, '')
+const words = function (params) {
+  if (!params.words) {
+    const start = quotient(params, 1)
+    params.words = new Map()
+    params.words.set(start, '')
+    params.currentWords = new Map()
+    params.currentWords.set(start, '')
+    params.lastWord = ''
+    params.lastCoset = start
+    params.remaining = [start]
+    if (params.rootVertex && params.rootNormals && params.metric) {
+      params.vertices = new Map()
+      params.vertices.set(start, params.rootVertex)
+    }
+  }
 
-  const remaining = [start]
-  while (remaining.length > 0) {
-    const rawCosetId = remaining.shift()
+  while (params.remaining.length > 0) {
+    const rawCosetId = params.remaining[0]
     const cosetId = quotient(params, rawCosetId)
+    const coset = params.cosets.get(cosetId)
+    const word = params.words.get(cosetId)
 
-    for (let i = 0; i < gens.length; i++) {
-      const generator = gens[i]
-      const coset = params.cosets.get(cosetId)
+    if (coset.size < params.gens.length * 2) {
+      // Might be a coincidence stop here
+      return
+    }
 
-      if (coset.size < params.gens.length * 2) {
-        // Might be a coincidence stop here
-        return names
-      }
+    const genCoset = []
+    for (let i = 0; i < params.gens.length; i++) {
+      const generator = params.gens[i]
 
       const nextCosetId = quotient(params, coset.get(generator))
-      if (!names.has(nextCosetId)) {
+      if (!params.words.has(nextCosetId)) {
         const nextCoset = params.cosets.get(nextCosetId)
         if (nextCoset.size < params.gens.length * 2) {
           // Might be a coincidence stop here
-          return names
+          return
         }
-        names.set(nextCosetId, generator + names.get(cosetId))
-        remaining.push(nextCosetId)
+        genCoset.push([generator, nextCosetId])
+      }
+    }
+
+    params.remaining.shift()
+
+    for (let i = 0; i < genCoset.length; i++) {
+      const [generator, nextCosetId] = genCoset[i]
+
+      const newWord = generator + word
+      params.words.set(nextCosetId, newWord)
+      params.currentWords.set(nextCosetId, newWord)
+      params.lastCoset = nextCosetId
+      params.lastWord = newWord
+      params.remaining.push(nextCosetId)
+      if (params.vertices) {
+        let vertex = params.vertices.get(cosetId)
+        for (let j = 0; j < params.transforms[generator].length; j++) {
+          const idx = params.transforms[generator][j]
+          vertex = reflect(vertex, params.rootNormals[idx], params.metric)
+        }
+        params.vertices.set(nextCosetId, vertex)
       }
     }
   }
-  return names
 }
 
 export const wordToCoset = (params, word) => {
   // Start at 1
-  let cosetId = 1
+  let cosetId = quotient(params, 1)
   for (let i = word.length - 1; i >= 0; i--) {
-    cosetId = quotient(params, cosetId)
     const coset = params.cosets.get(cosetId)
     if (coset.size < params.gens.length * 2) {
       return
@@ -179,13 +217,13 @@ const iter = params => {
     }
 
     // (1) Scan the coset under all generators
-    for (let i = 0; i < params.gens.length; i++) {
-      follow(params, coset, params.gens[i].toUpperCase())
-      follow(params, coset, params.gens[i])
+    for (let j = 0; j < params.gens.length; j++) {
+      follow(params, coset, params.gens[j].toUpperCase())
+      follow(params, coset, params.gens[j])
     }
     // (2) Scan the coset under all relators
-    for (let i = 0; i < params.rels.length; i++) {
-      scan(params, params.rels[i], coset)
+    for (let j = 0; j < params.rels.length; j++) {
+      scan(params, params.rels[j], coset)
     }
   }
 }
@@ -197,7 +235,6 @@ export const countCosets = params => {
 
 export const ToddCoxeter = params => {
   iter(params)
-  params.verticesWords = words(params, params.gens)
-  params.words = Array.from(params.verticesWords.values())
+  words(params)
   return params
 }

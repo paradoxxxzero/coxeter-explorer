@@ -1,133 +1,43 @@
-import { useEffect, useRef } from 'react'
-import { coxeterToGram, getGeometry, getSpace } from '../math/hypermath'
-import { killRunningWorkers, workers } from '../workers/worker'
-import { getShape } from '../math/shape'
-
-const asyncProcess = async (runtime, running, setRuntime) => {
-  // Rules gets computed on non stellated coxeter group
-  const worker = workers[runtime.grouper.replace(/^auto-/, '')]
-  if (runtime.currentOrder === 0) {
-    killRunningWorkers()
-    running.current = false
-  }
-  if (running.current === runtime.currentOrder) {
-    console.info('already processing at ', runtime.currentOrder)
-    return
-  }
-  try {
-    running.current = runtime.currentOrder
-    const { vertices, edges, faces, partials, order } = await worker.process({
-      order: runtime.currentOrder,
-      coxeter: runtime.coxeter,
-      stellation: runtime.stellation,
-      metric: runtime.space.metric,
-      curvature: runtime.space.curvature,
-      mirrors: runtime.mirrors,
-      rootNormals: runtime.rootNormals,
-      rootVertices: runtime.rootVertices,
-      dimensions: runtime.dimensions,
-    })
-    running.current = false
-    setRuntime(runtime => {
-      if (runtime.currentOrder !== order) {
-        console.warn('Mismatched order, ignoring', runtime.currentOrder, order)
-        return runtime
-      }
-      return {
-        ...runtime,
-        ranges: [
-          ...runtime.ranges,
-          {
-            vertex: [
-              runtime.vertex.length,
-              runtime.vertex.length + vertices.length,
-            ],
-            edge: [runtime.edge.length, runtime.edge.length + edges.length],
-            face: [runtime.face.length, runtime.face.length + faces.length],
-          },
-        ],
-        vertex: runtime.vertex.concat(vertices),
-        edge: runtime.edge.concat(edges),
-        face: runtime.face.concat(faces),
-        partial: partials,
-        currentOrder: order + 1,
-        processing: false,
-        error: null,
-      }
-    })
-  } catch (e) {
-    // Change current order to allow user to retry
-    running.current = false
-    console.error(e)
-    const newRuntime = {
-      ...runtime,
-
-      currentOrder: runtime.order,
-      error: e.message,
-      processing: false,
-    }
-    setRuntime(newRuntime)
-  }
-}
+import { useEffect } from 'react'
+import {
+  coxeterToGram,
+  getGeometry,
+  getSpace,
+  normalize,
+} from '../math/hypermath'
+import { multiplyVector } from '../math/matrix'
+import { mirrorValue } from '../mirrors'
+import Shaper from '../workers/shape.worker?worker'
 
 export const useProcess = (runtime, setRuntime) => {
-  const running = useRef(false)
-
-  useEffect(() => {
-    setRuntime(runtime => {
-      if (runtime.order < runtime.currentOrder) {
-        return {
-          ...runtime,
-          currentOrder: runtime.order,
-        }
-      }
-      return runtime
-    })
-  }, [runtime.order, runtime.currentOrder, setRuntime])
-
   useEffect(() => {
     setRuntime(runtime => {
       const gram = coxeterToGram(runtime.coxeter, runtime.stellation)
       // const cartan = multiplyScalar(gram, 2)
 
       const space = getSpace(gram)
-      const shape = getShape(
-        runtime.dimensions,
-        runtime.coxeter,
-        runtime.stellation,
-        runtime.mirrors
-      )
-      if (!space) {
-        return {
-          ...runtime,
-          space,
-          shape,
-        }
-      }
 
       const { vertices: rootVertices, normals: rootNormals } = getGeometry(
         space,
         runtime.centered
       )
+      // Handle no mirrors = fundamental
+      const mirrors = runtime.mirrors.every(m => !m)
+        ? runtime.mirrors.map(() => 1)
+        : runtime.mirrors.map(v => mirrorValue(v))
+      const rootVertex = normalize(
+        multiplyVector(rootVertices, mirrors),
+        space.metric
+      )
+      space.rootVertex = rootVertex
+      space.rootVertices = rootVertices
+      space.rootNormals = rootNormals
 
-      const newRuntime = {
+      return {
         ...runtime,
-        currentOrder: 0,
-        vertex: [],
-        edge: [],
-        face: [],
-        partial: [],
-        ranges: [],
         space,
-        shape,
-        rootNormals,
-        rootVertices,
-        processing: true,
         error: null,
       }
-
-      asyncProcess(newRuntime, running, setRuntime)
-      return newRuntime
     })
   }, [
     runtime.dimensions,
@@ -135,34 +45,149 @@ export const useProcess = (runtime, setRuntime) => {
     runtime.mirrors,
     runtime.stellation,
     runtime.centered,
-    runtime.grouper,
     setRuntime,
   ])
 
   useEffect(() => {
     setRuntime(runtime => {
-      if (runtime.currentOrder === 0) {
+      const newRuntime = {
+        ...runtime,
+        iteration: -1,
+        paused: false,
+      }
+      if (runtime.processing) {
+        runtime.shaper?.terminate()
+        newRuntime.shaper = new Shaper()
+      }
+      return newRuntime
+    })
+  }, [
+    runtime.space,
+    runtime.ambiance,
+    runtime.drawVertex,
+    runtime.drawEdge,
+    runtime.drawFace,
+    runtime.hidden,
+    setRuntime,
+  ])
+
+  useEffect(() => {
+    setRuntime(runtime => {
+      const newRuntime = {
+        ...runtime,
+      }
+      if (runtime.polytope.size > runtime.limit) {
+        newRuntime.paused = true
+      }
+      return newRuntime
+    })
+  }, [runtime.polytope.size, runtime.limit, setRuntime])
+
+  useEffect(() => {
+    setRuntime(runtime => ({
+      ...runtime,
+      paused: false,
+    }))
+  }, [runtime.limit, setRuntime])
+
+  useEffect(() => {
+    setRuntime(runtime => {
+      if (!runtime.iteration < 0) {
         return runtime
       }
-      if (runtime.order <= runtime.currentOrder) {
-        return runtime
-      }
-      if (runtime.ranges?.[runtime.order]) {
-        return {
-          ...runtime,
-          currentOrder: runtime.order,
-          askedOrder: null,
-        }
-      }
-      asyncProcess(runtime, running, setRuntime)
+
+      runtime.shaper.postMessage({
+        first: runtime.iteration === -1,
+        space: runtime.space,
+        dimensions: runtime.dimensions,
+        coxeter: runtime.coxeter,
+        stellation: runtime.stellation,
+        mirrors: runtime.mirrors,
+        ambiance: runtime.ambiance,
+        draw: {
+          vertex: runtime.drawVertex,
+          edge: runtime.drawEdge,
+          face: runtime.drawFace,
+        },
+        batch: runtime.batch,
+        hidden: runtime.hidden,
+      })
       return {
         ...runtime,
-        error: null,
+        iteration: runtime.iteration === -1 ? 0 : runtime.iteration,
         processing: true,
       }
     })
+  }, [
+    runtime.iteration,
+    runtime.limit,
+    runtime.ambiance,
+    runtime.drawVertex,
+    runtime.drawEdge,
+    runtime.drawFace,
+    runtime.shaper,
+    runtime.space,
+    runtime.hidden,
+    setRuntime,
+  ])
 
-    // Can't have ranges here
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setRuntime, runtime.order, runtime.currentOrder])
+  useEffect(() => {
+    setRuntime(runtime => ({
+      ...runtime,
+      iteration: runtime.paused ? runtime.iteration : runtime.iteration + 1,
+    }))
+  }, [runtime.paused, setRuntime])
+
+  useEffect(() => {
+    if (!runtime.shaper) {
+      return
+    }
+    const handleShape = ({ data }) => {
+      if (!data.error) {
+        setRuntime(runtime => {
+          for (let i = 0; i < data.infos.length; i++) {
+            const mesh = runtime.meshes[runtime.meshes.meshes[i]]
+            const info = data.infos[i]
+            if (!info) {
+              mesh.count = 0
+              continue
+            }
+
+            mesh.count = info.start + info.size
+            if (mesh.instances < mesh.count) {
+              mesh.extendAttributes(mesh.count)
+            }
+
+            mesh.attributes.color.update(data.data[i][0], info.start, info.size)
+
+            for (let j = 0; j < mesh.varying.length; j++) {
+              const attr = mesh.varying[j]
+              mesh.attributes[attr].update(
+                data.data[i][j + 1],
+                info.start,
+                info.size
+              )
+            }
+          }
+
+          return {
+            ...runtime,
+            processing: !data.polytope.done,
+            iteration:
+              runtime.paused || data.polytope.done
+                ? runtime.iteration
+                : runtime.iteration + 1,
+            polytope: data.polytope,
+          }
+        })
+      } else {
+        console.error(data.error)
+      }
+    }
+
+    runtime.shaper.addEventListener('message', handleShape)
+    return () => {
+      runtime.shaper.removeEventListener('message', handleShape)
+    }
+  }, [runtime.shaper, runtime.paused, setRuntime])
 }

@@ -34,17 +34,6 @@ canvas,
   height: 100%;
 }
 
-aside {
-  pointer-events: none;
-}
-aside input,
-aside button,
-aside label,
-aside select,
-aside svg {
-  pointer-events: all;
-}
-
 label {
   white-space: nowrap;
 }
@@ -111,7 +100,6 @@ select option {
 }
 .space-button.empty {
   font-size: 1.5em;
-  align-self: flex-end;
 }
 
 .space-button .processing-counter {
@@ -160,14 +148,20 @@ select option {
   box-sizing: border-box;
   pointer-events: none;
 }
+
+.ui input,
+.ui button,
+.ui label,
+.ui select,
+.ui svg {
+  pointer-events: all;
+}
+
 .ui-row {
   display: flex;
   flex-wrap: nowrap;
   flex-direction: row;
   justify-content: space-between;
-}
-.ui-row > * {
-  pointer-events: all;
 }
 .ui-row-top {
   align-items: flex-start;
@@ -176,6 +170,7 @@ select option {
   flex: 1;
   align-items: center;
   min-height: 0;
+  flex-direction: row-reverse;
 }
 .ui-row-bottom {
   align-items: flex-end;
@@ -237,6 +232,7 @@ select option {
 }
 .subcontrols button {
   margin: 0.25em;
+  font-size: 2em;
 }
 
 .parameters {
@@ -284,43 +280,62 @@ select option {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  margin: 0.5em 0;
   max-height: 100%;
+  position: relative;
+}
+
+.shape-info {
+  display: grid;
+  grid-template-columns: auto max-content auto;
   overflow-y: auto;
   overflow-x: hidden;
+  font-size: 0.9em;
+  gap: 0.25em 1em;
 }
-.shape-level {
+
+.shape-info-expanded {
+  grid-template-columns: auto max-content auto max-content 1fr;
+}
+
+.shape-count,
+.shape-icon {
   display: flex;
-  flex-direction: row;
   align-items: center;
-  margin: 0.25em 0;
 }
-.shape-level > svg {
+
+.shape-count {
+  justify-content: flex-end;
+}
+
+.shape-detail-count {
+  justify-content: center;
+}
+
+.shape-icon svg {
   width: 1.5em;
   height: 1.5em;
-  margin-right: 0.25em;
 }
-.shape-count {
-  min-width: 4ch;
-  text-align: center;
+.shape-hidden {
+  font-size: 1.25em;
 }
-.shape-detail {
-  margin-left: 0.5em;
-  padding-left: 0.5em;
+.shape-split {
+  border-right: 1px solid rgba(255, 255, 255, 0.25);
 }
-.shape-detail-split {
-  border-left: 1px solid rgba(255, 255, 255, 0.25);
-}
-.shape-detail-line {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
+/* .shape-detail-line {
+  display: grid;
+  grid-template-columns: auto 1fr;
+} */
+/* .shape-detail-line .shape-count {
+  margin: 0 0.5em;
+  justify-content: center;
+} */
 .shape-detail-button {
   background: none;
   border: none;
   font-size: 1em;
   color: rgba(255, 255, 255, 1);
+  justify-self: flex-start;
+  padding: 0;
 }
 .shape-detail-button:not([disabled]) {
   cursor: pointer;
@@ -335,6 +350,8 @@ select option {
   font-size: 1.25em;
 }
 .shape .buttons {
+  position: absolute;
+  top: -3em;
   align-self: flex-end;
 }
 .shape-processing {

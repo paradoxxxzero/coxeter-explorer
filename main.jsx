@@ -2,9 +2,10 @@ import React, { useCallback, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './explorer/App.jsx'
 import './index.css'
-import { defaultParams, filterParams } from './statics.js'
 import { arrayEquals } from './utils.js'
 import { ToddCoxeter } from './explorer/math/toddcoxeter.js'
+import { filterParams } from './explorer/params.js'
+import { defaultParams } from './explorer/default.js'
 // import 'https://greggman.github.io/webgl-lint/webgl-lint.js'
 
 const parseParams = (def = null) => {
