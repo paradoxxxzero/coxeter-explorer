@@ -153,7 +153,7 @@ export const useRender = (runtime, setRuntime) => {
     runtime.subsampling,
     runtime.sizeVertex,
     runtime.sizeEdge,
-    runtime.visit,
+    runtime.polytope,
     runtime.vertex,
     runtime.zoom,
   ])

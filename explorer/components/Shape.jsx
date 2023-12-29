@@ -53,7 +53,7 @@ const icons = n => {
 
 export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
   const handlePause = useCallback(() => {
-    if (runtime.paused && runtime.visit.top > runtime.limit) {
+    if (runtime.paused && runtime.polytope.size > runtime.limit) {
       updateParams({
         limit: runtime.limit + runtime.start,
       })
@@ -64,7 +64,7 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
     }))
   }, [
     runtime.paused,
-    runtime.visit.top,
+    runtime.polytope.size,
     runtime.limit,
     runtime.start,
     setRuntime,
@@ -74,21 +74,17 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
   const handleHiddenChange = useCallback(
     event => {
       const key = event.target.closest('button').dataset.key
-      let newHidden = runtime.hidden
-      key.split(',').forEach(k => {
-        newHidden = newHidden.includes(k)
-          ? newHidden.filter(v => v !== k)
-          : [...newHidden, k]
-      })
-
+      const keys = key.split(',')
+      const shown = !keys.some(k => runtime.hidden.includes(k))
+      const hidden = runtime.hidden.filter(v => !keys.includes(v))
       updateParams({
-        hidden: newHidden,
+        hidden: shown ? [...hidden, ...keys] : hidden,
       })
     },
     [runtime.hidden, updateParams]
   )
 
-  const simple = runtime.visit.every(subshape => subshape.detail.length < 2)
+  const simple = runtime.polytope.every(subshape => subshape.detail.length < 2)
 
   const formatCount = count => (isFinite(count) ? count.toLocaleString() : '∞')
   if (showUI === 'empty') {
@@ -126,7 +122,7 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
           ['advanced', 'full'].includes(showUI) ? ' shape-info-expanded' : ''
         }`}
       >
-        {[...runtime.visit]
+        {[...runtime.polytope]
           .reverse()
           .filter(level => level)
           .map(level => (
@@ -177,35 +173,41 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                             ? formatCount(count)
                             : null}
                         </div>
-                        <button
-                          className="shape-hidden button"
-                          data-key={key}
-                          title={key}
-                          onClick={handleHiddenChange}
-                        >
-                          {key.split(',').some(k => runtime.hidden.includes(k))
-                            ? eyeOffIcon
-                            : eyeIcon}
-                        </button>
                         {level.dimensions > 0 ? (
-                          <button
-                            className="shape-detail-button"
-                            disabled={level.dimensions < 2}
-                            onClick={() =>
-                              updateParams({
-                                coxeter,
-                                stellation,
-                                mirrors,
-                                dimensions: level.dimensions,
-                              })
-                            }
-                          >
-                            <CoxeterDiagram
-                              coxeter={coxeter}
-                              stellation={stellation}
-                              mirrors={mirrors}
-                            />
-                          </button>
+                          <div>
+                            {[1, 2].includes(level.dimensions) ? (
+                              <button
+                                className="shape-hidden button"
+                                data-key={key}
+                                title={key}
+                                onClick={handleHiddenChange}
+                              >
+                                {key
+                                  .split(',')
+                                  .some(k => runtime.hidden.includes(k))
+                                  ? eyeOffIcon
+                                  : eyeIcon}
+                              </button>
+                            ) : null}
+                            <button
+                              className="shape-detail-button"
+                              disabled={level.dimensions < 2}
+                              onClick={() =>
+                                updateParams({
+                                  coxeter,
+                                  stellation,
+                                  mirrors,
+                                  dimensions: level.dimensions,
+                                })
+                              }
+                            >
+                              <CoxeterDiagram
+                                coxeter={coxeter}
+                                stellation={stellation}
+                                mirrors={mirrors}
+                              />
+                            </button>
+                          </div>
                         ) : null}
                       </Fragment>
                     )

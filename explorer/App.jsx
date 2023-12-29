@@ -14,7 +14,7 @@ export default function App({ params, updateParams }) {
     processing: true,
 
     iteration: 0,
-    visit: [],
+    polytope: [],
     shaper: null,
     paused: false,
     error: null,

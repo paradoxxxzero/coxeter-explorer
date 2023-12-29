@@ -31,7 +31,7 @@ onmessage = ({
       console.log(shape)
     }
     const rootKey = range(shape.dimensions).join('-')
-    const visit = new Array(shape.dimensions)
+    const polytope = []
     const fundamental = mirrors.every(m => !m)
 
     const computeWords = {
@@ -46,8 +46,8 @@ onmessage = ({
       const type = types[subshape.dimensions]
 
       if (subshape?.new) {
-        if (!visit[subshape.dimensions]) {
-          visit[subshape.dimensions] = {
+        if (!polytope[subshape.dimensions]) {
+          polytope[subshape.dimensions] = {
             dimensions: subshape.dimensions,
             processing: draw[type] ? 0 : undefined,
             count: 0,
@@ -65,8 +65,9 @@ onmessage = ({
           }
           const cached = {
             ...shape,
+            keys: [subshape.key],
             subgens: subshape.quotient,
-            space: subshape.space,
+            facet: subshape.facet,
             subdimensions: subshape.dimensions,
             mirrors: subshape.mirrors,
             limit,
@@ -79,7 +80,10 @@ onmessage = ({
               : {}),
           }
           cache.set(subshape.key, cached)
+        } else {
+          cache.get(subshape.key).keys.push(subshape.key)
         }
+
         const cached = cache.get(subshape.key)
         if (!cached.done) {
           if (compute) {
@@ -100,7 +104,7 @@ onmessage = ({
           }
         }
 
-        visit[subshape.dimensions].detail.push({
+        polytope[subshape.dimensions].detail.push({
           key: subshape.key,
           coxeter: subshape.coxeter,
           stellation: subshape.stellation,
@@ -110,7 +114,7 @@ onmessage = ({
           done: cached.done,
         })
 
-        const aggregated = visit[subshape.dimensions].aggregated.find(
+        const aggregated = polytope[subshape.dimensions].aggregated.find(
           ({ coxeter, stellation, mirrors }) =>
             arrayEquals(coxeter, subshape.coxeter) &&
             arrayEquals(stellation, subshape.stellation) &&
@@ -121,7 +125,7 @@ onmessage = ({
           aggregated.count += cached.count
           aggregated.key += ',' + subshape.key
         } else {
-          visit[subshape.dimensions].aggregated.push({
+          polytope[subshape.dimensions].aggregated.push({
             key: subshape.key,
             coxeter: subshape.coxeter,
             stellation: subshape.stellation,
@@ -132,11 +136,11 @@ onmessage = ({
           })
         }
         if (draw[type] && cached.words) {
-          visit[subshape.dimensions].processing += cached.words.size
+          polytope[subshape.dimensions].processing += cached.words.size
         }
-        visit[subshape.dimensions].count += cached.count
-        visit[subshape.dimensions].done =
-          visit[subshape.dimensions].done && cached.done
+        polytope[subshape.dimensions].count += cached.count
+        polytope[subshape.dimensions].done =
+          polytope[subshape.dimensions].done && cached.done
 
         allDone = allDone && cached.done
       }
@@ -146,17 +150,17 @@ onmessage = ({
 
     const rootCached = cache.get(rootKey)
     if (shape.dimensions === 2) {
-      shape.currentWords = new Map([[1, shape.space]])
-      shape.space = Array.from(rootCached.words.values())
+      shape.currentWords = new Map([[1, shape.facet]])
+      shape.facet = Array.from(rootCached.words.values())
       shape.done = true
       cache.set('', {
         ...shape,
         subgens: shape.subgens,
-        space: shape.space,
+        facet: shape.facet,
         subdimensions: shape.dimensions,
         mirrors: shape.mirrors,
       })
-      visit[2] = {
+      polytope[2] = {
         dimensions: 2,
         processing: 1,
         count: 0,
@@ -177,9 +181,9 @@ onmessage = ({
     }
 
     if (
-      visit[0].done &&
-      (!draw.edge || visit[1]?.done) &&
-      (!draw.face || visit[2]?.done)
+      polytope[0].done &&
+      (!draw.edge || polytope[1]?.done) &&
+      (!draw.face || polytope[2]?.done)
     ) {
       for (let cached of cache.values()) {
         cached.limit = 200
@@ -203,7 +207,7 @@ onmessage = ({
         }
       }
     } else {
-      for (let i = 0; i < visit.length && i < 3; i++) {
+      for (let i = 0; i < polytope.length && i < 3; i++) {
         if (!draw[types[i]]) {
           objects.push(null)
           continue
@@ -214,8 +218,8 @@ onmessage = ({
           objects: [],
           partials: [],
         }
-        for (let j = 0; j < visit[i].detail.length; j++) {
-          const detail = visit[i].detail[j]
+        for (let j = 0; j < polytope[i].detail.length; j++) {
+          const detail = polytope[i].detail[j]
           if (hidden.includes(detail.key)) {
             continue
           }
@@ -291,11 +295,14 @@ onmessage = ({
       })
     }
 
-    visit.top = fundamental ? rootCached.words.size : rootCached.vertices.size
-    visit.done = allDone
+    // Used for limiting
+    polytope.size = fundamental
+      ? rootCached.words.size
+      : rootCached.vertices.size
+    polytope.done = allDone
 
     postMessage(
-      { visit, infos, data },
+      { polytope, infos, data },
       { options: { transfer: [data.flat(1)] } }
     )
   } catch (e) {

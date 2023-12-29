@@ -51,19 +51,21 @@ export const getShape = (
 
     ...getParams(dimensions, coxeter, stellation, mirrors, skips),
     quotient: '',
-    space: [''],
+    facet: [''],
 
     children: [],
   }
   // Try subgroups by removing a mirror to the coxeter diagram:
   for (let i = 0; i < dimensions; i++) {
     if (skips.includes(i)) {
+      // Mirror is already removed
       continue
     }
     const subskips = [...skips, i]
     const actives = range(dimensions).filter(j => !subskips.includes(j))
     const key = subskips.sort().join('-')
     let isnew = false
+
     if (!solved.has(key)) {
       isnew = true
 
@@ -90,9 +92,9 @@ export const getShape = (
     }
 
     const subParams = solved.get(key)
-    const space = Array.from(subParams.words.values())
+    const facet = Array.from(subParams.words.values())
 
-    // If the coset generate a space
+    // If the coset generate a facet
     if (hasOrder(subParams)) {
       let quotient = ''
       const snub = mirrors.some(m => isSnub(m))
@@ -125,7 +127,7 @@ export const getShape = (
         ...subParams,
 
         quotient,
-        space,
+        facet,
 
         children: [],
       }
@@ -176,7 +178,7 @@ export const getShape = (
       ),
 
       quotient: '',
-      space: ['', 'b', 'c'],
+      facet: ['', 'b', 'c'],
 
       children: [],
     }
@@ -207,7 +209,7 @@ export const getShape = (
             stellation: submatrix(stellation, subskips),
             mirrors: subvector(mirrors, subskips),
             quotient: '',
-            space: [''],
+            facet: [''],
             skips: subskips,
 
             ...getParams(

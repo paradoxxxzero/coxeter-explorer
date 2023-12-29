@@ -29,8 +29,8 @@ export const getObjects = (cached, shape, space, rootCached) => {
   } else if (cached.subdimensions === 1) {
     for (const [cosetId, word] of cached.currentWords) {
       const vertex = { word, vertices: [] }
-      for (let i = 0; i < cached.space.length; i++) {
-        const vertexId = wordToCoset(rootCached, word + cached.space[i])
+      for (let i = 0; i < cached.facet.length; i++) {
+        const vertexId = wordToCoset(rootCached, word + cached.facet[i])
         if (vertexId && rootCached.vertices.has(vertexId)) {
           vertex.vertices.push(rootCached.vertices.get(vertexId))
         }
@@ -48,9 +48,9 @@ export const getObjects = (cached, shape, space, rootCached) => {
       const parity = word.length % 2 ? 0 : 1
 
       const faceVertices = []
-      for (let h = 0; h < cached.space.length; h++) {
-        const i = snub ? h : reorder(h, cached.space.length, double)
-        const vertexId = wordToCoset(rootCached, word + cached.space[i])
+      for (let h = 0; h < cached.facet.length; h++) {
+        const i = snub ? h : reorder(h, cached.facet.length, double)
+        const vertexId = wordToCoset(rootCached, word + cached.facet[i])
         if (vertexId && rootCached.vertices.has(vertexId)) {
           faceVertices.push(rootCached.vertices.get(vertexId))
         }
@@ -59,7 +59,7 @@ export const getObjects = (cached, shape, space, rootCached) => {
       if (faceVertices.length < 3) {
         continue
       }
-      const partial = faceVertices.length < cached.space.length
+      const partial = faceVertices.length < cached.facet.length
 
       if (faceVertices.length === 3) {
         if (parity) {

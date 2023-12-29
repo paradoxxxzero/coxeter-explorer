@@ -76,12 +76,12 @@ export const useProcess = (runtime, setRuntime) => {
       const newRuntime = {
         ...runtime,
       }
-      if (runtime.visit.top > runtime.limit) {
+      if (runtime.polytope.size > runtime.limit) {
         newRuntime.paused = true
       }
       return newRuntime
     })
-  }, [runtime.visit.top, runtime.limit, setRuntime])
+  }, [runtime.polytope.size, runtime.limit, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => ({
@@ -171,12 +171,12 @@ export const useProcess = (runtime, setRuntime) => {
 
           return {
             ...runtime,
-            processing: !data.visit.done,
+            processing: !data.polytope.done,
             iteration:
-              runtime.paused || data.visit.done
+              runtime.paused || data.polytope.done
                 ? runtime.iteration
                 : runtime.iteration + 1,
-            visit: data.visit,
+            polytope: data.polytope,
           }
         })
       } else {

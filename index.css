@@ -232,6 +232,7 @@ select option {
 }
 .subcontrols button {
   margin: 0.25em;
+  font-size: 2em;
 }
 
 .parameters {
@@ -280,6 +281,7 @@ select option {
   flex-direction: column;
   align-items: flex-start;
   max-height: 100%;
+  position: relative;
 }
 
 .shape-info {
@@ -292,7 +294,7 @@ select option {
 }
 
 .shape-info-expanded {
-  grid-template-columns: auto auto max-content auto max-content 1fr;
+  grid-template-columns: auto max-content auto max-content 1fr;
 }
 
 .shape-count,
@@ -314,7 +316,7 @@ select option {
   height: 1.5em;
 }
 .shape-hidden {
-  font-size: 1em;
+  font-size: 1.25em;
 }
 .shape-split {
   border-right: 1px solid rgba(255, 255, 255, 0.25);
@@ -348,6 +350,8 @@ select option {
   font-size: 1.25em;
 }
 .shape .buttons {
+  position: absolute;
+  top: -3em;
   align-self: flex-end;
 }
 .shape-processing {
