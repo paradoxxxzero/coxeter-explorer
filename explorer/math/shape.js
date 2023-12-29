@@ -63,7 +63,6 @@ export const getShape = (
     const subskips = [...skips, i]
     const actives = range(dimensions).filter(j => !subskips.includes(j))
     const key = subskips.sort().join('-')
-
     let isnew = false
     if (!solved.has(key)) {
       isnew = true
@@ -96,7 +95,7 @@ export const getShape = (
     // If the coset generate a space
     if (hasOrder(subParams)) {
       let quotient = ''
-      const snub = subvector(mirrors, subskips).some(m => isSnub(m))
+      const snub = mirrors.some(m => isSnub(m))
       if (snub) {
         if (subParams.gens.length === 1) {
           const gen = subParams.gens
@@ -105,6 +104,9 @@ export const getShape = (
           if (subParams.dimensions === 1 ? m === 2 : m > 2) {
             quotient += gen
           }
+        }
+        if (subParams.dimensions === 0) {
+          quotient = ''
         }
       } else {
         for (let j = 0; j < dimensions; j++) {

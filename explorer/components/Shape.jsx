@@ -53,15 +53,23 @@ const icons = n => {
 
 export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
   const handlePause = useCallback(() => {
+    if (runtime.paused && runtime.visit.top > runtime.limit) {
+      updateParams({
+        limit: runtime.limit + runtime.start,
+      })
+    }
     setRuntime(runtime => ({
       ...runtime,
-      limit:
-        runtime.paused && runtime.visit.top > runtime.limit
-          ? 2 * runtime.limit
-          : runtime.limit,
       paused: !runtime.paused,
     }))
-  }, [setRuntime])
+  }, [
+    runtime.paused,
+    runtime.visit.top,
+    runtime.limit,
+    runtime.start,
+    setRuntime,
+    updateParams,
+  ])
 
   const simple = runtime.visit.every(subshape => subshape.detail.length < 2)
 

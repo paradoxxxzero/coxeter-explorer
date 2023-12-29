@@ -96,6 +96,14 @@ export const filterParams = (maybeBadParams, changed = [], oldParams) => {
       }
     }
   })
+  if (
+    !changed.includes('limit') &&
+    ['coxeter', 'dimensions', 'stellation', 'mirrors', 'centered'].some(c =>
+      changed.includes(c)
+    )
+  ) {
+    params.limit = params.start
+  }
 
   // Normalize params
   if (!badParams.includes('coxeter')) {

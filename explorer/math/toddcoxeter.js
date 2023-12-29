@@ -27,6 +27,9 @@ const resolveCoincidence = (params, cosetId, otherCosetId) => {
   const remaining = [[cosetId, otherCosetId]]
   while (remaining.length > 0) {
     ;[cosetId, otherCosetId] = remaining.pop()
+    if (cosetId > otherCosetId) {
+      ;[cosetId, otherCosetId] = [otherCosetId, cosetId]
+    }
     cosetId = quotient(params, cosetId)
     otherCosetId = quotient(params, otherCosetId)
 
@@ -39,18 +42,6 @@ const resolveCoincidence = (params, cosetId, otherCosetId) => {
       const otherCoset = params.cosets.get(otherCosetId)
 
       params.cosets.delete(otherCosetId)
-      if (params.currentWords?.has(otherCosetId)) {
-        params.currentWords.set(cosetId, params.currentWords.get(otherCosetId))
-        params.currentWords.delete(otherCosetId)
-      }
-      if (params.words?.has(otherCosetId)) {
-        params.words.set(cosetId, params.words.get(otherCosetId))
-        params.words.delete(otherCosetId)
-      }
-      if (params.vertices?.has(otherCosetId)) {
-        params.vertices.set(cosetId, params.vertices.get(otherCosetId))
-        params.vertices.delete(otherCosetId)
-      }
 
       for (const [generator, otherCosetTargetCosetId] of otherCoset) {
         if (coset.has(generator)) {
@@ -226,13 +217,13 @@ const iter = params => {
     }
 
     // (1) Scan the coset under all generators
-    for (let i = 0; i < params.gens.length; i++) {
-      follow(params, coset, params.gens[i].toUpperCase())
-      follow(params, coset, params.gens[i])
+    for (let j = 0; j < params.gens.length; j++) {
+      follow(params, coset, params.gens[j].toUpperCase())
+      follow(params, coset, params.gens[j])
     }
     // (2) Scan the coset under all relators
-    for (let i = 0; i < params.rels.length; i++) {
-      scan(params, params.rels[i], coset)
+    for (let j = 0; j < params.rels.length; j++) {
+      scan(params, params.rels[j], coset)
     }
   }
 }

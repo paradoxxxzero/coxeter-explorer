@@ -44,6 +44,10 @@ export const defaultParams = {
 
   zoom: 1.5,
 
+  start: 1000,
+  limit: 1000,
+  batch: 500,
+
   msaa: window.devicePixelRatio <= 1,
   msaaSamples: MSAA_MAX,
   subsampling: window.devicePixelRatio,

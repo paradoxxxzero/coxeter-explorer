@@ -43,22 +43,31 @@ export const getObjects = (cached, shape, space, rootCached) => {
     }
   } else if (cached.subdimensions === 2) {
     for (const [cosetId, word] of cached.currentWords) {
+      const double = cached.mirrors.every(m => !!m)
+      const snub = cached.mirrors.some(m => isSnub(m))
+      const parity = word.length % 2 ? 0 : 1
+
       const faceVertices = []
       for (let h = 0; h < cached.space.length; h++) {
-        const double = cached.mirrors.every(m => !!m)
-        const snub = cached.mirrors.some(m => isSnub(m))
         const i = snub ? h : reorder(h, cached.space.length, double)
         const vertexId = wordToCoset(rootCached, word + cached.space[i])
         if (vertexId && rootCached.vertices.has(vertexId)) {
           faceVertices.push(rootCached.vertices.get(vertexId))
         }
       }
+
       if (faceVertices.length < 3) {
         continue
       }
       const partial = faceVertices.length < cached.space.length
 
       if (faceVertices.length === 3) {
+        if (parity) {
+          ;[faceVertices[2], faceVertices[1]] = [
+            faceVertices[1],
+            faceVertices[2],
+          ]
+        }
         const vertex = {
           word,
           vertices: faceVertices,
@@ -86,12 +95,11 @@ export const getObjects = (cached, shape, space, rootCached) => {
         center[j] /= faceVertices.length
       }
       for (let j = 0; j < faceVertices.length; j++) {
-        const p = word.length % 2 === space.curvature > 0 ? 0 : 1
         const vertex = {
           word,
           vertices: [
-            faceVertices[(j + p) % faceVertices.length],
-            faceVertices[(j + (1 - p)) % faceVertices.length],
+            faceVertices[(j + parity) % faceVertices.length],
+            faceVertices[(j + (1 - parity)) % faceVertices.length],
             center,
           ],
           faceIndex: j,

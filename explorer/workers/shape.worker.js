@@ -18,6 +18,7 @@ onmessage = ({
     mirrors,
     ambiance,
     draw,
+    batch,
   },
 }) => {
   try {
@@ -26,7 +27,6 @@ onmessage = ({
       cache = new Map()
       lasts = [0, 0, 0]
       shape = getShape(dimensions, coxeter, stellation, mirrors)
-      console.log(shape)
     }
     const rootKey = range(shape.dimensions).join('-')
     const visit = new Array(shape.dimensions)
@@ -47,7 +47,7 @@ onmessage = ({
         if (!visit[subshape.dimensions]) {
           visit[subshape.dimensions] = {
             dimensions: subshape.dimensions,
-            processing: compute ? 0 : undefined,
+            processing: draw[type] ? 0 : undefined,
             count: 0,
             detail: [],
             aggregated: [],
@@ -57,7 +57,10 @@ onmessage = ({
         const eiqenvalues = space.eigens.values
 
         if (!cache.has(subshape.key)) {
-          const limit = subshape.dimensions === 0 ? 500 : draw[type] ? 250 : 10
+          let limit = compute ? batch : 5
+          if (type === 'edge' && space.curvature <= 0) {
+            limit *= 1.5
+          }
           const cached = {
             ...shape,
             subgens: subshape.quotient,

@@ -54,7 +54,6 @@ export const useProcess = (runtime, setRuntime) => {
         ...runtime,
         iteration: 0,
         paused: false,
-        limit: 1000,
       }
       if (runtime.processing) {
         runtime.shaper?.terminate()
@@ -70,6 +69,25 @@ export const useProcess = (runtime, setRuntime) => {
     runtime.drawFace,
     setRuntime,
   ])
+
+  useEffect(() => {
+    setRuntime(runtime => {
+      const newRuntime = {
+        ...runtime,
+      }
+      if (runtime.visit.top > runtime.limit) {
+        newRuntime.paused = true
+      }
+      return newRuntime
+    })
+  }, [runtime.visit.top, runtime.limit, setRuntime])
+
+  useEffect(() => {
+    setRuntime(runtime => ({
+      ...runtime,
+      paused: false,
+    }))
+  }, [runtime.limit, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => {
@@ -90,6 +108,7 @@ export const useProcess = (runtime, setRuntime) => {
           edge: runtime.drawEdge,
           face: runtime.drawFace,
         },
+        batch: runtime.batch,
       })
       return {
         ...runtime,
@@ -167,16 +186,4 @@ export const useProcess = (runtime, setRuntime) => {
       runtime.shaper.removeEventListener('message', handleShape)
     }
   }, [runtime.shaper, runtime.paused, setRuntime])
-
-  useEffect(() => {
-    setRuntime(runtime => {
-      const newRuntime = {
-        ...runtime,
-      }
-      if (runtime.visit.top > runtime.limit) {
-        newRuntime.paused = true
-      }
-      return newRuntime
-    })
-  }, [runtime.visit, runtime.limit, setRuntime])
 }

@@ -126,7 +126,8 @@ export const getParams = (
     // ...
     // z = 1
     if (skips.length === dimensions - 1) {
-      const i = range(dimensions).find(i => !skips.includes(i))
+      const i =
+        dimensions === 2 ? 0 : range(dimensions).find(i => !skips.includes(i))
       gens = itoa(i)
       rels.push(gens.repeat(2))
     } else {
