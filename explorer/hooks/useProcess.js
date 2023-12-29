@@ -67,6 +67,7 @@ export const useProcess = (runtime, setRuntime) => {
     runtime.drawVertex,
     runtime.drawEdge,
     runtime.drawFace,
+    runtime.hidden,
     setRuntime,
   ])
 
@@ -109,6 +110,7 @@ export const useProcess = (runtime, setRuntime) => {
           face: runtime.drawFace,
         },
         batch: runtime.batch,
+        hidden: runtime.hidden,
       })
       return {
         ...runtime,
@@ -124,6 +126,7 @@ export const useProcess = (runtime, setRuntime) => {
     runtime.drawFace,
     runtime.shaper,
     runtime.space,
+    runtime.hidden,
     setRuntime,
   ])
 

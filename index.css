@@ -292,7 +292,7 @@ select option {
 }
 
 .shape-info-expanded {
-  grid-template-columns: auto max-content auto max-content 1fr;
+  grid-template-columns: auto auto max-content auto max-content 1fr;
 }
 
 .shape-count,
@@ -313,7 +313,9 @@ select option {
   width: 1.5em;
   height: 1.5em;
 }
-
+.shape-hidden {
+  font-size: 1em;
+}
 .shape-split {
   border-right: 1px solid rgba(255, 255, 255, 0.25);
 }

@@ -1,4 +1,4 @@
-import { getParams, itoa, itor } from '.'
+import { getParams, itoa } from '.'
 import { range } from '../../utils'
 import { isEnabled, isSnub } from '../mirrors'
 import { ident, submatrix, subvector } from './matrix'

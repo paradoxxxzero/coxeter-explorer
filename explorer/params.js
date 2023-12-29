@@ -70,7 +70,7 @@ export const filterParams = (maybeBadParams, changed = [], oldParams) => {
         delete params[key]
         badParams.push(key)
       }
-    } else if (Array.isArray(defaultParams[key])) {
+    } else if (Array.isArray(defaultParams[key]) && key !== 'hidden') {
       // arrays of arrays of numbers
       if (Array.isArray(value[0])) {
         if (

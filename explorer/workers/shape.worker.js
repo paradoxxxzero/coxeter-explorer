@@ -19,6 +19,7 @@ onmessage = ({
     ambiance,
     draw,
     batch,
+    hidden,
   },
 }) => {
   try {
@@ -27,6 +28,7 @@ onmessage = ({
       cache = new Map()
       lasts = [0, 0, 0]
       shape = getShape(dimensions, coxeter, stellation, mirrors)
+      console.log(shape)
     }
     const rootKey = range(shape.dimensions).join('-')
     const visit = new Array(shape.dimensions)
@@ -214,6 +216,9 @@ onmessage = ({
         }
         for (let j = 0; j < visit[i].detail.length; j++) {
           const detail = visit[i].detail[j]
+          if (hidden.includes(detail.key)) {
+            continue
+          }
           const cached = cache.get(detail.key)
 
           if (cached.currentWords.size) {

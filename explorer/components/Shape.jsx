@@ -1,5 +1,5 @@
 import { Fragment, useCallback } from 'react'
-import { pauseIcon, playIcon } from '../icons'
+import { eyeIcon, pauseIcon, playIcon, eyeOffIcon } from '../icons'
 import CoxeterDiagram from './CoxeterDiagram'
 
 const icons = n => {
@@ -70,6 +70,23 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
     setRuntime,
     updateParams,
   ])
+
+  const handleHiddenChange = useCallback(
+    event => {
+      const key = event.target.closest('button').dataset.key
+      let newHidden = runtime.hidden
+      key.split(',').forEach(k => {
+        newHidden = newHidden.includes(k)
+          ? newHidden.filter(v => v !== k)
+          : [...newHidden, k]
+      })
+
+      updateParams({
+        hidden: newHidden,
+      })
+    },
+    [runtime.hidden, updateParams]
+  )
 
   const simple = runtime.visit.every(subshape => subshape.detail.length < 2)
 
@@ -160,6 +177,16 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                             ? formatCount(count)
                             : null}
                         </div>
+                        <button
+                          className="shape-hidden button"
+                          data-key={key}
+                          title={key}
+                          onClick={handleHiddenChange}
+                        >
+                          {key.split(',').some(k => runtime.hidden.includes(k))
+                            ? eyeOffIcon
+                            : eyeIcon}
+                        </button>
                         {level.dimensions > 0 ? (
                           <button
                             className="shape-detail-button"
