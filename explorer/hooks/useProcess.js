@@ -52,7 +52,7 @@ export const useProcess = (runtime, setRuntime) => {
     setRuntime(runtime => {
       const newRuntime = {
         ...runtime,
-        iteration: 0,
+        iteration: -1,
         paused: false,
       }
       if (runtime.processing) {
@@ -97,7 +97,7 @@ export const useProcess = (runtime, setRuntime) => {
       }
 
       runtime.shaper.postMessage({
-        first: runtime.iteration === 0,
+        first: runtime.iteration === -1,
         space: runtime.space,
         dimensions: runtime.dimensions,
         coxeter: runtime.coxeter,
@@ -114,6 +114,7 @@ export const useProcess = (runtime, setRuntime) => {
       })
       return {
         ...runtime,
+        iteration: runtime.iteration === -1 ? 0 : runtime.iteration,
         processing: true,
       }
     })

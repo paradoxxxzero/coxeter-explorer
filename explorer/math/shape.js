@@ -9,6 +9,10 @@ export const hasOrder = params => {
     return true
   }
 
+  if (params.words.size <= params.dimensions) {
+    return false
+  }
+
   const seen = new Set()
   for (let i = 0; i < params.lastWord.length; i++) {
     const c = params.lastWord[i]
@@ -131,9 +135,6 @@ export const getShape = (
 
         children: [],
       }
-      if (subParams.words.size <= subParams.dimensions) {
-        subShape.new = false
-      }
       if (subParams.dimensions > 0) {
         subShape = getShape(
           dimensions,
@@ -178,7 +179,7 @@ export const getShape = (
       ),
 
       quotient: '',
-      facet: ['', 'b', 'c'],
+      facet: ['', 'a', 'ab'],
 
       children: [],
     }
