@@ -34,6 +34,7 @@ export const getShape = (
   coxeter,
   stellation,
   mirrors,
+  space,
   skips = null,
   shape = null,
   solved = new Map()
@@ -53,7 +54,7 @@ export const getShape = (
 
     skips,
 
-    ...getParams(dimensions, coxeter, stellation, mirrors, skips),
+    ...getParams(dimensions, coxeter, stellation, mirrors, space, skips),
     quotient: '',
     facet: [''],
 
@@ -87,6 +88,7 @@ export const getShape = (
           coxeter,
           stellation,
           mirrors,
+          space,
           subskips,
           shape.transforms
         ),
@@ -101,7 +103,7 @@ export const getShape = (
     // If the coset generate a facet
     if (hasOrder(subParams)) {
       let quotient = ''
-      const snub = mirrors.some(m => isSnub(m))
+      const snub = mirrors.every(m => isSnub(m))
       if (snub) {
         if (subParams.gens.length === 1) {
           const gen = subParams.gens
@@ -141,6 +143,7 @@ export const getShape = (
           coxeter,
           stellation,
           mirrors,
+          space,
           subskips,
           subShape,
           solved
@@ -151,7 +154,11 @@ export const getShape = (
   }
 
   // Snubs generate one more simplex facet
-  if (skips.length === 0 && mirrors.some(m => isSnub(m))) {
+  if (
+    skips.length === 0 &&
+    mirrors.every(m => isSnub(m)) &&
+    shape.dimensions > 2
+  ) {
     const key = 's'
     const snubCoxeter = ident(dimensions - 1).map((row, i) =>
       row.map((_, j) => (i === j + 1 || i === j - 1 ? 3 : 2))
@@ -174,12 +181,13 @@ export const getShape = (
         snubCoxeter,
         snubStellation,
         snubMirrors,
+        space,
         subskips,
         shape.transforms
       ),
 
       quotient: '',
-      facet: ['', 'a', 'ab'],
+      facet: ['', 'b', 'c'],
 
       children: [],
     }
@@ -200,6 +208,7 @@ export const getShape = (
           coxeter,
           stellation,
           mirrors,
+          space,
           subskips,
           {
             new: false,
@@ -218,6 +227,7 @@ export const getShape = (
               coxeter,
               stellation,
               mirrors,
+              space,
               subskips,
               shape.transforms
             ),

@@ -27,8 +27,7 @@ onmessage = ({
     if (first) {
       cache = new Map()
       lasts = [0, 0, 0]
-      shape = getShape(dimensions, coxeter, stellation, mirrors)
-      console.log(shape)
+      shape = getShape(dimensions, coxeter, stellation, mirrors, space)
     }
     const rootKey = range(shape.dimensions).join('-')
     const polytope = []
@@ -150,7 +149,7 @@ onmessage = ({
 
     const rootCached = cache.get(rootKey)
     if (shape.dimensions === 2) {
-      shape.currentWords = new Map([[1, shape.facet]])
+      shape.currentWords = new Map([[1, '']])
       shape.facet = Array.from(rootCached.words.values())
       shape.done = true
       cache.set('', {

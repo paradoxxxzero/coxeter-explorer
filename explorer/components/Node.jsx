@@ -128,7 +128,8 @@ export default function Node({ index, value, onChange }) {
       )}
       {menu && (
         <div className="coxeter-node-menu">
-          {Object.keys(mirrorSymbols)
+          {Object.keys(mirrorTypes)
+
             .filter(subtype => subtype !== type)
             .map(type => (
               <div

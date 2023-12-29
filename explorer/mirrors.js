@@ -10,10 +10,10 @@ export const mirrorValue = m => (isNaN(m) ? 1 : +m)
 export const mirrorTypes = {
   active: 1,
   inactive: 0,
-  dual: 'd',
+  // dual: 'd',
   snub: 's',
-  holosnub: 'ß',
-  dualsnub: 'b',
+  // holosnub: 'ß',
+  // dualsnub: 'b',
   custom: 0.5,
   activeVoid: 'x',
   void: '',
@@ -24,15 +24,15 @@ export const mirrorToType = v =>
     ? 'inactive'
     : v === 1
     ? 'active'
-    : v === 'd'
-    ? 'dual'
-    : v === 's'
+    : // : v === 'd'
+    // ? 'dual'
+    v === 's'
     ? 'snub'
-    : v === 'ß'
-    ? 'holosnub'
-    : v === 'b'
-    ? 'dualsnub'
-    : v === 'x'
+    : // : v === 'ß'
+    // ? 'holosnub'
+    // : v === 'b'
+    // ? 'dualsnub'
+    v === 'x'
     ? 'activeVoid'
     : v === ''
     ? 'void'

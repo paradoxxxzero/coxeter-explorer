@@ -669,10 +669,10 @@ export const presets = [
     name: 'Great Stellated Dodecahedron',
     params: polytope([5, 3], [1, 0, 0], [2, 1]),
   },
-  {
-    name: 'Stellated Octahedron',
-    params: polytope([2, 2], ['ß', 'ß', 'ß']),
-  },
+  // {
+  //   name: 'Stellated Octahedron',
+  //   params: polytope([2, 2], ['ß', 'ß', 'ß']),
+  // },
   {
     type: 'group',
     content: (

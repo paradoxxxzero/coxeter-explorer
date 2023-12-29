@@ -4,7 +4,6 @@ import { mesh } from './helpers'
 import { PI, cbrt, sqrt, tan } from './math'
 import { columnMajor } from './math/matrix'
 import { isDual, isHoloSnub, isSnub } from './mirrors'
-import { dual, holosnub, snub } from './operator'
 import { render } from './render'
 import fragmentEdge from './shaders/edge/fragment.glsl?raw'
 import vertexEdge from './shaders/edge/vertex.glsl?raw'
@@ -112,18 +111,6 @@ export default function getMeshes(rt) {
         mesh.uniforms.zoom.update(quick ? zoom : rt.zoom)
         mesh.uniforms.eye.update(rt.camera.eye)
       }
-    },
-    preprocess(rt, plot) {
-      if (rt.mirrors.some(mirror => isSnub(mirror))) {
-        plot = snub(plot, rt.mirrors, rt.dimensions, rt.space.metric)
-      }
-      if (rt.mirrors.some(mirror => isHoloSnub(mirror))) {
-        plot = holosnub(plot, rt.mirrors, rt.dimensions, rt.space.metric)
-      }
-      if (rt.mirrors.some(mirror => isDual(mirror))) {
-        plot = dual(plot, rt.mirrors, rt.dimensions, rt.space.metric)
-      }
-      return plot
     },
   }
 }
