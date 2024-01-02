@@ -1,14 +1,18 @@
 import { wordToCoset } from '../math/toddcoxeter'
 import { isSnub } from '../mirrors'
 
-const reorder = (i, n, double = false) => {
+const reorder = (i, n, double = false, snub = false) => {
   if (double) {
+    if (snub) {
+      return i
+    }
     const parity = i > 0 ? 1 - (i % 2) : 0
     if (i >= n / 2 + parity) {
       return 2 * (n - i) - 1 + parity
     }
     return 2 * i - parity
   }
+
   if (i >= n / 2) {
     return 2 * (n - i) - 1
   }
@@ -49,7 +53,7 @@ export const getObjects = (cached, shape, space, rootCached) => {
 
       const faceVertices = []
       for (let h = 0; h < cached.facet.length; h++) {
-        const i = snub ? h : reorder(h, cached.facet.length, double)
+        const i = reorder(h, cached.facet.length, double, snub)
         const vertexId = wordToCoset(rootCached, word + cached.facet[i])
         if (vertexId && rootCached.vertices.has(vertexId)) {
           faceVertices.push(rootCached.vertices.get(vertexId))

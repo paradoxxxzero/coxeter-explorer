@@ -108,7 +108,7 @@ export const getParams = (
   mirrors,
   space,
   skips = [],
-  superTransforms
+  superTransforms = null
 ) => {
   let gens = ''
 
@@ -116,85 +116,11 @@ export const getParams = (
     .map((m, i) => (skips.includes(i) || m ? '' : itoa(i)))
     .join('')
 
-  const transforms = superTransforms || {}
+  const transforms = {}
 
   const rels = []
 
-  if (mirrors.every(m => isSnub(m))) {
-    // a = 01
-    // b = 02
-    // c = 12
-    // a^p = b^r = c^q = aBc (b = ac)
-    if (skips.length === dimensions - 1) {
-      const i =
-        dimensions === 2 ? 0 : range(dimensions).find(i => !skips.includes(i))
-      gens = itoa(i)
-      rels.push(gens.repeat(2))
-    } else {
-      let k = 0
-      for (let i = 0; i < dimensions; i++) {
-        for (let j = i + 1; j < dimensions; j++) {
-          const c = itoa(k)
-          if (!skips.includes(i) && !skips.includes(j)) {
-            gens += c
-            rels.push(c.repeat(coxeter[i][j]))
-            transforms[c] = [i, j]
-            if (i > 0 && !skips.includes(i - 1) && !skips.includes(j - 1)) {
-              rels.push(itoa(i - 1) + itoa(j - 1).toUpperCase() + c)
-            }
-          }
-          k++
-        }
-      }
-    }
-  } else if (mirrors.filter(m => isSnub(m)).length === 2) {
-    // a = 01, b = 2
-    const snubbeds = mirrors
-      .map((m, i) => (isSnub(m) ? i : null))
-      .filter(i => i !== null)
-
-    for (let i = 0; i < dimensions - 1; i++) {
-      if (!skips.includes(i)) {
-        const c = itoa(i)
-        gens += c
-        if (i === snubbeds[0]) {
-          transforms[c] = snubbeds
-          rels.push(c.repeat(coxeter[snubbeds[0]][snubbeds[1]]))
-        } else {
-          rels.push(c.repeat(2))
-          transforms[c] = [i]
-        }
-      }
-    }
-    if (skips.length === dimensions - 1) {
-      const i =
-        dimensions === 2 ? 0 : range(dimensions).find(i => !skips.includes(i))
-      gens = itoa(i)
-      rels.push(gens.repeat(2))
-    } else {
-      for (let i = 0; i < dimensions; i++) {
-        for (let j = i + 1; j < dimensions; j++) {
-          if (!skips.includes(i - 1) && !skips.includes(j - 1)) {
-            let m = coxeter[i][j]
-            if (i === snubbeds[0] || j === snubbeds[1] || j - i > 1 || m < 2) {
-              continue
-            }
-            if (m % 2 === 0) {
-              m /= 2
-            }
-            rels.push(
-              (
-                itoa(i - 1).toUpperCase() +
-                itoa(j - 1) +
-                itoa(i - 1) +
-                itoa(j - 1)
-              ).repeat(m)
-            )
-          }
-        }
-      }
-    }
-  } else if (mirrors.filter(m => isSnub(m)).length === 1) {
+  if (mirrors.filter(m => isSnub(m)).length === 1) {
     // Same group but with the snubbed generator making reverse mirror transform:
     const snubbed = mirrors.findIndex(m => isSnub(m))
     const pair = (snubbed + 1) % dimensions
@@ -219,15 +145,113 @@ export const getParams = (
           }
           if ((i === snubbed && j === pair) || (i === pair && j === snubbed)) {
             if (m % 2 === 0) {
-              m /= 2
+              rels.push((itoa(i) + itoa(j)).repeat(m / 2))
+            } else {
+              rels.push((itoa(i) + itoa(j)).repeat(m))
+              // rels.push((itoa(i) + itoa(j) + itoa(j + 1) + itoa(j)).repeat(2))
             }
-            rels.push((itoa(i) + itoa(j)).repeat(m))
           } else {
             if (j - i > 1) {
               m = coxeter[j - 1][j]
             }
             rels.push((itoa(i) + itoa(j)).repeat(m))
           }
+        }
+      }
+    }
+    // } else if (mirrors.filter(m => isSnub(m)).length === 2) {
+    //   // a = 01, b = 2
+    //   const snubbeds = mirrors
+    //     .map((m, i) => (isSnub(m) ? i : null))
+    //     .filter(i => i !== null)
+
+    //   for (let i = 0; i < dimensions - 1; i++) {
+    //     if (!skips.includes(i)) {
+    //       const c = itoa(i)
+    //       gens += c
+    //       if (i === snubbeds[0]) {
+    //         transforms[c] = snubbeds
+    //         rels.push(c.repeat(coxeter[snubbeds[0]][snubbeds[1]]))
+    //       } else {
+    //         rels.push(c.repeat(2))
+    //         transforms[c] = [i]
+    //       }
+    //     }
+    //   }
+
+    //   if (skips.length === dimensions - 1) {
+    //     const trans = Object.entries(superTransforms).find(
+    //       ([k, v]) => v[0] === 0 && !skips.includes(v[1])
+    //     )
+    //     if (!trans) {
+    //       return { gens: null }
+    //     }
+    //     gens = trans[0]
+
+    //     rels.push(gens.repeat(2))
+    //   } else {
+    //     for (let i = 1; i < dimensions; i++) {
+    //       for (let j = i + 1; j < dimensions; j++) {
+    //         if (!skips.includes(i - 1) && !skips.includes(j - 1)) {
+    //           let m = coxeter[i][j]
+    //           if (i === snubbeds[0] || j === snubbeds[1] || j - i > 1 || m < 2) {
+    //             continue
+    //           }
+    //           if (m % 2 === 0) {
+    //             m /= 2
+    //           }
+    //           rels.push(
+    //             (
+    //               itoa(i - 1).toUpperCase() +
+    //               itoa(j - 1) +
+    //               itoa(i - 1) +
+    //               itoa(j - 1)
+    //             ).repeat(m)
+    //           )
+    //         }
+    //       }
+    //     }
+    //   }
+  } else if (mirrors.some(m => isSnub(m))) {
+    // a = 01
+    // b = 02
+    // c = 12
+    // a^p = b^r = c^q = aBc (b = ac)
+
+    if (skips.length === dimensions - 1) {
+      const trans = Object.entries(superTransforms).find(
+        ([k, v]) => v[0] === 0 && !skips.includes(v[1])
+      )
+      if (!trans) {
+        return { gens: null }
+      }
+      gens = trans[0]
+
+      rels.push(gens.repeat(2))
+    } else {
+      let k = 0
+      for (let i = 0; i < dimensions; i++) {
+        for (let j = i + 1; j < dimensions; j++) {
+          const c = itoa(k)
+          if (!skips.includes(i) && !skips.includes(j)) {
+            gens += c
+            rels.push(c.repeat(coxeter[i][j]))
+            transforms[c] = [i, j]
+            for (let l = 0; l < j; l++) {
+              const pair = [i, j]
+                .map(x =>
+                  Object.entries(transforms).find(
+                    ([_, v]) => v[0] === l && v[1] === x
+                  )
+                )
+                .filter(x => x)
+              if (pair.length === 2) {
+                // We have an inner relation (b = ac)
+                rels.push(pair[0][0] + pair[1][0].toUpperCase() + c)
+              }
+            }
+          }
+          k++
         }
       }
     }
@@ -251,6 +275,7 @@ export const getParams = (
       }
     }
   }
+
   if (
     !stellation.every(row => row.every(x => x === 1)) &&
     space.curvature > 0
@@ -334,7 +359,7 @@ export const getParams = (
       }
     }
   }
-  return { gens, subgens, rels, transforms }
+  return { gens, subgens, rels, transforms: superTransforms || transforms }
 }
 
 export const factorial = n => (n ? n * factorial(n - 1) : 1)

@@ -105,6 +105,26 @@ export const ambiances = Object.fromEntries(
       transparency: 'blend',
       color: ({ word }) => hsl(...catpuccin[word.length % catpuccin.length]),
     },
+    cathedral: {
+      background: [0.6, 0.6, 0.6, 1],
+      glow: {
+        exposure: 1.5,
+        strength: 2,
+        offset: {
+          up: 2,
+          down: 2,
+        },
+        steps: 4,
+        pow: 2,
+      },
+      face: {
+        gouraud: true,
+        opacity: 0.9,
+      },
+      transparency: 'oit',
+      color: ({ word, type }) =>
+        type === 'face' ? hsl((word.length * 0.3) % 1, 1, 0.6) : [0, 0, 0],
+    },
     synthwave: {
       background: [...hsl(0.77, 0.6, 0.04), 1],
       glow: {

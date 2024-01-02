@@ -103,7 +103,6 @@ const words = function (params) {
     params.words.set(start, '')
     params.currentWords = new Map()
     params.currentWords.set(start, '')
-    params.lastWord = ''
     params.lastCoset = start
     params.remaining = [start]
     if (params.rootVertex && params.rootNormals && params.metric) {
@@ -147,7 +146,6 @@ const words = function (params) {
       params.words.set(nextCosetId, newWord)
       params.currentWords.set(nextCosetId, newWord)
       params.lastCoset = nextCosetId
-      params.lastWord = newWord
       params.remaining.push(nextCosetId)
       if (params.vertices) {
         let vertex = params.vertices.get(cosetId)

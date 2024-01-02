@@ -707,7 +707,15 @@ export const presets = [
   }),
   {
     name: 'Snub 24-cell',
-    params: polytope([3, 4, 3], ['s', 's', 0, 0]),
+    params: polytope(
+      [
+        [1, 3, 2, 2],
+        [3, 1, 3, 3],
+        [2, 3, 1, 2],
+        [2, 3, 2, 1],
+      ],
+      ['s', 's', 's', 's']
+    ),
   },
   {
     name: 'Icosahedral 120-cell',
