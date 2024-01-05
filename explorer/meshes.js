@@ -26,32 +26,32 @@ const geometries = {
         ultra: { widthSegments: 128, segments: 64 },
       }[detail || 'medium']
     ),
-  edge: (segments, detail) =>
+  edge: (curve, detail) =>
     tube(
       {
-        lowest: { segments, radialSegments: 4 },
-        lower: { segments, radialSegments: 5 },
-        low: { segments, radialSegments: 6 },
-        lowish: { segments, radialSegments: 7 },
-        medium: { segments, radialSegments: 8 },
-        highish: { segments, radialSegments: 10 },
-        high: { segments, radialSegments: 12 },
-        higher: { segments, radialSegments: 16 },
-        ultra: { segments, radialSegments: 32 },
+        lowest: { segments: curve ? 4 : 1, radialSegments: 4 },
+        lower: { segments: curve ? 8 : 1, radialSegments: 5 },
+        low: { segments: curve ? 12 : 1, radialSegments: 6 },
+        lowish: { segments: curve ? 14 : 1, radialSegments: 7 },
+        medium: { segments: curve ? 16 : 1, radialSegments: 8 },
+        highish: { segments: curve ? 24 : 1, radialSegments: 10 },
+        high: { segments: curve ? 32 : 1, radialSegments: 12 },
+        higher: { segments: curve ? 64 : 1, radialSegments: 16 },
+        ultra: { segments: curve ? 128 : 1, radialSegments: 32 },
       }[detail || 'medium']
     ),
-  face: (segments, detail) =>
+  face: (curve, detail) =>
     tri(
       {
-        lowest: { segments: ~~pow(segments, 0.2) },
-        lower: { segments: ~~pow(segments, 0.3) },
-        low: { segments: ~~pow(segments, 0.5) },
-        lowish: { segments: ~~pow(segments, 0.6) },
-        medium: { segments: ~~pow(segments, 0.6) },
-        highish: { segments: ~~pow(segments, 0.8) },
-        high: { segments },
-        higher: { segments },
-        ultra: { segments: ~~pow(segments, 1.25) },
+        lowest: { segments: curve ? 4 : 1 },
+        lower: { segments: curve ? 8 : 1 },
+        low: { segments: curve ? 12 : 1 },
+        lowish: { segments: curve ? 14 : 1 },
+        medium: { segments: curve ? 16 : 1 },
+        highish: { segments: curve ? 24 : 1 },
+        high: { segments: curve ? 32 : 1 },
+        higher: { segments: curve ? 64 : 1 },
+        ultra: { segments: curve ? 128 : 1 },
       }[detail || 'medium']
     ),
 }

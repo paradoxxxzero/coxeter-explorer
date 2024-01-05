@@ -124,8 +124,8 @@ export const augment = (rt, vertex, fragment, type) => {
     }\n`
   }
   config += `#define CURVATURE ${rt.space?.curvature || 0}\n`
-  if (rt.curve && rt.segments > 1) {
-    config += `#define SEGMENTS ${rt.segments}\n`
+  if (rt.curve) {
+    config += `#define SEGMENTS\n`
   }
   config += `#define EASING ${easings.indexOf(easing)}\n`
 
@@ -455,7 +455,7 @@ export const mesh = (
   varying = ['position']
 ) => {
   const { gl } = rt
-  const geometry = geometryFunc(rt.curve ? rt.segments : 1, rt.detail)
+  const geometry = geometryFunc(rt.space?.curvature && rt.curve, rt.detail)
   const uniforms = rt => [
     {
       name: 'viewProjection',
@@ -540,10 +540,7 @@ export const mesh = (
       this.attributes.color.extend(3, new Float32Array(maxSize * 3), true)
     },
     updateGeometry(rt) {
-      const geometry = geometryFunc(
-        rt.space.curvature && rt.curve ? rt.segments : 1,
-        rt.detail
-      )
+      const geometry = geometryFunc(rt.space.curvature && rt.curve, rt.detail)
       this.indices.update(new Uint16Array(geometry.indices))
       this.attributes.vertex.extend(3, new Float32Array(geometry.vertices))
       this.attributes.uv.extend(2, new Float32Array(geometry.uvs))

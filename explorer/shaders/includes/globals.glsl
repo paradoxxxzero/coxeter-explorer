@@ -14,9 +14,4 @@ const vec3 NOISE = vec3(.000003f, -.000002f, .000017f);
 const float NaN = intBitsToFloat(-1);
 const float SCALE = TAU;
 const float curvature = float(CURVATURE);
-#ifdef SEGMENTS
-const float segments = float(SEGMENTS);
-#else
-const float segments = 1.f;
-#endif
-const float DT = .1f / segments;
+const float DT = .005f;

@@ -455,16 +455,16 @@ export default function UI({
 
           {['advanced', 'full'].includes(showUI) && (
             <aside className="parameters">
-              <Number
-                name="segments"
-                label="Segments"
-                min={1}
-                step={1}
-                value={params.segments}
-                toggler={params.curve}
-                togglerName="curve"
-                onChange={handleChange}
-              />
+              {runtime.space?.curvature ? (
+                <label className="boolean-label">
+                  Normalize
+                  <Boolean
+                    name="curve"
+                    value={params.curve}
+                    onChange={handleChange}
+                  />
+                </label>
+              ) : null}
               {showUI === 'full' && (
                 <label className="select-label">
                   Easing

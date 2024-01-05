@@ -174,7 +174,6 @@ export const useInteract = (
       runtime.projection7,
       runtime.projection8,
       runtime.projection9,
-      runtime.segments,
       runtime.space,
       runtime.stellation,
       runtime.subsampling,

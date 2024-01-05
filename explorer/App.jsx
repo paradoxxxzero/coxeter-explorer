@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { details } from '../statics'
 import Runtime from './components/Runtime'
 import UI from './components/UI'
@@ -73,17 +73,41 @@ export default function App({ params, updateParams }) {
     },
     [setRotations]
   )
+
+  const adaptative = useRef({
+    previous: null,
+    anteprevious: null,
+    start: null,
+    stable: false,
+  })
+
+  useEffect(() => {
+    adaptative.current = {
+      previous: null,
+      anteprevious: null,
+      stable: false,
+      start: null,
+    }
+  }, [runtime.space, runtime.shaper, params.ambiance])
+
   useEffect(() => {
     const rate = 1000 / 60 // Base computations on a 60Hz screen
 
     if (params.adaptative) {
       let raf = null
-      let frame = performance.now()
+      let frame = null
       let lasts = []
       const upsampling = 20
-      const downsampling = 5
-      const loop = () => {
-        const now = performance.now()
+      const downsampling = 10
+      const loop = now => {
+        if (frame === null) {
+          if (adaptative.current.start === null) {
+            adaptative.current.start = now
+          }
+          frame = now
+          raf = requestAnimationFrame(loop)
+          return
+        }
         lasts.push(now - frame)
         frame = now
         if (lasts.length > max(upsampling, downsampling)) {
@@ -92,10 +116,14 @@ export default function App({ params, updateParams }) {
         if (lasts.length >= downsampling) {
           const downavg =
             lasts.slice(-downsampling).reduce((a, b) => a + b, 0) / downsampling
-          if (downavg > 2.5 * rate) {
+          if (downavg > (adaptative.current.stable ? 2.01 : 1.51) * rate) {
+            lasts = []
+            adaptative.current.stable = false
             const currentDetail = details.indexOf(params.detail)
             if (currentDetail > 1) {
-              console.debug('Lowering details')
+              // console.debug('Lowering details')
+              adaptative.current.anteprevious = adaptative.current.previous
+              adaptative.current.previous = params.detail
               updateParams({ detail: details[currentDetail - 1] })
             }
           }
@@ -104,12 +132,26 @@ export default function App({ params, updateParams }) {
         if (lasts.length >= upsampling) {
           const upavg =
             lasts.slice(-upsampling).reduce((a, b) => a + b, 0) / upsampling
-          if (upavg < rate) {
+          if (upavg < (adaptative.current.stable ? 1.001 : 1.01) * rate) {
+            lasts = []
+            adaptative.current.stable = false
             const currentDetail = details.indexOf(params.detail)
             // Don't go ultra
             if (currentDetail < details.length - 2) {
-              console.debug('Increasing details')
-              updateParams({ detail: details[currentDetail + 1] })
+              // console.debug('Increasing details')
+              const nextDetail = details[currentDetail + 1]
+              if (
+                nextDetail === adaptative.current.previous &&
+                params.detail === adaptative.current.anteprevious &&
+                now - adaptative.current.start > 1000
+              ) {
+                // console.debug('Stabilized, not increasing details')
+                adaptative.current.stable = true
+              } else {
+                adaptative.current.anteprevious = adaptative.current.previous
+                adaptative.current.previous = params.detail
+                updateParams({ detail: nextDetail })
+              }
             }
           }
         }
@@ -118,7 +160,13 @@ export default function App({ params, updateParams }) {
       raf = requestAnimationFrame(loop)
       return () => cancelAnimationFrame(raf)
     }
-  }, [params.detail, params.adaptative, updateParams])
+  }, [
+    params.detail,
+    params.adaptative,
+    params.ambiance,
+    runtime.space,
+    updateParams,
+  ])
 
   return runtime.gl ? (
     <>

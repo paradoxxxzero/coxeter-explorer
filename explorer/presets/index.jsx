@@ -48,7 +48,6 @@ const polytope = (coxeterArgs, mirrors, stellationArgs, extra) => {
     drawFace: dimensions <= 4,
     curve: dimensions > 3,
     ambiance: 'colorful',
-    segments: 32,
     matrix: ident(dimensions),
     zoom: dimensions <= 3 ? 2 : dimensions > 4 ? 3 : 5,
     centered: true,
@@ -102,7 +101,6 @@ const tiling = (coxeterArgs, mirrors, stellationArgs, extra) => {
     curve: true,
     detail: 'medium',
     zoom: 1,
-    segments: 32,
     ...extra,
   }
 }
@@ -114,7 +112,6 @@ const ehoneycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
     drawVertex: false,
     centered: false,
     sizeEdge: 15,
-    segments: 16,
     zoom: 2,
     ...extra,
   }
@@ -131,7 +128,6 @@ const honeycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
     curve: true,
     centered: false,
     sizeEdge: dimensions > 4 ? 15 : 25,
-    segments: 16,
     zoom: 1.5,
     ...extra,
   }
@@ -271,7 +267,6 @@ export const presets = [
       curve: true,
       ambiance: 'neon',
       zoom: 4.2,
-      segments: 64,
     }),
   },
   {
@@ -306,7 +301,6 @@ export const presets = [
         drawVertex: false,
         drawFace: true,
         curve: true,
-        segments: 64,
         easing: 'quintic',
         ambiance: 'neon',
         centered: true,
@@ -332,7 +326,6 @@ export const presets = [
         projection4: 'inverted',
         ambiance: 'disco',
         zoom: 3,
-        segments: 32,
       }
     ),
   },
@@ -416,7 +409,6 @@ export const presets = [
       drawFace: true,
       curve: true,
       centered: true,
-      segments: 64,
       detail: 'high',
       easing: 'quartic',
       ambiance: 'pure',
@@ -478,7 +470,6 @@ export const presets = [
       curve: true,
       centered: true,
       detail: 'high',
-      segments: 32,
       easing: 'quartic',
       ambiance: 'pure',
       zoom: 1.5,
@@ -1866,7 +1857,6 @@ export const presets = [
     name: 'Triangular',
     params: honeycomb([3, 6, 3], [1, 0, 0, 0], null, {
       easing: 'quintic',
-      segments: 32,
     }),
   },
   {
@@ -1877,7 +1867,6 @@ export const presets = [
     name: 'Order-6 tetrahedral',
     params: honeycomb([3, 3, 6], [1, 0, 0, 0], null, {
       easing: 'quintic',
-      segments: 32,
     }),
   },
   {
@@ -1893,7 +1882,6 @@ export const presets = [
       null,
       {
         easing: 'quintic',
-        segments: 32,
       }
     ),
   },
@@ -1919,7 +1907,6 @@ export const presets = [
     name: 'Order-6 hexagonal',
     params: honeycomb([6, 3, 6], [0, 0, 0, 1], null, {
       easing: 'quintic',
-      segments: 32,
     }),
   },
   {
@@ -2001,7 +1988,6 @@ export const presets = [
       null,
       {
         easing: 'quintic',
-        segments: 32,
       }
     ),
   },
@@ -2060,7 +2046,6 @@ export const presets = [
       null,
       {
         easing: 'quintic',
-        segments: 32,
       }
     ),
   },
@@ -2164,21 +2149,15 @@ export const presets = [
   },
   {
     name: '3-3-7',
-    params: honeycomb([3, 3, 7], [1, 0, 0, 0], null, {
-      segments: 64,
-    }),
+    params: honeycomb([3, 3, 7], [1, 0, 0, 0], null, {}),
   },
   {
     name: '3-4-7',
-    params: honeycomb([3, 3, 7], [1, 0, 0, 0], null, {
-      segments: 64,
-    }),
+    params: honeycomb([3, 3, 7], [1, 0, 0, 0], null, {}),
   },
   {
     name: '3-5-7',
-    params: honeycomb([3, 5, 7], [1, 0, 0, 0], null, {
-      segments: 64,
-    }),
+    params: honeycomb([3, 5, 7], [1, 0, 0, 0], null, {}),
   },
   {
     type: 'group',
@@ -2238,7 +2217,6 @@ export const presets = [
     name: 'Order-4 24-cell',
     params: honeycomb([3, 4, 3, 4], [1, 0, 0, 0, 0], null, {
       easing: 'quintic',
-      segments: 32,
     }),
   },
   {
@@ -2258,7 +2236,6 @@ export const presets = [
     name: '5-orthoplex',
     params: honeycomb([3, 3, 3, 4, 3], [1, 0, 0, 0, 0, 0], null, {
       easing: 'quintic',
-      segments: 32,
     }),
   },
   {
@@ -2269,21 +2246,18 @@ export const presets = [
     name: '16-cell honeycomb',
     params: honeycomb([3, 3, 4, 3, 3], [1, 0, 0, 0, 0, 0], null, {
       easing: 'quintic',
-      segments: 32,
     }),
   },
   {
     name: 'Order-4 24-cell honeycomb',
     params: honeycomb([3, 4, 3, 3, 4], [1, 0, 0, 0, 0, 0], null, {
       easing: 'quintic',
-      segments: 32,
     }),
   },
   {
     name: 'Tesseratic honeycomb',
     params: honeycomb([4, 3, 3, 4, 3], [1, 0, 0, 0, 0, 0], null, {
       easing: 'quintic',
-      segments: 32,
     }),
   },
 ]

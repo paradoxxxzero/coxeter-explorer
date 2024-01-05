@@ -35,8 +35,6 @@ export const useRender = (runtime, setRuntime) => {
     runtime.curve,
     runtime.dimensions,
     runtime.easing,
-    runtime.detail,
-    runtime.segments,
     runtime.projection3,
     runtime.projection4,
     runtime.projection5,
@@ -60,13 +58,7 @@ export const useRender = (runtime, setRuntime) => {
       runtime.meshes.updateGeometries(runtime)
       return runtime
     })
-  }, [
-    runtime.space,
-    runtime.curve,
-    runtime.segments,
-    runtime.detail,
-    setRuntime,
-  ])
+  }, [runtime.space, runtime.curve, runtime.detail, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => {
@@ -95,7 +87,6 @@ export const useRender = (runtime, setRuntime) => {
     runtime.projection7,
     runtime.projection8,
     runtime.projection9,
-    runtime.segments,
     runtime.space,
     setRuntime,
   ])
@@ -147,7 +138,6 @@ export const useRender = (runtime, setRuntime) => {
     runtime.projection8,
     runtime.projection9,
     runtime.ranges,
-    runtime.segments,
     runtime.space,
     runtime.stellation,
     runtime.subsampling,
