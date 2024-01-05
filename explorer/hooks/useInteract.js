@@ -114,13 +114,13 @@ export const useInteract = (
   })
 
   const local = useRef({
-    matrix: runtime.matrix.map(x => x.slice()),
+    matrix: runtime.matrix,
     zoom: runtime.zoom,
     pointers: new Map(),
   })
 
   useEffect(() => {
-    local.current.matrix = runtime.matrix.map(x => x.slice())
+    local.current.matrix = runtime.matrix
   }, [runtime.matrix])
 
   useEffect(() => {
@@ -199,7 +199,7 @@ export const useInteract = (
       animation.current.t = performance.now()
     }
 
-    const dt = min(performance.now() - animation.current.t, 100)
+    const dt = performance.now() - animation.current.t
 
     let changed = false
     for (let i = 0; i < speed.length; i++) {
@@ -215,11 +215,12 @@ export const useInteract = (
         }
       }
       if (!pause.has(i)) {
+        const currentSpeed = max(min(speed[i] * dt, 0.1), -0.1)
         set(
           local.current.matrix,
           multiply(
             rotate(
-              speed[i] * dt,
+              currentSpeed,
               rotations.combinations[i],
               runtime.dimensions,
               runtime.space.metric
@@ -315,7 +316,7 @@ export const useInteract = (
       const delta = [
         -(e.clientX - last[0]) / window.innerHeight, // height is intentional
         -(e.clientY - last[1]) / window.innerHeight,
-      ].map(x => max(min(x, 0.01), -0.01))
+      ]
 
       local.current.pointers.set(e.pointerId, [e.clientX, e.clientY])
       if (local.current.pointers.size > 1) {

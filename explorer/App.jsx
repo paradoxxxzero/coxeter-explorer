@@ -5,6 +5,7 @@ import UI from './components/UI'
 import { getRotations } from './math/hypermath'
 import { filterParams } from './params'
 import { initializeGl } from './render'
+import { max } from './math'
 
 export default function App({ params, updateParams }) {
   const [runtime, setRuntime] = useState({
@@ -73,34 +74,42 @@ export default function App({ params, updateParams }) {
     [setRotations]
   )
   useEffect(() => {
+    const rate = 1000 / 60 // Base computations on a 60Hz screen
+
     if (params.adaptative) {
       let raf = null
       let frame = performance.now()
       let lasts = []
-      const sampling = 10
+      const upsampling = 20
+      const downsampling = 5
       const loop = () => {
         const now = performance.now()
         lasts.push(now - frame)
         frame = now
-        if (lasts.length > sampling) {
+        if (lasts.length > max(upsampling, downsampling)) {
           lasts.shift()
         } else {
           raf = requestAnimationFrame(loop)
           return
         }
-        const avg = lasts.reduce((a, b) => a + b, 0) / sampling
-        if (avg > 40) {
-          lasts = []
+        const downavg =
+          lasts.slice(-downsampling).reduce((a, b) => a + b, 0) / downsampling
+        if (downavg > 2 * rate) {
+          // lasts = []
           const currentDetail = details.indexOf(params.detail)
-          if (currentDetail > 0) {
+          if (currentDetail > 1) {
             console.debug('Lowering details')
             updateParams({ detail: details[currentDetail - 1] })
           }
-        } else if (avg < 17) {
-          lasts = []
+        }
+
+        const upavg =
+          lasts.slice(-upsampling).reduce((a, b) => a + b, 0) / upsampling
+        if (upavg < rate) {
+          // lasts = []
           const currentDetail = details.indexOf(params.detail)
+          // Don't go ultra
           if (currentDetail < details.length - 2) {
-            // Don't go ultra
             console.debug('Increasing details')
             updateParams({ detail: details[currentDetail + 1] })
           }
