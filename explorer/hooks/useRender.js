@@ -19,26 +19,6 @@ export const useRender = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
-      runtime.meshes.updateGeometries(runtime)
-      return runtime
-    })
-  }, [
-    runtime.space,
-    runtime.curve,
-    runtime.segments,
-    runtime.detail,
-    setRuntime,
-  ])
-
-  useEffect(() => {
-    setRuntime(runtime => {
-      runtime.meshes.changeArity(runtime.dimensions)
-      return runtime
-    })
-  }, [runtime.dimensions, setRuntime])
-
-  useEffect(() => {
-    setRuntime(runtime => {
       changeAmbiance(runtime)
       refreshTextures(runtime)
       return runtime
@@ -65,6 +45,26 @@ export const useRender = (runtime, setRuntime) => {
     runtime.projection8,
     runtime.projection9,
     runtime.space,
+    setRuntime,
+  ])
+
+  useEffect(() => {
+    setRuntime(runtime => {
+      runtime.meshes.changeArity(runtime.dimensions)
+      return runtime
+    })
+  }, [runtime.dimensions, setRuntime])
+
+  useEffect(() => {
+    setRuntime(runtime => {
+      runtime.meshes.updateGeometries(runtime)
+      return runtime
+    })
+  }, [
+    runtime.space,
+    runtime.curve,
+    runtime.segments,
+    runtime.detail,
     setRuntime,
   ])
 

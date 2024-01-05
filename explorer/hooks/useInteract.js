@@ -215,7 +215,7 @@ export const useInteract = (
         }
       }
       if (!pause.has(i)) {
-        const currentSpeed = max(min(speed[i] * dt, 0.1), -0.1)
+        const currentSpeed = max(min(speed[i] * dt, 0.5), -0.5)
         set(
           local.current.matrix,
           multiply(

@@ -88,35 +88,34 @@ export default function App({ params, updateParams }) {
         frame = now
         if (lasts.length > max(upsampling, downsampling)) {
           lasts.shift()
-        } else {
-          raf = requestAnimationFrame(loop)
-          return
         }
-        const downavg =
-          lasts.slice(-downsampling).reduce((a, b) => a + b, 0) / downsampling
-        if (downavg > 2 * rate) {
-          // lasts = []
-          const currentDetail = details.indexOf(params.detail)
-          if (currentDetail > 1) {
-            console.debug('Lowering details')
-            updateParams({ detail: details[currentDetail - 1] })
+        if (lasts.length >= downsampling) {
+          const downavg =
+            lasts.slice(-downsampling).reduce((a, b) => a + b, 0) / downsampling
+          if (downavg > 2.5 * rate) {
+            const currentDetail = details.indexOf(params.detail)
+            if (currentDetail > 1) {
+              console.debug('Lowering details')
+              updateParams({ detail: details[currentDetail - 1] })
+            }
           }
         }
 
-        const upavg =
-          lasts.slice(-upsampling).reduce((a, b) => a + b, 0) / upsampling
-        if (upavg < rate) {
-          // lasts = []
-          const currentDetail = details.indexOf(params.detail)
-          // Don't go ultra
-          if (currentDetail < details.length - 2) {
-            console.debug('Increasing details')
-            updateParams({ detail: details[currentDetail + 1] })
+        if (lasts.length >= upsampling) {
+          const upavg =
+            lasts.slice(-upsampling).reduce((a, b) => a + b, 0) / upsampling
+          if (upavg < rate) {
+            const currentDetail = details.indexOf(params.detail)
+            // Don't go ultra
+            if (currentDetail < details.length - 2) {
+              console.debug('Increasing details')
+              updateParams({ detail: details[currentDetail + 1] })
+            }
           }
         }
         raf = requestAnimationFrame(loop)
       }
-      loop()
+      raf = requestAnimationFrame(loop)
       return () => cancelAnimationFrame(raf)
     }
   }, [params.detail, params.adaptative, updateParams])

@@ -281,13 +281,7 @@ export const attribute = (
       }
       gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer)
       const locSize = size > 4 ? 3 : 1
-      // Force location on target and center to account for attrib size change
-      if (this.name === 'target') {
-        this.location = size > 4 ? 6 : 4
-      }
-      if (this.name === 'center') {
-        this.location = size > 4 ? 9 : 5
-      }
+
       for (let i = 0; i < locSize; i++) {
         gl.enableVertexAttribArray(this.location + i)
       }
@@ -301,10 +295,8 @@ export const attribute = (
           (size / locSize) * i * byteSize
         )
       }
-      if (this.instances) {
-        for (let i = 0; i < locSize; i++) {
-          gl.vertexAttribDivisor(this.location + i, this.instances)
-        }
+      for (let i = 0; i < locSize; i++) {
+        gl.vertexAttribDivisor(this.location + i, this.instances || 0)
       }
       this.update()
     },
@@ -534,13 +526,7 @@ export const mesh = (
         return
       }
       this.arity = arity
-      varying.forEach(attr => {
-        this.attributes[attr].extend(
-          arity,
-          new Float32Array(this.instances * arity),
-          false
-        )
-      })
+      this.extendAttributes(this.instances)
     },
     extendAttributes(maxSize) {
       this.instances = maxSize
