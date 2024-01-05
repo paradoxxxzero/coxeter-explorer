@@ -1,9 +1,8 @@
 import { types } from '../statics'
 import { sphere, tri, tube } from './geometries'
 import { mesh } from './helpers'
-import { PI, cbrt, sqrt, tan } from './math'
+import { PI, pow, tan } from './math'
 import { columnMajor } from './math/matrix'
-import { isDual, isHoloSnub, isSnub } from './mirrors'
 import { render } from './render'
 import fragmentEdge from './shaders/edge/fragment.glsl?raw'
 import vertexEdge from './shaders/edge/vertex.glsl?raw'
@@ -16,28 +15,43 @@ const geometries = {
   vertex: (_, detail) =>
     sphere(
       {
-        low: { widthSegments: 16, segments: 8 },
-        medium: { widthSegments: 32, segments: 16 },
-        high: { widthSegments: 64, segments: 32 },
+        lowest: { widthSegments: 6, segments: 2 },
+        lower: { widthSegments: 8, segments: 4 },
+        low: { widthSegments: 8, segments: 8 },
+        lowish: { widthSegments: 12, segments: 8 },
+        medium: { widthSegments: 16, segments: 16 },
+        highish: { widthSegments: 32, segments: 16 },
+        high: { widthSegments: 32, segments: 32 },
+        higher: { widthSegments: 64, segments: 32 },
         ultra: { widthSegments: 128, segments: 64 },
       }[detail || 'medium']
     ),
   edge: (segments, detail) =>
     tube(
       {
-        low: { segments, radialSegments: 4 },
+        lowest: { segments, radialSegments: 4 },
+        lower: { segments, radialSegments: 5 },
+        low: { segments, radialSegments: 6 },
+        lowish: { segments, radialSegments: 7 },
         medium: { segments, radialSegments: 8 },
-        high: { segments, radialSegments: 16 },
+        highish: { segments, radialSegments: 10 },
+        high: { segments, radialSegments: 12 },
+        higher: { segments, radialSegments: 16 },
         ultra: { segments, radialSegments: 32 },
       }[detail || 'medium']
     ),
   face: (segments, detail) =>
     tri(
       {
-        low: { segments: ~~cbrt(segments) },
-        medium: { segments: ~~sqrt(segments) },
+        lowest: { segments: ~~pow(segments, 0.2) },
+        lower: { segments: ~~pow(segments, 0.3) },
+        low: { segments: ~~pow(segments, 0.5) },
+        lowish: { segments: ~~pow(segments, 0.6) },
+        medium: { segments: ~~pow(segments, 0.6) },
+        highish: { segments: ~~pow(segments, 0.8) },
         high: { segments },
-        ultra: { segments: 3 * segments },
+        higher: { segments },
+        ultra: { segments: ~~pow(segments, 1.25) },
       }[detail || 'medium']
     ),
 }

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import { filterParams } from './params'
+import { details } from '../statics'
 import Runtime from './components/Runtime'
 import UI from './components/UI'
 import { getRotations } from './math/hypermath'
+import { filterParams } from './params'
 import { initializeGl } from './render'
 
 export default function App({ params, updateParams }) {
@@ -71,6 +72,45 @@ export default function App({ params, updateParams }) {
     },
     [setRotations]
   )
+  useEffect(() => {
+    if (params.adaptative) {
+      let raf = null
+      let frame = performance.now()
+      let lasts = []
+      const sampling = 10
+      const loop = () => {
+        const now = performance.now()
+        lasts.push(now - frame)
+        frame = now
+        if (lasts.length > sampling) {
+          lasts.shift()
+        } else {
+          raf = requestAnimationFrame(loop)
+          return
+        }
+        const avg = lasts.reduce((a, b) => a + b, 0) / sampling
+        if (avg > 40) {
+          lasts = []
+          const currentDetail = details.indexOf(params.detail)
+          if (currentDetail > 0) {
+            console.debug('Lowering details')
+            updateParams({ detail: details[currentDetail - 1] })
+          }
+        } else if (avg < 17) {
+          lasts = []
+          const currentDetail = details.indexOf(params.detail)
+          if (currentDetail < details.length - 2) {
+            // Don't go ultra
+            console.debug('Increasing details')
+            updateParams({ detail: details[currentDetail + 1] })
+          }
+        }
+        raf = requestAnimationFrame(loop)
+      }
+      loop()
+      return () => cancelAnimationFrame(raf)
+    }
+  }, [params.detail, params.adaptative, updateParams])
 
   return runtime.gl ? (
     <>

@@ -225,12 +225,7 @@ onmessage = ({
           const cached = cache.get(detail.key)
 
           if (cached.currentWords.size) {
-            const { objects, partials } = getObjects(
-              cached,
-              shape,
-              space,
-              rootCached
-            )
+            const { objects, partials } = getObjects(cached, shape, rootCached)
             parts.objects.push(objects)
             parts.size += objects.length + partials.length
             lasts[i] += objects.length

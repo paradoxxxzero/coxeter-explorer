@@ -58,5 +58,15 @@ export const specularLight = [
   'ward-anisotropic',
 ]
 
-export const details = ['low', 'medium', 'high', 'ultra']
+export const details = [
+  'lowest',
+  'lower',
+  'low',
+  'lowish',
+  'medium',
+  'highish',
+  'high',
+  'higher',
+  'ultra',
+]
 export const types = ['vertex', 'edge', 'face']

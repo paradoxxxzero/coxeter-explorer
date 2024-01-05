@@ -1,4 +1,4 @@
-import { PI, TAU, cos, log, sin, sqrt } from './math'
+import { PI, TAU, cos, sin } from './math'
 
 export const sphere = ({
   radius = 1,

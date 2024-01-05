@@ -19,7 +19,7 @@ const reorder = (i, n, double = false, snub = false) => {
   return 2 * i
 }
 
-export const getObjects = (cached, shape, space, rootCached) => {
+export const getObjects = (cached, shape, rootCached) => {
   const objects = []
   const partials = []
   if (cached.subdimensions === 0) {

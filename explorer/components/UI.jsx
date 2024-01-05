@@ -365,6 +365,15 @@ export default function UI({
               <div className="projection">
                 <label className="number-label">
                   <span className="number-label">Detail</span>
+
+                  <label className="boolean-label">
+                    <Boolean
+                      name="adaptative"
+                      value={params.adaptative}
+                      onChange={handleChange}
+                    />
+                    Auto
+                  </label>
                   <select
                     name="detail"
                     value={params.detail}
