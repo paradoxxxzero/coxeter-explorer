@@ -159,59 +159,62 @@ export const getParams = (
         }
       }
     }
-    // } else if (mirrors.filter(m => isSnub(m)).length === 2) {
-    //   // a = 01, b = 2
-    //   const snubbeds = mirrors
-    //     .map((m, i) => (isSnub(m) ? i : null))
-    //     .filter(i => i !== null)
+  } else if (mirrors.filter(m => isSnub(m)).length === 2) {
+    // a = 01, b = 2
+    const snubbeds = mirrors
+      .map((m, i) => (isSnub(m) ? i : null))
+      .filter(i => i !== null)
+    let k = 0
+    for (let i = 0; i < dimensions; i++) {
+      const c = itoa(k)
+      if (!snubbeds.some(s => skips.includes(s))) {
+        if (i === snubbeds[0]) {
+          transforms[c] = snubbeds
+          gens += c
+          k++
+          rels.push(c.repeat(coxeter[snubbeds[0]][snubbeds[1]]))
+        } else if (i !== snubbeds[1] && !skips.includes(i)) {
+          rels.push(c.repeat(2))
+          gens += c
+          k++
+          transforms[c] = [i]
+        }
+      }
+    }
 
-    //   for (let i = 0; i < dimensions - 1; i++) {
-    //     if (!skips.includes(i)) {
-    //       const c = itoa(i)
-    //       gens += c
-    //       if (i === snubbeds[0]) {
-    //         transforms[c] = snubbeds
-    //         rels.push(c.repeat(coxeter[snubbeds[0]][snubbeds[1]]))
-    //       } else {
-    //         rels.push(c.repeat(2))
-    //         transforms[c] = [i]
-    //       }
-    //     }
-    //   }
+    if (skips.length === dimensions - 1) {
+      const trans = Object.entries(superTransforms).find(
+        ([k, v]) => v[0] === 0 && !skips.includes(v[1])
+      )
+      if (!trans) {
+        return { gens: null }
+      }
+      gens = trans[0]
 
-    //   if (skips.length === dimensions - 1) {
-    //     const trans = Object.entries(superTransforms).find(
-    //       ([k, v]) => v[0] === 0 && !skips.includes(v[1])
-    //     )
-    //     if (!trans) {
-    //       return { gens: null }
-    //     }
-    //     gens = trans[0]
-
-    //     rels.push(gens.repeat(2))
-    //   } else {
-    //     for (let i = 1; i < dimensions; i++) {
-    //       for (let j = i + 1; j < dimensions; j++) {
-    //         if (!skips.includes(i - 1) && !skips.includes(j - 1)) {
-    //           let m = coxeter[i][j]
-    //           if (i === snubbeds[0] || j === snubbeds[1] || j - i > 1 || m < 2) {
-    //             continue
-    //           }
-    //           if (m % 2 === 0) {
-    //             m /= 2
-    //           }
-    //           rels.push(
-    //             (
-    //               itoa(i - 1).toUpperCase() +
-    //               itoa(j - 1) +
-    //               itoa(i - 1) +
-    //               itoa(j - 1)
-    //             ).repeat(m)
-    //           )
-    //         }
-    //       }
-    //     }
-    //   }
+      rels.push(gens.repeat(2))
+    } else {
+      for (let i = 0; i < dimensions; i++) {
+        for (let j = i + 1; j < dimensions; j++) {
+          if (!skips.includes(i) && !skips.includes(j)) {
+            if (i === snubbeds[0] && j === snubbeds[1]) {
+              let m =
+                coxeter[snubbeds[1]][
+                  range(dimensions).find(i => !snubbeds.includes(i))
+                ]
+              if (m < 2) {
+                continue
+              }
+              if (m % 2 === 0) {
+                m /= 2
+              }
+              rels.push(
+                (itoa(0).toUpperCase() + itoa(1) + itoa(0) + itoa(1)).repeat(m)
+              )
+            }
+          }
+        }
+      }
+    }
   } else if (mirrors.some(m => isSnub(m))) {
     // a = 01
     // b = 02
@@ -277,6 +280,7 @@ export const getParams = (
   }
 
   if (
+    !mirrors.some(m => isSnub(m)) &&
     !stellation.every(row => row.every(x => x === 1)) &&
     space.curvature > 0
   ) {

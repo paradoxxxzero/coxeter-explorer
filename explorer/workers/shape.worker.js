@@ -206,8 +206,8 @@ onmessage = ({
         }
       }
     } else {
-      for (let i = 0; i < polytope.length && i < 3; i++) {
-        if (!draw[types[i]]) {
+      for (let i = 0; i < 3; i++) {
+        if (!draw[types[i]] || !polytope[i]) {
           objects.push(null)
           continue
         }
