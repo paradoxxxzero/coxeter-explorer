@@ -43,7 +43,6 @@ const polytope = (coxeterArgs, mirrors, stellationArgs, extra) => {
   const params = {
     ...defaultParams,
     ...coxeterParams,
-    detail: dimensions > 4 ? 'medium' : 'high',
     drawVertex: dimensions <= 3,
     drawFace: dimensions <= 4,
     curve: dimensions > 3,
@@ -99,7 +98,6 @@ const tiling = (coxeterArgs, mirrors, stellationArgs, extra) => {
     ambiance: 'plain',
     drawVertex: false,
     curve: true,
-    detail: 'medium',
     zoom: 1,
     ...extra,
   }
@@ -122,7 +120,6 @@ const honeycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
   return {
     ...poly,
     ambiance: 'neon',
-    detail: 'medium',
     drawFace: false,
     drawVertex: false,
     curve: true,
@@ -385,7 +382,6 @@ export const presets = [
         curve: false,
         ambiance: 'neon',
         drawVertex: true,
-        detail: 'low',
         projection3: 'orthographic',
         projection4: 'orthographic',
         projection5: 'orthographic',
@@ -409,7 +405,6 @@ export const presets = [
       drawFace: true,
       curve: true,
       centered: true,
-      detail: 'high',
       easing: 'quartic',
       ambiance: 'pure',
     }),
@@ -469,7 +464,6 @@ export const presets = [
       drawFace: true,
       curve: true,
       centered: true,
-      detail: 'high',
       easing: 'quartic',
       ambiance: 'pure',
       zoom: 1.5,
@@ -1586,7 +1580,6 @@ export const presets = [
     name: 'Infinite Order triangular',
     params: tiling([3, 0], [1, 0, 0], null, {
       easing: 'quintic',
-      detail: 'high',
     }),
   },
   {

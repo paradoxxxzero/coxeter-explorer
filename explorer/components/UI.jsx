@@ -376,8 +376,13 @@ export default function UI({
                   </label>
                   <select
                     name="detail"
-                    value={params.detail}
-                    onChange={handleRawChange}
+                    value={runtime.detail}
+                    onChange={event =>
+                      setRuntime(runtime => ({
+                        ...runtime,
+                        detail: event.target.value,
+                      }))
+                    }
                   >
                     {details.map(a => (
                       <option key={a} value={a}>

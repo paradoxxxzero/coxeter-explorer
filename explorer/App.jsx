@@ -1,11 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { details } from '../statics'
+import { useCallback, useEffect, useState } from 'react'
 import Runtime from './components/Runtime'
 import UI from './components/UI'
 import { getRotations } from './math/hypermath'
 import { filterParams } from './params'
 import { initializeGl } from './render'
-import { max } from './math'
 
 export default function App({ params, updateParams }) {
   const [runtime, setRuntime] = useState({
@@ -14,7 +12,7 @@ export default function App({ params, updateParams }) {
     space: null,
     shape: null,
     processing: true,
-
+    detail: 'medium',
     iteration: 0,
     polytope: [],
     shaper: null,
@@ -73,100 +71,6 @@ export default function App({ params, updateParams }) {
     },
     [setRotations]
   )
-
-  const adaptative = useRef({
-    previous: null,
-    anteprevious: null,
-    start: null,
-    stable: false,
-  })
-
-  useEffect(() => {
-    adaptative.current = {
-      previous: null,
-      anteprevious: null,
-      stable: false,
-      start: null,
-    }
-  }, [runtime.space, runtime.shaper, params.ambiance])
-
-  useEffect(() => {
-    const rate = 1000 / 60 // Base computations on a 60Hz screen
-
-    if (params.adaptative) {
-      let raf = null
-      let frame = null
-      let lasts = []
-      const upsampling = 20
-      const downsampling = 10
-      const loop = now => {
-        if (frame === null) {
-          if (adaptative.current.start === null) {
-            adaptative.current.start = now
-          }
-          frame = now
-          raf = requestAnimationFrame(loop)
-          return
-        }
-        lasts.push(now - frame)
-        frame = now
-        if (lasts.length > max(upsampling, downsampling)) {
-          lasts.shift()
-        }
-        if (lasts.length >= downsampling) {
-          const downavg =
-            lasts.slice(-downsampling).reduce((a, b) => a + b, 0) / downsampling
-          if (downavg > (adaptative.current.stable ? 2.01 : 1.51) * rate) {
-            lasts = []
-            adaptative.current.stable = false
-            const currentDetail = details.indexOf(params.detail)
-            if (currentDetail > 1) {
-              // console.debug('Lowering details')
-              adaptative.current.anteprevious = adaptative.current.previous
-              adaptative.current.previous = params.detail
-              updateParams({ detail: details[currentDetail - 1] })
-            }
-          }
-        }
-
-        if (lasts.length >= upsampling) {
-          const upavg =
-            lasts.slice(-upsampling).reduce((a, b) => a + b, 0) / upsampling
-          if (upavg < (adaptative.current.stable ? 1.001 : 1.01) * rate) {
-            lasts = []
-            adaptative.current.stable = false
-            const currentDetail = details.indexOf(params.detail)
-            // Don't go ultra
-            if (currentDetail < details.length - 2) {
-              // console.debug('Increasing details')
-              const nextDetail = details[currentDetail + 1]
-              if (
-                nextDetail === adaptative.current.previous &&
-                params.detail === adaptative.current.anteprevious &&
-                now - adaptative.current.start > 1000
-              ) {
-                // console.debug('Stabilized, not increasing details')
-                adaptative.current.stable = true
-              } else {
-                adaptative.current.anteprevious = adaptative.current.previous
-                adaptative.current.previous = params.detail
-                updateParams({ detail: nextDetail })
-              }
-            }
-          }
-        }
-        raf = requestAnimationFrame(loop)
-      }
-      raf = requestAnimationFrame(loop)
-      return () => cancelAnimationFrame(raf)
-    }
-  }, [
-    params.detail,
-    params.adaptative,
-    params.ambiance,
-    runtime.space,
-    updateParams,
-  ])
 
   return runtime.gl ? (
     <>

@@ -22,21 +22,7 @@ const parseParams = () => {
   return filterParams(defaultParams).params
 }
 const syncParams = params => {
-  const hash =
-    '#' +
-    btoa(
-      JSON.stringify(
-        Object.fromEntries(
-          Object.entries(params).filter(
-            ([k, v]) => !['matrix', 'detail'].includes(k)
-          )
-        )
-      )
-    )
-  // In case only ignored params changed
-  if (hash === window.location.hash) {
-    return
-  }
+  const hash = '#' + btoa(JSON.stringify(params))
   window.history.pushState(null, null, hash)
 }
 
