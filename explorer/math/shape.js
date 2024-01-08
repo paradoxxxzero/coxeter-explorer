@@ -44,31 +44,45 @@ export const getQuotient = (
 ) => {
   const actives = range(dimensions).filter(j => !subskips.includes(j))
   let quotient = ''
-  const snub = mirrors.some(m => isSnub(m))
-  if (snub && subParams.gens.length) {
-    for (let j = 0; j < subParams.gens.length; j++) {
-      const gen = subParams.gens[j]
-
-      const m = coxeter[shape.transforms[gen][0]][shape.transforms[gen][1]]
+  const transforms = Object.entries(shape.transforms)
+  for (let i = 0; i < transforms.length; i++) {
+    const [gen, transform] = transforms[i]
+    if (transform.length === 1) {
+      const genIndex = transform[0]
+      if (subskips.includes(genIndex) || !isEnabled(mirrors[genIndex])) {
+        continue
+      }
       if (
-        (subParams.dimensions === 1 ? m === 2 : m > 2) ||
-        shape.transforms[gen].some(x => !mirrors[x])
+        !mirrors[genIndex] &&
+        !actives.some(k => coxeter[k][genIndex] !== 2)
       ) {
         quotient += gen
       }
-    }
-  } else {
-    for (let j = 0; j < dimensions; j++) {
+    } else if (transform.length === 2) {
+      const genIndex1 = transform[0]
+      const genIndex2 = transform[1]
       if (
-        !subskips.includes(j) ||
-        (isEnabled(mirrors[j]) &&
-          !mirrors[j] &&
-          !actives.some(k => coxeter[k][j] !== 2))
+        subskips.includes(genIndex1) ||
+        subskips.includes(genIndex2) ||
+        !isEnabled(mirrors[genIndex1]) ||
+        !isEnabled(mirrors[genIndex2])
       ) {
-        quotient += itoa(j)
+        continue
+      }
+      const m = coxeter[genIndex1][genIndex2]
+      if (
+        (!mirrors[genIndex1] &&
+          !mirrors[genIndex2] &&
+          !actives.some(k => coxeter[k][genIndex1] !== 2) &&
+          !actives.some(k => coxeter[k][genIndex2] !== 2)) ||
+        (subParams.dimensions === 1 ? m === 2 : m > 2)
+      ) {
+        // ?
+        quotient += gen
       }
     }
   }
+
   return quotient
 }
 
@@ -155,8 +169,7 @@ export const getShape = (
         coxeter,
         shape,
         dimensions,
-        subskips,
-        actives
+        subskips
       )
       let subShape = {
         new: isnew,
@@ -238,10 +251,10 @@ export const getShape = (
           }
         }
         visitShape(shape)
-
         const missingEdges = Object.entries(shape.transforms)
           .filter(([edge, transform]) => transform.every(t => mirrors[t]))
           .map(([edge]) => edge)
+        console.log(shape.transforms)
         for (let i = 0; i < edges.length; i++) {
           const edge = edges[i]
           if (missingEdges.includes(edge.gens)) {
@@ -307,8 +320,9 @@ export const getShape = (
             facet: ['', gen],
             children: j === 0 ? children : [],
           }
-
-          snubshape.push(subShape)
+          if (subShape.quotient !== subShape.gens) {
+            snubshape.push(subShape)
+          }
         }
       } else if (i === 2) {
         // We add the missing faces
@@ -319,27 +333,28 @@ export const getShape = (
         const snubMirrors = range(subdimensions).map(() => 's')
 
         const extra = []
-        let k = 0
-        for (let i = 0; i < dimensions; i++) {
-          for (let j = i + 1; j < dimensions; j++) {
-            const c = itoa(k)
-            for (let l = 0; l < j; l++) {
-              const pair = [i, j]
-                .map(x =>
-                  Object.entries(shape.transforms).find(
-                    ([_, v]) => v[0] === l && v[1] === x
-                  )
-                )
-                .filter(x => x)
-              if (pair.length === 2) {
-                extra.push(['', pair[1][0], c])
-              }
+        // Extra faces are rotations that end on same generator
+        const composition = Object.entries(shape.transforms).filter(
+          ([edge, transform]) => transform.length >= 2
+        )
+        for (let i = 0; i < composition.length; i++) {
+          const [gen1, transforms1] = composition[i]
+          for (let j = i + 1; j < composition.length; j++) {
+            const [gen2, transforms2] = composition[j]
+            if (
+              transforms1[transforms1.length - 1] ===
+              transforms2[transforms2.length - 1]
+            ) {
+              extra.push(['', gen1, gen2])
             }
-            k++
           }
         }
         const children = snubshape
         snubshape = []
+
+        if (!extra.length) {
+          extra.push([''])
+        }
 
         for (let j = 0; j < extra.length; j++) {
           subskips[subskips.length - 1] = j + 's'

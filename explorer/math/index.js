@@ -1,4 +1,3 @@
-import { range } from '../../utils'
 import { isSnub } from '../mirrors'
 import { getStellationOppositeAngle } from './hypermath'
 
@@ -101,6 +100,38 @@ export const itoa = i => String.fromCharCode(97 + i)
 export const itor = i => String.fromCharCode(114 + i)
 export const atoi = a => a.charCodeAt(0) - 97
 
+const findPaths = (rotations, word = '', chain = []) => {
+  const paths = []
+  for (let i = 0; i < rotations.length; i++) {
+    const [key, rotation] = rotations[i]
+    const otherRotations = rotations.filter((_, j) => j !== i)
+    if (chain.length) {
+      const last = chain[chain.length - 1]
+
+      if (rotation.some(r => r === last)) {
+        const reverse = rotation[1] === last
+        const char = reverse ? key.toUpperCase() : key
+        const rot = reverse ? [...rotation].reverse() : rotation
+        if (rot[1] === chain[0]) {
+          return [word + char]
+        }
+        if (otherRotations.length) {
+          paths.push(
+            ...findPaths(
+              otherRotations,
+              word + char,
+              chain.concat(rot.slice(1))
+            )
+          )
+        }
+      }
+    } else {
+      paths.push(...findPaths(otherRotations, key, rotation))
+    }
+  }
+  return paths
+}
+
 export const getParams = (
   dimensions,
   coxeter,
@@ -120,159 +151,82 @@ export const getParams = (
 
   const rels = []
 
-  if (mirrors.filter(m => isSnub(m)).length === 1) {
-    // Same group but with the snubbed generator making reverse mirror transform:
-    const snubbed = mirrors.findIndex(m => isSnub(m))
-    const pair = (snubbed + 1) % dimensions
-    for (let i = 0; i < dimensions; i++) {
-      if (!skips.includes(i)) {
-        const c = itoa(i)
+  for (let i = 0; i < dimensions; i++) {
+    if (skips.includes(i)) {
+      continue
+    }
+
+    if (!isSnub(mirrors[i])) {
+      const c = itoa(i)
+      gens += c
+      // Case of not snub => Normal reflection
+      transforms[c] = [i]
+      rels.push(c.repeat(2))
+    }
+
+    for (let j = i + 1; j < dimensions; j++) {
+      if (skips.includes(j)) {
+        continue
+      }
+      const m = coxeter[i][j]
+
+      if (isSnub(mirrors[i]) && isSnub(mirrors[j])) {
+        // Case of snub + snub => rotation
+        const c = itoa((i + 1) * dimensions + j)
         gens += c
-        rels.push(c.repeat(2))
-        if (i === snubbed) {
-          transforms[c] = [snubbed, pair, snubbed]
-        } else {
-          transforms[c] = [i]
-        }
-      }
-    }
-    for (let i = 0; i < dimensions; i++) {
-      for (let j = i + 1; j < dimensions; j++) {
-        if (!skips.includes(i) && !skips.includes(j)) {
-          let m = coxeter[i][j]
-          if (m < 2) {
-            continue
-          }
-          if ((i === snubbed && j === pair) || (i === pair && j === snubbed)) {
-            if (m % 2 === 0) {
-              rels.push((itoa(i) + itoa(j)).repeat(m / 2))
-            } else {
-              rels.push((itoa(i) + itoa(j)).repeat(m))
-              // rels.push((itoa(i) + itoa(j) + itoa(j + 1) + itoa(j)).repeat(2))
-            }
-          } else {
-            if (j - i > 1) {
-              m = coxeter[j - 1][j]
-            }
-            rels.push((itoa(i) + itoa(j)).repeat(m))
-          }
-        }
-      }
-    }
-  } else if (mirrors.filter(m => isSnub(m)).length === 2) {
-    // a = 01, b = 2
-    const snubbeds = mirrors
-      .map((m, i) => (isSnub(m) ? i : null))
-      .filter(i => i !== null)
-    let k = 0
-    for (let i = 0; i < dimensions; i++) {
-      const c = itoa(k)
-      if (!snubbeds.some(s => skips.includes(s))) {
-        if (i === snubbeds[0]) {
-          transforms[c] = snubbeds
-          gens += c
-          k++
-          rels.push(c.repeat(coxeter[snubbeds[0]][snubbeds[1]]))
-        } else if (i !== snubbeds[1] && !skips.includes(i)) {
-          rels.push(c.repeat(2))
-          gens += c
-          k++
-          transforms[c] = [i]
-        }
-      }
-    }
-
-    if (skips.length === dimensions - 1) {
-      const trans = Object.entries(superTransforms).find(
-        ([k, v]) => v[0] === 0 && !skips.includes(v[1])
-      )
-      if (!trans) {
-        return { gens: null }
-      }
-      gens = trans[0]
-
-      rels.push(gens.repeat(2))
-    } else {
-      for (let i = 0; i < dimensions; i++) {
-        for (let j = i + 1; j < dimensions; j++) {
-          if (!skips.includes(i) && !skips.includes(j)) {
-            if (i === snubbeds[0] && j === snubbeds[1]) {
-              let m =
-                coxeter[snubbeds[1]][
-                  range(dimensions).find(i => !snubbeds.includes(i))
-                ]
-              if (m < 2) {
-                continue
-              }
-              if (m % 2 === 0) {
-                m /= 2
-              }
-              rels.push(
-                (itoa(0).toUpperCase() + itoa(1) + itoa(0) + itoa(1)).repeat(m)
-              )
-            }
-          }
-        }
-      }
-    }
-  } else if (mirrors.some(m => isSnub(m))) {
-    // a = 01
-    // b = 02
-    // c = 12
-    // a^p = b^r = c^q = aBc (b = ac)
-
-    if (skips.length === dimensions - 1) {
-      const trans = Object.entries(superTransforms).find(
-        ([k, v]) => v[0] === 0 && !skips.includes(v[1])
-      )
-      if (!trans) {
-        return { gens: null }
-      }
-      gens = trans[0]
-
-      rels.push(gens.repeat(2))
-    } else {
-      let k = 0
-      for (let i = 0; i < dimensions; i++) {
-        for (let j = i + 1; j < dimensions; j++) {
-          const c = itoa(k)
-          if (!skips.includes(i) && !skips.includes(j)) {
-            gens += c
-            rels.push(c.repeat(coxeter[i][j]))
-            transforms[c] = [i, j]
-            for (let l = 0; l < j; l++) {
-              const pair = [i, j]
-                .map(x =>
-                  Object.entries(transforms).find(
-                    ([_, v]) => v[0] === l && v[1] === x
-                  )
-                )
-                .filter(x => x)
-              if (pair.length === 2) {
-                // We have an inner relation (b = ac)
-                rels.push(pair[0][0] + pair[1][0].toUpperCase() + c)
-              }
-            }
-          }
-          k++
-        }
-      }
-    }
-  } else {
-    for (let i = 0; i < dimensions; i++) {
-      if (!skips.includes(i)) {
-        const c = itoa(i)
+        transforms[c] = [i, j]
+        rels.push(c.repeat(m))
+      } else if (isSnub(mirrors[i]) && !isSnub(mirrors[j])) {
+        // Case of snub + not snub => conjugate reflection
+        const c = itoa((i + 1) * dimensions + j)
         gens += c
+        transforms[c] = [i, j, i]
         rels.push(c.repeat(2))
-        transforms[c] = [i]
+        rels.push((c + itoa(j)).repeat(m % 2 === 0 ? m / 2 : m))
+      } else if (!isSnub(mirrors[i]) && isSnub(mirrors[j])) {
+        // Case of snub + not snub => conjugate reflection
+        const c = itoa((i + 1) * dimensions + j)
+        gens += c
+        transforms[c] = [j, i, j]
+        rels.push(c.repeat(2))
+        rels.push((c + itoa(i)).repeat(m % 2 === 0 ? m / 2 : m))
+      } else if (m > 1) {
+        // Case of not snub + not snub
+        rels.push((itoa(i) + itoa(j)).repeat(m))
       }
     }
-    for (let i = 0; i < dimensions; i++) {
-      for (let j = i + 1; j < dimensions; j++) {
-        if (!skips.includes(i) && !skips.includes(j)) {
-          const m = coxeter[i][j]
-          if (m > 1) {
-            rels.push((itoa(i) + itoa(j)).repeat(m))
+  }
+  const conjugaisons = Object.entries(transforms).filter(
+    ([k, v]) => v.length === 3
+  )
+  const rotations = Object.entries(transforms).filter(
+    ([k, v]) => v.length === 2
+  )
+  if (rotations.length > 1) {
+    // Find closed path in rotations
+    const paths = findPaths(rotations)
+    // Paths should be reversed for some reason
+    rels.push(...paths.map(p => p.split('').reverse().join('')))
+  }
+  if (conjugaisons.length > 1) {
+    // Find relationsn between conjugate reflections
+    for (let i = 0; i < conjugaisons.length; i++) {
+      const [gen1, conjugate1] = conjugaisons[i]
+      for (let j = i + 1; j < conjugaisons.length; j++) {
+        const [gen2, conjugate2] = conjugaisons[j]
+        if (conjugate1[1] === conjugate2[1]) {
+          const conjugatesRotation = rotations.find(
+            ([_, rotation]) =>
+              rotation[0] === conjugate1[0] && rotation[1] === conjugate2[0]
+          )
+          if (conjugatesRotation) {
+            const genRotation = conjugatesRotation[0]
+            rels.push(
+              gen1.toUpperCase() +
+                genRotation.toUpperCase() +
+                gen2 +
+                genRotation
+            )
           }
         }
       }

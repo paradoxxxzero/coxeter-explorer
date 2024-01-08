@@ -28,6 +28,7 @@ onmessage = ({
       cache = new Map()
       lasts = [0, 0, 0]
       shape = getShape(dimensions, coxeter, stellation, mirrors, space)
+      console.log(shape)
     }
     const rootKey = range(shape.dimensions).join('-')
     const polytope = []
