@@ -1,6 +1,7 @@
 import { Fragment, useCallback } from 'react'
 import { eyeIcon, pauseIcon, playIcon, eyeOffIcon } from '../icons'
 import CoxeterDiagram from './CoxeterDiagram'
+import { ident } from '../math/matrix'
 
 const icons = n => {
   if (n < 4) {
@@ -198,6 +199,7 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                                   stellation,
                                   mirrors,
                                   dimensions: level.dimensions,
+                                  matrix: ident(level.dimensions),
                                 })
                               }
                             >

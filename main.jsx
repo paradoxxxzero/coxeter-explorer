@@ -22,20 +22,22 @@ const parseParams = () => {
   return filterParams(defaultParams).params
 }
 const syncParams = params => {
-  window.history.pushState(
-    null,
-    null,
+  const hash =
     '#' +
-      btoa(
-        JSON.stringify(
-          Object.fromEntries(
-            Object.entries(params).filter(
-              ([k, v]) => !['matrix', 'detail'].includes(k)
-            )
+    btoa(
+      JSON.stringify(
+        Object.fromEntries(
+          Object.entries(params).filter(
+            ([k, v]) => !['matrix', 'detail'].includes(k)
           )
         )
       )
-  )
+    )
+  // In case only ignored params changed
+  if (hash === window.location.hash) {
+    return
+  }
+  window.history.pushState(null, null, hash)
 }
 
 const AppWithHistory = () => {
