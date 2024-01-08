@@ -21,9 +21,9 @@ const parseParams = () => {
   }
   return filterParams(defaultParams).params
 }
-const syncParams = params => {
+const syncParams = (params, replace = false) => {
   const hash = '#' + btoa(JSON.stringify(params))
-  window.history.pushState(null, null, hash)
+  window.history[replace ? 'replaceState' : 'pushState'](null, null, hash)
 }
 
 const AppWithHistory = () => {
@@ -70,7 +70,10 @@ const AppWithHistory = () => {
         params
       )
       if (!badParams.length) {
-        syncParams(finalParams)
+        syncParams(
+          finalParams,
+          Object.keys(newParams).length === 1 && newParams.matrix
+        )
       }
       return finalParams
     })

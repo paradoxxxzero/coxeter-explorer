@@ -1,10 +1,9 @@
 import { useCallback, useEffect } from 'react'
+import { useAdaptative } from '../hooks/useAdaptative'
 import { ErrorBoundary } from './ErrorBoundary'
 import Interact from './Interact'
-import Render from './Render'
 import Process from './Process'
-import { ident } from '../math/matrix'
-import { useAdaptative } from '../hooks/useAdaptative'
+import Render from './Render'
 
 export default function Runtime({
   runtime,
@@ -32,16 +31,12 @@ export default function Runtime({
   useAdaptative(runtime, setRuntime)
 
   useEffect(() => {
-    return () => {
-      if (runtime.space && runtime.space.curvature !== null) {
-        const matrix = ident(runtime.dimensions)
-        matrix._reset = true
-        updateParams({
-          matrix,
-        })
-      }
+    if (runtime.matrix) {
+      updateParams({
+        matrix: runtime.matrix,
+      })
     }
-  }, [runtime.space?.curvature])
+  }, [runtime.matrix, updateParams])
 
   return (
     <>
