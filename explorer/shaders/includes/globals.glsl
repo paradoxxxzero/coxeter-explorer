@@ -14,4 +14,4 @@ const vec3 NOISE = vec3(.000003f, -.000002f, .000017f);
 const float NaN = intBitsToFloat(-1);
 const float SCALE = TAU;
 const float curvature = float(CURVATURE);
-const float DT = .005f;
+const float DT = curvature == 0.f ? .05f : .001f;
