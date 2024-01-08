@@ -38,18 +38,26 @@ export const getQuotient = (
   mirrors,
   subParams,
   coxeter,
-  shape,
-  dimensions,
+  transforms,
   subskips
 ) => {
-  const actives = range(dimensions).filter(j => !subskips.includes(j))
+  const actives = range(coxeter.length).filter(j => !subskips.includes(j))
   let quotient = ''
-  const transforms = Object.entries(shape.transforms)
-  for (let i = 0; i < transforms.length; i++) {
-    const [gen, transform] = transforms[i]
+  const transformsEntries = Object.entries(transforms)
+  const reflections = transformsEntries.filter(([k, v]) => v.length === 1)
+  const conjugations = transformsEntries.filter(([k, v]) => v.length === 3)
+  for (let i = 0; i < transformsEntries.length; i++) {
+    const [gen, transform] = transformsEntries[i]
     if (transform.length === 1) {
       const genIndex = transform[0]
-      if (subskips.includes(genIndex) || !isEnabled(mirrors[genIndex])) {
+      if (
+        !subskips.includes(genIndex) &&
+        !conjugations.some(([k, conj]) => conj[1] === genIndex)
+      ) {
+        quotient += gen
+        continue
+      }
+      if (!isEnabled(mirrors[genIndex])) {
         continue
       }
       if (
@@ -61,28 +69,72 @@ export const getQuotient = (
     } else if (transform.length === 2) {
       const genIndex1 = transform[0]
       const genIndex2 = transform[1]
-      if (
-        subskips.includes(genIndex1) ||
-        subskips.includes(genIndex2) ||
-        !isEnabled(mirrors[genIndex1]) ||
-        !isEnabled(mirrors[genIndex2])
-      ) {
-        continue
-      }
       const m = coxeter[genIndex1][genIndex2]
+      // if (!subskips.includes(genIndex1) && !subskips.includes(genIndex2)) {
       if (
-        (!mirrors[genIndex1] &&
-          !mirrors[genIndex2] &&
-          !actives.some(k => coxeter[k][genIndex1] !== 2) &&
-          !actives.some(k => coxeter[k][genIndex2] !== 2)) ||
+        subParams.gens.includes(gen) &&
         (subParams.dimensions === 1 ? m === 2 : m > 2)
       ) {
-        // ?
         quotient += gen
+        continue
+      }
+      // }
+      if (!isEnabled(mirrors[genIndex1]) || !isEnabled(mirrors[genIndex2])) {
+        continue
+      }
+      // if (
+      //   (!mirrors[genIndex1] &&
+      //     !actives.some(k => coxeter[k][genIndex1] !== 2)) ||
+      //   (!mirrors[genIndex2] && !actives.some(k => coxeter[k][genIndex2] !== 2))
+      // ) {
+      //   // ?
+      //   quotient += gen
+      // }
+    } else if (transform.length === 3) {
+      if (
+        subskips.length &&
+        typeof subskips[subskips.length - 1] === 'string' &&
+        subskips[subskips.length - 1].includes('s')
+      ) {
+        const genIndex1 = transform[0]
+        const genIndex2 = transform[1]
+        const m = coxeter[genIndex1][genIndex2]
+        // TODO: factorize this correctly
+        const skips = subskips[subskips.length - 1].split('s').filter(c => c)
+
+        for (let i = 0; i < skips.length; i++) {
+          const skip = skips[i]
+
+          const currentTransform = transforms[Object.keys(transforms)[skip]]
+
+          if (
+            currentTransform.length === 3 &&
+            transform[1] === currentTransform[1]
+          ) {
+            const n = coxeter[currentTransform[0]][currentTransform[1]]
+            if (
+              subParams.dimensions === 1
+                ? ![2, 4].includes(m) || [2, 4].includes(n)
+                : m !== 2
+            ) {
+              quotient += gen
+            }
+            const opposite = reflections.find(([k, v]) =>
+              currentTransform.every(t => t !== v[0])
+            )
+            if (opposite) {
+              const conj = reflections.find(
+                ([k, v]) => v[0] === currentTransform[1]
+              )
+              if (conj) {
+                quotient += conj[0]
+              }
+            }
+          }
+        }
       }
     }
   }
-
   return quotient
 }
 
@@ -94,6 +146,7 @@ export const getShape = (
   space,
   skips = null,
   shape = null,
+  transforms = null,
   solved = new Map()
 ) => {
   const root = !shape
@@ -120,6 +173,7 @@ export const getShape = (
 
     children: [],
   }
+  transforms = transforms || shape.transforms
   // Try subgroups by removing a mirror to the coxeter diagram:
   for (let i = 0; i < dimensions; i++) {
     if (skips.includes(i) || skips.includes('s')) {
@@ -127,7 +181,6 @@ export const getShape = (
       continue
     }
     const subskips = [...skips, i]
-    const actives = range(dimensions).filter(j => !subskips.includes(j))
     const key = subskips.sort().join('-')
     let isnew = false
     if (!solved.has(key)) {
@@ -142,15 +195,7 @@ export const getShape = (
 
         skips: subskips,
 
-        ...getParams(
-          dimensions,
-          coxeter,
-          stellation,
-          mirrors,
-          space,
-          subskips,
-          shape.transforms
-        ),
+        ...getParams(dimensions, coxeter, stellation, mirrors, space, subskips),
       }
       if (subParams.gens === null) {
         continue
@@ -161,14 +206,14 @@ export const getShape = (
 
     const subParams = solved.get(key)
     const facet = Array.from(subParams.words.values())
+
     // If the coset generate a facet
     if (isFacet(facet, subParams.dimensions, subParams.transforms)) {
       let quotient = getQuotient(
         mirrors,
         subParams,
         coxeter,
-        shape,
-        dimensions,
+        transforms,
         subskips
       )
       let subShape = {
@@ -189,6 +234,7 @@ export const getShape = (
           space,
           subskips,
           subShape,
+          transforms,
           solved
         )
       }
@@ -224,12 +270,12 @@ export const getShape = (
         space,
         subskips,
         subShape,
+        transforms,
         solved
       )
       shape.children.push(subShape)
     }
   }
-
   if (root && mirrors.some(m => isSnub(m))) {
     // Snubs generate one more simplex facet
     // Add missing part at the end
@@ -237,7 +283,7 @@ export const getShape = (
     let snubshape = []
 
     for (let i = 1; i < dimensions; i++) {
-      const subskips = [...skips, ...range(dimensions - i).map(() => '0s')]
+      const subskips = [...skips, ...range(dimensions - i).map(() => 's')]
       const subdimensions = dimensions - subskips.length
 
       if (i === 1) {
@@ -252,9 +298,19 @@ export const getShape = (
         }
         visitShape(shape)
         const missingEdges = Object.entries(shape.transforms)
-          .filter(([edge, transform]) => transform.every(t => mirrors[t]))
+          .filter(
+            // If reflection edge, add only if mirror active
+            ([edge, transform]) =>
+              transform.length !== 1 || mirrors[transform[0]]
+          )
+          .filter(
+            // If conjugate reflection edge, add only if generators don't commute
+            ([edge, transform]) =>
+              transform.length !== 3 ||
+              coxeter[transform[0]][transform[1]] !== 2
+          )
           .map(([edge]) => edge)
-        console.log(shape.transforms)
+
         for (let i = 0; i < edges.length; i++) {
           const edge = edges[i]
           if (missingEdges.includes(edge.gens)) {
@@ -272,7 +328,7 @@ export const getShape = (
 
         for (let j = 0; j < missingEdges.length; j++) {
           const gen = missingEdges[j]
-          subskips[subskips.length - 1] = j + 's'
+          subskips[subskips.length - 1] = shape.gens.indexOf(gen) + 's'
 
           const subParams = {
             key: subskips.join('-'),
@@ -289,22 +345,13 @@ export const getShape = (
               snubStellation,
               snubMirrors,
               space,
-              subskips,
-              shape.transforms
+              subskips
             ),
           }
-
           subParams.gens = gen
 
           const subShape = {
             new: true,
-            key: subskips.join('-'),
-            dimensions: subdimensions,
-            coxeter: snubCoxeter,
-            stellation: snubStellation,
-            mirrors: snubMirrors,
-
-            skips: subskips,
 
             ...subParams,
 
@@ -312,17 +359,15 @@ export const getShape = (
               mirrors,
               subParams,
               coxeter,
-              shape,
-              dimensions,
+              transforms,
               subskips
             ),
 
             facet: ['', gen],
             children: j === 0 ? children : [],
           }
-          if (subShape.quotient !== subShape.gens) {
-            snubshape.push(subShape)
-          }
+
+          snubshape.push(subShape)
         }
       } else if (i === 2) {
         // We add the missing faces
@@ -333,12 +378,21 @@ export const getShape = (
         const snubMirrors = range(subdimensions).map(() => 's')
 
         const extra = []
-        // Extra faces are rotations that end on same generator
-        const composition = Object.entries(shape.transforms).filter(
-          ([edge, transform]) => transform.length >= 2
+        // Extra faces are transforms that end on same generator
+        const composition = Object.entries(shape.transforms)
+          .filter(([edge, transform]) => transform.length >= 2)
+          .filter(
+            // Filter out conjugate reflections that commute
+            ([edge, transform]) =>
+              transform.length !== 3 ||
+              coxeter[transform[0]][transform[1]] !== 2
+          )
+        const reflections = Object.entries(shape.transforms).filter(
+          ([edge, transform]) => transform.length === 1
         )
         for (let i = 0; i < composition.length; i++) {
           const [gen1, transforms1] = composition[i]
+
           for (let j = i + 1; j < composition.length; j++) {
             const [gen2, transforms2] = composition[j]
             if (
@@ -347,8 +401,28 @@ export const getShape = (
             ) {
               extra.push(['', gen1, gen2])
             }
+            if (transforms1.length !== transforms2.length) {
+              // Also check reverse rotations for conjugate reflections
+              if (
+                (transforms1.length === 2 &&
+                  transforms1[0] === transforms2[2]) ||
+                (transforms1.length === 3 && transforms1[2] === transforms2[0])
+              ) {
+                extra.push(['', gen1.toUpperCase(), gen2.toUpperCase()])
+              }
+            }
+          }
+          if (transforms1.length === 3) {
+            // Check conjugate reflections -> reflections
+            for (let j = 0; j < reflections.length; j++) {
+              const [gen2, reflection] = reflections[j]
+              if (transforms1.every(t => t !== reflection[0])) {
+                extra.push(['', gen1, gen2 + gen1])
+              }
+            }
           }
         }
+
         const children = snubshape
         snubshape = []
 
@@ -357,9 +431,15 @@ export const getShape = (
         }
 
         for (let j = 0; j < extra.length; j++) {
-          subskips[subskips.length - 1] = j + 's'
-          const subShape = {
-            new: true,
+          const facet = extra[j]
+          subskips[subskips.length - 1] =
+            facet.length === 1
+              ? 's'
+              : shape.gens.indexOf(facet[1].toLowerCase()) +
+                's' +
+                shape.gens.indexOf(facet[2].replace(facet[1], '').toLowerCase())
+
+          const subParams = {
             key: subskips.join('-'),
             dimensions: subdimensions,
             coxeter: snubCoxeter,
@@ -374,13 +454,24 @@ export const getShape = (
               snubStellation,
               snubMirrors,
               space,
-              subskips,
-              shape.transforms
+              subskips
+            ),
+          }
+
+          const subShape = {
+            new: true,
+
+            ...subParams,
+
+            quotient: getQuotient(
+              mirrors,
+              subParams,
+              coxeter,
+              transforms,
+              subskips
             ),
 
-            quotient: '',
-
-            facet: extra[j],
+            facet,
             children: j === 0 ? children : [],
           }
 
@@ -411,8 +502,7 @@ export const getShape = (
             snubStellation,
             snubMirrors,
             space,
-            subskips,
-            shape.transforms
+            subskips
           ),
 
           facet: [''], // ?

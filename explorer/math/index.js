@@ -138,8 +138,7 @@ export const getParams = (
   stellation,
   mirrors,
   space,
-  skips = [],
-  superTransforms = null
+  skips = []
 ) => {
   let gens = ''
 
@@ -196,7 +195,7 @@ export const getParams = (
       }
     }
   }
-  const conjugaisons = Object.entries(transforms).filter(
+  const conjugations = Object.entries(transforms).filter(
     ([k, v]) => v.length === 3
   )
   const rotations = Object.entries(transforms).filter(
@@ -208,12 +207,12 @@ export const getParams = (
     // Paths should be reversed for some reason
     rels.push(...paths.map(p => p.split('').reverse().join('')))
   }
-  if (conjugaisons.length > 1) {
+  if (conjugations.length > 1) {
     // Find relationsn between conjugate reflections
-    for (let i = 0; i < conjugaisons.length; i++) {
-      const [gen1, conjugate1] = conjugaisons[i]
-      for (let j = i + 1; j < conjugaisons.length; j++) {
-        const [gen2, conjugate2] = conjugaisons[j]
+    for (let i = 0; i < conjugations.length; i++) {
+      const [gen1, conjugate1] = conjugations[i]
+      for (let j = i + 1; j < conjugations.length; j++) {
+        const [gen2, conjugate2] = conjugations[j]
         if (conjugate1[1] === conjugate2[1]) {
           const conjugatesRotation = rotations.find(
             ([_, rotation]) =>
@@ -228,11 +227,15 @@ export const getParams = (
                 genRotation
             )
           }
+        } else if (conjugate1[0] === conjugate2[0]) {
+          const m = coxeter[conjugate1[1]][conjugate2[1]]
+          if (m > 1) {
+            rels.push((gen1 + gen2).repeat(m))
+          }
         }
       }
     }
   }
-
   if (
     !mirrors.some(m => isSnub(m)) &&
     !stellation.every(row => row.every(x => x === 1)) &&
@@ -317,7 +320,7 @@ export const getParams = (
       }
     }
   }
-  return { gens, subgens, rels, transforms: superTransforms || transforms }
+  return { gens, subgens, rels, transforms }
 }
 
 export const factorial = n => (n ? n * factorial(n - 1) : 1)

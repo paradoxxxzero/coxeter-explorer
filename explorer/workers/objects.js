@@ -48,7 +48,7 @@ export const getObjects = (cached, shape, rootCached) => {
   } else if (cached.subdimensions === 2) {
     for (const [cosetId, word] of cached.currentWords) {
       const double = cached.mirrors.every(m => !!m)
-      const snub = cached.mirrors.some(m => isSnub(m))
+      const snub = cached.mirrors.every(m => isSnub(m))
       const parity = word.length % 2 ? 0 : 1
 
       const faceVertices = []

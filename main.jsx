@@ -8,27 +8,38 @@ import { filterParams } from './explorer/params.js'
 import { defaultParams } from './explorer/default.js'
 // import 'https://greggman.github.io/webgl-lint/webgl-lint.js'
 
-const parseParams = (def = null) => {
+const parseParams = () => {
   const { location } = window
   if (location.hash) {
     try {
       const hash = JSON.parse(atob(location.hash.slice(1)))
-      return hash
+      return filterParams({ ...defaultParams, ...hash }).params
     } catch (e) {
       console.warn(e)
       location.hash = ''
     }
   }
-  return def
+  return filterParams(defaultParams).params
 }
 const syncParams = params => {
-  window.history.pushState(null, null, '#' + btoa(JSON.stringify(params)))
+  window.history.pushState(
+    null,
+    null,
+    '#' +
+      btoa(
+        JSON.stringify(
+          Object.fromEntries(
+            Object.entries(params).filter(
+              ([k, v]) => !['matrix', 'detail'].includes(k)
+            )
+          )
+        )
+      )
+  )
 }
 
 const AppWithHistory = () => {
-  const [params, setParams] = useState(
-    parseParams(filterParams(defaultParams).params)
-  )
+  const [params, setParams] = useState(parseParams())
   const popstate = useCallback(
     e => {
       const newParams = parseParams()
