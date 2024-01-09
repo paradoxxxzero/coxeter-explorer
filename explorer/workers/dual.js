@@ -143,12 +143,20 @@ export const getDualObjects = (rank, cached, shape, rootCached) => {
       const dualVertices = []
 
       const chain = getChain(edges)
+      if (chain.length < 4) {
+        continue
+      }
+      let partial = true
+      if (chain[0] === chain[chain.length - 1]) {
+        chain.pop()
+        partial = false
+      }
+
       for (let i = 0; i < chain.length; i++) {
         const index = chain[i]
         dualVertices.push(dualVerticesIndexed[index])
       }
 
-      const partial = false // TODO
       if (dualVertices.length === 3) {
         const vertex = { word, vertices: dualVertices }
         objects.push(vertex)
