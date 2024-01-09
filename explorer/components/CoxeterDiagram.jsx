@@ -7,7 +7,9 @@ const textSpacing = 18
 
 export default function CoxeterDiagram({ coxeter, stellation, mirrors }) {
   const dimensions = coxeter.length
-
+  if (dimensions === 0) {
+    return null
+  }
   const nodes = mirrors.map((mirror, i) => {
     const type = mirrorToType(mirror)
     return {

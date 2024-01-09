@@ -36,30 +36,26 @@ onmessage = ({
     const fundamental = mirrors.every(m => !m)
     const dual = mirrors.some(m => isDual(m))
 
-    const computeWords = {}
-    if (dual) {
-      // Always compute the dual facets
-      // FIMXE: This is not always necessary
-      computeWords[dimensions - 1] = true
-      computeWords[dimensions - 2] = true
-      computeWords[dimensions - 3] = true
-    } else {
-      computeWords[1] = draw.edge && !fundamental
-      computeWords[2] = draw.face && !fundamental
+    const computeWords = {
+      // We always need to compute the vertices
+      [dimensions - 1]: dual,
+      0: true,
+      1: dual || (draw.edge && !fundamental),
+      2: dual || (draw.face && !fundamental),
     }
 
-    // We always need to compute the vertices
-    computeWords[0] = true
-
     const visitShape = subshape => {
+      const rank = dual
+        ? dimensions - subshape.dimensions - 1
+        : subshape.dimensions
       subshape.children.forEach(visitShape)
-      const compute = computeWords[subshape.dimensions]
-      const type = types[subshape.dimensions]
+      const compute = computeWords[rank]
+      const type = types[rank]
 
       if (subshape?.new) {
-        if (!polytope[subshape.dimensions]) {
-          polytope[subshape.dimensions] = {
-            dimensions: subshape.dimensions,
+        if (!polytope[rank]) {
+          polytope[rank] = {
+            dimensions: rank,
             processing: draw[type] ? 0 : undefined,
             count: 0,
             detail: [],
@@ -79,7 +75,7 @@ onmessage = ({
             keys: [subshape.key],
             subgens: subshape.quotient,
             facet: subshape.facet,
-            subdimensions: subshape.dimensions,
+            subdimensions: rank,
             mirrors: subshape.mirrors,
             limit,
             space,
@@ -116,7 +112,7 @@ onmessage = ({
           }
         }
 
-        polytope[subshape.dimensions].detail.push({
+        polytope[rank].detail.push({
           key: subshape.key,
           coxeter: subshape.coxeter,
           stellation: subshape.stellation,
@@ -126,7 +122,7 @@ onmessage = ({
           done: cached.done,
         })
 
-        const aggregated = polytope[subshape.dimensions].aggregated.find(
+        const aggregated = polytope[rank].aggregated.find(
           ({ coxeter, stellation, mirrors }) =>
             arrayEquals(coxeter, subshape.coxeter) &&
             arrayEquals(stellation, subshape.stellation) &&
@@ -137,7 +133,7 @@ onmessage = ({
           aggregated.count += cached.count
           aggregated.key += ',' + subshape.key
         } else {
-          polytope[subshape.dimensions].aggregated.push({
+          polytope[rank].aggregated.push({
             key: subshape.key,
             coxeter: subshape.coxeter,
             stellation: subshape.stellation,
@@ -148,11 +144,10 @@ onmessage = ({
           })
         }
         if (draw[type] && cached.words) {
-          polytope[subshape.dimensions].processing += cached.words.size
+          polytope[rank].processing += cached.words.size
         }
-        polytope[subshape.dimensions].count += cached.count
-        polytope[subshape.dimensions].done =
-          polytope[subshape.dimensions].done && cached.done
+        polytope[rank].count += cached.count
+        polytope[rank].done = polytope[rank].done && cached.done
 
         allDone = allDone && cached.done
       }
@@ -220,7 +215,7 @@ onmessage = ({
       }
     } else {
       for (let i = 0; i < 3; i++) {
-        const rank = dual ? dimensions - i - 1 : i
+        const rank = i
         if ((dual ? !computeWords[rank] : !draw[types[i]]) || !polytope[rank]) {
           objects.push(null)
           continue

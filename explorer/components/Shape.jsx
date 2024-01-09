@@ -174,43 +174,41 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                             ? formatCount(count)
                             : null}
                         </div>
-                        {level.dimensions > 0 ? (
-                          <div>
-                            {[1, 2].includes(level.dimensions) ? (
-                              <button
-                                className="shape-hidden button"
-                                data-key={key}
-                                title={key}
-                                onClick={handleHiddenChange}
-                              >
-                                {key
-                                  .split(',')
-                                  .some(k => runtime.hidden.includes(k))
-                                  ? eyeOffIcon
-                                  : eyeIcon}
-                              </button>
-                            ) : null}
+                        <div>
+                          {[1, 2].includes(level.dimensions) ? (
                             <button
-                              className="shape-detail-button"
-                              disabled={level.dimensions < 2}
-                              onClick={() =>
-                                updateParams({
-                                  coxeter,
-                                  stellation,
-                                  mirrors,
-                                  dimensions: level.dimensions,
-                                  matrix: ident(level.dimensions),
-                                })
-                              }
+                              className="shape-hidden button"
+                              data-key={key}
+                              title={key}
+                              onClick={handleHiddenChange}
                             >
-                              <CoxeterDiagram
-                                coxeter={coxeter}
-                                stellation={stellation}
-                                mirrors={mirrors}
-                              />
+                              {key
+                                .split(',')
+                                .some(k => runtime.hidden.includes(k))
+                                ? eyeOffIcon
+                                : eyeIcon}
                             </button>
-                          </div>
-                        ) : null}
+                          ) : null}
+                          <button
+                            className="shape-detail-button"
+                            disabled={coxeter.length < 2}
+                            onClick={() =>
+                              updateParams({
+                                coxeter,
+                                stellation,
+                                mirrors,
+                                dimensions: coxeter.length,
+                                matrix: ident(coxeter.length),
+                              })
+                            }
+                          >
+                            <CoxeterDiagram
+                              coxeter={coxeter}
+                              stellation={stellation}
+                              mirrors={mirrors}
+                            />
+                          </button>
+                        </div>
                       </Fragment>
                     )
                   )
