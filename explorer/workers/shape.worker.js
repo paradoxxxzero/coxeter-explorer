@@ -3,7 +3,9 @@ import { arrayEquals, range } from '../../utils'
 import { ambiances } from '../ambiances'
 import { getShape } from '../math/shape'
 import { ToddCoxeter, countCosets } from '../math/toddcoxeter'
-import { getFundamentalObjects } from './fundamentalObjects'
+import { isDual } from '../mirrors'
+import { getDualObjects } from './dual'
+import { getFundamentalObjects } from './fundamental'
 import { getObjects } from './objects'
 
 let cache, lasts, shape
@@ -32,12 +34,22 @@ onmessage = ({
     const rootKey = range(shape.dimensions).join('-')
     const polytope = []
     const fundamental = mirrors.every(m => !m)
+    const dual = mirrors.some(m => isDual(m))
 
-    const computeWords = {
-      0: true,
-      1: draw.edge && !fundamental,
-      2: draw.face && !fundamental,
+    const computeWords = {}
+    if (dual) {
+      // Always compute the dual facets
+      // FIMXE: This is not always necessary
+      computeWords[dimensions - 1] = true
+      computeWords[dimensions - 2] = true
+      computeWords[dimensions - 3] = true
+    } else {
+      computeWords[1] = draw.edge && !fundamental
+      computeWords[2] = draw.face && !fundamental
     }
+
+    // We always need to compute the vertices
+    computeWords[0] = true
 
     const visitShape = subshape => {
       subshape.children.forEach(visitShape)
@@ -70,6 +82,7 @@ onmessage = ({
             subdimensions: subshape.dimensions,
             mirrors: subshape.mirrors,
             limit,
+            space,
             ...(subshape.dimensions === 0 && !fundamental
               ? {
                   rootVertex: space.rootVertex,
@@ -207,7 +220,8 @@ onmessage = ({
       }
     } else {
       for (let i = 0; i < 3; i++) {
-        if (!draw[types[i]] || !polytope[i]) {
+        const rank = dual ? dimensions - i - 1 : i
+        if ((dual ? !computeWords[rank] : !draw[types[i]]) || !polytope[rank]) {
           objects.push(null)
           continue
         }
@@ -217,15 +231,23 @@ onmessage = ({
           objects: [],
           partials: [],
         }
-        for (let j = 0; j < polytope[i].detail.length; j++) {
-          const detail = polytope[i].detail[j]
+        for (let j = 0; j < polytope[rank].detail.length; j++) {
+          const detail = polytope[rank].detail[j]
           if (hidden.includes(detail.key)) {
             continue
           }
           const cached = cache.get(detail.key)
 
           if (cached.currentWords.size) {
-            const { objects, partials } = getObjects(cached, shape, rootCached)
+            const { objects, partials } = (dual ? getDualObjects : getObjects)(
+              i,
+              cached,
+              shape,
+              rootCached
+            )
+            if (dual && !draw[types[i]]) {
+              continue
+            }
             parts.objects.push(objects)
             parts.size += objects.length + partials.length
             lasts[i] += objects.length

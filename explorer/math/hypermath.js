@@ -39,12 +39,12 @@ export const reflect = (v, n, metric) => {
   )
 }
 
-export const normalize = (v, metric) => {
+export const normalize = (v, metric, reverse = -1) => {
   if (metric.some((row, i) => row.some((v, j) => i === j && v === 0))) {
     return mulV(v, 1 / v[v.length - 1])
   }
   // We use -1 to orient the hyperboloids in front of camera
-  return mulV(v, -1 / sqrt(abs(dot(multiplyVector(metric, v), v))))
+  return mulV(v, reverse / sqrt(abs(dot(multiplyVector(metric, v), v))))
 }
 
 export const coxeterToGram = (coxeter, stellation) =>

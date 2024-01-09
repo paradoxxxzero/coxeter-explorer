@@ -74,7 +74,7 @@ export default memo(function CoxeterMatrix({
       if (isDual(value) || oldValue === 0) {
         if (newMirrors.some(m => isDual(m))) {
           newMirrors = newMirrors.map((m, i) =>
-            m === 's' ? 'b' : m && m !== 'b' ? 'd' : m
+            m === 's' ? 'b' : m && m !== 'b' ? 'm' : m
           )
         }
       } else {
@@ -84,7 +84,7 @@ export default memo(function CoxeterMatrix({
           newMirrors.some(m => isDual(m))
         ) {
           newMirrors = newMirrors.map((m, i) =>
-            m === 'b' ? 's' : m === 'd' ? 1 : m
+            m === 'b' ? 's' : m === 'm' ? 1 : m
           )
         }
       }

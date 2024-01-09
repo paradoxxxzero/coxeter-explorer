@@ -19,10 +19,10 @@ const reorder = (i, n, double = false, snub = false) => {
   return 2 * i
 }
 
-export const getObjects = (cached, shape, rootCached) => {
+export const getObjects = (rank, cached, shape, rootCached) => {
   const objects = []
   const partials = []
-  if (cached.subdimensions === 0) {
+  if (rank === 0) {
     for (const [cosetId, word] of cached.currentWords) {
       objects.push({
         word,
@@ -30,7 +30,7 @@ export const getObjects = (cached, shape, rootCached) => {
       })
       cached.currentWords.delete(cosetId)
     }
-  } else if (cached.subdimensions === 1) {
+  } else if (rank === 1) {
     for (const [cosetId, word] of cached.currentWords) {
       const vertex = { word, vertices: [] }
       for (let i = 0; i < cached.facet.length; i++) {
@@ -39,13 +39,13 @@ export const getObjects = (cached, shape, rootCached) => {
           vertex.vertices.push(rootCached.vertices.get(vertexId))
         }
       }
-      if (vertex.vertices.length < 2) {
+      if (vertex.vertices.length < rank + 1) {
         continue
       }
       objects.push(vertex)
       cached.currentWords.delete(cosetId)
     }
-  } else if (cached.subdimensions === 2) {
+  } else if (rank === 2) {
     for (const [cosetId, word] of cached.currentWords) {
       const double = cached.mirrors.every(m => !!m)
       const snub = cached.mirrors.every(m => isSnub(m))
@@ -60,7 +60,7 @@ export const getObjects = (cached, shape, rootCached) => {
         }
       }
 
-      if (faceVertices.length < 3) {
+      if (faceVertices.length < rank + 1) {
         continue
       }
       const partial = faceVertices.length < cached.facet.length

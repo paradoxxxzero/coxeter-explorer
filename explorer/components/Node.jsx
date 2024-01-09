@@ -30,7 +30,7 @@ export const mirrorSymbols = {
       <circle cx="16" cy="16" r={circleSize} />
     </>
   ),
-  dualsnub: (
+  snubdual: (
     <>
       <circle cx="16" cy="16" r={circleSize - 4} />
       <path d="M 16 0 L 16 32" />
@@ -76,7 +76,7 @@ export default function Node({ index, value, onChange }) {
   }
 
   const handleWheel = e => {
-    const types = Object.keys(mirrorSymbols)
+    const types = Object.keys(mirrorTypes)
     const current = types.indexOf(type)
     const next = types[(types.length + current + sign(e.deltaY)) % types.length]
     const newValue = mirrorTypes[next]

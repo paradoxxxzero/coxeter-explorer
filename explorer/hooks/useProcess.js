@@ -95,7 +95,8 @@ export const useProcess = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
-      if (!runtime.iteration < 0) {
+      if (runtime.iteration === 0) {
+        // Was done in -1
         return runtime
       }
 
