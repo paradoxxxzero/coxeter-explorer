@@ -126,6 +126,6 @@ window.bench = () => {
     ],
     limit: 100000,
   })
-  console.log(performance.now() - t, p.words.length)
+  console.warn(performance.now() - t, p.words.length)
   return p.tc
 }
