@@ -182,6 +182,9 @@ export const getDualObjects = (
           dualVerticesId.push(vkey)
         }
         partial = partial || vpartial
+        if (dualVertices.length === 2) {
+          break
+        }
       }
       if (dualVertices.length === 2) {
         const vertex = { word, vertices: dualVertices, dual: true, partial }
@@ -212,8 +215,6 @@ export const getDualObjects = (
         continue
       }
 
-      // We need to find in the dual root facet which ones have this n-1 facet
-      // as a common "edge", there should be exactly two
       const dualVerticesIndexed = {}
       for (const [
         vkey,

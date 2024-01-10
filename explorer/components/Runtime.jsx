@@ -32,6 +32,7 @@ export default function Runtime({
 
   useEffect(() => {
     if (runtime.matrix) {
+      runtime.matrix._reset = true
       updateParams({
         matrix: runtime.matrix,
       })
