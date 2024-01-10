@@ -1,4 +1,4 @@
-import { avg, max, min, sqrt } from '../math'
+import { avg } from '../math'
 import { normalize } from '../math/hypermath'
 import { addV, dot, mulV, multiplyVector } from '../math/matrix'
 import { wordToCoset } from '../math/toddcoxeter'
@@ -78,7 +78,7 @@ export const getDualObjects = (
   const partials = []
   if (rank === 0) {
     // root word -> { vertex: centroid, facets: [facet vertex ids] }
-    polytope.root.dualVertices = polytope.root.dualVertices || []
+    polytope.root.dualVertices = polytope.root.dualVertices || new Map()
 
     for (const [cosetId, word] of cached.currentWords) {
       const vertexIds = []
@@ -89,11 +89,7 @@ export const getDualObjects = (
           vertexIds.push(vertexId)
         }
       }
-
-      if (vertexIds.length < cached.facet.length) {
-        // Facet is not complete
-        continue
-      }
+      const partial = vertexIds.length < cached.facet.length
 
       // The facet dual of rank 0 is a scaled up centroid of the facet
       let normal = new Array(shape.dimensions).fill(0)
@@ -137,18 +133,28 @@ export const getDualObjects = (
 
         normal = mulV(normal, space.curvature / weights)
       }
+      const vertex = { word, vertices: [normal], dual: true, partial }
 
-      objects.push({ word, vertices: [normal], dual: true })
-
-      polytope.root.dualVertices.push({
+      polytope.root.dualVertices.set(`${key}#${word}`, {
         vertex: normal,
         facet: vertexIds,
+        partial,
       })
 
-      // We also need to store the adjacency
-      cached.currentWords.delete(cosetId)
+      if (partial) {
+        partials.push(vertex)
+      } else {
+        objects.push(vertex)
+
+        // We also need to store the adjacency
+        cached.currentWords.delete(cosetId)
+      }
     }
   } else if (rank === 1) {
+    if (!polytope.root.dualVertices) {
+      return { objects, partials }
+    }
+
     polytope.root.dualEdges = polytope.root.dualEdges || []
 
     for (const [cosetId, word] of cached.currentWords) {
@@ -160,31 +166,38 @@ export const getDualObjects = (
           vertexIds.push(vertexId)
         }
       }
-      if (vertexIds.length < cached.facet.length) {
-        // Facet is not complete
-        continue
-      }
+      let partial = vertexIds.length < cached.facet.length
 
       // We need to find in the dual root facet which ones have this n-1 facet
       // as a common "edge", there should be exactly two
 
       const dualVertices = []
       const dualVerticesId = []
-      for (let i = 0; i < polytope.root.dualVertices.length; i++) {
-        const { vertex, facet } = polytope.root.dualVertices[i]
+      for (const [
+        vkey,
+        { vertex, facet, partial: vpartial },
+      ] of polytope.root.dualVertices.entries()) {
         if (vertexIds.every(vertexId => facet.includes(vertexId))) {
           dualVertices.push(vertex)
-          dualVerticesId.push(i)
+          dualVerticesId.push(vkey)
         }
+        partial = partial || vpartial
       }
       if (dualVertices.length === 2) {
-        const vertex = { word, vertices: dualVertices, dual: true }
-        objects.push(vertex)
-        polytope.root.dualEdges.push(dualVerticesId)
-        cached.currentWords.delete(cosetId)
+        const vertex = { word, vertices: dualVertices, dual: true, partial }
+        if (partial) {
+          partials.push(vertex)
+        } else {
+          objects.push(vertex)
+          polytope.root.dualEdges.push(dualVerticesId)
+          cached.currentWords.delete(cosetId)
+        }
       }
     }
   } else if (rank === 2) {
+    if (!polytope.root.dualVertices || !polytope.root.dualEdges) {
+      return { objects, partials }
+    }
     for (const [cosetId, word] of cached.currentWords) {
       const vertexIds = []
       for (let i = 0; i < cached.facet.length; i++) {
@@ -202,13 +215,15 @@ export const getDualObjects = (
       // We need to find in the dual root facet which ones have this n-1 facet
       // as a common "edge", there should be exactly two
       const dualVerticesIndexed = {}
-      for (let i = 0; i < polytope.root.dualVertices.length; i++) {
-        const { vertex, facet } = polytope.root.dualVertices[i]
+      for (const [
+        vkey,
+        { vertex, facet },
+      ] of polytope.root.dualVertices.entries()) {
         if (vertexIds.every(vertexId => facet.includes(vertexId))) {
-          dualVerticesIndexed[i] = vertex
+          dualVerticesIndexed[vkey] = vertex
         }
       }
-      const dualVerticesId = Object.keys(dualVerticesIndexed).map(Number)
+      const dualVerticesId = Object.keys(dualVerticesIndexed)
 
       if (dualVerticesId.length < 3) {
         continue
