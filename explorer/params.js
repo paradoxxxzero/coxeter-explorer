@@ -1,7 +1,7 @@
 import { defaultParams } from './default'
 import { min, sign } from './math'
 import { ident } from './math/matrix'
-import { mirrorChars } from './mirrors'
+import { mirrorTypes } from './mirrors'
 
 export const defaultProjection = (dimension, dimensions) =>
   dimension === 3
@@ -87,7 +87,8 @@ export const filterParams = (maybeBadParams, changed = [], oldParams) => {
           value.find(
             c =>
               value === '' ||
-              (isNaN(c) && !(key === 'mirrors' && mirrorChars.includes(c)))
+              (isNaN(c) &&
+                !(key === 'mirrors' && Object.values(mirrorTypes).includes(c)))
           )
         ) {
           delete params[key]

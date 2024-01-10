@@ -1,123 +1,78 @@
-import { wordToCoset } from '../math/toddcoxeter'
-import { isSnub } from '../mirrors'
+import { types } from '../../statics'
+import { getBaseObjects } from './base'
+import { getDualObjects } from './dual'
+import { getFundamentalObjects } from './fundamental'
 
-const reorder = (i, n, double = false, snub = false) => {
-  if (double) {
-    if (snub) {
-      return i
-    }
-    const parity = i > 0 ? 1 - (i % 2) : 0
-    if (i >= n / 2 + parity) {
-      return 2 * (n - i) - 1 + parity
-    }
-    return 2 * i - parity
+export const getObjects = (
+  shape,
+  cache,
+  space,
+  draw,
+  fundamental,
+  dual,
+  computeWords,
+  polytope,
+  hidden
+) => {
+  if (!polytope.root.lasts) {
+    polytope.root.lasts = new Array(3).fill(0)
   }
-
-  if (i >= n / 2) {
-    return 2 * (n - i) - 1
-  }
-  return 2 * i
-}
-
-export const getObjects = (rank, cached, shape, rootCached) => {
   const objects = []
-  const partials = []
-  if (rank === 0) {
-    for (const [cosetId, word] of cached.currentWords) {
-      objects.push({
-        word,
-        vertices: [cached.vertices.get(cosetId)],
-      })
-      cached.currentWords.delete(cosetId)
+  if (fundamental) {
+    const fundamentalObjects = getFundamentalObjects(
+      polytope.root,
+      shape,
+      space
+    )
+    for (let i = 0; i < fundamentalObjects.length; i++) {
+      if (draw[types[i]]) {
+        objects.push({
+          start: polytope.root.lasts[i],
+          size: fundamentalObjects[i].length,
+          objects: [fundamentalObjects[i]],
+          partials: [],
+        })
+        polytope.root.lasts[i] += fundamentalObjects[i].length
+      } else {
+        objects.push(null)
+      }
     }
-  } else if (rank === 1) {
-    for (const [cosetId, word] of cached.currentWords) {
-      const vertex = { word, vertices: [] }
-      for (let i = 0; i < cached.facet.length; i++) {
-        const vertexId = wordToCoset(rootCached, word + cached.facet[i])
-        if (vertexId && rootCached.vertices.has(vertexId)) {
-          vertex.vertices.push(rootCached.vertices.get(vertexId))
-        }
-      }
-      if (vertex.vertices.length < rank + 1) {
+  } else {
+    for (let i = 0; i < 3; i++) {
+      if (!polytope[i] || (!dual && !draw[types[i]])) {
+        objects.push(null)
         continue
       }
-      objects.push(vertex)
-      cached.currentWords.delete(cosetId)
-    }
-  } else if (rank === 2) {
-    for (const [cosetId, word] of cached.currentWords) {
-      const double = cached.mirrors.every(m => !!m)
-      const snub = cached.mirrors.every(m => isSnub(m))
-      const parity = word.length % 2 ? 0 : 1
+      const parts = {
+        start: polytope.root.lasts[i],
+        size: 0,
+        objects: [],
+        partials: [],
+      }
+      for (let j = 0; j < polytope[i].detail.length; j++) {
+        const detail = polytope[i].detail[j]
+        if (!detail.dual && hidden.includes(detail.key)) {
+          continue
+        }
+        const cached = cache.get(detail.key)
 
-      const faceVertices = []
-      for (let h = 0; h < cached.facet.length; h++) {
-        const i = reorder(h, cached.facet.length, double, snub)
-        const vertexId = wordToCoset(rootCached, word + cached.facet[i])
-        if (vertexId && rootCached.vertices.has(vertexId)) {
-          faceVertices.push(rootCached.vertices.get(vertexId))
-        }
-      }
+        if (cached.currentWords.size) {
+          const { objects, partials } = (
+            detail.dual ? getDualObjects : getBaseObjects
+          )(i, cached, shape, polytope)
 
-      if (faceVertices.length < rank + 1) {
-        continue
-      }
-      const partial = faceVertices.length < cached.facet.length
+          if (detail.dual && (!draw[types[i]] || hidden.includes(detail.key))) {
+            continue
+          }
 
-      if (faceVertices.length === 3) {
-        if (parity) {
-          ;[faceVertices[2], faceVertices[1]] = [
-            faceVertices[1],
-            faceVertices[2],
-          ]
-        }
-        const vertex = {
-          word,
-          vertices: faceVertices,
-          faceIndex: 0,
-          faceSize: 3,
-          partial,
-        }
-        if (partial) {
-          partials.push(vertex)
-        } else {
-          objects.push(vertex)
-          cached.currentWords.delete(cosetId)
-        }
-        continue
-      }
-
-      const center = new Array(shape.dimensions).fill(0)
-      for (let j = 0; j < faceVertices.length; j++) {
-        const vertices = faceVertices[j]
-        for (let k = 0; k < vertices.length; k++) {
-          center[k] += vertices[k]
+          parts.objects.push(objects)
+          parts.size += objects.length + partials.length
+          polytope.root.lasts[i] += objects.length
+          parts.partials.push(partials)
         }
       }
-      for (let j = 0; j < shape.dimensions; j++) {
-        center[j] /= faceVertices.length
-      }
-      for (let j = 0; j < faceVertices.length; j++) {
-        const vertex = {
-          word,
-          vertices: [
-            faceVertices[(j + parity) % faceVertices.length],
-            faceVertices[(j + (1 - parity)) % faceVertices.length],
-            center,
-          ],
-          faceIndex: j,
-          faceSize: faceVertices.length,
-          partial,
-        }
-        if (partial) {
-          partials.push(vertex)
-        } else {
-          objects.push(vertex)
-          cached.currentWords.delete(cosetId)
-        }
-      }
+      objects.push(parts)
     }
   }
-  return { objects, partials }
+  return objects
 }

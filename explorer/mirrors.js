@@ -1,10 +1,17 @@
-export const mirrorChars = 'msbßx'
-
 export const isEnabled = m => m !== '' && m !== 'x'
-export const isDual = m => m === 'm' || m === 'b'
-export const isSnub = m => m === 's' || m === 'b'
+export const isDual = m => m === 'm' || m === 'b' || m === 'c' || m === 'd'
+export const isCompound = m => m === 'c' || m === 'd'
+export const isSnub = m => m === 's' || m === 'b' || m === 'd'
 export const isHoloSnub = m => m === 'ß'
-// Fix this mess:
+
+// active -> s, snub -> snubDual
+export const dualize = m => (isDual(m) ? m : m ? { s: 'b' }[m] || 'm' : m)
+export const undualize = m => ({ b: 's', m: 1 })[m] || m
+// active -> c, snub -> snubCompound, dual -> compound, snubDual -> snubCompound
+export const compoundize = m =>
+  isCompound(m) ? m : m ? { s: 'd', b: 'd', m: 'c' }[m] || 'c' : m
+export const uncompoundize = m => ({ d: 's', c: 1 })[m] || m
+
 export const mirrorValue = m => (isNaN(m) ? 1 : +m)
 
 export const mirrorTypes = {
@@ -12,28 +19,13 @@ export const mirrorTypes = {
   inactive: 0,
   dual: 'm',
   snub: 's',
-  // holosnub: 'ß',
-  snubdual: 'b',
+  snubDual: 'b',
+  compound: 'c',
+  snubCompound: 'd',
   custom: 0.5,
   activeVoid: 'x',
   void: '',
 }
 
 export const mirrorToType = v =>
-  v === 0
-    ? 'inactive'
-    : v === 1
-    ? 'active'
-    : v === 'm'
-    ? 'dual'
-    : v === 's'
-    ? 'snub'
-    : // : v === 'ß'
-    // ? 'holosnub'
-    v === 'b'
-    ? 'snubdual'
-    : v === 'x'
-    ? 'activeVoid'
-    : v === ''
-    ? 'void'
-    : 'custom'
+  (Object.entries(mirrorTypes).find(([k, w]) => w === v) || ['custom'])[0]

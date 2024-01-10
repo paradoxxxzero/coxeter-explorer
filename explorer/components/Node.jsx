@@ -30,7 +30,7 @@ export const mirrorSymbols = {
       <circle cx="16" cy="16" r={circleSize} />
     </>
   ),
-  snubdual: (
+  snubDual: (
     <>
       <circle cx="16" cy="16" r={circleSize - 4} />
       <path d="M 16 0 L 16 32" />
@@ -40,6 +40,22 @@ export const mirrorSymbols = {
     <>
       <circle cx="16" cy="16" r={circleSize} />
       <circle cx="16" cy="16" r={dotSize} />
+    </>
+  ),
+  compound: (
+    <>
+      <circle cx="16" cy="16" r={circleSize - 4} />
+      <circle cx="16" cy="16" r={dotSize - 2} fill="currentColor" />
+      <path d="M 16 2 L 16 12" />
+      <path d="M 16 12 L 16 20" stroke="black" />
+      <path d="M 16 20 L 16 30" />
+    </>
+  ),
+  snubCompound: (
+    <>
+      <circle cx="16" cy="16" r={circleSize - 2} />
+      <circle cx="16" cy="16" r={circleSize - 6} />
+      <path d="M 16 0 L 16 32" />
     </>
   ),
   custom: (

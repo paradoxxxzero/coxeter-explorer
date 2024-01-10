@@ -1,14 +1,10 @@
-import { types } from '../../statics'
-import { arrayEquals, range } from '../../utils'
-import { ambiances } from '../ambiances'
 import { getShape } from '../math/shape'
-import { ToddCoxeter, countCosets } from '../math/toddcoxeter'
-import { isDual } from '../mirrors'
-import { getDualObjects } from './dual'
-import { getFundamentalObjects } from './fundamental'
+import { isCompound, isDual } from '../mirrors'
+import { fillData } from './datafiller'
 import { getObjects } from './objects'
+import { getPolytope } from './polytope'
 
-let cache, lasts, shape
+let cache, shape
 
 onmessage = ({
   data: {
@@ -25,16 +21,13 @@ onmessage = ({
   },
 }) => {
   try {
-    let allDone = true
     if (first) {
       cache = new Map()
-      lasts = [0, 0, 0]
       shape = getShape(dimensions, coxeter, stellation, mirrors, space)
     }
-    const rootKey = range(shape.dimensions).join('-')
-    const polytope = []
     const fundamental = mirrors.every(m => !m)
     const dual = mirrors.some(m => isDual(m))
+    const compound = mirrors.some(m => isCompound(m))
 
     const computeWords = {
       // We always need to compute the vertices
@@ -44,121 +37,33 @@ onmessage = ({
       2: dual || (draw.face && !fundamental),
     }
 
-    const visitShape = subshape => {
-      const rank = dual
-        ? dimensions - subshape.dimensions - 1
-        : subshape.dimensions
-      subshape.children.forEach(visitShape)
-      const compute = computeWords[rank]
-      const type = types[rank]
-
-      if (subshape?.new) {
-        if (!polytope[rank]) {
-          polytope[rank] = {
-            dimensions: rank,
-            processing: draw[type] ? 0 : undefined,
-            count: 0,
-            detail: [],
-            aggregated: [],
-            done: true,
-          }
-        }
-        const eiqenvalues = space.eigens.values
-
-        if (!cache.has(subshape.key)) {
-          let limit = compute ? batch : 5
-          if (type === 'edge' && space.curvature <= 0) {
-            limit *= 1.5
-          }
-          const cached = {
-            ...shape,
-            keys: [subshape.key],
-            subgens: subshape.quotient,
-            facet: subshape.facet,
-            subdimensions: rank,
-            mirrors: subshape.mirrors,
-            limit,
-            space,
-            ...(subshape.dimensions === 0 && !fundamental
-              ? {
-                  rootVertex: space.rootVertex,
-                  rootNormals: space.rootNormals,
-                  metric: space.metric,
-                }
-              : {}),
-          }
-          cache.set(subshape.key, cached)
-        } else {
-          cache.get(subshape.key).keys.push(subshape.key)
-        }
-
-        const cached = cache.get(subshape.key)
-        if (!cached.done) {
-          if (compute) {
-            // Also extract words to generate the shape
-            ToddCoxeter(cached)
-            if (eiqenvalues.some(x => x <= 0)) {
-              cached.count = Infinity
-            } else {
-              cached.count = cached.cosets.size
-            }
-          } else {
-            if (eiqenvalues.some(x => x <= 0)) {
-              cached.count = Infinity
-              cached.done = true
-            } else {
-              cached.count = countCosets(cached)
-            }
-          }
-        }
-
-        polytope[rank].detail.push({
-          key: subshape.key,
-          coxeter: subshape.coxeter,
-          stellation: subshape.stellation,
-          mirrors: subshape.mirrors,
-
-          count: cached.count,
-          done: cached.done,
-        })
-
-        const aggregated = polytope[rank].aggregated.find(
-          ({ coxeter, stellation, mirrors }) =>
-            arrayEquals(coxeter, subshape.coxeter) &&
-            arrayEquals(stellation, subshape.stellation) &&
-            arrayEquals(mirrors, subshape.mirrors)
-        )
-        if (aggregated) {
-          aggregated.done = aggregated.done && cached.done
-          aggregated.count += cached.count
-          aggregated.key += ',' + subshape.key
-        } else {
-          polytope[rank].aggregated.push({
-            key: subshape.key,
-            coxeter: subshape.coxeter,
-            stellation: subshape.stellation,
-            mirrors: subshape.mirrors,
-
-            count: cached.count,
-            done: cached.done,
-          })
-        }
-        if (draw[type] && cached.words) {
-          polytope[rank].processing += cached.words.size
-        }
-        polytope[rank].count += cached.count
-        polytope[rank].done = polytope[rank].done && cached.done
-
-        allDone = allDone && cached.done
-      }
+    const polytope = getPolytope(
+      batch,
+      shape,
+      cache,
+      space,
+      draw,
+      fundamental,
+      dual && !compound,
+      computeWords
+    )
+    if (compound) {
+      getPolytope(
+        batch,
+        shape,
+        cache,
+        space,
+        draw,
+        fundamental,
+        dual,
+        computeWords,
+        polytope
+      )
     }
 
-    shape.children.forEach(visitShape)
-
-    const rootCached = cache.get(rootKey)
     if (shape.dimensions === 2) {
       shape.currentWords = new Map([[1, '']])
-      shape.facet = Array.from(rootCached.words.values())
+      shape.facet = Array.from(polytope.root.words.values())
       shape.done = true
       cache.set('', {
         ...shape,
@@ -197,120 +102,19 @@ onmessage = ({
       }
     }
 
-    const objects = []
-    if (fundamental) {
-      const fundamentalObjects = getFundamentalObjects(rootCached, shape, space)
-      for (let i = 0; i < fundamentalObjects.length; i++) {
-        if (draw[types[i]]) {
-          objects.push({
-            start: lasts[i],
-            size: fundamentalObjects[i].length,
-            objects: [fundamentalObjects[i]],
-            partials: [],
-          })
-          lasts[i] += fundamentalObjects[i].length
-        } else {
-          objects.push(null)
-        }
-      }
-    } else {
-      for (let i = 0; i < 3; i++) {
-        const rank = i
-        if ((dual ? !computeWords[rank] : !draw[types[i]]) || !polytope[rank]) {
-          objects.push(null)
-          continue
-        }
-        const parts = {
-          start: lasts[i],
-          size: 0,
-          objects: [],
-          partials: [],
-        }
-        for (let j = 0; j < polytope[rank].detail.length; j++) {
-          const detail = polytope[rank].detail[j]
-          if (hidden.includes(detail.key)) {
-            continue
-          }
-          const cached = cache.get(detail.key)
+    const objects = getObjects(
+      shape,
+      cache,
+      space,
+      draw,
+      fundamental,
+      dual,
+      computeWords,
+      polytope,
+      hidden
+    )
 
-          if (cached.currentWords.size) {
-            const { objects, partials } = (dual ? getDualObjects : getObjects)(
-              i,
-              cached,
-              shape,
-              rootCached
-            )
-            if (dual && !draw[types[i]]) {
-              continue
-            }
-            parts.objects.push(objects)
-            parts.size += objects.length + partials.length
-            lasts[i] += objects.length
-            parts.partials.push(partials)
-          }
-        }
-        objects.push(parts)
-      }
-    }
-
-    const data = []
-    const infos = []
-    const arity = shape.dimensions > 4 ? 9 : shape.dimensions
-    for (let i = 0; i < objects.length; i++) {
-      const parts = objects[i]
-      if (!parts) {
-        data.push(null)
-        infos.push(null)
-        continue
-      }
-      const buffers = [new Float32Array(parts.size * 3)]
-      for (let j = 0; j < i + 1; j++) {
-        buffers.push(new Float32Array(parts.size * arity))
-      }
-      let idx = 0
-      const allObjects = parts.objects.concat(parts.partials)
-      for (let j = 0; j < allObjects.length; j++) {
-        const objects = allObjects[j]
-
-        for (let k = 0; k < objects.length; k++) {
-          const object = objects[k]
-
-          for (let l = 0; l < object.vertices.length; l++) {
-            const vertex = object.vertices[l]
-            for (let m = 0; m < vertex.length; m++) {
-              buffers[l + 1][idx * arity + m] = vertex[m]
-            }
-          }
-          const c = ambiances[ambiance].color({
-            word: object.word,
-            key: object.key,
-            subShape: j % parts.objects.length, // For partials
-            faceIndex: object.faceIndex,
-            faceSize: object.faceSize,
-            dimensions: shape.dimensions,
-            draw,
-            idx,
-            size: parts.size,
-            type: types[i],
-          })
-          buffers[0][idx * 3 + 0] = c[0]
-          buffers[0][idx * 3 + 1] = c[1]
-          buffers[0][idx * 3 + 2] = c[2]
-          idx++
-        }
-      }
-      data.push(buffers)
-      infos.push({
-        start: parts.start,
-        size: parts.size,
-      })
-    }
-
-    // Used for limiting
-    polytope.size = fundamental
-      ? rootCached.words.size
-      : rootCached.vertices.size
-    polytope.done = allDone
+    const { infos, data } = fillData(shape.dimensions, objects, ambiance, draw)
 
     postMessage(
       { polytope, infos, data },

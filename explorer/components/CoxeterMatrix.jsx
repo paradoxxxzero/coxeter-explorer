@@ -3,7 +3,15 @@ import Value from './Value'
 import Link from './Link'
 import Node from './Node'
 import { min } from '../math'
-import { isDual, isEnabled } from '../mirrors'
+import {
+  compoundize,
+  dualize,
+  isCompound,
+  isDual,
+  isEnabled,
+  uncompoundize,
+  undualize,
+} from '../mirrors'
 
 const getType = (coxeter, i) =>
   coxeter[i].some((m, j) => j < i && m < 0)
@@ -70,12 +78,22 @@ export default memo(function CoxeterMatrix({
       const oldValue = mirrors[index]
       let newMirrors = mirrors.slice()
       newMirrors[index] = value
+      // If new mirror is compound, all active mirrors become compound
+      if (isCompound(value)) {
+        newMirrors = newMirrors.map(compoundize)
+      } else {
+        if (
+          value !== 0 &&
+          isEnabled(value) &&
+          newMirrors.some(m => isCompound(m))
+        ) {
+          newMirrors = newMirrors.map(uncompoundize)
+        }
+      }
       // If there is a dual, all active mirrors become duals
       if (isDual(value) || oldValue === 0) {
         if (newMirrors.some(m => isDual(m))) {
-          newMirrors = newMirrors.map((m, i) =>
-            m === 's' ? 'b' : m && m !== 'b' ? 'm' : m
-          )
+          newMirrors = newMirrors.map(dualize)
         }
       } else {
         if (
@@ -83,9 +101,7 @@ export default memo(function CoxeterMatrix({
           isEnabled(value) &&
           newMirrors.some(m => isDual(m))
         ) {
-          newMirrors = newMirrors.map((m, i) =>
-            m === 'b' ? 's' : m === 'm' ? 1 : m
-          )
+          newMirrors = newMirrors.map(undualize)
         }
       }
       onChange('mirrors', newMirrors)
