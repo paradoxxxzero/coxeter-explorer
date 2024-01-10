@@ -1,3 +1,4 @@
+import { addV, mulV } from '../math/matrix'
 import { wordToCoset } from '../math/toddcoxeter'
 import { isSnub } from '../mirrors'
 
@@ -88,23 +89,19 @@ export const getBaseObjects = (rank, cached, shape, polytope) => {
         continue
       }
 
-      const center = new Array(shape.dimensions).fill(0)
+      let centroid = new Array(shape.dimensions).fill(0)
       for (let j = 0; j < faceVertices.length; j++) {
         const vertices = faceVertices[j]
-        for (let k = 0; k < vertices.length; k++) {
-          center[k] += vertices[k]
-        }
+        centroid = addV(centroid, vertices)
       }
-      for (let j = 0; j < shape.dimensions; j++) {
-        center[j] /= faceVertices.length
-      }
+      centroid = mulV(centroid, 1 / faceVertices.length)
       for (let j = 0; j < faceVertices.length; j++) {
         const vertex = {
           word,
           vertices: [
             faceVertices[(j + parity) % faceVertices.length],
             faceVertices[(j + (1 - parity)) % faceVertices.length],
-            center,
+            centroid,
           ],
           faceIndex: j,
           faceSize: faceVertices.length,

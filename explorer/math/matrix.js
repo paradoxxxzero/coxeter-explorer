@@ -8,6 +8,14 @@ export const dot = (v1, v2) => {
   return sum
 }
 
+export const addV = (a, b) => {
+  const result = []
+  for (let i = 0; i < a.length; i++) {
+    result[i] = a[i] + b[i]
+  }
+  return result
+}
+
 export const subV = (a, b) => {
   const result = []
   for (let i = 0; i < a.length; i++) {

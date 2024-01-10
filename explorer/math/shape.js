@@ -245,7 +245,7 @@ export const getShape = (
   if (shape.children.length === 0 && dimensions - skips.length > 1) {
     // If no facet found, try them all for subdimension
     // Used for diagram like 5-2-2
-    console.info('No leaf found, digging deeper', skips)
+    console.debug('No leaf found, digging deeper', skips)
     for (let i = 0; i < dimensions; i++) {
       if (skips.includes(i)) {
         continue

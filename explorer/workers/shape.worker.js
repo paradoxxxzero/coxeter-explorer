@@ -18,6 +18,7 @@ onmessage = ({
     draw,
     batch,
     hidden,
+    reciprocation,
   },
 }) => {
   try {
@@ -109,9 +110,9 @@ onmessage = ({
       draw,
       fundamental,
       dual,
-      computeWords,
       polytope,
-      hidden
+      hidden,
+      reciprocation
     )
 
     const { infos, data } = fillData(shape.dimensions, objects, ambiance, draw)

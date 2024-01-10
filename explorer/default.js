@@ -40,10 +40,10 @@ export const defaultParams = {
   projection3: 'perspective',
   fov4: 90,
   projection4: 'stereographic',
-
   zoom: 1.5,
 
   hidden: [],
+  reciprocation: 0,
 
   start: 1000,
   limit: 1000,

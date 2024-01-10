@@ -116,6 +116,11 @@ export const filterParams = (maybeBadParams, changed = [], oldParams) => {
   ) {
     params.matrix = ident(params.dimensions)
   }
+
+  if (params.reciprocation > params.dimensions - 1) {
+    params.reciprocation = params.dimensions - 1
+  }
+
   for (let i = 3; i <= 9; i++) {
     if (i <= params.dimensions) {
       if (!params[`fov${i}`] && !badParams.includes(`fov${i}`)) {

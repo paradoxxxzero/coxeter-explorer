@@ -1,5 +1,6 @@
-import { normalize, rotate } from '../math/hypermath'
-import { dot, multiply, multiplyVector } from '../math/matrix'
+import { avg, max, min, sqrt } from '../math'
+import { normalize } from '../math/hypermath'
+import { addV, dot, mulV, multiplyVector } from '../math/matrix'
 import { wordToCoset } from '../math/toddcoxeter'
 
 const getChain = (edges, chain = null) => {
@@ -25,7 +26,53 @@ const getChain = (edges, chain = null) => {
   return getChain(edges, chain)
 }
 
-export const getDualObjects = (rank, cached, shape, polytope) => {
+const getMidradius = (reciprocation, shape, key, root) => {
+  const dists = []
+  const facet = shape.children.find(c => c.key === key.replace('d', ''))
+  const facets = []
+  const visitShape = subshape => {
+    if (subshape.dimensions === reciprocation) {
+      facets.push(subshape.facet)
+    }
+    subshape.children.forEach(visitShape)
+  }
+  visitShape(facet)
+  // In case of snub add all facets (links are not clear)
+  shape.children.filter(c => c.key.includes('s')).forEach(visitShape)
+
+  for (let i = 0; i < facets.length; i++) {
+    const facet = facets[i]
+    if (facet.length < 2) {
+      continue
+    }
+    const vertices = []
+    for (let j = 0; j < facet.length; j++) {
+      const vertexId = wordToCoset(root, facet[j])
+      if (vertexId && root.vertices.has(vertexId)) {
+        vertices.push(root.vertices.get(vertexId))
+      }
+    }
+
+    // Compute centroid
+    let centroid = new Array(vertices[0].length).fill(0)
+    for (let j = 0; j < vertices.length; j++) {
+      const vertex = vertices[j]
+      centroid = addV(centroid, vertex)
+    }
+    centroid = mulV(centroid, 1 / vertices.length)
+    dists.push(dot(centroid, centroid))
+  }
+  return avg(...dists) // Squared midradius
+}
+
+export const getDualObjects = (
+  rank,
+  cached,
+  shape,
+  polytope,
+  reciprocation,
+  key
+) => {
   const { space } = polytope.root
   const objects = []
   const partials = []
@@ -52,29 +99,46 @@ export const getDualObjects = (rank, cached, shape, polytope) => {
       let normal = new Array(shape.dimensions).fill(0)
       for (let j = 0; j < vertexIds.length; j++) {
         const vertex = polytope.root.vertices.get(vertexIds[j])
-        for (let k = 0; k < vertex.length; k++) {
-          normal[k] += vertex[k]
-        }
+        normal = addV(normal, vertex)
       }
 
       normal = normalize(normal, space.metric)
 
-      // Compute the circumcenter of the facet
+      // Compute the polar reciprocation of the facet
       if (space.curvature) {
         let weights = 0
+        if (reciprocation >= 0) {
+          let radius = 1
 
-        for (let j = 0; j < vertexIds.length; j++) {
-          const vertex = polytope.root.vertices.get(vertexIds[j])
-          weights += dot(normal, multiplyVector(space.metric, vertex))
-        }
-        weights /= vertexIds.length
+          if (reciprocation > 0 && reciprocation < shape.dimensions - 1) {
+            if (!cached.midradius) {
+              cached.midradius = getMidradius(
+                reciprocation,
+                shape,
+                key,
+                polytope.root
+              )
+            }
+            radius = cached.midradius
+          }
+          const normalWithMetric = multiplyVector(space.metric, normal)
+          for (let j = 0; j < vertexIds.length; j++) {
+            const vertex = polytope.root.vertices.get(vertexIds[j])
+            weights += dot(normalWithMetric, vertex)
+          }
+          weights /= radius * vertexIds.length
 
-        for (let k = 0; k < normal.length; k++) {
-          normal[k] /= -weights
+          if (reciprocation === shape.dimensions - 1) {
+            weights = 1 / weights
+          }
+        } else {
+          weights = 1
         }
+
+        normal = mulV(normal, space.curvature / weights)
       }
 
-      objects.push({ word, vertices: [normal] })
+      objects.push({ word, vertices: [normal], dual: true })
 
       polytope.root.dualVertices.push({
         vertex: normal,
@@ -114,7 +178,7 @@ export const getDualObjects = (rank, cached, shape, polytope) => {
         }
       }
       if (dualVertices.length === 2) {
-        const vertex = { word, vertices: dualVertices }
+        const vertex = { word, vertices: dualVertices, dual: true }
         objects.push(vertex)
         polytope.root.dualEdges.push(dualVerticesId)
         cached.currentWords.delete(cosetId)
@@ -176,23 +240,19 @@ export const getDualObjects = (rank, cached, shape, polytope) => {
       }
 
       if (dualVertices.length === 3) {
-        const vertex = { word, vertices: dualVertices }
+        const vertex = { word, vertices: dualVertices, dual: true }
         objects.push(vertex)
         cached.currentWords.delete(cosetId)
         continue
       }
 
       const parity = word.length % 2 ? 0 : 1
-      const center = new Array(shape.dimensions).fill(0)
+      let center = new Array(shape.dimensions).fill(0)
       for (let j = 0; j < dualVertices.length; j++) {
         const vertices = dualVertices[j]
-        for (let k = 0; k < vertices.length; k++) {
-          center[k] += vertices[k]
-        }
+        center = addV(center, vertices)
       }
-      for (let j = 0; j < shape.dimensions; j++) {
-        center[j] /= dualVertices.length
-      }
+      center = mulV(center, 1 / dualVertices.length)
 
       for (let j = 0; j < dualVertices.length; j++) {
         const vertex = {
@@ -202,6 +262,7 @@ export const getDualObjects = (rank, cached, shape, polytope) => {
             dualVertices[(j + (1 - parity)) % dualVertices.length],
             center,
           ],
+          dual: true,
           faceIndex: j,
           faceSize: dualVertices.length,
           partial,

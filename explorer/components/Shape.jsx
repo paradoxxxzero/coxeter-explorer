@@ -1,5 +1,12 @@
 import { Fragment, useCallback } from 'react'
-import { eyeIcon, pauseIcon, playIcon, eyeOffIcon } from '../icons'
+import {
+  eyeIcon,
+  pauseIcon,
+  playIcon,
+  eyeOffIcon,
+  centerViewIcon,
+  coxeterPlaneIcon,
+} from '../icons'
 import CoxeterDiagram from './CoxeterDiagram'
 import { ident } from '../math/matrix'
 
@@ -84,6 +91,15 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
     },
     [runtime.hidden, updateParams]
   )
+  const handlereciprocationChange = useCallback(
+    event => {
+      const level = +event.target.closest('button').dataset.key
+      updateParams({
+        reciprocation: level,
+      })
+    },
+    [updateParams]
+  )
 
   const simple = runtime.polytope.every(subshape => subshape.detail.length < 2)
 
@@ -135,6 +151,21 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                 }}
               >
                 {icons(level.dimensions)}
+                {level.dual && !runtime.curve ? (
+                  <button
+                    className="shape-reciprocation button"
+                    data-key={
+                      runtime.reciprocation === level.dimensions
+                        ? -1
+                        : level.dimensions
+                    }
+                    onClick={handlereciprocationChange}
+                  >
+                    {runtime.reciprocation === level.dimensions
+                      ? coxeterPlaneIcon
+                      : centerViewIcon}
+                  </button>
+                ) : null}
               </div>
               <div
                 className="shape-count"

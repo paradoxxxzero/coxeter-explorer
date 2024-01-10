@@ -18,8 +18,12 @@ export const fillData = (dimensions, objects, ambiance, draw) => {
     }
     let idx = 0
     const allObjects = parts.objects.concat(parts.partials)
+
     for (let j = 0; j < allObjects.length; j++) {
       const objects = allObjects[j]
+      if (!objects) {
+        continue
+      }
 
       for (let k = 0; k < objects.length; k++) {
         const object = objects[k]
@@ -41,6 +45,7 @@ export const fillData = (dimensions, objects, ambiance, draw) => {
           idx,
           size: parts.size,
           type: types[i],
+          dual: !!object.dual,
         })
         buffers[0][idx * 3 + 0] = c[0]
         buffers[0][idx * 3 + 1] = c[1]

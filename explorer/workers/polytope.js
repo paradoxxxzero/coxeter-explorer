@@ -126,6 +126,7 @@ export const getPolytope = (
       }
       polytope[rank].count += cached.count
       polytope[rank].done = polytope[rank].done && cached.done
+      polytope[rank].dual = dual
       polytope.done = polytope.done && cached.done
     }
   }

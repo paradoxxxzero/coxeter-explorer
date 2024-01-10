@@ -10,9 +10,9 @@ export const getObjects = (
   draw,
   fundamental,
   dual,
-  computeWords,
   polytope,
-  hidden
+  hidden,
+  reciprocation
 ) => {
   if (!polytope.root.lasts) {
     polytope.root.lasts = new Array(3).fill(0)
@@ -52,19 +52,27 @@ export const getObjects = (
       for (let j = 0; j < polytope[i].detail.length; j++) {
         const detail = polytope[i].detail[j]
         if (!detail.dual && hidden.includes(detail.key)) {
+          // Keep index for subshape
+          parts.objects.push(null)
+          parts.partials.push(null)
           continue
         }
         const cached = cache.get(detail.key)
 
         if (cached.currentWords.size) {
-          const { objects, partials } = (
-            detail.dual ? getDualObjects : getBaseObjects
-          )(i, cached, shape, polytope)
-
-          if (detail.dual && (!draw[types[i]] || hidden.includes(detail.key))) {
+          const { objects, partials } = detail.dual
+            ? getDualObjects(
+                i,
+                cached,
+                shape,
+                polytope,
+                reciprocation,
+                detail.key
+              )
+            : getBaseObjects(i, cached, shape, polytope)
+          if (!draw[types[i]] || hidden.includes(detail.key)) {
             continue
           }
-
           parts.objects.push(objects)
           parts.size += objects.length + partials.length
           polytope.root.lasts[i] += objects.length

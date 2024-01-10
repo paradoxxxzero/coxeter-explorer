@@ -1,4 +1,4 @@
-import { atoi, pow } from './math'
+import { abs, atoi, pow } from './math'
 
 export const hueToRgb = (p, q, t) => {
   if (t < 0) t += 1
@@ -163,7 +163,8 @@ export const ambiances = Object.fromEntries(
       },
 
       transparency: 'oit',
-      color: ({ word }) => hsl((word.length * 0.03) % 1, 1, 0.8),
+      color: ({ word, dual }) =>
+        hsl(((word.length * 0.03) % 1) - (dual ? 0.25 : 0), 1, 0.8),
       // culling: true,
     },
     shiny: {

@@ -315,6 +315,9 @@ select option {
   width: 1.5em;
   height: 1.5em;
 }
+.shape-reciprocation {
+  font-size: 1em;
+}
 .shape-hidden {
   font-size: 1.25em;
 }

@@ -27,6 +27,8 @@ export const {
   PI,
 } = Math
 
+export const avg = (...args) => args.reduce((a, b) => a + b, 0) / args.length
+
 export const TAU = PI * 2
 
 export const eps = x => (abs(x) < 1e-9 ? 0 : x)
