@@ -1,4 +1,5 @@
-import { normalize } from '../math/hypermath'
+import { normalize, rotate } from '../math/hypermath'
+import { dot, multiply, multiplyVector } from '../math/matrix'
 import { wordToCoset } from '../math/toddcoxeter'
 
 const getChain = (edges, chain = null) => {
@@ -25,6 +26,7 @@ const getChain = (edges, chain = null) => {
 }
 
 export const getDualObjects = (rank, cached, shape, rootCached) => {
+  const { space } = rootCached
   const objects = []
   const partials = []
   if (rank === 0) {
@@ -45,25 +47,41 @@ export const getDualObjects = (rank, cached, shape, rootCached) => {
         // Facet is not complete
         continue
       }
-      // The facet dual of rank 0 is the centroid of the facet
-      let centroid = new Array(shape.dimensions).fill(0)
+
+      // The facet dual of rank 0 is a scaled up centroid of the facet
+      let normal = new Array(shape.dimensions).fill(0)
       for (let j = 0; j < vertexIds.length; j++) {
         const vertex = rootCached.vertices.get(vertexIds[j])
         for (let k = 0; k < vertex.length; k++) {
-          centroid[k] += vertex[k]
+          normal[k] += vertex[k]
         }
       }
-      // We directly raise the vertex on the n-sphere (no need to divide by len)
-      centroid = normalize(centroid, rootCached.space.metric, 1)
-      objects.push({ word, vertices: [centroid] })
+
+      normal = multiplyVector(space.metric, normalize(normal, space.metric))
+
+      // Compute the circumcenter of the facet
+      if (space.curvature) {
+        let weights = 0
+
+        for (let j = 0; j < vertexIds.length; j++) {
+          const vertex = rootCached.vertices.get(vertexIds[j])
+          weights += dot(normal, vertex)
+        }
+        weights /= vertexIds.length
+
+        for (let k = 0; k < normal.length; k++) {
+          normal[k] /= weights
+        }
+      }
+
+      objects.push({ word, vertices: [normal] })
 
       rootCached.dualVertices.push({
-        vertex: centroid,
+        vertex: normal,
         facet: vertexIds,
       })
 
       // We also need to store the adjacency
-
       cached.currentWords.delete(cosetId)
     }
   } else if (rank === 1) {
