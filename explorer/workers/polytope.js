@@ -68,7 +68,7 @@ export const getPolytope = (
 
       if (!cached.done) {
         if (
-          polytope[0].done &&
+          polytope[0]?.done &&
           (!draw.edge || polytope[1]?.done) &&
           (!draw.face || polytope[2]?.done)
         ) {
