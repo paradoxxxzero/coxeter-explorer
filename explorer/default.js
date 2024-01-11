@@ -47,7 +47,7 @@ export const defaultParams = {
 
   start: 1000,
   limit: 1000,
-  batch: 500,
+  batch: 1000,
 
   msaa: window.devicePixelRatio <= 1,
   msaaSamples: MSAA_MAX,

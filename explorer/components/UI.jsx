@@ -470,24 +470,6 @@ export default function UI({
                   />
                 </label>
               ) : null}
-              {showUI === 'full' && (
-                <label className="select-label">
-                  Easing
-                  <select
-                    name="easing"
-                    value={params.easing}
-                    onChange={handleRawChange}
-                  >
-                    {easings.map(p => (
-                      <option key={p} value={p}>
-                        {p
-                          .replace(/_/g, ' ')
-                          .replace(/\b./g, c => c.toUpperCase())}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
               <Number
                 name="sizeVertex"
                 label="Vertices"
@@ -538,6 +520,51 @@ export default function UI({
                   ))}
                 </select>
               </label>
+              {window.location.search.includes('debug') &&
+                showUI === 'full' && (
+                  <>
+                    <label className="select-label">
+                      Easing
+                      <select
+                        name="easing"
+                        value={params.easing}
+                        onChange={handleRawChange}
+                      >
+                        {easings.map(p => (
+                          <option key={p} value={p}>
+                            {p
+                              .replace(/_/g, ' ')
+                              .replace(/\b./g, c => c.toUpperCase())}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <Number
+                      name="start"
+                      label="Start"
+                      min={0}
+                      step={1}
+                      value={params.start}
+                      onChange={handleChange}
+                    />
+                    <Number
+                      name="limit"
+                      label="Limit"
+                      min={0}
+                      step={1}
+                      value={params.limit}
+                      onChange={handleChange}
+                    />
+                    <Number
+                      name="batch"
+                      label="Batch"
+                      min={0}
+                      step={1}
+                      value={params.batch}
+                      onChange={handleChange}
+                    />
+                  </>
+                )}
             </aside>
           )}
 

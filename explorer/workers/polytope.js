@@ -40,10 +40,6 @@ export const getPolytope = (
       const eiqenvalues = space.eigens.values
 
       if (!cache.has(key)) {
-        let limit = compute ? batch : 5
-        if (type === 'edge' && space.curvature <= 0) {
-          limit *= 1.5
-        }
         const cached = {
           ...shape,
           keys: [key],
@@ -51,7 +47,6 @@ export const getPolytope = (
           facet: subshape.facet,
           subdimensions: rank,
           mirrors: subshape.mirrors,
-          limit,
           space,
           ...(subshape.dimensions === 0 && !fundamental
             ? {
@@ -72,6 +67,18 @@ export const getPolytope = (
       }
 
       if (!cached.done) {
+        if (
+          polytope[0].done &&
+          (!draw.edge || polytope[1]?.done) &&
+          (!draw.face || polytope[2]?.done)
+        ) {
+          cached.limit = 1000
+        } else {
+          cached.limit = compute ? batch : 0
+          if (type === 'edge' && space.curvature <= 0) {
+            cached.limit *= 1.5
+          }
+        }
         if (compute) {
           // Also extract words to generate the shape
           ToddCoxeter(cached)
@@ -84,7 +91,7 @@ export const getPolytope = (
           if (eiqenvalues.some(x => x <= 0)) {
             cached.count = Infinity
             cached.done = true
-          } else {
+          } else if (cached.limit) {
             cached.count = countCosets(cached)
           }
         }

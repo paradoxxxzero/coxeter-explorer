@@ -93,16 +93,6 @@ onmessage = ({
       }
     }
 
-    if (
-      polytope[0].done &&
-      (!draw.edge || polytope[1]?.done) &&
-      (!draw.face || polytope[2]?.done)
-    ) {
-      for (let cached of cache.values()) {
-        cached.limit = 200
-      }
-    }
-
     const objects = getObjects(
       shape,
       cache,

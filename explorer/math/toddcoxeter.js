@@ -179,6 +179,7 @@ export const wordToCoset = (params, word) => {
 const iter = params => {
   if (!params.cosets) {
     params.unvisited = [1]
+    params.pointer = 0
     params.cosets = new Map([[1, new Map()]]) // id -> (gen -> id)
     params.nextVertex = 2
 
@@ -192,6 +193,9 @@ const iter = params => {
       // Each subgen is a rel of length 1
       scan(params, params.subgens[i], 1)
     }
+  } else {
+    params.unvisited.splice(0, params.pointer)
+    params.pointer = 0
   }
 
   params.limit = params.limit || 1000
@@ -201,8 +205,9 @@ const iter = params => {
     // Look for unvisited coset
     let coset = null
 
-    while (params.unvisited.length > 0) {
-      const id = quotient(params, params.unvisited.shift())
+    while (params.unvisited.length - params.pointer > 0) {
+      const nextCoset = params.unvisited[params.pointer++]
+      const id = quotient(params, nextCoset)
       if (!params.seen.has(id)) {
         params.seen.add(id)
         coset = id
