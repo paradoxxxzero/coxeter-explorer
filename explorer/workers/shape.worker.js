@@ -106,7 +106,7 @@ onmessage = ({
     )
 
     const { infos, data } = fillData(shape.dimensions, objects, ambiance, draw)
-
+    polytope.root = undefined
     postMessage(
       { polytope, infos, data },
       data
