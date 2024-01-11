@@ -88,6 +88,11 @@ export default function getMeshes(rt) {
       rt.dimensions,
       ['position', 'target', 'center']
     ),
+    reset() {
+      for (let i = 0; i < this.meshes.length; i++) {
+        this[this.meshes[i]].count = 0
+      }
+    },
     changeArity(arity) {
       for (let i = 0; i < this.meshes.length; i++) {
         this[this.meshes[i]].changeArity(arity)

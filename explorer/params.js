@@ -1,6 +1,7 @@
 import { defaultParams } from './default'
 import { min, sign } from './math'
-import { ident } from './math/matrix'
+import { coxeterToGram } from './math/hypermath'
+import { det, ident } from './math/matrix'
 import { mirrorTypes } from './mirrors'
 
 export const defaultProjection = (dimension, dimensions) =>
@@ -115,8 +116,16 @@ export const filterParams = (maybeBadParams, changed = [], oldParams) => {
     params.matrix.some(r => r.length !== params.dimensions)
   ) {
     params.matrix = ident(params.dimensions)
+  } else if (changed.includes('coxeter') || changed.includes('stellation')) {
+    // Reset rotation matrix if curvature changed
+    // We check curvature using only the gram determinant
+    // It's not entirely correct but it's fast and works for most cases
+    const oldGram = coxeterToGram(oldParams.coxeter, oldParams.stellation)
+    const newGram = coxeterToGram(params.coxeter, params.stellation)
+    if (det(oldGram) !== det(newGram)) {
+      params.matrix = ident(params.dimensions)
+    }
   }
-
   if (params.reciprocation > params.dimensions - 1) {
     params.reciprocation = params.dimensions - 1
   }

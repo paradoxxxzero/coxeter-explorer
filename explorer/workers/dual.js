@@ -151,11 +151,11 @@ export const getDualObjects = (
       }
     }
   } else if (rank === 1) {
-    if (!polytope.root.dualVertices) {
+    if (!polytope.root.dualVertices?.size) {
       return { objects, partials }
     }
 
-    polytope.root.dualEdges = polytope.root.dualEdges || []
+    polytope.root.dualEdges = polytope.root.dualEdges || new Map()
 
     for (const [cosetId, word] of cached.currentWords) {
       const vertexIds = []
@@ -188,17 +188,20 @@ export const getDualObjects = (
       }
       if (dualVertices.length === 2) {
         const vertex = { word, vertices: dualVertices, dual: true, partial }
+        polytope.root.dualEdges.set(`${key}#${word}`, {
+          edge: dualVerticesId,
+          partial,
+        })
         if (partial) {
           partials.push(vertex)
         } else {
           objects.push(vertex)
-          polytope.root.dualEdges.push(dualVerticesId)
           cached.currentWords.delete(cosetId)
         }
       }
     }
   } else if (rank === 2) {
-    if (!polytope.root.dualVertices || !polytope.root.dualEdges) {
+    if (!polytope.root.dualVertices?.size || !polytope.root.dualEdges?.size) {
       return { objects, partials }
     }
     for (const [cosetId, word] of cached.currentWords) {
@@ -216,27 +219,35 @@ export const getDualObjects = (
       }
 
       const dualVerticesIndexed = {}
+      const dualVerticesId = []
       for (const [
         vkey,
         { vertex, facet },
       ] of polytope.root.dualVertices.entries()) {
         if (vertexIds.every(vertexId => facet.includes(vertexId))) {
           dualVerticesIndexed[vkey] = vertex
+          dualVerticesId.push(vkey)
         }
       }
-      const dualVerticesId = Object.keys(dualVerticesIndexed)
 
       if (dualVerticesId.length < 3) {
         continue
       }
 
       // Find the edges that compose this face
+      let edgePartial = false
       const edges = []
-      for (let i = 0; i < polytope.root.dualEdges.length; i++) {
-        const [a, b] = polytope.root.dualEdges[i]
-        if (dualVerticesId.includes(a) && dualVerticesId.includes(b)) {
-          edges.push([a, b])
+      for (const { edge, partial } of polytope.root.dualEdges.values()) {
+        if (
+          dualVerticesId.includes(edge[0]) &&
+          dualVerticesId.includes(edge[1])
+        ) {
+          edgePartial = edgePartial || partial
+          edges.push([...edge])
         }
+      }
+      if (edges.length < 3) {
+        continue
       }
       const dualVertices = []
 
@@ -247,7 +258,7 @@ export const getDualObjects = (
       let partial = true
       if (chain[0] === chain[chain.length - 1]) {
         chain.pop()
-        partial = false
+        partial = edgePartial || false
       }
 
       for (let i = 0; i < chain.length; i++) {

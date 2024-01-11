@@ -79,7 +79,10 @@ export default memo(function CoxeterMatrix({
       let newMirrors = mirrors.slice()
       newMirrors[index] = value
       // If new mirror is compound, all active mirrors become compound
-      if (isCompound(value)) {
+      if (
+        isCompound(value) ||
+        (oldValue === 0 && newMirrors.some(isCompound))
+      ) {
         newMirrors = newMirrors.map(compoundize)
       } else {
         if (
@@ -91,10 +94,8 @@ export default memo(function CoxeterMatrix({
         }
       }
       // If there is a dual, all active mirrors become duals
-      if (isDual(value) || oldValue === 0) {
-        if (newMirrors.some(m => isDual(m))) {
-          newMirrors = newMirrors.map(dualize)
-        }
+      if (isDual(value) || (oldValue === 0 && newMirrors.some(isDual))) {
+        newMirrors = newMirrors.map(dualize)
       } else {
         if (
           value !== 0 &&

@@ -82,7 +82,8 @@ export const ambiances = Object.fromEntries(
         opacity: 0.025,
       },
       transparency: 'blend',
-      color: ({ word }) => hsl((word.length * 0.17) % 1, 0.5, 0.6),
+      color: ({ word, dual }) =>
+        hsl((word.length * 0.17 - (dual ? 0.43 : 0)) % 1, 0.5, 0.6),
     },
     disco: {
       background: [0, 0, 0, 1],

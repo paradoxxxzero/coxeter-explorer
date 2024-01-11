@@ -5,13 +5,14 @@ import {
   getSpace,
   normalize,
 } from '../math/hypermath'
-import { ident, multiplyVector } from '../math/matrix'
+import { multiplyVector } from '../math/matrix'
 import { mirrorValue } from '../mirrors'
 import Shaper from '../workers/shape.worker?worker'
 
 export const useProcess = (runtime, setRuntime) => {
   useEffect(() => {
     setRuntime(runtime => {
+      runtime.meshes.reset()
       const gram = coxeterToGram(runtime.coxeter, runtime.stellation)
       // const cartan = multiplyScalar(gram, 2)
 
@@ -32,15 +33,11 @@ export const useProcess = (runtime, setRuntime) => {
       space.rootVertex = rootVertex
       space.rootVertices = rootVertices
       space.rootNormals = rootNormals
-      const newRuntime = {
+      return {
         ...runtime,
         space,
         error: null,
       }
-      if (runtime.space && space.curvature !== runtime.space.curvature) {
-        newRuntime.matrix = ident(runtime.dimensions)
-      }
-      return newRuntime
     })
   }, [
     runtime.dimensions,

@@ -30,15 +30,6 @@ export default function Runtime({
 
   useAdaptative(runtime, setRuntime)
 
-  useEffect(() => {
-    if (runtime.matrix) {
-      runtime.matrix._reset = true
-      updateParams({
-        matrix: runtime.matrix,
-      })
-    }
-  }, [runtime.matrix, updateParams])
-
   return (
     <>
       <ErrorBoundary
