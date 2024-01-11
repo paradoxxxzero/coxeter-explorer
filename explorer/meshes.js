@@ -131,6 +131,13 @@ export default function getMeshes(rt) {
         mesh.uniforms.eye.update(rt.camera.eye)
       }
     },
+    fillData(data) {
+      for (let i = 0; i < this.meshes.length; i++) {
+        const type = this.meshes[i]
+        const mesh = this[type]
+        mesh.fillData(data.data[i], data.infos[i])
+      }
+    },
   }
 }
 

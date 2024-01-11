@@ -109,7 +109,10 @@ onmessage = ({
 
     postMessage(
       { polytope, infos, data },
-      { options: { transfer: [data.flat(1)] } }
+      data
+        .flat(1)
+        .filter(a => a)
+        .map(a => a.buffer)
     )
   } catch (e) {
     postMessage({ error: e.message })

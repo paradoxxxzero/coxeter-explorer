@@ -150,31 +150,7 @@ export const useProcess = (runtime, setRuntime) => {
     const handleShape = ({ data }) => {
       if (!data.error) {
         setRuntime(runtime => {
-          for (let i = 0; i < data.infos.length; i++) {
-            const mesh = runtime.meshes[runtime.meshes.meshes[i]]
-            const info = data.infos[i]
-            if (!info) {
-              mesh.count = 0
-              continue
-            }
-
-            mesh.count = info.start + info.size
-            if (mesh.instances < mesh.count) {
-              mesh.extendAttributes(mesh.count)
-            }
-
-            mesh.attributes.color.update(data.data[i][0], info.start, info.size)
-
-            for (let j = 0; j < mesh.varying.length; j++) {
-              const attr = mesh.varying[j]
-              mesh.attributes[attr].update(
-                data.data[i][j + 1],
-                info.start,
-                info.size
-              )
-            }
-          }
-
+          runtime.meshes.fillData(data)
           return {
             ...runtime,
             processing: !data.polytope.done,
