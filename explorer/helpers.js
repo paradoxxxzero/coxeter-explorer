@@ -1,17 +1,10 @@
-import {
-  diffuseLight,
-  easings,
-  projections,
-  shadings,
-  specularLight,
-} from '../statics'
+import { diffuseLight, projections, shadings, specularLight } from '../statics'
 import { range } from '../utils'
 import { min } from './math'
 import { columnMajor, ident } from './math/matrix'
 import { render } from './render'
 import complex from './shaders/includes/complex.glsl?raw'
 import dimensions from './shaders/includes/dimensions.glsl?raw'
-import ease from './shaders/includes/ease.glsl?raw'
 import globals from './shaders/includes/globals.glsl?raw'
 import helpers from './shaders/includes/helpers.glsl?raw'
 import lighting from './shaders/includes/lighting.glsl?raw'
@@ -27,7 +20,6 @@ export const includes = {
   project,
   helpers,
   complex,
-  ease,
   fragment,
   vertexouthead,
   lighting,
@@ -116,7 +108,6 @@ export const augment = (rt, vertex, fragment, type) => {
     }
   })
 
-  const easing = rt.easing
   config += `#define DIMENSIONS ${rt.dimensions}\n`
   for (let i = 3; i <= rt.dimensions; i++) {
     config += `#define PROJECTION${i} ${
@@ -127,7 +118,6 @@ export const augment = (rt, vertex, fragment, type) => {
   if (rt.curve) {
     config += `#define SEGMENTS\n`
   }
-  config += `#define EASING ${easings.indexOf(easing)}\n`
 
   Object.entries({ ...includes, config }).forEach(([key, value]) => {
     vertex = vertex.replace(`#include ${key}`, value)
@@ -662,10 +652,6 @@ if (import.meta.hot) {
     render(rt)
   }
 
-  import.meta.hot.accept(
-    './shaders/includes/ease.glsl?raw',
-    updateIncludeShader('ease')
-  )
   import.meta.hot.accept(
     './shaders/includes/globals.glsl?raw',
     updateIncludeShader('globals')

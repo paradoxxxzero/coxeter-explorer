@@ -8,7 +8,7 @@ import {
 import { dot, multiplyVector, transpose } from '../math/matrix'
 import { mirrorValue } from '../mirrors'
 import Shaper from '../workers/shape.worker?worker'
-import { abs } from '../math'
+import { abs, max, sign } from '../math'
 
 export const useProcess = (runtime, setRuntime) => {
   useEffect(() => {
@@ -28,6 +28,7 @@ export const useProcess = (runtime, setRuntime) => {
       const mirrors = fundamental
         ? runtime.mirrors.map(() => 1)
         : runtime.mirrors.map(v => mirrorValue(v))
+
       const rootVertex = normalize(
         multiplyVector(rootVertices, mirrors),
         space.metric
@@ -35,7 +36,6 @@ export const useProcess = (runtime, setRuntime) => {
       space.rootVertex = rootVertex
       space.rootVertices = rootVertices
       space.rootNormals = rootNormals
-
       space.boundnesses = transpose(rootVertices)
         .map(v => dot(multiplyVector(space.metric, v), v))
         .map(d =>
@@ -45,19 +45,10 @@ export const useProcess = (runtime, setRuntime) => {
             ? 'ultraideal'
             : 'inside'
         )
-      const easing =
-        // If one and only one mirror's correpsonding vertex is ideal, use quintic
-        mirrors.filter((m, i) => m && space.boundnesses[i] === 'ideal')
-          .length === 1 ||
-        // For fundamental polytopes, if one vertex is ideal, use quintic
-        (fundamental && space.boundnesses.some(t => t === 'ideal'))
-          ? 'quintic'
-          : 'linear'
 
       return {
         ...runtime,
         space,
-        easing,
         error: null,
       }
     })
@@ -133,7 +124,10 @@ export const useProcess = (runtime, setRuntime) => {
           edge: runtime.drawEdge,
           face: runtime.drawFace,
         },
-        batch: runtime.iteration === -1 ? 100 : runtime.batch,
+        batch:
+          runtime.iteration === -1
+            ? max(1, ~~(runtime.batch / 10))
+            : runtime.batch,
         hidden: runtime.hidden,
         reciprocation: runtime.reciprocation,
       })

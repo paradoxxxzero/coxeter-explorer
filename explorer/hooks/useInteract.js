@@ -156,7 +156,6 @@ export const useInteract = (
       runtime.drawVertex,
       runtime.drawEdge,
       runtime.drawFace,
-      runtime.easing,
       runtime.error,
       runtime.fov3,
       runtime.fov4,

@@ -117,56 +117,6 @@ bool nan(in vec9 v) {
 }
 #endif
 
-float trix(in float c, in float p, in float t, in vec2 a) {
-  return a.x * p + a.y * t + c * (1. - a.x - a.y);
-}
-vec2 trix(in vec2 c, in vec2 p, in vec2 t, in vec2 a) {
-  return a.x * p + a.y * t + c * (1. - a.x - a.y);
-}
-vec3 trix(in vec3 c, in vec3 p, in vec3 t, in vec2 a) {
-  return a.x * p + a.y * t + c * (1. - a.x - a.y);
-}
-vec4 trix(in vec4 c, in vec4 p, in vec4 t, in vec2 a) {
-  return a.x * p + a.y * t + c * (1. - a.x - a.y);
-}
-
-#if DIMENSIONS == 5
-vec5 mix(in vec5 a, in vec5 b, in float t) {
-  return vec5(mix(a.v, b.v, t), mix(a.u, b.u, t));
-}
-vec5 trix(in vec5 c, in vec5 p, in vec5 t, in vec2 a) {
-  return vec5(trix(c.v, p.v, t.v, a), trix(c.u, p.u, t.u, a));
-}
-#elif DIMENSIONS == 6
-vec6 mix(in vec6 a, in vec6 b, in float t) {
-  return vec6(mix(a.v, b.v, t), mix(a.u, b.u, t));
-}
-vec6 trix(in vec6 c, in vec6 p, in vec6 t, in vec2 a) {
-  return vec6(trix(c.v, p.v, t.v, a), trix(c.u, p.u, t.u, a));
-}
-#elif DIMENSIONS == 7
-vec7 mix(in vec7 a, in vec7 b, in float t) {
-  return vec7(mix(a.v, b.v, t), mix(a.u, b.u, t));
-}
-vec7 trix(in vec7 c, in vec7 p, in vec7 t, in vec2 a) {
-  return vec7(trix(c.v, p.v, t.v, a), trix(c.u, p.u, t.u, a));
-}
-#elif DIMENSIONS == 8
-vec8 mix(in vec8 a, in vec8 b, in float t) {
-  return vec8(mix(a.v, b.v, t), mix(a.u, b.u, t));
-}
-vec8 trix(in vec8 c, in vec8 p, in vec8 t, in vec2 a) {
-  return vec8(trix(c.v, p.v, t.v, a), trix(c.u, p.u, t.u, a));
-}
-#elif DIMENSIONS == 9
-vec9 mix(in vec9 a, in vec9 b, in float t) {
-  return vec9(mix(a.v, b.v, t), mix(a.u, b.u, t), mix(a.t, b.t, t));
-}
-vec9 trix(in vec9 c, in vec9 p, in vec9 t, in vec2 a) {
-  return vec9(trix(c.v, p.v, t.v, a), trix(c.u, p.u, t.u, a), trix(c.t, p.t, t.t, a));
-}
-#endif
-
 #if DIMENSIONS >= 2
 float ndot(in vec2 v, in vec2 w) {
   return dot(v, w);

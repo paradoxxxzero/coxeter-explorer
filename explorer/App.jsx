@@ -13,7 +13,6 @@ export default function App({ params, updateParams }) {
     shape: null,
     processing: true,
     detail: 'medium',
-    easing: 'linear',
     iteration: 0,
     polytope: [],
     shaper: null,

@@ -24,7 +24,7 @@ import { presets } from '../presets/index.jsx'
 import Shape from './Shape.jsx'
 import { ambiances } from '../ambiances.js'
 import { defaultProjection } from '../params.js'
-import { details, easings, projections } from '../../statics.js'
+import { details, projections } from '../../statics.js'
 import { defaultParams } from '../default.js'
 
 const getShowUI = () => {
@@ -524,22 +524,6 @@ export default function UI({
               {window.location.search.includes('debug') &&
                 showUI === 'full' && (
                   <>
-                    <label className="select-label">
-                      Easing
-                      <select
-                        name="easing"
-                        value={runtime.easing}
-                        onChange={handleRawChange}
-                      >
-                        {easings.map(p => (
-                          <option key={p} value={p}>
-                            {p
-                              .replace(/_/g, ' ')
-                              .replace(/\b./g, c => c.toUpperCase())}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
                     <Number
                       name="start"
                       label="Start"

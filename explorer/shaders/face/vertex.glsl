@@ -34,13 +34,9 @@ void main() {
   vecN targetN = multiplyMatrix(matrix, adapt(target));
   vecN centerN = multiplyMatrix(matrix, adapt(center));
 
-  vec2 t = ease(uv);
-  vec2 s = ease(uv - vec2(NOISE.x, DT));
-  vec2 r = ease(uv - vec2(DT, NOISE.z));
-
-  vecN pos = trix(centerN, positionN, targetN, t);
-  vecN next = trix(centerN, positionN, targetN, s);
-  vecN other = trix(centerN, positionN, targetN, r);
+  vecN pos = trix(centerN, positionN, targetN, uv);
+  vecN next = trix(centerN, positionN, targetN, uv - vec2(NOISE.x, DT));
+  vecN other = trix(centerN, positionN, targetN, uv - vec2(DT, NOISE.z));
 
   #if defined(SEGMENTS) && CURVATURE != 0
   if(ndot(pos, pos) > 1e-6) {

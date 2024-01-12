@@ -1,7 +1,7 @@
 import { types } from '../statics'
 import { sphere, tri, tube } from './geometries'
 import { mesh } from './helpers'
-import { PI, pow, tan } from './math'
+import { PI, tan } from './math'
 import { columnMajor } from './math/matrix'
 import { render } from './render'
 import fragmentEdge from './shaders/edge/fragment.glsl?raw'

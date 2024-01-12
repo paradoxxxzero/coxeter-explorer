@@ -44,7 +44,13 @@ export const normalize = (v, metric) => {
     return mulV(v, 1 / v[v.length - 1])
   }
   // We use -1 to orient the hyperboloids in front of camera
-  return mulV(v, -1 / sqrt(abs(dot(multiplyVector(metric, v), v))))
+  let nr = dot(multiplyVector(metric, v), v)
+  if (nr === 0) {
+    // Cheat a bit here to avoid Infinity
+    // It works great for centered 4-∞ for instance
+    nr = 1e-16
+  }
+  return mulV(v, -1 / sqrt(abs(nr)))
 }
 
 export const coxeterToGram = (coxeter, stellation) =>

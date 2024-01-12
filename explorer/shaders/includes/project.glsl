@@ -1,5 +1,4 @@
 #include helpers
-#include ease
 #include complex
 
 #if DIMENSIONS >= 3

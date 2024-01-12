@@ -24,24 +24,7 @@ export const projections = [
   'SC_Pentagon',
   'SC_Hexagon',
 ]
-export const easings = [
-  'linear',
-  'sine',
-  'quadratic',
-  'cubic',
-  'quartic',
-  'quintic',
-  'exponential',
-  'circular',
-  'back',
-  'elastic',
-  'bounce',
-  'inverse_sine',
-  'inverse_quadratic',
-  'inverse_cubic',
-  'inverse_quartic',
-  'inverse_quintic',
-]
+
 export const shadings = ['ads', 'normal', 'position', 'uv']
 export const diffuseLight = [
   'lambert',

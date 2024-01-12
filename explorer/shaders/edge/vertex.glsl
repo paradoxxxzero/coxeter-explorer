@@ -26,16 +26,14 @@ in mat3 target;
 #include vertexouthead
 #include project
 
-#define STABLE 1
+#define STABLE 0
 
 void main() {
   vecN positionN = multiplyMatrix(matrix, adapt(position));
   vecN targetN = multiplyMatrix(matrix, adapt(target));
 
-  float t = ease(uv.y);
-  float s = ease(uv.y - DT);
-  vecN pos = mix(positionN, targetN, t);
-  vecN next = mix(positionN, targetN, s);
+  vecN pos = nmix(positionN, targetN, uv.y);
+  vecN next = nmix(positionN, targetN, uv.y + DT);
   // Position segments on hypersurface
 
   #if defined(SEGMENTS) && CURVATURE != 0
@@ -47,15 +45,18 @@ void main() {
   vec3 nextProj = xproject(next) + NOISE;
   vec3 tangent = normalize(proj - nextProj);
 
-  #if STABLE ==0
+  #if STABLE == 0
   vec3 norm = cross(nextProj, proj);
   #else
   // Find a stable norm for the whole tube
-  vecN mid = mix(positionN, targetN, .5);
+  vecN mid = nmix(positionN, targetN, .5);
 
   vec3 start = xproject(positionN);
   vec3 end = xproject(targetN);
-  vec3 middle = xproject(xnormalize(mid));
+  #if defined(SEGMENTS) && CURVATURE != 0
+  mid = xnormalize(mid);
+  #endif
+  vec3 middle = xproject(mid);
   vec3 norm = cross(end - start, middle - start);
 
   // If there is no curvature the tube will be straight:
