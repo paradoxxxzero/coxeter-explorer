@@ -70,7 +70,7 @@ vec3 xproject(in vec3 v) {
   if(len(z) > 24.) {
     return vec3(NaN);
   }
-  nset(z, -1, nget(z, -1) - 1.); // Lower the plane for better perspectize
+  nset(z, -1, nget(z, -1) - zoom); // Lower the plane for better perspectize
   return xproject(z);
   #elif PROJECTION3 == 8 // HALFSPHERE
   v = halff(v, -1.);

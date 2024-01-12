@@ -431,7 +431,7 @@ export default function UI({
                                 (i === 3 &&
                                   runtime.dimensions === 3 &&
                                   runtime.space?.curvature < 0) ||
-                                n < 8
+                                n < 9
                             ),
                           ].map(p => (
                             <option key={p} value={p}>

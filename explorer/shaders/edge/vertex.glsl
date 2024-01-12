@@ -26,6 +26,8 @@ in mat3 target;
 #include vertexouthead
 #include project
 
+#define STABLE 1
+
 void main() {
   vecN positionN = multiplyMatrix(matrix, adapt(position));
   vecN targetN = multiplyMatrix(matrix, adapt(target));
@@ -45,21 +47,23 @@ void main() {
   vec3 nextProj = xproject(next) + NOISE;
   vec3 tangent = normalize(proj - nextProj);
 
+  #if STABLE ==0
   vec3 norm = cross(nextProj, proj);
+  #else
+  // Find a stable norm for the whole tube
+  vecN mid = mix(positionN, targetN, .5);
 
-  // // Find a stable norm for the whole tube
-  // vecN mid = mix(positionN, targetN, .5f);
+  vec3 start = xproject(positionN);
+  vec3 end = xproject(targetN);
+  vec3 middle = xproject(xnormalize(mid));
+  vec3 norm = cross(end - start, middle - start);
 
-  // vec3 start = xproject(positionN);
-  // vec3 end = xproject(targetN);
-  // vec3 middle = xproject(xnormalize(mid));
-  // vec3 norm = cross(end - start, middle - start);
-
-  // // If there is no curvature the tube will be straight:
-  // if(length(norm) < 0.001f) {
-  //   middle += NOISE;
-  //   norm = cross(end - start, middle - start);
-  // }
+  // If there is no curvature the tube will be straight:
+  if(length(norm) < 0.001) {
+    middle += NOISE;
+    norm = cross(end - start, middle - start);
+  }
+  #endif
 
   // Rodrigues' rotation formula: rotate norm around tangent by angle r:
   float r = uv.x * TAU;
