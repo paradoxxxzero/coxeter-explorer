@@ -27,7 +27,6 @@ export const defaultParams = {
 
   curve: true,
   adaptative: true,
-  easing: 'linear',
   sizeVertex: 40,
   sizeEdge: 25,
   drawVertex: true,

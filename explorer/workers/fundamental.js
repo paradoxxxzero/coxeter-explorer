@@ -1,4 +1,3 @@
-import { range } from '../../utils'
 import { hash } from '../math'
 import { normalize, reflect } from '../math/hypermath'
 import { transpose } from '../math/matrix'
@@ -13,9 +12,7 @@ export const getFundamentalObjects = (cached, shape, space) => {
       // Add all fundamental mirrors
       const rootVerticesT = transpose(space.rootVertices)
       cached.fundamentalVertices = new Map()
-      simplex = range(shape.dimensions).map(i =>
-        normalize(rootVerticesT[i], space.metric)
-      )
+      simplex = rootVerticesT.map(v => normalize(v, space.metric))
       cached.hashes = {
         vertex: new Set(),
         edge: new Set(),

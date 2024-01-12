@@ -338,6 +338,7 @@ export default function UI({
               mirrors={params.mirrors}
               stellation={params.stellation}
               extended={params.extended}
+              space={runtime.space}
               onChange={handleChange}
             />
           )}
@@ -527,7 +528,7 @@ export default function UI({
                       Easing
                       <select
                         name="easing"
-                        value={params.easing}
+                        value={runtime.easing}
                         onChange={handleRawChange}
                       >
                         {easings.map(p => (

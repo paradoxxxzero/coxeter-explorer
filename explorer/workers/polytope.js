@@ -75,8 +75,8 @@ export const getPolytope = (
           cached.limit = 1000
         } else {
           cached.limit = compute ? batch : 0
-          if (type === 'edge' && space.curvature === 0) {
-            cached.limit *= 1.5
+          if (type === 'edge' && space.curvature <= 0) {
+            cached.limit *= 1.75
           }
         }
         if (compute) {

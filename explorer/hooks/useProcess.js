@@ -5,9 +5,10 @@ import {
   getSpace,
   normalize,
 } from '../math/hypermath'
-import { multiplyVector } from '../math/matrix'
+import { dot, multiplyVector, transpose } from '../math/matrix'
 import { mirrorValue } from '../mirrors'
 import Shaper from '../workers/shape.worker?worker'
+import { abs } from '../math'
 
 export const useProcess = (runtime, setRuntime) => {
   useEffect(() => {
@@ -23,7 +24,8 @@ export const useProcess = (runtime, setRuntime) => {
         runtime.centered
       )
       // Handle no mirrors = fundamental
-      const mirrors = runtime.mirrors.every(m => !m)
+      const fundamental = runtime.mirrors.every(m => !m)
+      const mirrors = fundamental
         ? runtime.mirrors.map(() => 1)
         : runtime.mirrors.map(v => mirrorValue(v))
       const rootVertex = normalize(
@@ -33,9 +35,29 @@ export const useProcess = (runtime, setRuntime) => {
       space.rootVertex = rootVertex
       space.rootVertices = rootVertices
       space.rootNormals = rootNormals
+
+      space.boundnesses = transpose(rootVertices)
+        .map(v => dot(multiplyVector(space.metric, v), v))
+        .map(d =>
+          abs(d) < 1e-9
+            ? 'ideal'
+            : space.curvature * d < -1e-9
+            ? 'ultraideal'
+            : 'inside'
+        )
+      const easing =
+        // If one and only one mirror's correpsonding vertex is ideal, use quintic
+        mirrors.filter((m, i) => m && space.boundnesses[i] === 'ideal')
+          .length === 1 ||
+        // For fundamental polytopes, if one vertex is ideal, use quintic
+        (fundamental && space.boundnesses.some(t => t === 'ideal'))
+          ? 'quintic'
+          : 'linear'
+
       return {
         ...runtime,
         space,
+        easing,
         error: null,
       }
     })

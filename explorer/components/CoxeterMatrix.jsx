@@ -26,6 +26,7 @@ export default memo(function CoxeterMatrix({
   mirrors,
   stellation,
   extended,
+  space,
   onChange,
 }) {
   const [scale, setScale] = useState(1)
@@ -154,7 +155,12 @@ export default memo(function CoxeterMatrix({
               </div>
             )}
             {i > 0 && <Link type={getType(coxeter, i)} />}
-            <Node index={i} value={mirrors[i]} onChange={handleMirrorChange} />
+            <Node
+              index={i}
+              value={mirrors[i]}
+              onChange={handleMirrorChange}
+              boundness={space?.boundnesses[i]}
+            />
             {i < dimensions - 1 && <Link type={getType(coxeter, i + 1)} />}
           </Fragment>
         ))}

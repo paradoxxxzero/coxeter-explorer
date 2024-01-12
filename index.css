@@ -153,7 +153,8 @@ select option {
 .ui button,
 .ui label,
 .ui select,
-.ui svg {
+.ui svg,
+.ui [title] {
   pointer-events: all;
 }
 
@@ -393,13 +394,19 @@ select option {
 .coxeter-node {
   position: relative;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 .coxeter-node input {
+  margin: 0.5em 0 0;
   font-size: 1.25em;
-  position: absolute;
-  top: 2.5em;
-  left: -0.4em;
 }
+.coxeter-node .boundness-flag {
+  margin: 0.25em;
+  font-size: 1.5em;
+}
+
 .coxeter-graphic {
   color: rgba(255, 255, 255, 1);
   font-size: 3em;

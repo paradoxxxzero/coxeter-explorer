@@ -298,7 +298,6 @@ export const presets = [
         drawVertex: false,
         drawFace: true,
         curve: true,
-        easing: 'quintic',
         ambiance: 'neon',
         centered: true,
       }
@@ -405,7 +404,6 @@ export const presets = [
       drawFace: true,
       curve: true,
       centered: true,
-      easing: 'quartic',
       ambiance: 'pure',
     }),
   },
@@ -464,7 +462,6 @@ export const presets = [
       drawFace: true,
       curve: true,
       centered: true,
-      easing: 'quartic',
       ambiance: 'pure',
       zoom: 1.5,
     }),
@@ -1164,11 +1161,11 @@ export const presets = [
   },
   {
     name: '16-cellic',
-    params: ehoneycomb([3, 3, 4, 3], [1, 0, 0, 0, 0], null, {}),
+    params: ehoneycomb([3, 3, 4, 3], [1, 0, 0, 0, 0]),
   },
   {
     name: '24-cellic',
-    params: ehoneycomb([3, 4, 3, 3], [1, 0, 0, 0, 0], null, {}),
+    params: ehoneycomb([3, 4, 3, 3], [1, 0, 0, 0, 0]),
   },
   {
     name: '4-simpletic',
@@ -1578,9 +1575,7 @@ export const presets = [
   },
   {
     name: 'Infinite Order triangular',
-    params: tiling([3, 0], [1, 0, 0], null, {
-      easing: 'quintic',
-    }),
+    params: tiling([3, 0], [1, 0, 0]),
   },
   {
     name: 'Order-5 square',
@@ -1753,7 +1748,7 @@ export const presets = [
   },
   {
     name: 'Order-5 dodecahedral',
-    params: honeycomb([5, 3, 5], [1, 0, 0, 0], null, {}),
+    params: honeycomb([5, 3, 5], [1, 0, 0, 0]),
   },
   {
     name: 'Alternated Order-5 cubic',
@@ -1848,19 +1843,15 @@ export const presets = [
   },
   {
     name: 'Triangular',
-    params: honeycomb([3, 6, 3], [1, 0, 0, 0], null, {
-      easing: 'quintic',
-    }),
+    params: honeycomb([3, 6, 3], [1, 0, 0, 0]),
   },
   {
     name: 'Hexagonal',
-    params: honeycomb([6, 3, 3], [1, 0, 0, 0], null, {}),
+    params: honeycomb([6, 3, 3], [1, 0, 0, 0]),
   },
   {
     name: 'Order-6 tetrahedral',
-    params: honeycomb([3, 3, 6], [1, 0, 0, 0], null, {
-      easing: 'quintic',
-    }),
+    params: honeycomb([3, 3, 6], [1, 0, 0, 0]),
   },
   {
     name: 'Alternated Order-6 cubic',
@@ -1873,14 +1864,12 @@ export const presets = [
       ],
       [1, 0, 0, 0],
       null,
-      {
-        easing: 'quintic',
-      }
+      {}
     ),
   },
   {
     name: 'Order-5 hexagonal',
-    params: honeycomb([6, 3, 5], [1, 0, 0, 0], null, {}),
+    params: honeycomb([6, 3, 5], [1, 0, 0, 0]),
   },
   {
     name: 'Alternated Order-5 hexagonal',
@@ -1898,13 +1887,11 @@ export const presets = [
   },
   {
     name: 'Order-6 hexagonal',
-    params: honeycomb([6, 3, 6], [0, 0, 0, 1], null, {
-      easing: 'quintic',
-    }),
+    params: honeycomb([6, 3, 6], [0, 0, 0, 1]),
   },
   {
     name: 'Square',
-    params: honeycomb([4, 4, 3], [1, 0, 0, 0], null, {}),
+    params: honeycomb([4, 4, 3], [1, 0, 0, 0]),
   },
   {
     name: 'Alternated square',
@@ -1922,7 +1909,7 @@ export const presets = [
   },
   {
     name: 'Order-4 square',
-    params: honeycomb([4, 4, 4], [0, 1, 0, 0], null, {}),
+    params: honeycomb([4, 4, 4], [0, 1, 0, 0]),
   },
   {
     name: 'Tetrahedral square',
@@ -1952,22 +1939,20 @@ export const presets = [
       {}
     ),
   },
-  // {
-  //   name: 'Alternated Cubic square',
-  //   params: honeycomb(
-  //     [
-  //       [1, 2, 4, 3],
-  //       [2, 1, 3, 2],
-  //       [4, 3, 1, 4],
-  //       [3, 2, 4, 1],
-  //     ],
-  //     [1, 0, 0, 0, 1],
-  //     null,
-  //     {
-  //       easing: 'quintic'
-  //     }
-  //   ),
-  // },
+  {
+    name: 'Alternated Cubic square',
+    params: honeycomb(
+      [
+        [1, 2, 4, 3],
+        [2, 1, 3, 2],
+        [4, 3, 1, 4],
+        [3, 2, 4, 1],
+      ],
+      [1, 0, 0, 0, 1],
+      null,
+      {}
+    ),
+  },
   {
     name: 'Quarter order square',
     params: honeycomb(
@@ -1979,9 +1964,7 @@ export const presets = [
       ],
       [1, 0, 0, 0],
       null,
-      {
-        easing: 'quintic',
-      }
+      {}
     ),
   },
   {
@@ -2037,9 +2020,7 @@ export const presets = [
       ],
       [0, 0, 0, 1],
       null,
-      {
-        easing: 'quintic',
-      }
+      {}
     ),
   },
   {
@@ -2142,15 +2123,15 @@ export const presets = [
   },
   {
     name: '3-3-7',
-    params: honeycomb([3, 3, 7], [1, 0, 0, 0], null, {}),
+    params: honeycomb([3, 3, 7], [1, 0, 0, 0]),
   },
   {
     name: '3-4-7',
-    params: honeycomb([3, 3, 7], [1, 0, 0, 0], null, {}),
+    params: honeycomb([3, 3, 7], [1, 0, 0, 0]),
   },
   {
     name: '3-5-7',
-    params: honeycomb([3, 5, 7], [1, 0, 0, 0], null, {}),
+    params: honeycomb([3, 5, 7], [1, 0, 0, 0]),
   },
   {
     type: 'group',
@@ -2208,9 +2189,7 @@ export const presets = [
   },
   {
     name: 'Order-4 24-cell',
-    params: honeycomb([3, 4, 3, 4], [1, 0, 0, 0, 0], null, {
-      easing: 'quintic',
-    }),
+    params: honeycomb([3, 4, 3, 4], [1, 0, 0, 0, 0]),
   },
   {
     name: 'Cubic honeycomb',
@@ -2227,9 +2206,7 @@ export const presets = [
   },
   {
     name: '5-orthoplex',
-    params: honeycomb([3, 3, 3, 4, 3], [1, 0, 0, 0, 0, 0], null, {
-      easing: 'quintic',
-    }),
+    params: honeycomb([3, 3, 3, 4, 3], [1, 0, 0, 0, 0, 0]),
   },
   {
     name: '24-cell honeycomb',
@@ -2237,20 +2214,14 @@ export const presets = [
   },
   {
     name: '16-cell honeycomb',
-    params: honeycomb([3, 3, 4, 3, 3], [1, 0, 0, 0, 0, 0], null, {
-      easing: 'quintic',
-    }),
+    params: honeycomb([3, 3, 4, 3, 3], [1, 0, 0, 0, 0, 0]),
   },
   {
     name: 'Order-4 24-cell honeycomb',
-    params: honeycomb([3, 4, 3, 3, 4], [1, 0, 0, 0, 0, 0], null, {
-      easing: 'quintic',
-    }),
+    params: honeycomb([3, 4, 3, 3, 4], [1, 0, 0, 0, 0, 0]),
   },
   {
     name: 'Tesseratic honeycomb',
-    params: honeycomb([4, 3, 3, 4, 3], [1, 0, 0, 0, 0, 0], null, {
-      easing: 'quintic',
-    }),
+    params: honeycomb([4, 3, 3, 4, 3], [1, 0, 0, 0, 0, 0]),
   },
 ]

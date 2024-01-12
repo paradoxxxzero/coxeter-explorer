@@ -79,7 +79,7 @@ export const mirrorSymbols = {
   ),
 }
 
-export default function Node({ index, value, onChange }) {
+export default function Node({ index, value, boundness, onChange }) {
   const ref = useRef(null)
   const [menu, setMenu] = useState(false)
 
@@ -118,6 +118,8 @@ export default function Node({ index, value, onChange }) {
     }
   }, [menu])
 
+  const boundnessFlag = { ideal: '∞', ultraideal: '⊘' }[boundness]
+
   return (
     <div className="coxeter-node" title={type} ref={ref}>
       <svg
@@ -141,6 +143,13 @@ export default function Node({ index, value, onChange }) {
           style={{ width: `${value.toString().length + 1.5}ch` }}
           onChange={e => onChange(index, e.target.value)}
         />
+      )}
+      {boundnessFlag ? (
+        <div className="boundness-flag" title={boundness}>
+          {boundnessFlag}
+        </div>
+      ) : (
+        ''
       )}
       {menu && (
         <div className="coxeter-node-menu">
