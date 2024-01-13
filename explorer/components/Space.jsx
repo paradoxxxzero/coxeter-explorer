@@ -1,6 +1,9 @@
-export default function Space({ type, subtype, level, dimensions }) {
+export default function Space({ type, subtype, order, dimensions }) {
   return (
-    <span className="space">
+    <span
+      className="space"
+      title={`${type} ${subtype}${order > 1 ? `of order ${order}` : ''}`}
+    >
       {type === null || type === 'indefinite'
         ? '𝕏'
         : type === 'affine'
@@ -8,18 +11,21 @@ export default function Space({ type, subtype, level, dimensions }) {
         : type === 'finite'
         ? '𝕊'
         : 'ℍ'}
-      {dimensions ? <sup>{dimensions - 1}</sup> : null}
+      {dimensions ? (
+        <sup>
+          {dimensions - 1}
+          {order > 1 ? <sup>{order}</sup> : null}
+        </sup>
+      ) : null}
       {type === 'hyperbolic' ? (
         <sub>
           {
             {
               compact: ' ',
               paracompact: '*',
-              lorentzian: 'L',
-              superhyperbolic: '**',
+              hypercompact: '+',
             }[subtype]
           }
-          {level}
         </sub>
       ) : null}
     </span>

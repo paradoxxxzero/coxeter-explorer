@@ -113,7 +113,7 @@ const ehoneycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
     drawFace: false,
     drawVertex: false,
     centered: false,
-    sizeEdge: 15,
+    sizeEdge: 20,
     zoom: 2,
     ...extra,
   }
@@ -273,7 +273,7 @@ export const presets = [
   {
     name: (
       <>
-        <Space type="hyperbolic" dimensions={3} /> 7-3-2 tiling
+        <Space type="hyperbolic" dimensions={3} /> Heptagonal Tiling
       </>
     ),
     params: tiling([7, 3], [1, 0, 0], {
@@ -287,7 +287,7 @@ export const presets = [
     name: (
       <>
         <Space type="hyperbolic" subtype="paracompact" dimensions={3} /> Ideal
-        triangles
+        Triangles
       </>
     ),
     params: tiling(
@@ -310,7 +310,8 @@ export const presets = [
   {
     name: (
       <>
-        <Space type="hyperbolic" dimensions={4} /> Inverted honeycomb
+        <Space type="hyperbolic" dimensions={4} /> Inverted Alternated Order-5
+        Cubic Honeycomb
       </>
     ),
     params: honeycomb(
@@ -400,7 +401,7 @@ export const presets = [
     name: (
       <>
         <Space type="hyperbolic" subtype="paracompact" dimensions={4} /> Ideal
-        tetrahedron
+        Tetrahedron
       </>
     ),
     params: tiling([3, 3, 6], [1, 0, 0, ''], {
@@ -429,7 +430,8 @@ export const presets = [
   {
     name: (
       <>
-        <Space type="hyperbolic" dimensions={4} /> 5-3-4 honeycomb
+        <Space type="hyperbolic" dimensions={4} /> Order-4 Dodecahedral
+        Honeycomb
       </>
     ),
     params: honeycomb([5, 3, 4], [1, 0, 0, 0], {
@@ -439,13 +441,8 @@ export const presets = [
   {
     name: (
       <>
-        <Space
-          type="hyperbolic"
-          subtype="lorentzian"
-          level={2}
-          dimensions={4}
-        />{' '}
-        7-3-3 paracompact honeycomb
+        <Space type="hyperbolic" subtype="hypercompact" dimensions={4} />
+        Hypercompact Order 3-6 Heptagonal Honeycomb
       </>
     ),
     params: honeycomb([7, 3, 3], [1, 0, 0, 0], {
@@ -488,7 +485,7 @@ export const presets = [
   {
     name: (
       <>
-        <Space type="affine" dimensions={5} /> Tesseract stack
+        <Space type="affine" dimensions={5} /> Tesseract Stack
       </>
     ),
     params: polytope(
@@ -513,8 +510,13 @@ export const presets = [
   {
     name: (
       <>
-        <Space type="hyperbolic" subtype="superhyperbolic" dimensions={4} />{' '}
-        Ultrahyperbolic surface (Anti-de Sitter Ads3)
+        <Space
+          type="hyperbolic"
+          subtype="hypercompact"
+          order={2}
+          dimensions={4}
+        />{' '}
+        Ultrahyperbolic Surface (Anti-de Sitter Ads3)
       </>
     ),
     params: polytope([-1, 2, -1], [1, 0, 0, 1], {
@@ -530,8 +532,13 @@ export const presets = [
   {
     name: (
       <>
-        <Space type="hyperbolic" subtype="superhyperbolic" dimensions={5} />{' '}
-        Ultrahyperbolic honeycomb (Anti-de Sitter Ads4)
+        <Space
+          type="hyperbolic"
+          subtype="hypercompact"
+          order={2}
+          dimensions={5}
+        />{' '}
+        Ultrahyperbolic Honeycomb (Anti-de Sitter Ads4)
       </>
     ),
     params: polytope([-1, 3, 3, -1], [1, 0, 0, 0, 1], {
@@ -544,10 +551,32 @@ export const presets = [
     }),
   },
   {
+    name: (
+      <>
+        <Space
+          type="hyperbolic"
+          subtype="hypercompact"
+          order={3}
+          dimensions={6}
+        />{' '}
+        Ultraultrahyperbolic
+      </>
+    ),
+    params: polytope([-1, 2, -1, 2, -1], [0, 0, 0, 0, 0, 0], {
+      drawVertex: false,
+      drawFace: false,
+      curve: true,
+      ambiance: 'neon',
+      centered: false,
+      zoom: 2,
+      sizeEdge: 15,
+    }),
+  },
+  {
     type: 'title',
     content: (
       <>
-        <Space type="finite" /> Spherical space
+        <Space type="finite" /> Spherical Space
       </>
     ),
   },
@@ -780,7 +809,7 @@ export const presets = [
     }),
     subforms: [
       {
-        name: 'Small stellated 120-cell',
+        name: 'Small Stellated 120-cell',
         params: polytope([3, 5, 5], [0, 0, 0, 1], [1, 1, 2], {
           curve: false,
         }),
@@ -798,14 +827,14 @@ export const presets = [
         }),
       },
       {
-        name: 'Great stellated 120-cell',
+        name: 'Great Stellated 120-cell',
         params: polytope([5, 3, 5], [0, 0, 0, 1], [1, 1, 2], {
           curve: false,
         }),
       },
       // FIXME
       {
-        name: 'Grand stellated 120-cell',
+        name: 'Grand Stellated 120-cell',
         params: polytope([5, 5, 5], [1, 0, 0, 0], [2, 1, 2], {
           curve: false,
         }),
@@ -817,13 +846,13 @@ export const presets = [
         }),
       },
       {
-        name: 'Great icosahedral 120-cell',
+        name: 'Great Icosahedral 120-cell',
         params: polytope([5, 5, 3], [0, 0, 0, 1], [1, 2, 1], {
           curve: false,
         }),
       },
       {
-        name: 'Great grand stellated 120-cell',
+        name: 'Great grand Stellated 120-cell',
         params: polytope([5, 3, 3], [1, 0, 0, 0], [2, 1, 1], {
           curve: false,
         }),
@@ -1119,8 +1148,7 @@ export const presets = [
     type: 'group',
     content: (
       <>
-        <Space type="finite" dimensions={9} />
-        Polyyotta
+        <Space type="finite" dimensions={9} /> Polyyotta
       </>
     ),
   },
@@ -1154,7 +1182,7 @@ export const presets = [
     type: 'title',
     content: (
       <>
-        <Space type="affine" /> Euclidean space
+        <Space type="affine" /> Euclidean Space
       </>
     ),
   },
@@ -1210,7 +1238,7 @@ export const presets = [
     ),
   },
   {
-    name: 'Quarter cubic',
+    name: 'Quarter Cubic',
     params: ehoneycomb(
       [
         [1, 3, 2, 3],
@@ -1255,7 +1283,7 @@ export const presets = [
     ),
   },
   {
-    name: 'Quarter tesseractic',
+    name: 'Quarter Tesseractic',
     params: ehoneycomb(
       [
         [1, 2, 3, 2, 2],
@@ -1627,7 +1655,7 @@ export const presets = [
     type: 'title',
     content: (
       <>
-        <Space type="hyperbolic" /> Hyperbolic space
+        <Space type="hyperbolic" /> Hyperbolic Space
       </>
     ),
   },
@@ -1640,35 +1668,35 @@ export const presets = [
     ),
   },
   {
-    name: 'Order-7 triangular',
+    name: 'Order-7 Triangular',
     params: tiling([3, 7], [1, 0, 0]),
   },
   {
-    name: 'Order-8 triangular',
+    name: 'Order-8 Triangular',
     params: tiling([3, 8], [1, 0, 0]),
   },
   {
-    name: 'Infinite Order triangular',
+    name: 'Infinite Order Triangular',
     params: tiling([3, 0], [1, 0, 0]),
   },
   {
-    name: 'Order-5 square',
+    name: 'Order-5 Square',
     params: tiling([4, 5], [1, 0, 0]),
   },
   {
-    name: 'Order-6 square',
+    name: 'Order-6 Square',
     params: tiling([4, 6], [1, 0, 0]),
   },
   {
-    name: 'Order-7 square',
+    name: 'Order-7 Square',
     params: tiling([4, 7], [1, 0, 0]),
   },
   {
-    name: 'Order-8 square',
+    name: 'Order-8 Square',
     params: tiling([4, 8], [1, 0, 0]),
   },
   {
-    name: 'Infinite Order square',
+    name: 'Infinite Order Square',
     params: tiling([4, 0], [1, 0, 0]),
   },
   {
@@ -1696,112 +1724,120 @@ export const presets = [
     params: tiling([5, 0], [1, 0, 0]),
   },
   {
-    name: 'Order-4 hexagonal',
+    name: 'Order-4 Hexagonal',
     params: tiling([6, 4], [1, 0, 0]),
   },
   {
-    name: 'Order-5 hexagonal',
+    name: 'Order-5 Hexagonal',
     params: tiling([6, 5], [1, 0, 0]),
   },
   {
-    name: 'Order-6 hexagonal',
+    name: 'Order-6 Hexagonal',
     params: tiling([6, 6], [1, 0, 0]),
   },
   {
-    name: 'Order-7 hexagonal',
+    name: 'Order-7 Hexagonal',
     params: tiling([6, 7], [1, 0, 0]),
   },
   {
-    name: 'Order-8 hexagonal',
+    name: 'Order-8 Hexagonal',
     params: tiling([6, 8], [1, 0, 0]),
   },
   {
-    name: 'Infinite Order hexagonal',
+    name: 'Infinite Order Hexagonal',
     params: tiling([6, 0], [1, 0, 0]),
   },
   {
-    name: 'Order-3 heptagonal',
+    name: 'Order-3 Heptagonal',
     params: tiling([7, 3], [1, 0, 0]),
   },
   {
-    name: 'Order-4 heptagonal',
+    name: 'Order-4 Heptagonal',
     params: tiling([7, 4], [1, 0, 0]),
   },
   {
-    name: 'Order-5 heptagonal',
+    name: 'Order-5 Heptagonal',
     params: tiling([7, 5], [1, 0, 0]),
   },
   {
-    name: 'Order-6 heptagonal',
+    name: 'Order-6 Heptagonal',
     params: tiling([7, 6], [1, 0, 0]),
   },
   {
-    name: 'Order-7 heptagonal',
+    name: 'Order-7 Heptagonal',
     params: tiling([7, 7], [1, 0, 0]),
   },
   {
-    name: 'Order-8 heptagonal',
+    name: 'Order-8 Heptagonal',
     params: tiling([7, 8], [1, 0, 0]),
   },
   {
-    name: 'Infinite Order heptagonal',
+    name: 'Infinite Order Heptagonal',
     params: tiling([7, 0], [1, 0, 0]),
   },
   {
-    name: 'Order-3 octagonal',
+    name: 'Order-3 Octagonal',
     params: tiling([8, 3], [1, 0, 0]),
   },
   {
-    name: 'Order-4 octagonal',
+    name: 'Order-4 Octagonal',
     params: tiling([8, 4], [1, 0, 0]),
   },
   {
-    name: 'Order-5 octagonal',
+    name: 'Order-5 Octagonal',
     params: tiling([8, 5], [1, 0, 0]),
   },
   {
-    name: 'Order-6 octagonal',
+    name: 'Order-6 Octagonal',
     params: tiling([8, 6], [1, 0, 0]),
   },
   {
-    name: 'Order-7 octagonal',
+    name: 'Order-7 Octagonal',
     params: tiling([8, 7], [1, 0, 0]),
   },
   {
-    name: 'Order-8 octagonal',
+    name: 'Order-8 Octagonal',
     params: tiling([8, 8], [1, 0, 0]),
   },
   {
-    name: 'Infinite Order octagonal',
+    name: 'Infinite Order Octagonal',
     params: tiling([8, 0], [1, 0, 0]),
   },
   {
-    name: 'Order-3 apeirogonal',
+    name: 'Order-3 Apeirogonal',
     params: tiling([0, 3], [1, 0, 0]),
   },
   {
-    name: 'Order-4 apeirogonal',
+    name: 'Order-4 Apeirogonal',
     params: tiling([0, 4], [1, 0, 0]),
   },
   {
-    name: 'Order-5 apeirogonal',
+    name: 'Order-5 Apeirogonal',
     params: tiling([0, 5], [1, 0, 0]),
   },
   {
-    name: 'Order-6 apeirogonal',
+    name: 'Order-6 Apeirogonal',
     params: tiling([0, 6], [1, 0, 0]),
   },
   {
-    name: 'Order-7 apeirogonal',
+    name: 'Order-7 Apeirogonal',
     params: tiling([0, 7], [1, 0, 0]),
   },
   {
-    name: 'Order-8 apeirogonal',
+    name: 'Order-8 Apeirogonal',
     params: tiling([0, 8], [1, 0, 0]),
   },
   {
-    name: 'Infinite Order apeirogonal',
+    name: 'Infinite Order Apeirogonal',
     params: tiling([0, 0], [1, 0, 0]),
+  },
+  {
+    name: 'Snub Square',
+    params: tiling([4, 4], ['s', 's', 0]),
+  },
+  {
+    name: 'Snub Trihexagonal',
+    params: tiling([6, 3], ['s', 's', 's']),
   },
   {
     type: 'group',
@@ -1817,15 +1853,15 @@ export const presets = [
     params: honeycomb([3, 5, 3], [1, 0, 0, 0]),
   },
   {
-    name: 'Order-4 dodecahedral',
+    name: 'Order-4 Dodecahedral',
     params: honeycomb([5, 3, 4], [1, 0, 0, 0]),
   },
   {
-    name: 'Order-5 dodecahedral',
+    name: 'Order-5 Dodecahedral',
     params: honeycomb([5, 3, 5], [1, 0, 0, 0]),
   },
   {
-    name: 'Alternated Order-5 cubic',
+    name: 'Alternated Order-5 Cubic',
     params: honeycomb(
       [
         [1, 2, 3, 2],
@@ -1837,7 +1873,7 @@ export const presets = [
     ),
   },
   {
-    name: 'Tetrahedral cubic',
+    name: 'Tetrahedral Cubic',
     params: honeycomb(
       [
         [1, 4, 2, 3],
@@ -1851,7 +1887,7 @@ export const presets = [
     ),
   },
   {
-    name: 'Tetrahedral dodecahedral',
+    name: 'Tetrahedral Dodecahedral',
     params: honeycomb(
       [
         [1, 3, 2, 5],
@@ -1865,7 +1901,7 @@ export const presets = [
     ),
   },
   {
-    name: 'Cubic octahedral',
+    name: 'Cubic Octahedral',
     params: honeycomb(
       [
         [1, 3, 2, 4],
@@ -1924,11 +1960,11 @@ export const presets = [
     params: honeycomb([6, 3, 3], [1, 0, 0, 0]),
   },
   {
-    name: 'Order-6 tetrahedral',
+    name: 'Order-6 Tetrahedral',
     params: honeycomb([3, 3, 6], [1, 0, 0, 0]),
   },
   {
-    name: 'Alternated Order-6 cubic',
+    name: 'Alternated Order-6 Cubic',
     params: honeycomb(
       [
         [1, 2, 3, 2],
@@ -1942,11 +1978,11 @@ export const presets = [
     ),
   },
   {
-    name: 'Order-5 hexagonal',
+    name: 'Order-5 Hexagonal',
     params: honeycomb([6, 3, 5], [1, 0, 0, 0]),
   },
   {
-    name: 'Alternated Order-5 hexagonal',
+    name: 'Alternated Order-5 Hexagonal',
     params: honeycomb(
       [
         [1, 2, 3, 2],
@@ -1960,7 +1996,7 @@ export const presets = [
     ),
   },
   {
-    name: 'Order-6 hexagonal',
+    name: 'Order-6 Hexagonal',
     params: honeycomb([6, 3, 6], [0, 0, 0, 1]),
   },
   {
@@ -1968,7 +2004,7 @@ export const presets = [
     params: honeycomb([4, 4, 3], [1, 0, 0, 0]),
   },
   {
-    name: 'Alternated square',
+    name: 'Alternated Square',
     params: honeycomb(
       [
         [1, 2, 4, 2],
@@ -1982,11 +2018,11 @@ export const presets = [
     ),
   },
   {
-    name: 'Order-4 square',
+    name: 'Order-4 Square',
     params: honeycomb([4, 4, 4], [0, 1, 0, 0]),
   },
   {
-    name: 'Tetrahedral square',
+    name: 'Tetrahedral Square',
     params: honeycomb(
       [
         [1, 4, 2, 4],
@@ -2000,7 +2036,7 @@ export const presets = [
     ),
   },
   {
-    name: 'Cubic square',
+    name: 'Cubic Square',
     params: honeycomb(
       [
         [1, 4, 2, 4],
@@ -2014,7 +2050,7 @@ export const presets = [
     ),
   },
   {
-    name: 'Alternated Cubic square',
+    name: 'Alternated Cubic Square',
     params: honeycomb(
       [
         [1, 2, 4, 3],
@@ -2028,7 +2064,7 @@ export const presets = [
     ),
   },
   {
-    name: 'Quarter order square',
+    name: 'Quarter order Square',
     params: honeycomb(
       [
         [1, 4, 2, 4],
@@ -2154,7 +2190,7 @@ export const presets = [
     ),
   },
   {
-    name: 'Quarter Order-4 hexagonal',
+    name: 'Quarter Order-4 Hexagonal',
     params: honeycomb(
       [
         [1, 3, 3, 2],
@@ -2185,27 +2221,22 @@ export const presets = [
     type: 'group',
     content: (
       <>
-        <Space
-          type="hyperbolic"
-          subtype="lorentzian"
-          level={2}
-          dimensions={4}
-        />{' '}
-        Level-2 Lorentzian Hyperbolic Honeycombs
+        <Space type="hyperbolic" subtype="hypercompact" dimensions={4} />{' '}
+        Hypercompact Hyperbolic Honeycombs
       </>
     ),
   },
   {
-    name: '3-3-7',
-    params: honeycomb([3, 3, 7], [1, 0, 0, 0]),
+    name: 'Order 7-3 Triangular',
+    params: honeycomb([3, 7, 3], [1, 0, 0, 0]),
   },
   {
-    name: '3-4-7',
-    params: honeycomb([3, 3, 7], [1, 0, 0, 0]),
+    name: 'Order 3-6 Heptagonal',
+    params: honeycomb([7, 3, 6], [1, 0, 0, 0]),
   },
   {
-    name: '3-5-7',
-    params: honeycomb([3, 5, 7], [1, 0, 0, 0]),
+    name: 'Order-7 Dodecahedral',
+    params: honeycomb([5, 3, 7], [1, 0, 0, 0]),
   },
   {
     type: 'group',
@@ -2225,7 +2256,7 @@ export const presets = [
     params: honeycomb([5, 3, 3, 3], [1, 0, 0, 0, 0]),
   },
   {
-    name: 'Order-5 tesseratic',
+    name: 'Order-5 Tesseratic',
     params: honeycomb([4, 3, 3, 5], [1, 0, 0, 0, 0]),
   },
   {
@@ -2237,7 +2268,7 @@ export const presets = [
     params: honeycomb([5, 3, 3, 5], [1, 0, 0, 0, 0]),
   },
   {
-    name: 'Small stellated 120-cell',
+    name: 'Small Stellated 120-cell',
     params: honeycomb([5, 5, 3, 3], [1, 0, 0, 0, 0], [2, 1, 1, 1]),
   },
   {
@@ -2245,7 +2276,7 @@ export const presets = [
     params: honeycomb([3, 3, 5, 5], [1, 0, 0, 0, 0], [1, 1, 1, 2]),
   },
   {
-    name: 'Order-5 icosahedral 120-cell',
+    name: 'Order-5 Icosahedral 120-cell',
     params: honeycomb([3, 5, 5, 5], [1, 0, 0, 0, 0], [1, 1, 2, 1]),
   },
   {
@@ -2266,7 +2297,7 @@ export const presets = [
     params: honeycomb([3, 4, 3, 4], [1, 0, 0, 0, 0]),
   },
   {
-    name: 'Cubic honeycomb',
+    name: 'Cubic Honeycomb',
     params: honeycomb([4, 3, 4, 3], [1, 0, 0, 0, 0]),
   },
   {
@@ -2283,19 +2314,19 @@ export const presets = [
     params: honeycomb([3, 3, 3, 4, 3], [1, 0, 0, 0, 0, 0]),
   },
   {
-    name: '24-cell honeycomb',
+    name: '24-cell Honeycomb',
     params: honeycomb([3, 4, 3, 3, 3], [1, 0, 0, 0, 0, 0]),
   },
   {
-    name: '16-cell honeycomb',
+    name: '16-cell Honeycomb',
     params: honeycomb([3, 3, 4, 3, 3], [1, 0, 0, 0, 0, 0]),
   },
   {
-    name: 'Order-4 24-cell honeycomb',
+    name: 'Order-4 24-cell Honeycomb',
     params: honeycomb([3, 4, 3, 3, 4], [1, 0, 0, 0, 0, 0]),
   },
   {
-    name: 'Tesseratic honeycomb',
+    name: 'Tesseratic Honeycomb',
     params: honeycomb([4, 3, 3, 4, 3], [1, 0, 0, 0, 0, 0]),
   },
 ]

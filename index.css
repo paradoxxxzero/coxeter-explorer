@@ -83,16 +83,19 @@ select option {
   color: rgba(33, 150, 243);
 }
 
-.space-button {
+.space {
   position: relative;
-  font-size: 3em;
+  line-height: 1; /* Normalize for button similarity */
 }
 
-.space-button sub {
+.space sub {
   position: absolute;
-  bottom: 0.5em;
-  left: 2.5em;
-  font-size: 0.4em;
+  bottom: -0.3em;
+  left: 1em;
+}
+
+.space-button {
+  font-size: 3em;
 }
 
 .space-button.processing {

@@ -26,6 +26,7 @@ import {
   multiply,
   multiplyVector,
   subV,
+  submatrix,
   transpose,
 } from './matrix.js'
 
@@ -79,19 +80,6 @@ export const getSignature = gram => {
     eigens,
   }
 }
-export const getSubSignatures = (gram, sub = [], level = 0, maxLevel = 10) => {
-  sub[level] = sub[level] || []
-  for (let i = 0; i < gram.length; i++) {
-    const subgram = gram
-      .filter((_, j) => j !== i)
-      .map(row => row.filter((_, j) => j !== i))
-    sub[level].push(getSignature(subgram))
-    if (subgram.length > 1 && level + 1 < maxLevel) {
-      getSubSignatures(subgram, sub, level + 1, maxLevel)
-    }
-  }
-  return sub
-}
 
 export const getSpace = gram => {
   const signature = getSignature(gram)
@@ -100,62 +88,27 @@ export const getSpace = gram => {
   // Lorentzian metric tensor
   const metric = diag(eigens.values.map(v => sign(v)))
 
-  const common = {
+  const sign_ = '-0+'.split('').find(c => signature[c] > 0)
+  const curvature = { '+': 1, 0: 0, '-': -1 }[sign_]
+  const type = { 1: 'finite', 0: 'affine', '-1': 'hyperbolic' }[curvature]
+  const subsignatures = range(gram.length).map(i =>
+    getSignature(submatrix(gram, [i]))
+  )
+  const subtype = !subsignatures.some(s => s['-'] || s['0'])
+    ? 'compact'
+    : !subsignatures.some(s => s['-'])
+    ? 'paracompact'
+    : 'hypercompact'
+
+  return {
     eigens,
     gram,
     metric,
+    type,
+    curvature,
+    subtype,
+    order: curvature > 0 ? 1 : signature[sign_],
   }
-
-  if (signature['-'] === 0 && signature['0'] === 0) {
-    return { ...common, type: 'finite', curvature: 1 }
-  }
-  if (signature['-'] === 0 && signature['0'] > 0) {
-    return { ...common, type: 'affine', curvature: 0 }
-  }
-  if (signature['-'] > 1) {
-    return {
-      ...common,
-      type: 'hyperbolic',
-      subtype: 'superhyperbolic',
-      level: signature['-'],
-      curvature: -1,
-    }
-  }
-  // Indefinite, check subgroups
-  const subSignatures = getSubSignatures(gram, [], 0, 3)
-
-  const subSignature = subSignatures[0]
-
-  if (subSignature.every(s => s['-'] === 0 && s['0'] === 0)) {
-    return {
-      ...common,
-      type: 'hyperbolic',
-      subtype: 'compact',
-      curvature: -1,
-    }
-  }
-  if (subSignature.every(s => s['-'] === 0)) {
-    return {
-      ...common,
-      type: 'hyperbolic',
-      subtype: 'paracompact',
-      curvature: -1,
-    }
-  }
-  for (let i = 1; i < subSignatures.length; i++) {
-    const subSignature = subSignatures[i]
-    if (subSignature.every(s => s['-'] === 0)) {
-      return {
-        ...common,
-        type: 'hyperbolic',
-        subtype: 'lorentzian',
-        curvature: -1,
-        level: i + 1,
-      }
-    }
-  }
-  console.info('indefinite', subSignatures)
-  return { ...common, type: 'indefinite', curvature: -1 }
 }
 
 const euclidean_scaling = 1
