@@ -26,6 +26,7 @@ import { ambiances } from '../ambiances.js'
 import { defaultProjection } from '../params.js'
 import { details, projections } from '../../statics.js'
 import { defaultParams } from '../default.js'
+import CoxeterDiagram from './CoxeterDiagram.jsx'
 
 const getShowUI = () => {
   try {
@@ -340,6 +341,7 @@ export default function UI({
               extended={params.extended}
               space={runtime.space}
               onChange={handleChange}
+              preview
             />
           )}
         </div>

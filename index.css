@@ -434,7 +434,16 @@ select option {
   align-items: center;
   margin: 0 1.25em;
 }
-
+.coxeter-preview {
+  position: relative;
+}
+.coxeter-preview .coxeter-diagram {
+  font-size: 1.5em;
+  position: absolute;
+  bottom: 0em;
+  left: -2em;
+  transform: translate(-100%, 50%);
+}
 .number-control {
   position: relative;
 }

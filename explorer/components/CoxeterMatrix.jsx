@@ -12,6 +12,7 @@ import {
   uncompoundize,
   undualize,
 } from '../mirrors'
+import CoxeterDiagram from './CoxeterDiagram'
 
 const getType = (coxeter, i) =>
   coxeter[i].some((m, j) => j < i && m < 0)
@@ -27,6 +28,7 @@ export default memo(function CoxeterMatrix({
   stellation,
   extended,
   space,
+  preview,
   onChange,
 }) {
   const [scale, setScale] = useState(1)
@@ -166,6 +168,15 @@ export default memo(function CoxeterMatrix({
         ))}
       </div>
       <div className="coxeter-toggles">
+        {preview && extended && (
+          <div className="coxeter-preview">
+            <CoxeterDiagram
+              coxeter={coxeter}
+              mirrors={mirrors}
+              stellation={stellation}
+            />
+          </div>
+        )}
         {dimensions < 9 && (
           <button
             className="button"
