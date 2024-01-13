@@ -39,6 +39,10 @@ const stellation_ = (...args) => {
 
 const polytope = (coxeterArgs, mirrors, stellationArgs, extra) => {
   const coxeterParams = coxeter_(...coxeterArgs)
+  if (stellationArgs && !Array.isArray(stellationArgs)) {
+    extra = stellationArgs
+    stellationArgs = null
+  }
   const { dimensions } = coxeterParams
   const params = {
     ...defaultParams,
@@ -257,7 +261,7 @@ export const presets = [
         <Space type="finite" dimensions={4} /> Tesseract
       </>
     ),
-    params: polytope([4, 3, 3], [1, 0, 0, 0], null, {
+    params: polytope([4, 3, 3], [1, 0, 0, 0], {
       drawVertex: true,
       sizeVertex: 40,
       drawFace: true,
@@ -272,7 +276,7 @@ export const presets = [
         <Space type="hyperbolic" dimensions={3} /> 7-3-2 tiling
       </>
     ),
-    params: tiling([7, 3], [1, 0, 0], null, {
+    params: tiling([7, 3], [1, 0, 0], {
       drawVertex: false,
       drawFace: true,
       curve: true,
@@ -293,7 +297,7 @@ export const presets = [
         [0, 0, 1],
       ],
       [0, 0, 0],
-      null,
+
       {
         drawVertex: false,
         drawFace: true,
@@ -317,7 +321,7 @@ export const presets = [
         [2, 2, 5, 1],
       ],
       [1, 0, 0, 0],
-      null,
+
       {
         projection4: 'inverted',
         ambiance: 'disco',
@@ -341,7 +345,7 @@ export const presets = [
         [2, 2, 2, 2, 3, 1],
       ],
       [0, 0, 0, 1, 0, 0],
-      null,
+
       {
         sizeVertex: 25,
         sizeEdge: 15,
@@ -374,7 +378,7 @@ export const presets = [
         [2, 2, 2, 2, 2, 2, 3, 1],
       ],
       [0, 0, 0, 0, 0, 0, 0, 1],
-      null,
+
       {
         sizeVertex: 20,
         sizeEdge: 6,
@@ -399,7 +403,7 @@ export const presets = [
         tetrahedron
       </>
     ),
-    params: tiling([3, 3, 6], [1, 0, 0, ''], null, {
+    params: tiling([3, 3, 6], [1, 0, 0, ''], {
       drawVertex: false,
       drawFace: true,
       curve: true,
@@ -414,7 +418,7 @@ export const presets = [
         Horoball
       </>
     ),
-    params: tiling([6, 3, 4], [1, 0, 0, ''], null, {
+    params: tiling([6, 3, 4], [1, 0, 0, ''], {
       drawVertex: false,
       drawFace: true,
       curve: true,
@@ -428,7 +432,7 @@ export const presets = [
         <Space type="hyperbolic" dimensions={4} /> 5-3-4 honeycomb
       </>
     ),
-    params: honeycomb([5, 3, 4], [1, 0, 0, 0], null, {
+    params: honeycomb([5, 3, 4], [1, 0, 0, 0], {
       zoom: 1.5,
     }),
   },
@@ -444,7 +448,7 @@ export const presets = [
         7-3-3 paracompact honeycomb
       </>
     ),
-    params: honeycomb([7, 3, 3], [1, 0, 0, 0], null, {
+    params: honeycomb([7, 3, 3], [1, 0, 0, 0], {
       zoom: 1.5,
       drawFace: true,
       drawVertex: true,
@@ -457,7 +461,7 @@ export const presets = [
         Pentahedron
       </>
     ),
-    params: tiling([5, 3, 6], [1, 0, 0, ''], null, {
+    params: tiling([5, 3, 6], [1, 0, 0, ''], {
       drawVertex: false,
       drawFace: true,
       curve: true,
@@ -472,7 +476,7 @@ export const presets = [
         <Space type="finite" dimensions={4} /> Flat Torus
       </>
     ),
-    params: polytope([32, 2, 32], [1, 0, 0, 1], null, {
+    params: polytope([32, 2, 32], [1, 0, 0, 1], {
       drawVertex: false,
       drawFace: false,
       curve: true,
@@ -496,7 +500,7 @@ export const presets = [
         [0, 2, 2, 2, 1],
       ],
       [1, 1, 1, 1, 0],
-      null,
+
       {
         drawVertex: false,
         drawFace: true,
@@ -513,7 +517,7 @@ export const presets = [
         Ultrahyperbolic surface (Anti-de Sitter Ads3)
       </>
     ),
-    params: polytope([-1, 2, -1], [1, 0, 0, 1], null, {
+    params: polytope([-1, 2, -1], [1, 0, 0, 1], {
       drawVertex: false,
       drawFace: false,
       curve: true,
@@ -530,7 +534,7 @@ export const presets = [
         Ultrahyperbolic honeycomb (Anti-de Sitter Ads4)
       </>
     ),
-    params: polytope([-1, 3, 3, -1], [1, 0, 0, 0, 1], null, {
+    params: polytope([-1, 3, 3, -1], [1, 0, 0, 0, 1], {
       drawVertex: false,
       drawFace: false,
       curve: true,
@@ -563,6 +567,14 @@ export const presets = [
         name: 'Truncated Tetrahedron',
         params: polytope([3, 3], [1, 1, 0]),
       },
+      {
+        name: 'Triakis Tetrahedron',
+        params: polytope([3, 3], ['m', 'm', 0], { reciprocation: 1 }),
+      },
+      {
+        name: 'Two Tetrahedra Compound',
+        params: polytope([3, 3], ['c', 0, 0], { reciprocation: 1 }),
+      },
     ],
   },
   {
@@ -593,9 +605,40 @@ export const presets = [
         name: 'Octahedron',
         params: polytope([3, 4]),
       },
+      {
+        name: 'Snub Cube',
+        params: polytope([4, 3], ['s', 's', 's']),
+      },
+      {
+        name: 'Rhombic Dodecahedron',
+        params: polytope([4, 3], [0, 'm', 0], { reciprocation: 1 }),
+      },
+      {
+        name: 'Triakis Octahedron',
+        params: polytope([4, 3], ['m', 'm', 0], { reciprocation: 1 }),
+      },
+      {
+        name: 'Triakis Hexahedron',
+        params: polytope([3, 4], ['m', 'm', 0], { reciprocation: 1 }),
+      },
+      {
+        name: 'Deltoidal Icositetrahedron',
+        params: polytope([4, 3], ['m', 0, 'm'], { reciprocation: 1 }),
+      },
+      {
+        name: 'Disdyakis Dodecahedron',
+        params: polytope([4, 3], ['m', 'm', 'm'], { reciprocation: 1 }),
+      },
+      {
+        name: 'Pentagonal Icositetrahedron',
+        params: polytope([4, 3], ['b', 'b', 'b'], { reciprocation: 1 }),
+      },
+      {
+        name: 'Cube Octahedron Compound',
+        params: polytope([4, 3], ['c', 0, 0], { reciprocation: 1 }),
+      },
     ],
   },
-
   {
     name: 'Dodecahedron',
     params: polytope([5, 3]),
@@ -624,24 +667,59 @@ export const presets = [
         name: 'Icosahedron',
         params: polytope([3, 5]),
       },
+      {
+        name: 'Snub Dodecahedron',
+        params: polytope([5, 3], ['s', 's', 's']),
+      },
+      {
+        name: 'Rhombic Triacontahedron',
+        params: polytope([5, 3], [0, 'm', 0], { reciprocation: 1 }),
+      },
+      {
+        name: 'Triakis Icosahedron',
+        params: polytope([5, 3], ['m', 'm', 0], { reciprocation: 1 }),
+      },
+      {
+        name: 'Pentakis Docecahedron',
+        params: polytope([3, 5], ['m', 'm', 0], { reciprocation: 1 }),
+      },
+      {
+        name: 'Deltoidal Hexecontahedron',
+        params: polytope([5, 3], ['m', 0, 'm'], { reciprocation: 1 }),
+      },
+      {
+        name: 'Disdyakis Triacontahedron',
+        params: polytope([5, 3], ['m', 'm', 'm'], { reciprocation: 1 }),
+      },
+      {
+        name: 'Pentagonal Hexecontahedron',
+        params: polytope([5, 3], ['b', 'b', 'b'], { reciprocation: 1 }),
+      },
+      {
+        name: 'Dodecahedron Icosahedron Compound',
+        params: polytope([5, 3], ['c', 0, 0], { reciprocation: 1 }),
+      },
     ],
-  },
-
-  {
-    name: 'Snub Cube',
-    params: polytope([4, 3], ['s', 's', 's']),
-  },
-  {
-    name: 'Snub Dodecahedron',
-    params: polytope([5, 3], ['s', 's', 's']),
   },
   {
     name: 'Great Dodecahedron',
     params: polytope([5, 5], [1, 0, 0], [1, 2]),
+    subforms: [
+      {
+        name: 'Small Stellated Docecahedron Great Docecahedron Compound',
+        params: polytope([5, 5], ['c', 0, 0], [1, 2], { reciprocation: 1 }),
+      },
+    ],
   },
   {
     name: 'Great Icosahedron',
     params: polytope([3, 5], [1, 0, 0], [1, 2]),
+    subforms: [
+      {
+        name: 'Great Icosahedron Great Stellated Dodecahedron Compound',
+        params: polytope([3, 5], ['c', 0, 0], [1, 2], { reciprocation: 1 }),
+      },
+    ],
   },
   {
     name: 'Small Stellated Dodecahedron',
@@ -651,10 +729,6 @@ export const presets = [
     name: 'Great Stellated Dodecahedron',
     params: polytope([5, 3], [1, 0, 0], [2, 1]),
   },
-  // {
-  //   name: 'Stellated Octahedron',
-  //   params: polytope([2, 2], ['ß', 'ß', 'ß']),
-  // },
   {
     type: 'group',
     content: (
@@ -1772,7 +1846,7 @@ export const presets = [
         [3, 2, 3, 1],
       ],
       [1, 0, 0, 0],
-      null,
+
       {}
     ),
   },
@@ -1786,7 +1860,7 @@ export const presets = [
         [5, 2, 3, 1],
       ],
       [1, 0, 0, 0],
-      null,
+
       {}
     ),
   },
@@ -1800,7 +1874,7 @@ export const presets = [
         [4, 2, 3, 1],
       ],
       [1, 0, 0, 0],
-      null,
+
       {}
     ),
   },
@@ -1814,7 +1888,7 @@ export const presets = [
         [5, 2, 3, 1],
       ],
       [1, 0, 0, 0],
-      null,
+
       {}
     ),
   },
@@ -1828,7 +1902,7 @@ export const presets = [
         [5, 2, 3, 1],
       ],
       [1, 0, 0, 0],
-      null,
+
       {}
     ),
   },
@@ -1863,7 +1937,7 @@ export const presets = [
         [2, 2, 6, 1],
       ],
       [1, 0, 0, 0],
-      null,
+
       {}
     ),
   },
@@ -1881,7 +1955,7 @@ export const presets = [
         [2, 2, 5, 1],
       ],
       [1, 0, 0, 0],
-      null,
+
       {}
     ),
   },
@@ -1903,7 +1977,7 @@ export const presets = [
         [2, 2, 3, 1],
       ],
       [1, 0, 0, 0],
-      null,
+
       {}
     ),
   },
@@ -1921,7 +1995,7 @@ export const presets = [
         [4, 2, 3, 1],
       ],
       [0, 1, 0, 0],
-      null,
+
       {}
     ),
   },
@@ -1935,7 +2009,7 @@ export const presets = [
         [4, 2, 4, 1],
       ],
       [1, 0, 0, 0],
-      null,
+
       {}
     ),
   },
@@ -1948,8 +2022,8 @@ export const presets = [
         [4, 3, 1, 4],
         [3, 2, 4, 1],
       ],
-      [1, 0, 0, 0, 1],
-      null,
+      [1, 0, 0, 0],
+
       {}
     ),
   },
@@ -1963,7 +2037,7 @@ export const presets = [
         [4, 2, 4, 1],
       ],
       [1, 0, 0, 0],
-      null,
+
       {}
     ),
   },
@@ -1977,7 +2051,7 @@ export const presets = [
         [6, 2, 3, 1],
       ],
       [1, 0, 0, 0],
-      null,
+
       {}
     ),
   },
@@ -1991,7 +2065,7 @@ export const presets = [
         [6, 2, 3, 1],
       ],
       [1, 0, 0, 0],
-      null,
+
       {}
     ),
   },
@@ -2005,7 +2079,7 @@ export const presets = [
         [6, 2, 3, 1],
       ],
       [1, 0, 0, 0],
-      null,
+
       {}
     ),
   },
@@ -2019,7 +2093,7 @@ export const presets = [
         [6, 2, 3, 1],
       ],
       [0, 0, 0, 1],
-      null,
+
       {}
     ),
   },
@@ -2033,7 +2107,7 @@ export const presets = [
         [2, 2, 3, 1],
       ],
       [1, 0, 0, 0],
-      null,
+
       {}
     ),
   },
@@ -2047,7 +2121,7 @@ export const presets = [
         [2, 2, 4, 1],
       ],
       [1, 0, 0, 0],
-      null,
+
       {}
     ),
   },
@@ -2061,7 +2135,7 @@ export const presets = [
         [2, 2, 5, 1],
       ],
       [1, 0, 0, 0],
-      null,
+
       {}
     ),
   },
@@ -2075,7 +2149,7 @@ export const presets = [
         [2, 2, 6, 1],
       ],
       [1, 0, 0, 1],
-      null,
+
       {}
     ),
   },
@@ -2089,7 +2163,7 @@ export const presets = [
         [2, 3, 3, 1],
       ],
       [1, 1, 0, 0],
-      null,
+
       {}
     ),
   },
@@ -2103,7 +2177,7 @@ export const presets = [
         [3, 3, 3, 1],
       ],
       [1, 1, 1, 1],
-      null,
+
       {}
     ),
   },
