@@ -14,6 +14,14 @@ export const getPolytope = (
   polytope = []
 ) => {
   polytope.done = true
+  let isComputeDone = true
+
+  for (const cached of cache.values()) {
+    if (cached.compute && !cached.done) {
+      isComputeDone = false
+      break
+    }
+  }
 
   const visitShape = subshape => {
     const rank = dual
@@ -42,11 +50,12 @@ export const getPolytope = (
       if (!cache.has(key)) {
         const cached = {
           ...shape,
-          keys: [key],
+          key,
           subgens: subshape.quotient,
           facet: subshape.facet,
           subdimensions: rank,
           mirrors: subshape.mirrors,
+          compute,
           space,
           ...(subshape.dimensions === 0 && !fundamental
             ? {
@@ -57,8 +66,6 @@ export const getPolytope = (
             : {}),
         }
         cache.set(key, cached)
-      } else {
-        cache.get(key).keys.push(key)
       }
 
       const cached = cache.get(key)
@@ -67,17 +74,9 @@ export const getPolytope = (
       }
 
       if (!cached.done) {
-        if (
-          polytope[0]?.done &&
-          (!draw.edge || polytope[1]?.done) &&
-          (!draw.face || polytope[2]?.done)
-        ) {
-          cached.limit = 1000
-        } else {
-          cached.limit = compute ? batch : 0
-          if (type === 'edge' && space.curvature <= 0) {
-            cached.limit *= 1.75
-          }
+        cached.limit = compute ? batch : isComputeDone ? 1000 : 1
+        if (type === 'edge' && space.curvature <= 0) {
+          cached.limit *= 1.75
         }
         if (compute) {
           // Also extract words to generate the shape
