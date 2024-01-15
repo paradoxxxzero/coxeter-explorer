@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
-import { PI, abs, hypot, log, max, min, pow } from '../math'
+import { PI, abs, hypot, log, max, min, pow, sqrt } from '../math'
 import { rotate } from '../math/hypermath'
 import { columnMajor, multiply, set } from '../math/matrix'
 import { render, updateCamera } from '../render'
@@ -10,12 +10,23 @@ const zoomSpeed = 0.9
 const dampSpeed = 0.95
 const speedSamples = 10
 
-const translate = (offset, shift, rotations, matrix, dimensions, metric) => {
+const translate = (
+  offset,
+  shift,
+  rotations,
+  matrix,
+  dimensions,
+  metric,
+  zoom
+) => {
   const { combinations } = rotations
   const couples = [[], []]
 
   const rotateInPlace = (o, pair) => {
-    set(matrix, multiply(rotate(o, pair, dimensions, metric), matrix))
+    set(
+      matrix,
+      multiply(rotate(o, pair, dimensions, metric, sqrt(zoom)), matrix)
+    )
   }
   const pairs =
     2 * shift + 1 > combinations.length - 1
@@ -61,7 +72,8 @@ export const keydown = (
   matrix,
   dimensions,
   metric,
-  updateRotations
+  updateRotations,
+  zoom
 ) => {
   const { code } = e
   const step = 0.1
@@ -69,7 +81,7 @@ export const keydown = (
     return
   }
   const rotateStep = (x, y, shift) =>
-    translate([x, y], shift, rotations, matrix, dimensions, metric)
+    translate([x, y], shift, rotations, matrix, dimensions, metric, zoom)
 
   if (code === 'ArrowLeft' || code === 'KeyA') {
     rotateStep(step, 0, 0)
@@ -221,7 +233,8 @@ export const useInteract = (
               currentSpeed,
               rotations.combinations[i],
               runtime.dimensions,
-              runtime.space.metric
+              runtime.space.metric,
+              animation.current.zoom || local.current.zoom
             ),
             local.current.matrix
           )
@@ -349,10 +362,12 @@ export const useInteract = (
         rotations,
         local.current.matrix,
         runtime.dimensions,
-        runtime.space.metric
+        runtime.space.metric,
+        animation.current.zoom || local.current.zoom
       )
       if (rotations.auto) {
-        const dt = performance.now() - t
+        const dt = min(50, performance.now() - t)
+
         t = performance.now()
         speeds.push([(delta[0] * 1.5) / dt, (delta[1] * 1.5) / dt])
 
@@ -360,14 +375,10 @@ export const useInteract = (
           speeds.shift()
         }
 
-        const deltas = speeds.reduce(
-          (a, b) => [a[0] + b[0], a[1] + b[1]],
-          [0, 0]
-        )
-
+        const sums = speeds.reduce((a, b) => [a[0] + b[0], a[1] + b[1]], [0, 0])
         for (let k = 0; k < 2; k++) {
           for (let i = 0; i < couples[k].length; i++) {
-            animation.current.speed[couples[k][i]] = deltas[k] / speeds.length
+            animation.current.speed[couples[k][i]] = sums[k] / speeds.length
           }
         }
         if (!loop.current) {
@@ -427,7 +438,8 @@ export const useInteract = (
           local.current.matrix,
           runtime.dimensions,
           runtime.space.metric,
-          updateRotations
+          updateRotations,
+          animation.current.zoom || local.current.zoom
         )
       ) {
         quickUpdate({ matrix: true })

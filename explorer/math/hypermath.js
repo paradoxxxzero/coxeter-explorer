@@ -481,7 +481,7 @@ export const getRotations = (dimensions, space) => {
   }
 }
 
-export const rotate = (offset, [i, j], dimensions, metric) => {
+export const rotate = (offset, [i, j], dimensions, metric, zoom) => {
   const matrix = ident(dimensions)
 
   if (i < 0 || j < 0) {
@@ -505,10 +505,10 @@ export const rotate = (offset, [i, j], dimensions, metric) => {
   }
   if (metric[i][i] * metric[j][j] === 0) {
     if (metric[i][i] === 0) {
-      matrix[j][i] = offset
+      matrix[j][i] = offset * zoom
     }
     if (metric[j][j] === 0) {
-      matrix[i][j] = offset
+      matrix[i][j] = offset * zoom
     }
     return matrix
   }
