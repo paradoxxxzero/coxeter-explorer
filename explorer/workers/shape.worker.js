@@ -74,29 +74,42 @@ onmessage = ({
       shape.currentWords = new Map([[1, '']])
       shape.facet = Array.from(polytope.root.words.values())
       shape.done = true
-      cache.set('', {
+      cache.set('f', {
         ...shape,
         subgens: shape.subgens,
         facet: shape.facet,
         subdimensions: shape.dimensions,
         mirrors: shape.mirrors,
+        compute: true,
       })
       polytope[2] = {
         dimensions: 2,
         processing: 1,
-        count: 0,
+        count: 1,
         detail: [
           {
-            key: '',
+            key: 'f',
             coxeter: shape.coxeter,
             stellation: shape.stellation,
             mirrors: shape.mirrors,
+            dual,
 
             count: 1,
             done: true,
           },
         ],
-        aggregated: [],
+        aggregated: [
+          {
+            key: 'f',
+            coxeter: shape.coxeter,
+            stellation: shape.stellation,
+            mirrors: shape.mirrors,
+            dual,
+
+            count: 1,
+            done: true,
+          },
+        ],
         done: true,
       }
     }

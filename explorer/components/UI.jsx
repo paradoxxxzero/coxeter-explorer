@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { details, projections } from '../../statics.js'
 import { range } from '../../utils.js'
+import { ambiances } from '../ambiances.js'
+import { defaultParams } from '../default.js'
 import {
   centerViewIcon,
   coxeterPlaneIcon,
@@ -14,19 +17,15 @@ import {
   unlockIcon,
 } from '../icons.jsx'
 import { ident } from '../math/matrix'
+import { defaultProjection } from '../params.js'
+import { presets } from '../presets/index.jsx'
 import Boolean from './Boolean'
 import CoxeterMatrix from './CoxeterMatrix'
 import Number from './Number'
 import Presets from './Presets'
 import Rotation from './Rotation.jsx'
-import Space from './Space'
-import { presets } from '../presets/index.jsx'
 import Shape from './Shape.jsx'
-import { ambiances } from '../ambiances.js'
-import { defaultProjection } from '../params.js'
-import { details, projections } from '../../statics.js'
-import { defaultParams } from '../default.js'
-import CoxeterDiagram from './CoxeterDiagram.jsx'
+import Space from './Space'
 
 const getShowUI = () => {
   try {

@@ -75,6 +75,10 @@ export const getObjects = (
             )
           : getBaseObjects(i, cached, shape, polytope)
 
+        if (!draw[types[i]] || hidden.includes(detail.key)) {
+          // Dual needs to be computed but still can be hidden
+          continue
+        }
         parts.objects.push(objects)
         parts.size += objects.length + partials.length
         polytope.root.lasts[i] += objects.length

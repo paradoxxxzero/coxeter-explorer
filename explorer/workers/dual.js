@@ -89,7 +89,7 @@ export const getDualObjects = (
           vertexIds.push(vertexId)
         }
       }
-      if (vertexIds.length < 3) {
+      if (vertexIds.length < 2) {
         continue
       }
       const partial = vertexIds.length < cached.facet.length
@@ -186,12 +186,12 @@ export const getDualObjects = (
           dualVerticesId.push(vkey)
         }
         partial = partial || vertexPartial
-        if (dualVertices.length === cached.facet.length) {
+        if (dualVertices.length === 2) {
           // Stop looking for more vertices
           break
         }
       }
-      if (dualVertices.length !== cached.facet.length) {
+      if (dualVertices.length !== 2) {
         continue
       }
       const vertex = { word, vertices: dualVertices, dual: true, partial }
@@ -230,7 +230,10 @@ export const getDualObjects = (
         vkey,
         { vertex, facet, partial: vertexPartial },
       ] of polytope.root.dualVertices.entries()) {
-        if (vertexIds.every(vertexId => facet.includes(vertexId))) {
+        if (
+          vertexIds.every(vertexId => facet.includes(vertexId)) ||
+          shape.dimensions === 2 // Hack to draw fake face
+        ) {
           dualVerticesIndexed[vkey] = vertex
           dualVerticesId.push(vkey)
           partial = partial || vertexPartial
