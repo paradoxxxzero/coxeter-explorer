@@ -30,13 +30,21 @@ onmessage = ({
     const dual = mirrors.some(m => isDual(m))
     const compound = mirrors.some(m => isCompound(m))
 
-    const computeWords = {
-      // We always need to compute the vertices
-      0: true,
-      1: dual || (draw.edge && !fundamental),
-      2: dual || (draw.face && !fundamental),
-      [dimensions - 1]: dual || fundamental,
-    }
+    // We always need to compute the vertices
+    const computeWords = fundamental
+      ? { [dimensions - 1]: true } // Compute vertices (Fundamental is reversed)
+      : dual
+      ? {
+          [dimensions - 1]: true,
+          [dimensions - 2]: draw.edge || draw.face,
+          [dimensions - 3]: draw.face,
+          0: true,
+        }
+      : {
+          0: true,
+          1: draw.edge,
+          2: draw.face,
+        }
 
     const polytope = getPolytope(
       batch,

@@ -106,6 +106,11 @@ vec4 light(vec3 position, vec3 normal, vec3 rgb, vec2 uv) {
   diffuse = getDiffuse(normal, lightDirection, eyeDirection, color);
   specular = getSpecular(normal, lightDirection, eyeDirection, color);
 
+  #ifdef DIFFUSE
+  #if DIFFUSE == 4
+  color.a += specular;
+  #endif
+  #endif
   return vec4((ambient + diffuse + specular) * color.rgb, color.a);
   #endif
   #elif SHADING == 1

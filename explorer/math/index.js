@@ -176,21 +176,27 @@ export const getParams = (
         const c = itoa((i + 1) * dimensions + j)
         gens += c
         transforms[c] = [i, j]
-        rels.push(c.repeat(m))
+        if (m > 1) {
+          rels.push(c.repeat(m))
+        }
       } else if (isSnub(mirrors[i]) && !isSnub(mirrors[j])) {
         // Case of snub + not snub => conjugate reflection
         const c = itoa((i + 1) * dimensions + j)
         gens += c
         transforms[c] = [i, j, i]
         rels.push(c.repeat(2))
-        rels.push((c + itoa(j)).repeat(m % 2 === 0 ? m / 2 : m))
+        if (m > 1) {
+          rels.push((c + itoa(j)).repeat(m % 2 === 0 ? m / 2 : m))
+        }
       } else if (!isSnub(mirrors[i]) && isSnub(mirrors[j])) {
         // Case of snub + not snub => conjugate reflection
         const c = itoa((i + 1) * dimensions + j)
         gens += c
         transforms[c] = [j, i, j]
         rels.push(c.repeat(2))
-        rels.push((c + itoa(i)).repeat(m % 2 === 0 ? m / 2 : m))
+        if (m > 1) {
+          rels.push((c + itoa(i)).repeat(m % 2 === 0 ? m / 2 : m))
+        }
       } else if (m > 1) {
         // Case of not snub + not snub
         rels.push((itoa(i) + itoa(j)).repeat(m))
@@ -322,6 +328,7 @@ export const getParams = (
       }
     }
   }
+  console.log(gens, subgens, rels, transforms)
   return { gens, subgens, rels, transforms }
 }
 

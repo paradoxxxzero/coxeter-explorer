@@ -1,4 +1,4 @@
-import { abs, atoi, pow } from './math'
+import { atoi, pow } from './math'
 
 export const hueToRgb = (p, q, t) => {
   if (t < 0) t += 1
@@ -269,8 +269,8 @@ export const ambiances = Object.fromEntries(
       opacity: 0.2,
       ambient: 0,
       diffuse: 'fresnel',
+      specular: 'blinn-phong',
       face: {
-        specular: 'blinn-phong',
         shininess: 16,
         diffuse: false,
       },
