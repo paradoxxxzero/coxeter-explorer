@@ -42,6 +42,9 @@ export const reflect = (v, n, metric) => {
 
 export const normalize = (v, metric) => {
   if (metric.some((row, i) => row.some((v, j) => i === j && v === 0))) {
+    if (v[v.length - 1] === 0) {
+      v[v.length - 1] = 1e-16
+    }
     return mulV(v, 1 / v[v.length - 1])
   }
   // We use -1 to orient the hyperboloids in front of camera

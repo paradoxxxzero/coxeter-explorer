@@ -111,6 +111,7 @@ vec4 light(vec3 position, vec3 normal, vec3 rgb, vec2 uv) {
   color.a += specular;
   #endif
   #endif
+
   return vec4((ambient + diffuse + specular) * color.rgb, color.a);
   #endif
   #elif SHADING == 1

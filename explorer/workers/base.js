@@ -7,6 +7,9 @@ const reorder = (i, n, double = false, snub = false) => {
     if (snub) {
       return i
     }
+    if (n % 2) {
+      n--
+    }
     const parity = i > 0 ? 1 - (i % 2) : 0
     if (i >= n / 2 + parity) {
       return 2 * (n - i) - 1 + parity
@@ -60,7 +63,6 @@ export const getBaseObjects = (rank, cached, shape, polytope) => {
           faceVertices.push(polytope.root.vertices.get(vertexId))
         }
       }
-
       if (faceVertices.length < rank + 1) {
         continue
       }

@@ -28,7 +28,6 @@ export const useProcess = (runtime, setRuntime) => {
       const mirrors = fundamental
         ? runtime.mirrors.map(() => 1)
         : runtime.mirrors.map(v => mirrorValue(v))
-
       const rootVertex = normalize(
         multiplyVector(rootVertices, mirrors),
         space.metric

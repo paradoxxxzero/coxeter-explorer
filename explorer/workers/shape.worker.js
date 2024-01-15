@@ -1,3 +1,4 @@
+import { addV, mulV } from '../math/matrix'
 import { getShape } from '../math/shape'
 import { isCompound, isDual } from '../mirrors'
 import { fillData } from './datafiller'
@@ -70,6 +71,7 @@ onmessage = ({
       )
     }
 
+    // Handle displaying the 2D shape face
     if (shape.dimensions === 2) {
       shape.currentWords = new Map([[1, '']])
       shape.facet = Array.from(polytope.root.words.values())
@@ -125,6 +127,68 @@ onmessage = ({
       hidden,
       reciprocation
     )
+    if (polytope.done && polytope.root.vertices?.size === 2) {
+      // TODO: Only in normalized
+      const digon = [...polytope.root.vertices.values()]
+      const centroid = mulV(addV(digon[1], digon[0]), 0.5)
+      const zeroes = digon[0]
+        .map((a, i) => (a === 0 ? i : null))
+        .filter(a => a !== null)
+
+      if (draw.edge) {
+        // We replace the digon edge with 2 edges
+        const edges = []
+        for (let i = 0; i < zeroes.length; i++) {
+          const zero = zeroes[i]
+          for (let p = -1; p < 2; p += 2) {
+            const point = centroid.map((a, j) => (j === zero ? p : a))
+            edges.push({
+              word: '',
+              vertices: [digon[0], point],
+            })
+            edges.push({
+              word: '',
+              vertices: [point, digon[1]],
+            })
+          }
+          objects[1] = {
+            start: 0,
+            size: edges.length,
+            objects: [edges],
+            partials: [],
+          }
+        }
+      }
+      if (draw.face) {
+        const faces = []
+        for (let i = 0; i < zeroes.length; i++) {
+          const zero1 = zeroes[i]
+          for (let p = -1; p < 2; p += 2) {
+            const point1 = centroid.map((a, k) => (k === zero1 ? p : a))
+            for (let j = i + 1; j < zeroes.length; j++) {
+              const zero2 = zeroes[j]
+              for (let q = -1; q < 2; q += 2) {
+                const point2 = centroid.map((a, k) => (k === zero2 ? q : a))
+                faces.push({
+                  word: '',
+                  vertices: [point1, point2, digon[0]],
+                })
+                faces.push({
+                  word: '',
+                  vertices: [point2, point1, digon[1]],
+                })
+              }
+            }
+          }
+        }
+        objects[2] = {
+          start: 0,
+          size: faces.length,
+          objects: [faces],
+          partials: [],
+        }
+      }
+    }
 
     const { infos, data } = fillData(shape.dimensions, objects, ambiance, draw)
     polytope.root = undefined
