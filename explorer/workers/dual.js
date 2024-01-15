@@ -89,6 +89,9 @@ export const getDualObjects = (
           vertexIds.push(vertexId)
         }
       }
+      if (vertexIds.length < 3) {
+        continue
+      }
       const partial = vertexIds.length < cached.facet.length
 
       // The facet dual of rank 0 is a scaled up centroid of the facet
@@ -135,18 +138,16 @@ export const getDualObjects = (
       }
       const vertex = { word, vertices: [normal], dual: true, partial }
 
+      // We also need to store the adjacency
       polytope.root.dualVertices.set(`${key}#${word}`, {
         vertex: normal,
         facet: vertexIds,
         partial,
       })
-
       if (partial) {
         partials.push(vertex)
       } else {
         objects.push(vertex)
-
-        // We also need to store the adjacency
         cached.currentWords.delete(cosetId)
       }
     }
@@ -166,6 +167,9 @@ export const getDualObjects = (
           vertexIds.push(vertexId)
         }
       }
+      if (!vertexIds.length) {
+        continue
+      }
       let partial = vertexIds.length < cached.facet.length
 
       // We need to find in the dual root facet which ones have this n-1 facet
@@ -175,29 +179,31 @@ export const getDualObjects = (
       const dualVerticesId = []
       for (const [
         vkey,
-        { vertex, facet, partial: vpartial },
+        { vertex, facet, partial: vertexPartial },
       ] of polytope.root.dualVertices.entries()) {
         if (vertexIds.every(vertexId => facet.includes(vertexId))) {
           dualVertices.push(vertex)
           dualVerticesId.push(vkey)
         }
-        partial = partial || vpartial
-        if (dualVertices.length === 2) {
+        partial = partial || vertexPartial
+        if (dualVertices.length === cached.facet.length) {
+          // Stop looking for more vertices
           break
         }
       }
-      if (dualVertices.length === 2) {
-        const vertex = { word, vertices: dualVertices, dual: true, partial }
-        polytope.root.dualEdges.set(`${key}#${word}`, {
-          edge: dualVerticesId,
-          partial,
-        })
-        if (partial) {
-          partials.push(vertex)
-        } else {
-          objects.push(vertex)
-          cached.currentWords.delete(cosetId)
-        }
+      if (dualVertices.length !== cached.facet.length) {
+        continue
+      }
+      const vertex = { word, vertices: dualVertices, dual: true, partial }
+      polytope.root.dualEdges.set(`${key}#${word}`, {
+        edge: dualVerticesId,
+        partial,
+      })
+      if (partial) {
+        partials.push(vertex)
+      } else {
+        objects.push(vertex)
+        cached.currentWords.delete(cosetId)
       }
     }
   } else if (rank === 2) {
@@ -217,16 +223,17 @@ export const getDualObjects = (
         // Facet is not complete
         continue
       }
-
+      let partial = false
       const dualVerticesIndexed = {}
       const dualVerticesId = []
       for (const [
         vkey,
-        { vertex, facet },
+        { vertex, facet, partial: vertexPartial },
       ] of polytope.root.dualVertices.entries()) {
         if (vertexIds.every(vertexId => facet.includes(vertexId))) {
           dualVerticesIndexed[vkey] = vertex
           dualVerticesId.push(vkey)
+          partial = partial || vertexPartial
         }
       }
 
@@ -235,14 +242,16 @@ export const getDualObjects = (
       }
 
       // Find the edges that compose this face
-      let edgePartial = false
       const edges = []
-      for (const { edge, partial } of polytope.root.dualEdges.values()) {
+      for (const {
+        edge,
+        partial: edgePartial,
+      } of polytope.root.dualEdges.values()) {
         if (
           dualVerticesId.includes(edge[0]) &&
           dualVerticesId.includes(edge[1])
         ) {
-          edgePartial = edgePartial || partial
+          partial = partial || edgePartial
           edges.push([...edge])
         }
       }
@@ -255,10 +264,8 @@ export const getDualObjects = (
       if (chain.length < 4) {
         continue
       }
-      let partial = true
       if (chain[0] === chain[chain.length - 1]) {
         chain.pop()
-        partial = edgePartial || false
       }
 
       for (let i = 0; i < chain.length; i++) {
@@ -267,9 +274,13 @@ export const getDualObjects = (
       }
 
       if (dualVertices.length === 3) {
-        const vertex = { word, vertices: dualVertices, dual: true }
-        objects.push(vertex)
-        cached.currentWords.delete(cosetId)
+        const vertex = { word, vertices: dualVertices, dual: true, partial }
+        if (partial) {
+          partials.push(vertex)
+        } else {
+          objects.push(vertex)
+          cached.currentWords.delete(cosetId)
+        }
         continue
       }
 
