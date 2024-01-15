@@ -24,15 +24,16 @@ export const getPolytope = (
   }
 
   const visitShape = subshape => {
-    const rank = dual
-      ? shape.dimensions - subshape.dimensions - 1
-      : subshape.dimensions
+    const rank =
+      dual || fundamental
+        ? shape.dimensions - subshape.dimensions - 1
+        : subshape.dimensions
 
     subshape.children.forEach(visitShape)
 
     const compute = computeWords[rank]
     const type = types[rank]
-    const key = dual ? `d${subshape.key}` : subshape.key
+    const key = `${dual ? 'd' : fundamental ? 'f' : ''}${subshape.key}`
 
     if (subshape?.new) {
       if (!polytope[rank]) {
@@ -45,7 +46,7 @@ export const getPolytope = (
           done: true,
         }
       }
-      const eiqenvalues = space.eigens.values
+      const eigenvalues = space.eigens.values
 
       if (!cache.has(key)) {
         const cached = {
@@ -81,13 +82,13 @@ export const getPolytope = (
         if (compute) {
           // Also extract words to generate the shape
           ToddCoxeter(cached)
-          if (eiqenvalues.some(x => x <= 0)) {
+          if (eigenvalues.some(x => x <= 0)) {
             cached.count = Infinity
           } else {
             cached.count = cached.cosets.size
           }
         } else {
-          if (eiqenvalues.some(x => x <= 0)) {
+          if (eigenvalues.some(x => x <= 0)) {
             cached.count = Infinity
             cached.done = true
           } else if (cached.limit) {
@@ -95,13 +96,17 @@ export const getPolytope = (
           }
         }
       }
+      const subShapeMirrors = fundamental
+        ? subshape.mirrors.map(() => 0)
+        : subshape.mirrors
 
       polytope[rank].detail.push({
         key: key,
         coxeter: subshape.coxeter,
         stellation: subshape.stellation,
-        mirrors: subshape.mirrors,
+        mirrors: subShapeMirrors,
         dual,
+        fundamental,
         count: cached.count,
         done: cached.done,
       })
@@ -110,7 +115,7 @@ export const getPolytope = (
         ({ coxeter, stellation, mirrors }) =>
           arrayEquals(coxeter, subshape.coxeter) &&
           arrayEquals(stellation, subshape.stellation) &&
-          arrayEquals(mirrors, subshape.mirrors)
+          arrayEquals(mirrors, subShapeMirrors)
       )
       if (aggregated) {
         aggregated.done = aggregated.done && cached.done
@@ -121,7 +126,7 @@ export const getPolytope = (
           key: key,
           coxeter: subshape.coxeter,
           stellation: subshape.stellation,
-          mirrors: subshape.mirrors,
+          mirrors: subShapeMirrors,
 
           count: cached.count,
           done: cached.done,
@@ -133,6 +138,7 @@ export const getPolytope = (
       polytope[rank].count += cached.count
       polytope[rank].done = polytope[rank].done && cached.done
       polytope[rank].dual = dual
+      polytope[rank].fundamental = fundamental
       polytope.done = polytope.done && cached.done
     }
   }

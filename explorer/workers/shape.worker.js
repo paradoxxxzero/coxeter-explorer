@@ -32,10 +32,10 @@ onmessage = ({
 
     const computeWords = {
       // We always need to compute the vertices
-      [dimensions - 1]: dual,
       0: true,
       1: dual || (draw.edge && !fundamental),
       2: dual || (draw.face && !fundamental),
+      [dimensions - 1]: dual || fundamental,
     }
 
     const polytope = getPolytope(

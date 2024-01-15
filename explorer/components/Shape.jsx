@@ -206,7 +206,8 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                             : null}
                         </div>
                         <div>
-                          {[1, 2].includes(level.dimensions) ? (
+                          {[1, 2].includes(level.dimensions) &&
+                          !level.fundamental ? (
                             <button
                               className="shape-hidden button"
                               data-key={key}

@@ -263,6 +263,22 @@ export const ambiances = Object.fromEntries(
       transparency: 'oit',
       color: () => [1, 1, 1],
     },
+    glass: {
+      background: [0, 0, 0, 1],
+      transparency: 'blend',
+      opacity: 0.2,
+      ambient: 0,
+      diffuse: 'fresnel',
+      face: {
+        specular: 'blinn-phong',
+        shininess: 16,
+        diffuse: false,
+      },
+      color: ({ subShape, word, type }) =>
+        type !== 'vertex'
+          ? hsl((subShape * 0.21 + word.length * 0.03) % 1, 1, 0.8)
+          : [1, 1, 1],
+    },
     plain: {
       extended: true,
       background: [1, 1, 1, 1],
