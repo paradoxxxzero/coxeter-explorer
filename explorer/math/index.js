@@ -328,7 +328,6 @@ export const getParams = (
       }
     }
   }
-  console.log(gens, subgens, rels, transforms)
   return { gens, subgens, rels, transforms }
 }
 

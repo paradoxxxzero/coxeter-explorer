@@ -74,9 +74,7 @@ export const getObjects = (
               detail.key
             )
           : getBaseObjects(i, cached, shape, polytope)
-        if (!draw[types[i]] || hidden.includes(detail.key)) {
-          continue
-        }
+
         parts.objects.push(objects)
         parts.size += objects.length + partials.length
         polytope.root.lasts[i] += objects.length
