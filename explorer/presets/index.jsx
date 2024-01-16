@@ -47,7 +47,7 @@ const polytope = (coxeterArgs, mirrors, stellationArgs, extra) => {
   const params = {
     ...defaultParams,
     ...coxeterParams,
-    drawVertex: dimensions <= 3,
+    drawVertex: dimensions <= 4,
     drawFace: dimensions <= 4,
     curve: dimensions > 3,
     ambiance: 'colorful',
@@ -93,6 +93,130 @@ const withSubforms = preset => {
         }
       }
     ),
+  }
+}
+const ngonal = {
+  0: 'Apeirogonal',
+  3: 'Triangular',
+  4: 'Square',
+  5: 'Pentagonal',
+  6: 'Hexagonal',
+  7: 'Heptagonal',
+  8: 'Octagonal',
+  9: 'Nonagonal',
+  10: 'Decagonal',
+  11: 'Hendecagonal',
+  12: 'Dodecagonal',
+}
+const nmul = {
+  0: 'Apeiro',
+  3: 'Tri',
+  4: 'Tetra',
+  5: 'Penta',
+  6: 'Hexa',
+  7: 'Hepta',
+  8: 'Octa',
+  9: 'Nona',
+  10: 'Deca',
+  11: 'Hendeca',
+  12: 'Dodeca',
+}
+
+const tilings = ([p, q, r]) => {
+  const o = m => (m === 0 ? 'infinite' : m)
+  const pqr = (p, q, r) =>
+    `${nmul[p]}${nmul[q].toLowerCase()}${nmul[r].toLowerCase()}gonal`
+  const dipqr = (p, q, r) =>
+    `Di${nmul[p].toLowerCase()}gonal ${nmul[q]}${nmul[r].toLowerCase()}gonal`
+  const coxeter = r
+    ? [
+        [1, p, r],
+        [p, 1, q],
+        [r, q, 1],
+      ]
+    : [p, q]
+  return {
+    name: (r
+      ? `Di${nmul[q].toLowerCase()}gonal ${nmul[r]}${nmul[
+          p
+        ].toLowerCase()}gonal`
+      : p === q
+      ? `${nmul[p]}${ngonal[q].toLowerCase()}`
+      : `${ngonal[p]} ${ngonal[q]}`
+    ).replace(/aa/g, 'a'),
+    params: tiling(coxeter, [1, 0, 0]),
+    subforms: [
+      {
+        name: r ? pqr(r, q, p) : `Truncated Order-${o(q)} ${ngonal[p]}`,
+        params: tiling(coxeter, [1, 1, 0]),
+      },
+      {
+        name: r ? dipqr(r, q, p) : `${nmul[q]}${ngonal[p].toLowerCase()}`,
+        params: tiling(coxeter, [0, 1, 0]),
+      },
+      {
+        name: r ? pqr(r, p, q) : `Truncated Order-${o(p)} ${ngonal[q]}`,
+        params: tiling(coxeter, [0, 1, 1]),
+      },
+      {
+        name: r ? dipqr(p, r, q) : `Order-${o(p)} ${ngonal[q]}`,
+        params: tiling(coxeter, [0, 0, 1]),
+      },
+      {
+        name: r
+          ? pqr(q, p, r)
+          : `Rhombi${nmul[q].toLowerCase()}${ngonal[p].toLowerCase()}`,
+        params: tiling(coxeter, [1, 0, 1]),
+      },
+      {
+        name: r
+          ? `${nmul[r]}gonally Truncated ${nmul[q]}${nmul[
+              p
+            ].toLowerCase()}gonal`
+          : `Truncated ${nmul[q]}${ngonal[p].toLowerCase()}`,
+        params: tiling(coxeter, [1, 1, 1]),
+      },
+      {
+        name: r ? `Snub ${pqr(r, q, p)}` : `Order-${o(q)} Snub ${ngonal[p]}`,
+        params: tiling(coxeter, ['s', 's', 's']),
+      },
+      {
+        name: r
+          ? `${pqr(r, q, p)} Dual`
+          : `Order-${o(p)} ${nmul[q]}akis ${ngonal[q]}`,
+        params: tiling(coxeter, ['m', 'm', 0]),
+      },
+      {
+        name: r ? `${dipqr(r, q, p)} Dual` : `Order-${o(p)}-${o(q)} Rhombille`,
+        params: tiling(coxeter, [0, 'm', 0]),
+      },
+      {
+        name: r
+          ? `${pqr(r, p, q)} Dual`
+          : `Order-${o(q)} ${nmul[p]}kis ${ngonal[p]}`,
+        params: tiling(coxeter, [0, 'm', 'm']),
+      },
+      {
+        name: r
+          ? `${pqr(q, p, r)} Dual`
+          : `Deltoidal ${nmul[q]}${ngonal[p].toLowerCase()}`,
+        params: tiling(coxeter, ['m', 0, 'm']),
+      },
+      {
+        name: r
+          ? `${nmul[r]}gonally Truncated ${nmul[q]}${nmul[
+              p
+            ].toLowerCase()}gonal Dual`
+          : `Order-${o(q)}-${o(p)} Kisrhombille`,
+        params: tiling(coxeter, ['m', 'm', 'm']),
+      },
+      {
+        name: r
+          ? `Snub ${pqr(r, q, p)} Dual`
+          : `Order-${o(p)}-${o(q)} Floret Pentagonal`,
+        params: tiling(coxeter, ['b', 'b', 'b']),
+      },
+    ].map(({ name, params }) => ({ name: name.replace(/aa/g, 'a'), params })),
   }
 }
 
@@ -147,7 +271,7 @@ const getOperators = d => {
       Omnitruncated: [1, 1, 1, 1],
       // Birectified: [0, 0, 1, 0],
       // 'Trirectified': [0, 0, 0, 1] ,
-      // Omnisub: ['s', 's', 's', 's'],
+      Omnisnub: ['s', 's', 's', 's'],
     }
   }
   if (d === 5) {
@@ -161,7 +285,7 @@ const getOperators = d => {
       Runcinated: [1, 0, 0, 1, 0],
       Stericated: [1, 0, 0, 0, 1],
       Omnitruncated: [1, 1, 1, 1, 1],
-      // Omnisub: ['s', 's', 's', 's', 's'],
+      Omnisnub: ['s', 's', 's', 's', 's'],
     }
   }
   if (d === 6) {
@@ -178,7 +302,7 @@ const getOperators = d => {
       Stericated: [1, 0, 0, 0, 1, 0],
       Pentellated: [1, 0, 0, 0, 0, 1],
       Omnitruncated: [1, 1, 1, 1, 1, 1],
-      // Omnisub: ['s', 's', 's', 's', 's', 's'],
+      // Omnisnub: ['s', 's', 's', 's', 's', 's'],
     }
   }
   if (d === 7) {
@@ -196,7 +320,7 @@ const getOperators = d => {
       Pentellated: [1, 0, 0, 0, 0, 1, 0],
       Hexicated: [1, 0, 0, 0, 0, 0, 1],
       Omnitruncated: [1, 1, 1, 1, 1, 1, 1],
-      // Omnisub: ['s', 's', 's', 's', 's', 's', 's'],
+      // Omnisnub: ['s', 's', 's', 's', 's', 's', 's'],
     }
   }
   if (d === 8) {
@@ -218,7 +342,7 @@ const getOperators = d => {
       Hexicated: [1, 0, 0, 0, 0, 0, 1, 0],
       Heptellated: [1, 0, 0, 0, 0, 0, 0, 1],
       Omnitruncated: [1, 1, 1, 1, 1, 1, 1, 1],
-      // Omnisub: ['s', 's', 's', 's', 's', 's', 's', 's'],
+      // Omnisnub: ['s', 's', 's', 's', 's', 's', 's', 's'],
     }
   }
   if (d === 9) {
@@ -241,7 +365,7 @@ const getOperators = d => {
       Heptellated: [1, 0, 0, 0, 0, 0, 0, 1, 0],
       Octellated: [1, 0, 0, 0, 0, 0, 0, 0, 1],
       Omnitruncated: [1, 1, 1, 1, 1, 1, 1, 1, 1],
-      // Omnisub: ['s', 's', 's', 's', 's', 's', 's', 's', 's'],
+      // Omnisnub: ['s', 's', 's', 's', 's', 's', 's', 's', 's'],
     }
   }
 }
@@ -594,6 +718,102 @@ export const presets = [
     ),
   },
   {
+    name: 'Triangular Prism',
+    params: polytope([3, 2], [0, 1, 1]),
+    subforms: [
+      {
+        name: 'Square Prism',
+        params: polytope([4, 2], [0, 1, 1]),
+      },
+      {
+        name: 'Pentagonal Prism',
+        params: polytope([5, 2], [0, 1, 1]),
+      },
+      {
+        name: 'Hexagonal Prism',
+        params: polytope([6, 2], [0, 1, 1]),
+      },
+      {
+        name: 'Square Bipyramid',
+        params: polytope([4, 2], [0, 'm', 'm'], { reciprocation: 1 }),
+      },
+      {
+        name: 'Pentagonal Bipyramid',
+        params: polytope([5, 2], [0, 'm', 'm'], { reciprocation: 1 }),
+      },
+      {
+        name: 'Hexagonal Bipyramid',
+        params: polytope([6, 2], [0, 'm', 'm'], { reciprocation: 1 }),
+      },
+      {
+        name: 'Pentagrammic Prism',
+        params: polytope([5, 2], [1, 0, 1], [2, 1]),
+      },
+      {
+        name: 'Heptagrammic Prism',
+        params: polytope([7, 2], [1, 0, 1], [2, 1]),
+      },
+      {
+        name: 'Octagrammic Prism',
+        params: polytope([8, 2], [1, 0, 1], [3, 1]),
+      },
+      {
+        name: 'Pentagrammic Bipyramid',
+        params: polytope([5, 2], ['m', 0, 'm'], [2, 1], { reciprocation: 1 }),
+      },
+      {
+        name: 'Heptagrammic Bipyramid',
+        params: polytope([7, 2], ['m', 0, 'm'], [2, 1], { reciprocation: 1 }),
+      },
+      {
+        name: 'Octagrammic Bipyramid',
+        params: polytope([8, 2], ['m', 0, 'm'], [3, 1], { reciprocation: 1 }),
+      },
+    ],
+  },
+  {
+    name: 'Triangular Antiprism',
+    params: polytope([3, 2], ['s', 's', 's']),
+    subforms: [
+      {
+        name: 'Square Antiprism',
+        params: polytope([4, 2], ['s', 's', 's']),
+      },
+      {
+        name: 'Pentagonal Antiprism',
+        params: polytope([5, 2], ['s', 's', 's']),
+      },
+      {
+        name: 'Hexagonal Antiprism',
+        params: polytope([6, 2], ['s', 's', 's']),
+      },
+      {
+        name: 'Pentagrammic Antiprism',
+        params: polytope([5, 2], ['s', 's', 's'], [2, 1]),
+      },
+      {
+        name: 'Penatagrammic Crossed Antiprism',
+        params: polytope([5, 2], ['s', 's', 's'], [3, 1]),
+      },
+      {
+        name: 'Heptagrammic Antiprism',
+        params: polytope([7, 2], ['s', 's', 's'], [2, 1]),
+      },
+      {
+        name: 'Heptagrammic Crossed Antiprism',
+        params: polytope([7, 2], ['s', 's', 's'], [4, 1]),
+      },
+      {
+        name: 'Octagrammic Antiprism',
+        params: polytope([8, 2], ['s', 's', 's'], [3, 1]),
+      },
+      {
+        name: 'Octagrammic Crossed Antiprism',
+        params: polytope([8, 2], ['s', 's', 's'], [5, 1]),
+      },
+    ],
+  },
+  {
     name: 'Tetrahedron',
     params: polytope([3, 3]),
     subforms: [
@@ -608,6 +828,10 @@ export const presets = [
       {
         name: 'Two Tetrahedra Compound',
         params: polytope([3, 3], ['c', 0, 0], { reciprocation: 1 }),
+      },
+      {
+        name: 'Snub Tetrahedron',
+        params: polytope([3, 3], ['s', 's', 's']),
       },
     ],
   },
@@ -642,6 +866,10 @@ export const presets = [
       {
         name: 'Snub Cube',
         params: polytope([4, 3], ['s', 's', 's']),
+      },
+      {
+        name: 'Snub Octahedron',
+        params: polytope([3, 4], ['s', 's', 0]),
       },
       {
         name: 'Rhombic Dodecahedron',
@@ -771,6 +999,217 @@ export const presets = [
       </>
     ),
   },
+  {
+    name: 'Tetrahedral Prism',
+    params: polytope([3, 3, 2], [1, 0, 0, 1]),
+    subforms: [
+      {
+        name: 'Truncated Tetrahedral Prism',
+        params: polytope([3, 3, 2], [1, 1, 0, 1]),
+      },
+      {
+        name: 'Snub Tetrahedral Prism',
+        params: polytope([3, 3, 2], ['s', 's', 's', 1]),
+      },
+      {
+        name: 'Omnisnub Tetrahedral Antiprism',
+        params: polytope([3, 3, 2], ['s', 's', 's', 's']),
+      },
+      {
+        name: 'Cubic Prism',
+        params: polytope([4, 3, 2], [1, 0, 0, 1]),
+      },
+      {
+        name: 'Cuboctahedral Prism',
+        params: polytope([4, 3, 2], [0, 1, 0, 1]),
+      },
+      {
+        name: 'Rhombicubochedral Prism',
+        params: polytope([4, 3, 2], [1, 0, 1, 1]),
+      },
+      {
+        name: 'Truncated Cubic Prism',
+        params: polytope([4, 3, 2], [1, 1, 0, 1]),
+      },
+      {
+        name: 'Octahedral Prism',
+        params: polytope([4, 3, 2], [0, 0, 1, 1]),
+      },
+      {
+        name: 'Truncated Octahedral Prism',
+        params: polytope([4, 3, 2], [0, 1, 1, 1]),
+      },
+      {
+        name: 'Truncated Cuboctahedral Prism',
+        params: polytope([4, 3, 2], [1, 1, 1, 1]),
+      },
+      {
+        name: 'Snub Cubic Prism',
+        params: polytope([4, 3, 2], ['s', 's', 's', 1]),
+      },
+      {
+        name: 'Omnisnub Cubic Antiprism',
+        params: polytope([4, 3, 2], ['s', 's', 's', 's']),
+      },
+      {
+        name: 'Snub Rhombicubochedral 24-cell',
+        params: polytope([2, 4, 3], ['s', 's', 0, 1]),
+      },
+      {
+        name: 'Dodecahedral Prism',
+        params: polytope([5, 3, 2], [1, 0, 0, 1]),
+      },
+      {
+        name: 'Icosidodecahedral Prism',
+        params: polytope([5, 3, 2], [0, 1, 0, 1]),
+      },
+      {
+        name: 'Icosahedral Prism',
+        params: polytope([5, 3, 2], [0, 0, 1, 1]),
+      },
+      {
+        name: 'Truncated Dodacahedral Prism',
+        params: polytope([5, 3, 2], [1, 1, 0, 1]),
+      },
+      {
+        name: 'Rhombicosidodecahedral Prism',
+        params: polytope([5, 3, 2], [1, 0, 1, 1]),
+      },
+      {
+        name: 'Truncated Icosahedral Prism',
+        params: polytope([5, 3, 2], [0, 1, 1, 1]),
+      },
+      {
+        name: 'Truncated Icosidodecahedral Prism',
+        params: polytope([5, 3, 2], [1, 1, 1, 1]),
+      },
+      {
+        name: 'Snub Dodecahedral Prism',
+        params: polytope([5, 3, 2], ['s', 's', 's', 1]),
+      },
+      {
+        name: 'Omnisnub Dodecahedral Antiprism',
+        params: polytope([5, 3, 2], ['s', 's', 's', 's']),
+      },
+      {
+        name: 'Great Dodecahedral Prism',
+        params: polytope([5, 5, 2], [1, 0, 0, 1], [1, 2, 1]),
+      },
+      {
+        name: 'Great Icosahedral Prism',
+        params: polytope([3, 5, 2], [1, 0, 0, 1], [1, 2, 1]),
+      },
+      {
+        name: 'Small Stellated Dodecahedral Prism',
+        params: polytope([5, 5, 2], [1, 0, 0, 1], [2, 1, 1]),
+      },
+      {
+        name: 'Great Stellated Dodecahedral Prism',
+        params: polytope([5, 3, 2], [1, 0, 0, 1], [2, 1, 1]),
+      },
+    ],
+  },
+  {
+    name: 'Square Antiprismatic Prism',
+    params: polytope([4, 2, 2], ['s', 's', 's', 1]),
+    subforms: [
+      {
+        name: 'Petagonal Antiprismatic Prism',
+        params: polytope([5, 2, 2], ['s', 's', 's', 1]),
+      },
+      {
+        name: 'Hexagonal Antiprismatic Prism',
+        params: polytope([6, 2, 2], ['s', 's', 's', 1]),
+      },
+      {
+        name: 'Heptaogonal Antiprismatic Prism',
+        params: polytope([7, 2, 2], ['s', 's', 's', 1]),
+      },
+      {
+        name: 'Octagonal Antiprismatic Prism',
+        params: polytope([8, 2, 2], ['s', 's', 's', 1]),
+      },
+    ],
+  },
+  {
+    name: 'Triangular Triangular Duoprism',
+    params: polytope([3, 2, 3], [1, 0, 1, 0]),
+    subforms: [
+      {
+        name: 'Triangular Cubic Duoprism',
+        params: polytope([3, 2, 4], [1, 0, 1, 0]),
+      },
+      {
+        name: 'Triangular Pentagonal Duoprism',
+        params: polytope([3, 2, 5], [1, 0, 1, 0]),
+      },
+      {
+        name: 'Triangular Hexagonal Duoprism',
+        params: polytope([3, 2, 6], [1, 0, 1, 0]),
+      },
+      {
+        name: 'Cubic Cubic Duoprism',
+        params: polytope([4, 2, 4], [1, 0, 1, 0]),
+      },
+      {
+        name: 'Cubic Pentagonal Duoprism',
+        params: polytope([4, 2, 5], [1, 0, 1, 0]),
+      },
+      {
+        name: 'Cubic Hexagonal Duoprism',
+        params: polytope([4, 2, 6], [1, 0, 1, 0]),
+      },
+      {
+        name: 'Pentagonal Pentagonal Duoprism',
+        params: polytope([5, 2, 5], [1, 0, 1, 0]),
+      },
+      {
+        name: 'Pentagonal Hexagonal Duoprism',
+        params: polytope([5, 2, 6], [1, 0, 1, 0]),
+      },
+      {
+        name: 'Hexagonal Hexagonal Duoprism',
+        params: polytope([6, 2, 6], [1, 0, 1, 0]),
+      },
+      {
+        name: 'Triangular Cubic Duopyramid',
+        params: polytope([3, 2, 4], ['m', 0, 'm', 0], { reciprocation: 1 }),
+      },
+      {
+        name: 'Triangular Pentagonal Duopyramid',
+        params: polytope([3, 2, 5], ['m', 0, 'm', 0], { reciprocation: 1 }),
+      },
+      {
+        name: 'Triangular Hexagonal Duopyramid',
+        params: polytope([3, 2, 6], ['m', 0, 'm', 0], { reciprocation: 1 }),
+      },
+      {
+        name: 'Cubic Cubic Duopyramid',
+        params: polytope([4, 2, 4], ['m', 0, 'm', 0], { reciprocation: 1 }),
+      },
+      {
+        name: 'Cubic Pentagonal Duopyramid',
+        params: polytope([4, 2, 5], ['m', 0, 'm', 0], { reciprocation: 1 }),
+      },
+      {
+        name: 'Cubic Hexagonal Duopyramid',
+        params: polytope([4, 2, 6], ['m', 0, 'm', 0], { reciprocation: 1 }),
+      },
+      {
+        name: 'Pentagonal Pentagonal Duopyramid',
+        params: polytope([5, 2, 5], ['m', 0, 'm', 0], { reciprocation: 1 }),
+      },
+      {
+        name: 'Pentagonal Hexagonal Duopyramid',
+        params: polytope([5, 2, 6], ['m', 0, 'm', 0], { reciprocation: 1 }),
+      },
+      {
+        name: 'Hexagonal Hexagonal Duopyramid',
+        params: polytope([6, 2, 6], ['m', 0, 'm', 0], { reciprocation: 1 }),
+      },
+    ],
+  },
+
   withSubforms({
     name: '5-cell',
     params: polytope([3, 3, 3]),
@@ -806,6 +1245,10 @@ export const presets = [
       ],
       ['s', 's', 's', 's']
     ),
+  },
+  {
+    name: 'Snub Runcitruncated 24-cell',
+    params: polytope([3, 4, 3], ['s', 's', 0, 1]),
   },
   {
     name: 'Icosahedral 120-cell',
@@ -1217,6 +1660,14 @@ export const presets = [
   {
     name: 'Hexagonal',
     params: polytope([6, 3], [1, 0, 0]),
+  },
+  {
+    name: 'Snub Square',
+    params: tiling([4, 4], ['s', 's', 0]),
+  },
+  {
+    name: 'Snub Trihexagonal',
+    params: tiling([6, 3], ['s', 's', 's']),
   },
   {
     type: 'group',
@@ -1672,177 +2123,39 @@ export const presets = [
       </>
     ),
   },
-  {
-    name: 'Order-7 Triangular',
-    params: tiling([3, 7], [1, 0, 0]),
-  },
-  {
-    name: 'Order-8 Triangular',
-    params: tiling([3, 8], [1, 0, 0]),
-  },
-  {
-    name: 'Infinite Order Triangular',
-    params: tiling([3, 0], [1, 0, 0]),
-  },
-  {
-    name: 'Order-5 Square',
-    params: tiling([4, 5], [1, 0, 0]),
-  },
-  {
-    name: 'Order-6 Square',
-    params: tiling([4, 6], [1, 0, 0]),
-  },
-  {
-    name: 'Order-7 Square',
-    params: tiling([4, 7], [1, 0, 0]),
-  },
-  {
-    name: 'Order-8 Square',
-    params: tiling([4, 8], [1, 0, 0]),
-  },
-  {
-    name: 'Infinite Order Square',
-    params: tiling([4, 0], [1, 0, 0]),
-  },
-  {
-    name: 'Order-4 pentagonal',
-    params: tiling([5, 4], [1, 0, 0]),
-  },
-  {
-    name: 'Order-5 pentagonal',
-    params: tiling([5, 5], [1, 0, 0]),
-  },
-  {
-    name: 'Order-6 pentagonal',
-    params: tiling([5, 6], [1, 0, 0]),
-  },
-  {
-    name: 'Order-7 pentagonal',
-    params: tiling([5, 7], [1, 0, 0]),
-  },
-  {
-    name: 'Order-8 pentagonal',
-    params: tiling([5, 8], [1, 0, 0]),
-  },
-  {
-    name: 'Infinite Order pentagonal',
-    params: tiling([5, 0], [1, 0, 0]),
-  },
-  {
-    name: 'Order-4 Hexagonal',
-    params: tiling([6, 4], [1, 0, 0]),
-  },
-  {
-    name: 'Order-5 Hexagonal',
-    params: tiling([6, 5], [1, 0, 0]),
-  },
-  {
-    name: 'Order-6 Hexagonal',
-    params: tiling([6, 6], [1, 0, 0]),
-  },
-  {
-    name: 'Order-7 Hexagonal',
-    params: tiling([6, 7], [1, 0, 0]),
-  },
-  {
-    name: 'Order-8 Hexagonal',
-    params: tiling([6, 8], [1, 0, 0]),
-  },
-  {
-    name: 'Infinite Order Hexagonal',
-    params: tiling([6, 0], [1, 0, 0]),
-  },
-  {
-    name: 'Order-3 Heptagonal',
-    params: tiling([7, 3], [1, 0, 0]),
-  },
-  {
-    name: 'Order-4 Heptagonal',
-    params: tiling([7, 4], [1, 0, 0]),
-  },
-  {
-    name: 'Order-5 Heptagonal',
-    params: tiling([7, 5], [1, 0, 0]),
-  },
-  {
-    name: 'Order-6 Heptagonal',
-    params: tiling([7, 6], [1, 0, 0]),
-  },
-  {
-    name: 'Order-7 Heptagonal',
-    params: tiling([7, 7], [1, 0, 0]),
-  },
-  {
-    name: 'Order-8 Heptagonal',
-    params: tiling([7, 8], [1, 0, 0]),
-  },
-  {
-    name: 'Infinite Order Heptagonal',
-    params: tiling([7, 0], [1, 0, 0]),
-  },
-  {
-    name: 'Order-3 Octagonal',
-    params: tiling([8, 3], [1, 0, 0]),
-  },
-  {
-    name: 'Order-4 Octagonal',
-    params: tiling([8, 4], [1, 0, 0]),
-  },
-  {
-    name: 'Order-5 Octagonal',
-    params: tiling([8, 5], [1, 0, 0]),
-  },
-  {
-    name: 'Order-6 Octagonal',
-    params: tiling([8, 6], [1, 0, 0]),
-  },
-  {
-    name: 'Order-7 Octagonal',
-    params: tiling([8, 7], [1, 0, 0]),
-  },
-  {
-    name: 'Order-8 Octagonal',
-    params: tiling([8, 8], [1, 0, 0]),
-  },
-  {
-    name: 'Infinite Order Octagonal',
-    params: tiling([8, 0], [1, 0, 0]),
-  },
-  {
-    name: 'Order-3 Apeirogonal',
-    params: tiling([0, 3], [1, 0, 0]),
-  },
-  {
-    name: 'Order-4 Apeirogonal',
-    params: tiling([0, 4], [1, 0, 0]),
-  },
-  {
-    name: 'Order-5 Apeirogonal',
-    params: tiling([0, 5], [1, 0, 0]),
-  },
-  {
-    name: 'Order-6 Apeirogonal',
-    params: tiling([0, 6], [1, 0, 0]),
-  },
-  {
-    name: 'Order-7 Apeirogonal',
-    params: tiling([0, 7], [1, 0, 0]),
-  },
-  {
-    name: 'Order-8 Apeirogonal',
-    params: tiling([0, 8], [1, 0, 0]),
-  },
+  tilings([7, 3]),
+  tilings([8, 3]),
+  tilings([5, 4]),
+  tilings([6, 4]),
+  tilings([7, 4]),
+  tilings([8, 4]),
+  tilings([6, 5]),
+  tilings([6, 6]),
+  tilings([8, 6]),
+  tilings([7, 7]),
+  tilings([8, 8]),
+  tilings([0, 3]),
+  tilings([0, 4]),
+  tilings([0, 5]),
+  tilings([0, 0]),
+  tilings([4, 3, 3]),
+  tilings([4, 4, 3]),
+  tilings([4, 4, 4]),
+  tilings([5, 3, 3]),
+  tilings([5, 4, 3]),
+  tilings([5, 4, 4]),
+  tilings([6, 3, 3]),
+  tilings([6, 4, 3]),
+  tilings([6, 4, 4]),
+  tilings([0, 3, 3]),
+  tilings([0, 4, 3]),
+  tilings([0, 4, 4]),
+  tilings([0, 0, 3]),
+  tilings([0, 0, 4]),
+  tilings([0, 0, 0]),
   {
     name: 'Infinite Order Apeirogonal',
     params: tiling([0, 0], [1, 0, 0]),
-  },
-  {
-    name: 'Snub Square',
-    params: tiling([4, 4], ['s', 's', 0]),
-  },
-  {
-    name: 'Snub Trihexagonal',
-    params: tiling([6, 3], ['s', 's', 's']),
   },
   {
     type: 'group',

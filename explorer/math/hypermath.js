@@ -551,6 +551,9 @@ export const rotate = (offset, [i, j], dimensions, metric, zoom) => {
 }
 
 export const getStellationOppositeAngle = (a, b, c, stellation) => {
+  if ([a, b, c].filter(m => m === 2).length === 2) {
+    return 0
+  }
   const A = PI / a
   const B = PI / b
   const C = PI / c
