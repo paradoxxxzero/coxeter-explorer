@@ -441,7 +441,7 @@ export const presets = [
   {
     name: (
       <>
-        <Space type="hyperbolic" subtype="hypercompact" dimensions={4} />
+        <Space type="hyperbolic" subtype="hypercompact" dimensions={4} />{' '}
         Hypercompact Order 3-6 Heptagonal Honeycomb
       </>
     ),
@@ -516,7 +516,7 @@ export const presets = [
           order={2}
           dimensions={4}
         />{' '}
-        Ultrahyperbolic Surface (Anti-de Sitter Ads3)
+        Ultra-Hyperbolic Surface (Anti-de Sitter Ads3)
       </>
     ),
     params: polytope([-1, 2, -1], [1, 0, 0, 1], {
@@ -538,7 +538,7 @@ export const presets = [
           order={2}
           dimensions={5}
         />{' '}
-        Ultrahyperbolic Honeycomb (Anti-de Sitter Ads4)
+        Ultra-Hyperbolic Honeycomb (Anti-de Sitter Ads4)
       </>
     ),
     params: polytope([-1, 3, 3, -1], [1, 0, 0, 0, 1], {
@@ -559,7 +559,7 @@ export const presets = [
           order={3}
           dimensions={6}
         />{' '}
-        Ultraultrahyperbolic
+        Ultra-Ultra-Hyperbolic
       </>
     ),
     params: polytope([-1, 2, -1, 2, -1], [0, 0, 0, 0, 0, 0], {

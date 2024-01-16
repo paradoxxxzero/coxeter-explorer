@@ -528,6 +528,10 @@ export const rotate = (offset, [i, j], dimensions, metric, zoom) => {
 
   const sint = sinx(offset) // ~offset
   const cost = sqrt(1 - c * sint * sint)
+  if (isNaN(cost) || isNaN(sint)) {
+    console.warn('???')
+    return matrix
+  }
 
   matrix[i][i] = cost
   matrix[j][j] = cost

@@ -50,6 +50,7 @@ export const getQuotient = (
     const [gen, transform] = transformsEntries[i]
     if (transform.length === 1) {
       const genIndex = transform[0]
+
       if (
         !subskips.includes(genIndex) &&
         !conjugations.some(([k, conj]) => conj[1] === genIndex)
@@ -62,7 +63,7 @@ export const getQuotient = (
       }
       if (
         !mirrors[genIndex] &&
-        !actives.some(k => coxeter[k][genIndex] !== 2)
+        !actives.some(k => k !== genIndex && coxeter[k][genIndex] !== 2)
       ) {
         quotient += gen
       }
@@ -146,34 +147,48 @@ export const getShape = (
   space,
   skips = null,
   shape = null,
-  transforms = null,
-  solved = new Map()
+  root = null
 ) => {
-  const root = !shape
-
   if (mirrors.every(m => !m)) {
     mirrors = mirrors.map(() => 1)
   }
   skips =
     skips ||
     mirrors.map((m, i) => (isEnabled(m) ? null : i)).filter(x => x !== null)
-  shape = shape || {
-    new: true,
-    key: '',
-    dimensions,
-    coxeter,
-    stellation,
-    mirrors,
+  if (!shape) {
+    shape = {
+      new: true,
+      key: '',
+      dimensions,
+      coxeter,
+      stellation,
+      mirrors,
+      skips,
 
-    skips,
+      ...getParams(dimensions, coxeter, stellation, mirrors, space, skips),
+      quotient: '',
+      facet: [''],
 
-    ...getParams(dimensions, coxeter, stellation, mirrors, space, skips),
-    quotient: '',
-    facet: [''],
-
-    children: [],
+      children: [],
+    }
+    root = shape
+    root.solved = new Map()
+    if (mirrors.filter(m => m).length === 1) {
+      const mirrorIndex = mirrors.findIndex(m => m)
+      if (coxeter[mirrorIndex].every((m, i) => mirrorIndex === i || m === 2)) {
+        // Choose a generator to generate the lunes
+        const hosotopeIndex =
+          mirrorIndex === dimensions - 1 ? dimensions - 2 : mirrorIndex + 1
+        const [gen] = Object.entries(shape.transforms).find(([k, v]) =>
+          v.includes(hosotopeIndex)
+        )
+        root.hosotope = {
+          gen,
+          index: hosotopeIndex,
+        }
+      }
+    }
   }
-  transforms = transforms || shape.transforms
   // Try subgroups by removing a mirror to the coxeter diagram:
   for (let i = 0; i < dimensions; i++) {
     if (skips.includes(i) || skips.includes('s')) {
@@ -181,9 +196,9 @@ export const getShape = (
       continue
     }
     const subskips = [...skips, i]
-    const key = subskips.sort().join('-')
+    const key = [...subskips].sort().join('-')
     let isnew = false
-    if (!solved.has(key)) {
+    if (!root.solved.has(key)) {
       isnew = true
 
       const subParams = {
@@ -201,21 +216,51 @@ export const getShape = (
         continue
       }
       ToddCoxeter(subParams)
-      solved.set(key, subParams)
+      root.solved.set(key, subParams)
     }
 
-    const subParams = solved.get(key)
+    const subParams = root.solved.get(key)
     const facet = Array.from(subParams.words.values())
 
+    const hosotopeFacet =
+      root.hosotope &&
+      subskips.length &&
+      subskips[0] === root.hosotope.index &&
+      subskips.every(
+        (s, l) => l === 0 || s === (subskips[l - 1] + 1) % dimensions
+      )
     // If the coset generate a facet
-    if (isFacet(facet, subParams.dimensions, subParams.transforms)) {
+    if (
+      isFacet(facet, subParams.dimensions, subParams.transforms) ||
+      hosotopeFacet
+    ) {
       let quotient = getQuotient(
         mirrors,
         subParams,
         coxeter,
-        transforms,
+        root.transforms,
         subskips
       )
+      // Handle hosotope edges
+      if (root.hosotope) {
+        if (subParams.dimensions === 1) {
+          quotient = quotient.replace(root.hosotope.gen, '')
+        } else if (subParams.dimensions === 2) {
+          let index = root.coxeter[root.hosotope.index].findIndex(
+            (m, l) => l !== root.hosotope.index && m !== 2
+          )
+          if (index < 0) {
+            index =
+              root.hosotope.index < root.dimensions - 1
+                ? root.hosotope.index + 1
+                : 0
+          }
+          const gen = Object.entries(root.transforms).find(([k, v]) =>
+            v.includes(index)
+          )[0]
+          quotient = quotient.replace(gen, root.hosotope.gen)
+        }
+      }
       let subShape = {
         new: isnew,
         ...subParams,
@@ -225,6 +270,7 @@ export const getShape = (
 
         children: [],
       }
+
       if (subParams.dimensions > 0) {
         subShape = getShape(
           dimensions,
@@ -234,8 +280,7 @@ export const getShape = (
           space,
           subskips,
           subShape,
-          transforms,
-          solved
+          root
         )
       }
       shape.children.push(subShape)
@@ -252,7 +297,7 @@ export const getShape = (
       }
       const subskips = [...skips, i]
       const key = subskips.sort().join('-')
-      const subParams = solved.get(key)
+      const subParams = root.solved.get(key)
       let subShape = {
         new: false,
         ...subParams,
@@ -270,8 +315,7 @@ export const getShape = (
         space,
         subskips,
         subShape,
-        transforms,
-        solved
+        root
       )
       shape.children.push(subShape)
     }
@@ -297,7 +341,7 @@ export const getShape = (
           }
         }
         visitShape(shape)
-        const missingEdges = Object.entries(shape.transforms)
+        const missingEdges = Object.entries(root.transforms)
           .filter(
             // If reflection edge, add only if mirror active
             ([edge, transform]) =>
@@ -359,7 +403,7 @@ export const getShape = (
               mirrors,
               subParams,
               coxeter,
-              transforms,
+              root.transforms,
               subskips
             ),
 
@@ -379,7 +423,7 @@ export const getShape = (
 
         const extra = []
         // Extra faces are transforms that end on same generator
-        const composition = Object.entries(shape.transforms)
+        const composition = Object.entries(root.transforms)
           .filter(([edge, transform]) => transform.length >= 2)
           .filter(
             // Filter out conjugate reflections that commute
@@ -387,7 +431,7 @@ export const getShape = (
               transform.length !== 3 ||
               coxeter[transform[0]][transform[1]] !== 2
           )
-        const reflections = Object.entries(shape.transforms).filter(
+        const reflections = Object.entries(root.transforms).filter(
           ([edge, transform]) => transform.length === 1
         )
         for (let i = 0; i < composition.length; i++) {
@@ -467,7 +511,7 @@ export const getShape = (
               mirrors,
               subParams,
               coxeter,
-              transforms,
+              root.transforms,
               subskips
             ),
 

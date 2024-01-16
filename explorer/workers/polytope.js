@@ -14,8 +14,8 @@ export const getPolytope = (
   polytope = []
 ) => {
   polytope.done = true
-  let isComputeDone = true
 
+  let isComputeDone = true
   for (const cached of cache.values()) {
     if (cached.compute && !cached.done) {
       isComputeDone = false
@@ -62,6 +62,7 @@ export const getPolytope = (
             ? {
                 rootVertex: space.rootVertex,
                 rootNormals: space.rootNormals,
+                rootVertices: space.rootVertices,
                 metric: space.metric,
               }
             : {}),
