@@ -63,7 +63,7 @@ export const coxeterToGram = (coxeter, stellation) =>
       row.map((column, j) => {
         if (column < 0) {
           // Imaginary
-          return -cosh(-column / 10)
+          return -cosh(-column / stellation[i][j])
         }
         if (column === 0) {
           // Infinity

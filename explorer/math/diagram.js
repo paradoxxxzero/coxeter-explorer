@@ -1,4 +1,4 @@
-import { PI, atan2, cos, max, min, sin, sqrt } from '.'
+import { PI, abs, atan2, cos, max, min, sin, sqrt } from '.'
 import { circleSize, dotSize } from '../components/Node'
 import { mirrorToType } from '../mirrors'
 
@@ -20,6 +20,7 @@ export const getNodes = (mirrors, dimensions, coxeter) => {
           snubDual: circleSize - 4,
           compound: circleSize - 4,
           snubCompound: circleSize - 2,
+          void: 1,
         }[type] || circleSize,
     }
   })
@@ -84,10 +85,11 @@ export const getNodes = (mirrors, dimensions, coxeter) => {
     xmax = max(xmax, node.x)
     ymax = max(ymax, node.y)
   }
-  nodes.xmin = -baseSize / 2
-  nodes.ymin = -baseSize / 2
-  nodes.xmax = xmax + baseSize
-  nodes.ymax = ymax + baseSize
+  const margin = 5
+  nodes.xmin = -baseSize / 2 - margin
+  nodes.ymin = -baseSize / 2 - margin
+  nodes.xmax = xmax + baseSize + 2 * margin
+  nodes.ymax = ymax + baseSize + 2 * margin
   const l = v => v + max(v - 1, 0)
 
   nodes.width = l(imax - imin + 1)
@@ -98,7 +100,7 @@ export const getNodes = (mirrors, dimensions, coxeter) => {
 export const getLinks = (dimensions, coxeter, stellation, nodes) => {
   const links = []
   for (let i = 0; i < dimensions; i++) {
-    for (let j = 0; j < i; j++) {
+    for (let j = i + 1; j < dimensions; j++) {
       if (coxeter[i][j] !== 2) {
         const m = coxeter[i][j]
         const s = stellation[i][j]
@@ -122,10 +124,12 @@ export const getLinks = (dimensions, coxeter, stellation, nodes) => {
         const text = {}
         const angle = atan2(end.y - start.y, end.x - start.x)
 
+        const shift = abs(angle) < 1e-6 ? PI / 2 : j - i > 1 ? PI / 2 : -PI / 2
+
         text.x =
           (start.x + end.x) / 2 +
-          (textSpacing + (value.length - 2) * 5) * cos(angle - PI / 2)
-        text.y = (start.y + end.y) / 2 + textSpacing * sin(angle - PI / 2)
+          (textSpacing + (value.length - 2) * 5) * cos(angle + shift)
+        text.y = (start.y + end.y) / 2 + textSpacing * sin(angle + shift)
 
         start.x += (source.r + 1) * cos(angle)
         start.y += (source.r + 1) * sin(angle)

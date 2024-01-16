@@ -204,6 +204,9 @@ export default function UI({
 
   useEffect(() => {
     const keydown = e => {
+      if (e.target.tagName === 'INPUT') {
+        return
+      }
       if (e.key === 'ArrowLeft' && e.ctrlKey && presetIndex > 0) {
         let prevPreset = presetIndex - 1
         while (presets[prevPreset].type) {

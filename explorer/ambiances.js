@@ -250,7 +250,8 @@ export const ambiances = Object.fromEntries(
     },
     facets: {
       background: [0, 0, 0, 1],
-      color: ({ faceIndex, faceSize }) => hsl(faceIndex / faceSize, 0.75, 0.7),
+      color: ({ faceIndex, faceSize }) =>
+        hsl((faceIndex || 0) / (faceSize || 1), 0.75, 0.7),
     },
     monochrome: {
       background: [0.12, 0.12, 0.12, 1],

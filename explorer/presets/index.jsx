@@ -519,7 +519,7 @@ export const presets = [
         Ultra-Hyperbolic Surface (Anti-de Sitter Ads3)
       </>
     ),
-    params: polytope([-1, 2, -1], [1, 0, 0, 1], {
+    params: polytope([-1, 2, -1], [1, 0, 0, 1], [10, 1, 10], {
       drawVertex: false,
       drawFace: false,
       curve: true,
@@ -541,7 +541,7 @@ export const presets = [
         Ultra-Hyperbolic Honeycomb (Anti-de Sitter Ads4)
       </>
     ),
-    params: polytope([-1, 3, 3, -1], [1, 0, 0, 0, 1], {
+    params: polytope([-1, 3, 3, -1], [1, 0, 0, 0, 1], [10, 1, 1, 10], {
       drawVertex: false,
       drawFace: false,
       curve: true,
@@ -562,15 +562,20 @@ export const presets = [
         Ultra-Ultra-Hyperbolic
       </>
     ),
-    params: polytope([-1, 2, -1, 2, -1], [0, 0, 0, 0, 0, 0], {
-      drawVertex: false,
-      drawFace: false,
-      curve: true,
-      ambiance: 'neon',
-      centered: false,
-      zoom: 2,
-      sizeEdge: 15,
-    }),
+    params: polytope(
+      [-1, 2, -1, 2, -1],
+      [0, 0, 0, 0, 0, 0],
+      [10, 1, 10, 1, 10],
+      {
+        drawVertex: false,
+        drawFace: false,
+        curve: true,
+        ambiance: 'neon',
+        centered: false,
+        zoom: 2,
+        sizeEdge: 15,
+      }
+    ),
   },
   {
     type: 'title',

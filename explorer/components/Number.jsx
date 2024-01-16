@@ -3,25 +3,26 @@ import { useCallback, useEffect, useState } from 'react'
 export const parse = (raw, min, max, step, coxeter) => {
   let valid = true
   let value = 0
-  let fraction = 1
+  let fraction = null
 
   if (coxeter && ['∞', 'inf', 'Infinity'].includes(raw)) {
     raw = '∞'
     value = 0
   } else if (coxeter && raw.endsWith('i')) {
-    const realRaw = raw.slice(0, -1)
-    const real = realRaw === '' ? 1 : parseInt(realRaw)
-    value = -real
+    value = -parseInt(raw.slice(0, -1) || '1')
     raw = `${value === -1 ? '' : -value}i`
   } else if (raw.includes('/')) {
     const [numerator, denominator] = raw.split('/')
-    value = numerator === '' ? '' : parseInt(numerator)
-    fraction = denominator === '' ? '' : parseInt(denominator)
-    if (fraction === 1) {
-      raw = `${value}`
+    let numeratorRaw
+    if (coxeter && numerator.endsWith('i')) {
+      value = -parseInt(numerator.slice(0, -1) || '1')
+      numeratorRaw = `${value === -1 ? '' : -value}i`
     } else {
-      raw = `${value}/${fraction}`
+      value = numerator === '' ? '' : parseInt(numerator)
+      numeratorRaw = `${value}`
     }
+    fraction = denominator === '' ? '' : parseInt(denominator)
+    raw = `${numeratorRaw}/${fraction}`
   } else {
     value =
       raw === ''
@@ -40,6 +41,8 @@ export const parse = (raw, min, max, step, coxeter) => {
     (step % 1 === 0 && value % step !== 0) ||
     isNaN(fraction) ||
     fraction === '' ||
+    fraction === 0 ||
+    fraction === 1 ||
     fraction < min ||
     fraction > max ||
     (step % 1 === 0 && fraction % step !== 0)
@@ -74,7 +77,8 @@ export default function Number({
   const defaultValue = useCallback(
     () =>
       value < 0 && coxeter
-        ? `${value === -1 ? '' : -value}i`
+        ? `${value === -1 ? '' : -value}i` +
+          (fraction > 1 ? `/${fraction}` : '')
         : value === 0 && coxeter
         ? '∞'
         : fractionName && fraction > 1
@@ -99,7 +103,7 @@ export default function Number({
       if (parsed.valid) {
         onChange(name, parsed.value)
         if (fractionName) {
-          onChange(fractionName, parsed.fraction)
+          onChange(fractionName, parsed.fraction || 1)
         }
       }
     },
@@ -111,26 +115,31 @@ export default function Number({
       update(coxeter ? '3' : `${min}`)
       return
     }
-    if (coxeter) {
-      if (raw === '2') {
-        update('∞')
-        return
-      }
-      if (raw === '∞') {
-        update('i')
-        return
-      }
-      if (raw.endsWith('i')) {
-        const realRaw = raw.slice(0, -1)
-        let real = (realRaw === '' ? 1 : parseInt(realRaw)) + 1
-        update(`${real}i`)
-        return
-      }
+    if (coxeter && raw === '2') {
+      update('∞')
+      return
+    }
+    if (coxeter && raw === '∞') {
+      update('i')
+      return
+    }
+    if (coxeter && raw.endsWith('i')) {
+      update(`${parseInt(raw.slice(0, -1) || '1') + step}i`)
+      return
     }
     if (raw === `${min}`) {
       // pass
     } else if (raw.includes('/')) {
-      update((parseInt(raw.split('/')[0]) - step).toString())
+      const [numerator, denominator] = raw.split('/')
+      let numeratorRaw
+      if (coxeter && numerator.endsWith('i')) {
+        const val = -parseInt(numerator.slice(0, -1) || '1') - step
+        numeratorRaw = `${-val}i`
+      } else {
+        const val = numerator === '' ? '' : parseInt(numerator) - step
+        numeratorRaw = `${val}`
+      }
+      update(`${numeratorRaw}/${denominator}`)
     } else {
       const val =
         (parseInt(step) === parseFloat(step)
@@ -149,29 +158,43 @@ export default function Number({
       update(coxeter ? '3' : `${min}`)
       return
     }
-    if (coxeter) {
-      if (raw === '∞') {
-        update('2')
-        return
+    if (coxeter && raw === '∞') {
+      update('2')
+      return
+    }
+    if (coxeter && raw === 'i') {
+      update('∞')
+      return
+    }
+
+    if (coxeter && raw.endsWith('i')) {
+      let real = parseInt(raw.slice(0, -1)) - step
+      if (real === 1) {
+        real = 'i'
+      } else {
+        real = `${real}i`
       }
-      if (raw === 'i') {
-        update('∞')
-        return
-      }
-      if (raw.endsWith('i')) {
-        const realRaw = raw.slice(0, -1)
-        let real = parseInt(realRaw) - 1
-        if (real === 1) {
-          real = ''
-        }
-        update(`${real}i`)
-        return
-      }
+      update(real)
+      return
     }
     if (raw === `${max}`) {
       // pass
     } else if (raw.includes('/')) {
-      update((parseInt(raw.split('/')[0]) + step).toString())
+      const [numerator, denominator] = raw.split('/')
+      let numeratorRaw
+      if (coxeter && numerator.endsWith('i')) {
+        if (numerator === 'i') {
+          update('∞')
+          return
+        }
+
+        const val = -parseInt(numerator.slice(0, -1) || '1') + step
+        numeratorRaw = `${val === -1 ? '' : -val}i`
+      } else {
+        const val = numerator === '' ? '' : parseInt(numerator) + step
+        numeratorRaw = `${val}`
+      }
+      update(`${numeratorRaw}/${denominator}`)
     } else {
       const val =
         (parseInt(step) === parseFloat(step)

@@ -75,6 +75,20 @@ main {
   color: rgba(50, 50, 50, 1);
 }
 
+.coxeter-node-menu {
+  z-index: 12;
+  position: absolute;
+  top: 3.5em;
+  left: -1.5em;
+  cursor: pointer;
+  background-color: rgba(255, 255, 255, 0.95);
+}
+.coxeter-node-menu svg {
+  padding: 0.5em;
+}
+.coxeter-node-menu svg:hover {
+  background-color: rgba(200, 200, 200, 1);
+}
 .coxeter-column {
   display: flex;
   flex-direction: column;
