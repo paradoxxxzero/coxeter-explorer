@@ -320,7 +320,7 @@ export const getShape = (
       shape.children.push(subShape)
     }
   }
-  if (root && mirrors.some(m => isSnub(m))) {
+  if (shape === root && mirrors.some(m => isSnub(m))) {
     // Snubs generate one more simplex facet
     // Add missing part at the end
 
