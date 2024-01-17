@@ -124,4 +124,5 @@ vec4 light(vec3 position, vec3 normal, vec3 rgb, vec2 uv) {
   // Uvs
   return vec4(uv, .5, opacity);
   #endif
+  return vec4(rgb, opacity);
 }

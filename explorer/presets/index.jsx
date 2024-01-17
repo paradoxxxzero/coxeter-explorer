@@ -221,9 +221,14 @@ const tilings = ([p, q, r]) => {
 }
 
 const tiling = (coxeterArgs, mirrors, stellationArgs, extra) => {
+  if (stellationArgs && !Array.isArray(stellationArgs)) {
+    extra = stellationArgs
+    stellationArgs = null
+  }
   return {
     ...polytope(coxeterArgs, mirrors, stellationArgs),
-    ambiance: 'plain',
+    ambiance: 'cathedral',
+    sizeEdge: 40,
     drawVertex: false,
     curve: true,
     zoom: 1,
@@ -231,6 +236,10 @@ const tiling = (coxeterArgs, mirrors, stellationArgs, extra) => {
   }
 }
 const ehoneycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
+  if (stellationArgs && !Array.isArray(stellationArgs)) {
+    extra = stellationArgs
+    stellationArgs = null
+  }
   return {
     ...polytope(coxeterArgs, mirrors, stellationArgs),
     ambiance: 'neon',
@@ -243,6 +252,10 @@ const ehoneycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
   }
 }
 const honeycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
+  if (stellationArgs && !Array.isArray(stellationArgs)) {
+    extra = stellationArgs
+    stellationArgs = null
+  }
   const poly = polytope(coxeterArgs, mirrors, stellationArgs)
   const dimensions = poly.matrix.length
   return {

@@ -118,13 +118,15 @@ export const ambiances = Object.fromEntries(
         steps: 4,
         pow: 2,
       },
+      shading: false,
       face: {
-        gouraud: true,
         opacity: 0.9,
       },
       transparency: 'oit',
-      color: ({ word, type }) =>
-        type === 'face' ? hsl((word.length * 0.3) % 1, 1, 0.6) : [0, 0, 0],
+      color: ({ word, subShape, type }) =>
+        type === 'face'
+          ? hsl((subShape * 0.23 + word.length * 0.07) % 1, 1, 0.58)
+          : [0, 0, 0],
     },
     synthwave: {
       background: [...hsl(0.77, 0.6, 0.04), 1],
