@@ -1,9 +1,27 @@
-import { invertCase, itoa } from '.'
+import { itoa } from '.'
 import { range } from '../../utils'
 import { isEnabled, isSnub } from '../mirrors'
 import { ident, submatrix, subvector } from './matrix'
-import { getGroupParams, getRelators } from './relators'
+import { getRelators } from './relators'
 import { ToddCoxeter } from './toddcoxeter'
+
+const reorder = (i, n, double) => {
+  if (double) {
+    if (n % 2) {
+      n--
+    }
+    const parity = i > 0 ? 1 - (i % 2) : 0
+    if (i >= n / 2 + parity) {
+      return 2 * (n - i) - 1 + parity
+    }
+    return 2 * i - parity
+  }
+
+  if (i >= n / 2) {
+    return 2 * (n - i) - 1
+  }
+  return 2 * i
+}
 
 export const isFacet = (facet, dimensions, transforms) => {
   if (dimensions === 0) {
@@ -206,23 +224,6 @@ export const getShape = (
       hosotopeFacet
     ) {
       if (subshape.dimensions === 2) {
-        const reorder = (i, n, double) => {
-          if (double) {
-            if (n % 2) {
-              n--
-            }
-            const parity = i > 0 ? 1 - (i % 2) : 0
-            if (i >= n / 2 + parity) {
-              return 2 * (n - i) - 1 + parity
-            }
-            return 2 * i - parity
-          }
-
-          if (i >= n / 2) {
-            return 2 * (n - i) - 1
-          }
-          return 2 * i
-        }
         const unorderedFacet = [...subshape.facet]
         const double = subshape.gens
           .split('')
@@ -376,9 +377,6 @@ export const getShape = (
 
         const extra = {}
         // Extra faces are transforms that end on same generator
-        // const reflections = Object.entries(root.transforms).filter(
-        //   ([edge, transform]) => transform.length === 1
-        // )
         const rotations = Object.entries(root.transforms).filter(
           ([edge, transform]) => transform.length === 2
         )
@@ -401,6 +399,34 @@ export const getShape = (
 
         for (let i = 0; i < conjugations.length; i++) {
           const [gen1, transform1] = conjugations[i]
+
+          for (let j = i + 1; j < conjugations.length; j++) {
+            const [gen2, transform2] = conjugations[j]
+            if (transform1[0] === transform2[0]) {
+              if (coxeter[transform1[1]][transform2[1]] !== 2) {
+                const m = coxeter[transform1[1]][transform2[1]]
+                const double =
+                  mirrors[transform2[1]] ||
+                  coxeter[transform1[0]][transform2[1]] !== 2
+
+                const facet = []
+                for (let k = 0; k < m; k++) {
+                  if (double) {
+                    facet.push(gen1 + (gen2 + gen1).repeat(m - k))
+                  }
+                  facet.push((gen2 + gen1).repeat(k))
+                }
+
+                extra[gen1 + gen2] = facet
+              } else if (
+                coxeter[transform1[0]][transform2[1]] !== 2 ||
+                mirrors[transform1[0]]
+              ) {
+                extra[gen1 + gen2] = ['', gen1, gen1 + gen2, gen2]
+              }
+            }
+          }
+
           for (let j = 0; j < rotations.length; j++) {
             const [gen2, transforms2] = rotations[j]
             if (transforms2[1] === transform1[2]) {
@@ -412,18 +438,8 @@ export const getShape = (
                 extra[gen1 + gen2] = ['', gen1, gen1 + gen2, gen2]
               }
             }
-            // else if (transforms2[0] === transform1[2]) {
-            //   extra[gen1 + gen2] = mirrors[transform1[1]]
-            //     ? ['', gen1, gen1 + invertCase(gen2), invertCase(gen2)]
-            //     : ['', gen1, invertCase(gen2)]
-            // }
           }
         }
-        // Object.keys(extra).forEach(key => {
-        //   delete extra[key]
-        // })
-        // extra.test = ['', 'a', 'ca', 'c']
-        console.log(root.rels, root.transforms, extra)
         const children = snubshape
         snubshape = []
 
