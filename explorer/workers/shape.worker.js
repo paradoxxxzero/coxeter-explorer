@@ -1,5 +1,3 @@
-import { ceil, floor } from '../math'
-import { addV, mulV } from '../math/matrix'
 import { getShape } from '../math/shape'
 import { isCompound, isDual } from '../mirrors'
 import { fillData } from './datafiller'

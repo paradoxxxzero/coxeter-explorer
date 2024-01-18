@@ -1,6 +1,6 @@
 import { abs } from '../math'
 import { normalize, reflect } from '../math/hypermath'
-import { addV, mulV, multiplyVector, transpose } from '../math/matrix'
+import { addV, mulV, transpose } from '../math/matrix'
 import { wordToCoset } from '../math/toddcoxeter'
 import { isSnub } from '../mirrors'
 

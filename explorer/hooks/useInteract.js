@@ -277,6 +277,7 @@ export const useInteract = (
     }
     animation.current.t = performance.now()
     loop.current = requestAnimationFrame(animate)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     quickUpdate,
     rotations.auto,
@@ -416,6 +417,7 @@ export const useInteract = (
         currentAnimation.t = null
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     rotations,
     runtime.dimensions,
@@ -448,6 +450,7 @@ export const useInteract = (
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     quickUpdate,
     rotations,

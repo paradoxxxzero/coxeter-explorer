@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { abs, max } from '../math'
 import {
   coxeterToGram,
   getGeometry,
@@ -8,7 +9,6 @@ import {
 import { dot, multiplyVector, transpose } from '../math/matrix'
 import { mirrorValue } from '../mirrors'
 import Shaper from '../workers/shape.worker?worker'
-import { abs, max, sign } from '../math'
 
 export const useProcess = (runtime, setRuntime) => {
   useEffect(() => {

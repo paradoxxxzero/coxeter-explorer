@@ -1,6 +1,6 @@
 import { types } from '../../statics'
 import { arrayEquals } from '../../utils'
-import { ToddCoxeter, countCosets } from '../math/toddcoxeter'
+import { ToddCoxeter, countCosets, wordToCoset } from '../math/toddcoxeter'
 
 export const getPolytope = (
   batch,
@@ -21,6 +21,21 @@ export const getPolytope = (
       isComputeDone = false
       break
     }
+  }
+
+  const isInvariant = (g, subshape, root) => {
+    if (subshape.done === false) {
+      // Infinite face, can't determine, include only generating mirrors
+      // Ignore commuting gens
+      return subshape.gens.includes(g)
+    }
+    const facetCosets = subshape.facet
+      .map(facet => wordToCoset(root, facet, true))
+      .sort()
+    const facetCosetsAfterG = subshape.facet
+      .map(facet => wordToCoset(root, g + facet, true))
+      .sort()
+    return facetCosets.every((coset, i) => coset === facetCosetsAfterG[i])
   }
 
   const visitShape = subshape => {
@@ -49,10 +64,45 @@ export const getPolytope = (
       const eigenvalues = space.eigens.values
 
       if (!cache.has(key)) {
+        let subgens
+        try {
+          subgens =
+            subshape.dimensions === 0
+              ? shape.subgens
+              : shape.gens
+                  .split('')
+                  .filter(g => isInvariant(g, subshape, polytope.root))
+                  .join('')
+        } catch (e) {
+          // Root iteration not enough processed, do nothing for now
+          return
+        }
+
+        // Handle hosotope edges
+        if (polytope.root?.hosotope) {
+          if (subshape.dimensions === 1) {
+            subgens = subgens.replace(polytope.root.hosotope.gen, '')
+          } else if (subshape.dimensions === 2) {
+            let index = polytope.root.coxeter[
+              polytope.root.hosotope.index
+            ].findIndex((m, l) => l !== polytope.root.hosotope.index && m !== 2)
+            if (index < 0) {
+              index =
+                polytope.root.hosotope.index < polytope.root.dimensions - 1
+                  ? polytope.root.hosotope.index + 1
+                  : 0
+            }
+            const gen = Object.entries(polytope.root.transforms).find(
+              ([k, v]) => v.includes(index)
+            )[0]
+            subgens = subgens.replace(gen, polytope.root.hosotope.gen)
+          }
+        }
+
         const cached = {
           ...shape,
           key,
-          subgens: subshape.quotient,
+          subgens,
           facet: subshape.facet,
           subdimensions: rank,
           mirrors: subshape.mirrors,
