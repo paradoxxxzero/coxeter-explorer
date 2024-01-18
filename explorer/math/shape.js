@@ -1,4 +1,4 @@
-import { itoa } from '.'
+import { invertCase, itoa } from '.'
 import { range } from '../../utils'
 import { isEnabled, isSnub } from '../mirrors'
 import { ident, submatrix, subvector } from './matrix'
@@ -226,11 +226,7 @@ export const getShape = (
         const unorderedFacet = [...subshape.facet]
         const double = subshape.gens
           .split('')
-          .every(
-            g =>
-              root.transforms[g].length === 1 &&
-              root.mirrors[root.transforms[g][0]]
-          )
+          .every(g => root.mirrors[root.transforms[g][0]])
         const rotation = subshape.gens
           .split('')
           .every(g => root.transforms[g].length === 2)
@@ -332,8 +328,8 @@ export const getShape = (
 
         for (let i = 0; i < edges.length; i++) {
           const edge = edges[i]
-          if (missingEdges[edge.gens]) {
-            delete missingEdges[edge.gens]
+          if (missingEdges.includes(edge.gens)) {
+            missingEdges.splice(missingEdges.indexOf(edge.gens), 1)
           }
         }
 
@@ -387,10 +383,7 @@ export const getShape = (
           ([edge, transform]) => transform.length === 2
         )
         const conjugations = Object.entries(root.transforms).filter(
-          ([edge, transform]) =>
-            transform.length === 3 && coxeter[transform[0]][transform[1]] !== 2
-          // ||
-          // mirrors[transform[1]]
+          ([edge, transform]) => transform.length === 3
         )
 
         for (let i = 0; i < rotations.length; i++) {
@@ -403,39 +396,38 @@ export const getShape = (
             ) {
               extra[gen1 + gen2] = ['', gen1, gen2]
             }
-            //   if (transforms1.length !== transforms2.length) {
-            //     // Also check reverse rotations for conjugate reflections
-            //     if (
-            //       (transforms1.length === 2 &&
-            //         transforms1[0] === transforms2[2]) ||
-            //       (transforms1.length === 3 && transforms1[2] === transforms2[0])
-            //     ) {
-            //       extra.push(['', gen1.toUpperCase(), gen2.toUpperCase()])
-            //     }
-            //   }
-            // }
-            // if (transforms1.length === 3) {
-            //   // Check conjugate reflections -> reflections
-            //   for (let j = 0; j < reflections.length; j++) {
-            //     const [gen2, reflection] = reflections[j]
-            //     if (transforms1.every(t => t !== reflection[0])) {
-            //       extra.push(['', gen1, gen2 + gen1])
-            //     }
-            //   }
-          }
-        }
-        for (let i = 0; i < conjugations.length; i++) {
-          const [gen1] = conjugations[i]
-          for (let j = i + 1; j < conjugations.length; j++) {
-            const [gen2] = conjugations[j]
-            extra[gen1 + gen2] = ['', gen1, gen2]
           }
         }
 
+        for (let i = 0; i < conjugations.length; i++) {
+          const [gen1, transform1] = conjugations[i]
+          for (let j = 0; j < rotations.length; j++) {
+            const [gen2, transforms2] = rotations[j]
+            if (transforms2[1] === transform1[2]) {
+              if (coxeter[transform1[2]][transforms2[1]] === 2) {
+                if (!mirrors[transform1[1]]) {
+                  extra[gen1 + gen2] = ['', gen1, gen2]
+                }
+              } else {
+                extra[gen1 + gen2] = ['', gen1, gen1 + gen2, gen2]
+              }
+            }
+            // else if (transforms2[0] === transform1[2]) {
+            //   extra[gen1 + gen2] = mirrors[transform1[1]]
+            //     ? ['', gen1, gen1 + invertCase(gen2), invertCase(gen2)]
+            //     : ['', gen1, invertCase(gen2)]
+            // }
+          }
+        }
+        // Object.keys(extra).forEach(key => {
+        //   delete extra[key]
+        // })
+        // extra.test = ['', 'a', 'ca', 'c']
+        console.log(root.rels, root.transforms, extra)
         const children = snubshape
         snubshape = []
 
-        if (!extra.length) {
+        if (!Object.keys(extra).length) {
           extra[''] = ['']
         }
         const extraFaces = Object.entries(extra)
