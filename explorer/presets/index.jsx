@@ -229,6 +229,7 @@ const tiling = (coxeterArgs, mirrors, stellationArgs, extra) => {
     ...polytope(coxeterArgs, mirrors, stellationArgs),
     ambiance: 'cathedral',
     sizeEdge: 40,
+    sizeVertex: 50,
     drawVertex: false,
     curve: true,
     zoom: 1,

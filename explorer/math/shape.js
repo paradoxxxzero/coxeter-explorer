@@ -5,7 +5,7 @@ import { ident, submatrix, subvector } from './matrix'
 import { getRelators } from './relators'
 import { ToddCoxeter } from './toddcoxeter'
 
-const reorder = (i, n, double) => {
+export const reorder = (i, n, double) => {
   if (double) {
     if (n % 2) {
       n--

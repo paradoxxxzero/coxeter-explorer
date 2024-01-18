@@ -1,4 +1,4 @@
-import { getShape } from '../math/shape'
+import { getShape, reorder } from '../math/shape'
 import { isCompound, isDual } from '../mirrors'
 import { fillData } from './datafiller'
 import { getObjects } from './objects'
@@ -73,7 +73,20 @@ onmessage = ({
     // Handle displaying the 2D shape face
     if (shape.dimensions === 2) {
       shape.currentWords = new Map([[1, '']])
-      shape.facet = Array.from(polytope.root.words.values())
+
+      const double = shape.gens
+        .split('')
+        .every(g => shape.mirrors[shape.transforms[g][0]])
+      const rotation = shape.gens
+        .split('')
+        .every(g => shape.transforms[g].length === 2)
+
+      const unorderedFacet = Array.from(polytope.root.words.values())
+      shape.facet = new Array(unorderedFacet.length)
+      for (let i = 0; i < unorderedFacet.length; i++) {
+        shape.facet[i] =
+          unorderedFacet[rotation ? i : reorder(i, shape.facet.length, double)]
+      }
       shape.done = true
       cache.set('f', {
         ...shape,
