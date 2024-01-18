@@ -174,7 +174,7 @@ export const getPolytope = (
         aggregated.key += ',' + key
       } else {
         polytope[rank].aggregated.push({
-          key: key,
+          key,
           coxeter: subshape.coxeter,
           stellation: subshape.stellation,
           mirrors: subShapeMirrors,

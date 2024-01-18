@@ -221,25 +221,27 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                                 : eyeIcon}
                             </button>
                           ) : null}
-                          <button
-                            className="shape-detail-button"
-                            disabled={coxeter.length < 2}
-                            onClick={() =>
-                              updateParams({
-                                coxeter,
-                                stellation,
-                                mirrors,
-                                dimensions: coxeter.length,
-                                matrix: ident(coxeter.length),
-                              })
-                            }
-                          >
-                            <CoxeterDiagram
-                              coxeter={coxeter}
-                              stellation={stellation}
-                              mirrors={mirrors}
-                            />
-                          </button>
+                          {coxeter ? (
+                            <button
+                              className="shape-detail-button"
+                              disabled={coxeter.length < 2}
+                              onClick={() =>
+                                updateParams({
+                                  coxeter,
+                                  stellation,
+                                  mirrors,
+                                  dimensions: coxeter.length,
+                                  matrix: ident(coxeter.length),
+                                })
+                              }
+                            >
+                              <CoxeterDiagram
+                                coxeter={coxeter}
+                                stellation={stellation}
+                                mirrors={mirrors}
+                              />
+                            </button>
+                          ) : null}
                         </div>
                       </Fragment>
                     )

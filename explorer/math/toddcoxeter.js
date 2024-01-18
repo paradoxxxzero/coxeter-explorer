@@ -1,12 +1,8 @@
 // From https://pi.math.cornell.edu/~kbrown/7350/toddcox.pdf
 // (https://math.berkeley.edu/~kmill/tools/tc.html)
 
+import { invertCase } from '.'
 import { reflect } from './hypermath'
-
-const invertCase = c => {
-  const C = c.toUpperCase()
-  return c === C ? c.toLowerCase() : C
-}
 
 const quotient = (params, cosetId) => {
   let minimalCosetId = cosetId

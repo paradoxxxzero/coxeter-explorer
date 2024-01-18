@@ -1,4 +1,4 @@
-import { itoa } from '.'
+import { invertCase, itoa } from '.'
 import { isSnub } from '../mirrors'
 import { getStellationOppositeAngle } from './hypermath'
 
@@ -32,6 +32,188 @@ const findPaths = (rotations, word = '', chain = []) => {
     }
   }
   return paths
+}
+
+export const getRelators = (transforms, coxeter, stellation) => {
+  const rels = []
+  const transformsEntries = Object.entries(transforms)
+  const reflectionsEntries = transformsEntries.filter(
+    ([_, transform]) => transform.length === 1
+  )
+  const rotationsEntries = transformsEntries.filter(([_, transform]) => {
+    return transform.length === 2
+  })
+  const conjugationsEntries = transformsEntries.filter(([_, transform]) => {
+    return transform.length === 3
+  })
+  const reflectionsGens = Object.fromEntries(
+    reflectionsEntries.map(([k, v]) => [v[0], k])
+  )
+
+  for (let i = 0; i < transformsEntries.length; i++) {
+    const [gen1, transform1] = transformsEntries[i]
+
+    // Reflection or conjugate reflection gen1^2 = 1
+    if ([1, 3].includes(transform1.length)) {
+      rels.push(gen1.repeat(2))
+    }
+    // Rotation gen12^m12 = 1
+    if (transform1.length === 2) {
+      const m = coxeter[transform1[0]][transform1[1]]
+      if (m > 1) {
+        rels.push(gen1.repeat(m))
+      }
+    }
+
+    // Reflection are related to reflections: (gen1 gen2)^m12
+    if (transform1.length === 1) {
+      const reflection1 = transform1[0]
+      for (let j = 0; j < reflectionsEntries.length; j++) {
+        const [gen2, reflection2] = reflectionsEntries[j]
+        // Only add once
+        if (reflection2 > reflection1) {
+          const m = coxeter[reflection1][reflection2]
+          if (m > 1) {
+            rels.push((gen1 + gen2).repeat(m))
+          }
+        }
+      }
+    }
+
+    // Conjugate reflection is related to reflection: (gen121 gen2)^m12/2
+    if (transform1.length === 3) {
+      const m = coxeter[transform1[0]][transform1[1]]
+      if (m > 1) {
+        const gen2 = reflectionsGens[transform1[1]]
+        if (gen2) {
+          rels.push((gen1 + gen2).repeat(m % 2 === 0 ? m / 2 : m))
+        } else {
+          console.warn('No conjugate conjugate reflection', gen1, transform1)
+        }
+      }
+      for (let j = 0; j < conjugationsEntries.length; j++) {
+        const [gen2, transform2] = conjugationsEntries[j]
+
+        // Link conjugate reflections to linking rotations (gen01 gen121 gen01^-1 gen020)
+        // Find conjugate reflections of the same reflection
+        if (transform2[1] === transform1[1]) {
+          // Only add once
+          if (transform2[0] > transform1[0]) {
+            // Find linking rotation
+            let gen3 = rotationsEntries.find(
+              ([_, rotation]) =>
+                rotation[0] === transform1[0] && rotation[1] === transform2[0]
+            )?.[0]
+
+            // Or reverse linking rotation
+            if (!gen3) {
+              gen3 = invertCase(
+                rotationsEntries.find(
+                  ([_, rotation]) =>
+                    rotation[1] === transform1[0] &&
+                    rotation[0] === transform2[0]
+                )?.[0]
+              )
+            }
+
+            if (gen3) {
+              rels.push(invertCase(gen1) + invertCase(gen3) + gen2 + gen3)
+            }
+          }
+        }
+
+        // Conjugate reflections conjugated with same reflection have same order
+        // as their conjugate (gen010 gen121)^m12
+        if (transform2[0] === transform1[0]) {
+          // Only add once
+          if (transform2[1] > transform1[1]) {
+            const m = coxeter[transform1[1]][transform2[1]]
+            if (m > 1) {
+              rels.push((gen1 + gen2).repeat(m))
+            }
+          }
+        }
+      }
+    }
+  }
+  // Link rotations that close a path (gen01 gen12 gen02^-1)
+  if (rotationsEntries.length > 1) {
+    const paths = findPaths(rotationsEntries)
+    // Paths should be reversed for some reason
+    rels.push(...paths.map(p => p.split('').reverse().join('')))
+  }
+
+  // Finally add extra relations generated from stellations
+  if (!stellation.every(row => row.every(x => x === 1))) {
+    // TODO: REWRITE!
+    // TODO: Handle fakestellation for imaginary coxeter
+    if (
+      coxeter.length === 4 &&
+      stellation[0][1] > 1 !== stellation[2][3] > 1 &&
+      coxeter[0][1] > 3 &&
+      coxeter[2][3] > 3
+    ) {
+      /// ?????????
+      if (stellation[0][1] > 1) {
+        rels.push(
+          'abcdcb'.repeat(
+            getStellationOppositeAngle(
+              coxeter[0][1],
+              coxeter[1][2],
+              coxeter[0][2],
+              stellation[0][1]
+            )
+          )
+        )
+      }
+      if (stellation[2][3] > 1) {
+        rels.push(
+          'abcdcb'.repeat(
+            getStellationOppositeAngle(
+              coxeter[2][3],
+              coxeter[1][2],
+              coxeter[1][3],
+              stellation[2][3]
+            )
+          )
+        )
+      }
+    } else {
+      for (let i = 1; i < coxeter.length; i++) {
+        for (let j = 0; j < i; j++) {
+          if (stellation[j][i] > 1) {
+            if (j + 2 < coxeter.length) {
+              const angle = getStellationOppositeAngle(
+                coxeter[j + 1][i + 1],
+                coxeter[j][i],
+                coxeter[j][i + 1],
+                stellation[j][i]
+              )
+              if (angle) {
+                rels.push(
+                  (itoa(j) + itoa(i) + itoa(j + 2) + itoa(i)).repeat(angle)
+                )
+              }
+            }
+            if (j - 1 >= 0) {
+              const angle = getStellationOppositeAngle(
+                coxeter[j - 1][i - 1],
+                coxeter[j][i],
+                coxeter[j - 1][i],
+                stellation[j][i]
+              )
+              if (angle) {
+                rels.push(
+                  (itoa(j) + itoa(i) + itoa(j) + itoa(j - 1)).repeat(angle)
+                )
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return rels
 }
 
 export const getGroupParams = (

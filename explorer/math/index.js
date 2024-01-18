@@ -98,6 +98,10 @@ export const genPaths = (a, len) =>
 export const itoa = i => String.fromCharCode(97 + i)
 export const itor = i => String.fromCharCode(114 + i)
 export const atoi = a => a.charCodeAt(0) - 97
+export const invertCase = c => {
+  const C = c.toUpperCase()
+  return c === C ? c.toLowerCase() : C
+}
 
 export const factorial = n => (n ? n * factorial(n - 1) : 1)
 export const binomial = (n, k) =>

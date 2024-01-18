@@ -2,7 +2,7 @@ import { itoa } from '.'
 import { range } from '../../utils'
 import { isEnabled, isSnub } from '../mirrors'
 import { ident, submatrix, subvector } from './matrix'
-import { getGroupParams } from './relators'
+import { getGroupParams, getRelators } from './relators'
 import { ToddCoxeter } from './toddcoxeter'
 
 export const isFacet = (facet, dimensions, transforms) => {
@@ -41,17 +41,62 @@ export const getShape = (
   stellation,
   mirrors,
   space,
-  skips = null,
   shape = null,
   root = null
 ) => {
-  if (mirrors.every(m => !m)) {
-    mirrors = mirrors.map(() => 1)
-  }
-  skips =
-    skips ||
-    mirrors.map((m, i) => (isEnabled(m) ? null : i)).filter(x => x !== null)
   if (!shape) {
+    // Handle fundamental domain
+    if (mirrors.every(m => !m)) {
+      mirrors = mirrors.map(() => 1)
+    }
+
+    let gens = ''
+    let gi = 0
+    const transforms = {}
+
+    for (let i = 0; i < dimensions; i++) {
+      if (!isEnabled(mirrors[i])) {
+        continue
+      }
+
+      if (!isSnub(mirrors[i])) {
+        const c = itoa(gi++)
+        gens += c
+        // Case of not snub => Normal reflection
+        transforms[c] = [i]
+      }
+
+      for (let j = i + 1; j < dimensions; j++) {
+        if (!isEnabled(mirrors[j])) {
+          continue
+        }
+
+        if (isSnub(mirrors[i]) && isSnub(mirrors[j])) {
+          // Case of snub + snub => rotation
+          const c = itoa(gi++)
+          gens += c
+          transforms[c] = [i, j]
+        } else if (isSnub(mirrors[i]) && !isSnub(mirrors[j])) {
+          // Case of snub + not snub => conjugate reflection
+          const c = itoa(gi++)
+          gens += c
+          transforms[c] = [i, j, i]
+        } else if (!isSnub(mirrors[i]) && isSnub(mirrors[j])) {
+          // Case of snub + not snub => conjugate reflection
+          const c = itoa(gi++)
+          gens += c
+          transforms[c] = [j, i, j]
+        }
+      }
+    }
+    const subgens = Object.entries(transforms)
+      .filter(([gen, transform]) => transform.every(t => !mirrors[t]))
+      // Quotiented for reflection if mirror is not active
+      // Quotiented for rotation if both mirrors are not active (that can't happen in snub)
+      // Quotiented for conjugate reflection if all mirrors are not active (same)
+      .map(([gen]) => gen)
+      .join('')
+    const rels = getRelators(transforms, coxeter, stellation)
     shape = {
       new: true,
       key: '',
@@ -59,11 +104,12 @@ export const getShape = (
       coxeter,
       stellation,
       mirrors,
-      skips,
-
-      ...getGroupParams(dimensions, coxeter, stellation, mirrors, space, skips),
+      gens,
+      subgens,
+      transforms,
+      rels,
       facet: [''],
-
+      removed: [],
       children: [],
     }
     root = shape
@@ -84,121 +130,173 @@ export const getShape = (
       }
     }
   }
-  // Try subgroups by removing a mirror to the coxeter diagram:
+
+  const emptySubshapes = []
+  // Try subgroups by removing a root reflection
   for (let i = 0; i < dimensions; i++) {
-    if (skips.includes(i) || skips.includes('s')) {
-      // Mirror is already removed
+    if (shape.removed.includes(i)) {
       continue
     }
-    const subskips = [...skips, i]
-    const key = [...subskips].sort().join('-')
+    let gens = shape.gens
+      .split('')
+      .filter(g => !shape.transforms[g].includes(i))
+      .join('')
+    const removed = [...shape.removed, i]
+    const key = removed.sort().join('-')
+
     let isnew = false
     if (!root.solved.has(key)) {
       isnew = true
-
-      const subParams = {
-        key,
-        dimensions: dimensions - subskips.length,
-        coxeter: submatrix(coxeter, subskips),
-        stellation: submatrix(stellation, subskips),
-        mirrors: subvector(mirrors, subskips),
-
-        skips: subskips,
-
-        ...getGroupParams(
-          dimensions,
-          coxeter,
-          stellation,
-          mirrors,
-          space,
-          subskips
+      // const removedGen = shape.gens[i]
+      // const removedTransform = shape.transforms[removedGen]
+      // const subTransforms = gens.split('').map(g => shape.transforms[g])
+      // // We need to determine if the removed generator lower the dimension
+      // // We say we remove a dimension if we remove a generator that was not
+      // // present in any of the other transform
+      // const removedRootReflections = removedTransform.filter(t =>
+      //   subTransforms.every(s => !s.includes(t))
+      // )
+      // const lowering =
+      //   removedTransform.length === 2 &&
+      //   (!removedRootReflections.length || removedRootReflections.length === 2)
+      //     ? 1
+      //     : removedRootReflections.length
+      const subshape = {
+        dimensions: shape.dimensions - 1,
+        coxeter: submatrix(root.coxeter, removed),
+        stellation: submatrix(root.stellation, removed),
+        mirrors: subvector(root.mirrors, removed),
+        gens,
+        subgens: root.subgens
+          .split('')
+          .filter(g => gens.includes(g))
+          .join(''),
+        rels: root.rels.filter(rel =>
+          rel
+            .toLowerCase()
+            .split('')
+            .every(g => gens.includes(g))
         ),
+        transforms: Object.fromEntries(
+          Object.entries(shape.transforms).filter(([g]) => gens.includes(g))
+        ),
+        removed,
+        key,
         limit: space.curvature > 0 ? 5000 : 1000,
       }
-      if (subParams.gens === null) {
-        continue
-      }
-      ToddCoxeter(subParams)
-      if (!subParams.done) {
-        console.log('infinite', subParams.gens)
-      }
-      subParams.words.size > 100 &&
-        console.log('solved', subParams.gens, subParams.words.size)
-      root.solved.set(key, subParams)
+      ToddCoxeter(subshape)
+      subshape.facet = Array.from(subshape.words.values())
+      root.solved.set(key, subshape)
     }
 
-    const subParams = root.solved.get(key)
-    const facet = Array.from(subParams.words.values())
+    const subshape = root.solved.get(key)
 
+    // TODO: Replace in term of gens
     const hosotopeFacet =
       root.hosotope &&
-      subskips.length &&
-      subskips[0] === root.hosotope.index &&
-      subskips.every(
-        (s, l) => l === 0 || s === (subskips[l - 1] + 1) % dimensions
+      subshape.removed.length &&
+      subshape.removed[0] === root.hosotope.index &&
+      subshape.removed.every(
+        (s, l) => l === 0 || s === (subshape.removed[l - 1] + 1) % dimensions
       )
+
     // If the coset generate a facet
     if (
-      isFacet(facet, subParams.dimensions, subParams.transforms) ||
+      isFacet(subshape.facet, subshape.dimensions, root.transforms) ||
       hosotopeFacet
     ) {
-      let subShape = {
+      if (subshape.dimensions === 2) {
+        const reorder = (i, n, double) => {
+          if (double) {
+            if (n % 2) {
+              n--
+            }
+            const parity = i > 0 ? 1 - (i % 2) : 0
+            if (i >= n / 2 + parity) {
+              return 2 * (n - i) - 1 + parity
+            }
+            return 2 * i - parity
+          }
+
+          if (i >= n / 2) {
+            return 2 * (n - i) - 1
+          }
+          return 2 * i
+        }
+        const unorderedFacet = [...subshape.facet]
+        const double = subshape.gens
+          .split('')
+          .every(
+            g =>
+              root.transforms[g].length === 1 &&
+              root.mirrors[root.transforms[g][0]]
+          )
+        const rotation = subshape.gens
+          .split('')
+          .every(g => root.transforms[g].length === 2)
+
+        for (let i = 0; i < unorderedFacet.length; i++) {
+          subshape.facet[i] =
+            unorderedFacet[
+              rotation ? i : reorder(i, subshape.facet.length, double)
+            ]
+        }
+      }
+      const subShape = {
         new: isnew,
-        ...subParams,
-
-        facet,
-
         children: [],
+        ...subshape,
       }
-
-      if (subParams.dimensions > 0) {
-        subShape = getShape(
-          dimensions,
-          coxeter,
-          stellation,
-          mirrors,
-          space,
-          subskips,
-          subShape,
-          root
+      if (subShape.removed.length < dimensions) {
+        shape.children.push(
+          getShape(
+            dimensions,
+            coxeter,
+            stellation,
+            mirrors,
+            space,
+            subShape,
+            root
+          )
         )
+      } else {
+        shape.children.push(subShape)
       }
-      shape.children.push(subShape)
+    } else {
+      emptySubshapes.push(subshape)
     }
   }
 
-  if (shape.children.length === 0 && dimensions - skips.length > 1) {
+  if (shape.children.length === 0 && shape.dimensions > 0) {
     // If no facet found, try them all for subdimension
     // Used for diagram like 5-2-2
-    console.debug('No leaf found, digging deeper', skips)
-    for (let i = 0; i < dimensions; i++) {
-      if (skips.includes(i)) {
-        continue
-      }
-      const subskips = [...skips, i]
-      const key = subskips.sort().join('-')
-      const subParams = root.solved.get(key)
-      let subShape = {
+    console.debug('No leaf found, digging deeper', shape.gens)
+    for (let i = 0; i < emptySubshapes.length; i++) {
+      const subshape = emptySubshapes[i]
+
+      const subShape = {
         new: false,
-        ...subParams,
-
-        facet: [''],
-
         children: [],
+        ...subshape,
       }
-      subShape = getShape(
-        dimensions,
-        coxeter,
-        stellation,
-        mirrors,
-        space,
-        subskips,
-        subShape,
-        root
-      )
-      shape.children.push(subShape)
+      if (subShape.removed.length < dimensions) {
+        shape.children.push(
+          getShape(
+            dimensions,
+            coxeter,
+            stellation,
+            mirrors,
+            space,
+            subShape,
+            root
+          )
+        )
+      } else {
+        shape.children.push(subShape)
+      }
     }
   }
+
   if (shape === root && mirrors.some(m => isSnub(m))) {
     // Snubs generate one more simplex facet
     // Add missing part at the end
@@ -206,9 +304,6 @@ export const getShape = (
     let snubshape = []
 
     for (let i = 1; i < dimensions; i++) {
-      const subskips = [...skips, ...range(dimensions - i).map(() => 's')]
-      const subdimensions = dimensions - subskips.length
-
       if (i === 1) {
         // We need to check if every generator has an edge
         // Extract all edges
@@ -244,40 +339,28 @@ export const getShape = (
 
         const children = snubshape
         snubshape = []
-        const snubCoxeter = ident(subdimensions).map((row, i) =>
+        const snubCoxeter = ident(1).map((row, i) =>
           row.map((_, j) => (i === j ? 1 : i === j + 1 || i === j - 1 ? 4 : 2))
         )
 
-        const snubStellation = ident(subdimensions).map(row => row.map(() => 1))
-        const snubMirrors = range(subdimensions).map(() => 's')
+        const snubStellation = ident(1).map(row => row.map(() => 1))
+        const snubMirrors = range(1).map(() => 's')
 
         for (let j = 0; j < missingEdges.length; j++) {
           const gen = missingEdges[j]
-          subskips[subskips.length - 1] = shape.gens.indexOf(gen) + 's'
 
           const subParams = {
-            key: subskips.join('-'),
-            dimensions: subdimensions,
+            dimensions: 1,
             coxeter: snubCoxeter,
             stellation: snubStellation,
             mirrors: snubMirrors,
-
-            skips: subskips,
-
-            ...getGroupParams(
-              subdimensions,
-              snubCoxeter,
-              snubStellation,
-              snubMirrors,
-              space,
-              subskips
-            ),
           }
           subParams.gens = gen
 
           const subShape = {
             new: true,
             done: true,
+            key: `se-${gen}`,
 
             ...subParams,
 
@@ -289,11 +372,11 @@ export const getShape = (
         }
       } else if (i === 2) {
         // We add the missing faces
-        const snubCoxeter = ident(subdimensions).map((row, i) =>
+        const snubCoxeter = ident(2).map((row, i) =>
           row.map((_, j) => (i === j ? 1 : i === j + 1 || i === j - 1 ? 3 : 2))
         )
-        const snubStellation = ident(subdimensions).map(row => row.map(() => 1))
-        const snubMirrors = range(subdimensions).map(() => 's')
+        const snubStellation = ident(2).map(row => row.map(() => 1))
+        const snubMirrors = range(2).map(() => 's')
 
         const extra = {}
         // Extra faces are transforms that end on same generator
@@ -358,30 +441,12 @@ export const getShape = (
         const extraFaces = Object.entries(extra)
         for (let j = 0; j < extraFaces.length; j++) {
           const [gens, facet] = extraFaces[j]
-          subskips[subskips.length - 1] =
-            facet.length === 1
-              ? 's'
-              : shape.gens.indexOf(facet[1].toLowerCase()) +
-                's' +
-                shape.gens.indexOf(facet[2].replace(facet[1], '').toLowerCase())
 
           const subParams = {
-            key: subskips.join('-'),
-            dimensions: subdimensions,
+            dimensions: 2,
             coxeter: snubCoxeter,
             stellation: snubStellation,
             mirrors: snubMirrors,
-
-            skips: subskips,
-
-            ...getGroupParams(
-              subdimensions,
-              snubCoxeter,
-              snubStellation,
-              snubMirrors,
-              space,
-              subskips
-            ),
           }
           subParams.gens = gens
 
@@ -389,6 +454,7 @@ export const getShape = (
             new: facet.length !== 1,
             done: true,
 
+            key: `sf-${gens}`,
             ...subParams,
 
             facet,
@@ -399,32 +465,22 @@ export const getShape = (
         }
       } else {
         // We add the missing cells (no idea on facet shape though)
-        const snubCoxeter = ident(subdimensions).map((row, i) =>
+        const snubCoxeter = ident(dimensions - 1).map((row, i) =>
           row.map((_, j) => (i === j ? 1 : 2))
         )
-        const snubStellation = ident(subdimensions).map(row => row.map(() => 1))
-        const snubMirrors = range(subdimensions).map(() => 's')
+        const snubStellation = ident(dimensions - 1).map(row =>
+          row.map(() => 1)
+        )
+        const snubMirrors = range(dimensions - 1).map(() => 's')
         const children = snubshape
         snubshape = []
         const subShape = {
           new: true,
           done: true,
-          key: subskips.join('-'),
-          dimensions: subdimensions,
+          dimensions: dimensions - 1,
           coxeter: snubCoxeter,
           stellation: snubStellation,
           mirrors: snubMirrors,
-
-          skips: subskips,
-
-          ...getGroupParams(
-            subdimensions,
-            snubCoxeter,
-            snubStellation,
-            snubMirrors,
-            space,
-            subskips
-          ),
 
           facet: [''], // ?
 
