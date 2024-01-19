@@ -1,10 +1,5 @@
-import { invertCase, itoa } from '.'
-import { isSnub } from '../mirrors'
-import {
-  getCGroup,
-  getGroupType,
-  getStellationOppositeAngle,
-} from './hypermath'
+import { invertCase } from '.'
+import { getGroupType } from './hypermath'
 
 const findPaths = (rotations, word = '', chain = []) => {
   const paths = []
@@ -157,41 +152,83 @@ export const getRelators = (transforms, coxeter, stellation) => {
     stellation.some((row, i) => row.some((s, j) => s > 1 && coxeter[i][j] > 1))
   ) {
     const groupType = getGroupType(coxeter)
+    const stellationsRels = []
     if (groupType.type === 'c') {
       // C-string groups with stellation i.e. 5/2 3 3 5
-      addSteallationRelationsForFiveHalf(
-        rels,
-        transforms,
-        coxeter,
-        stellation,
-        groupType.group,
-        groupType.pairs
+      stellationsRels.push(
+        ...addSteallationRelationsForFiveHalf(
+          coxeter,
+          stellation,
+          groupType.group,
+          groupType.pairs
+        )
+      )
+    } else if (groupType.type === 'star') {
+      stellationsRels.push(
+        ...addSteallationRelationsForStarFiveThrees(
+          coxeter,
+          stellation,
+          groupType.group,
+          groupType.pairs
+        )
       )
     }
-    if (groupType.type === 'star') {
-      addSteallationRelationsForStarFiveThrees(
-        rels,
-        transforms,
-        coxeter,
-        stellation,
-        groupType.group,
-        groupType.pairs
-      )
+
+    const reflectionsGens = Object.fromEntries(
+      Object.entries(transforms)
+        .filter(([_, transform]) => transform.length === 1)
+        .map(([k, v]) => [v[0], k])
+    )
+    const rotationsGens = Object.entries(transforms)
+      .filter(([_, transform]) => transform.length === 2)
+      .map(([k, v]) => [
+        [v, k],
+        [[...v].reverse(), invertCase(k)],
+      ])
+      .flat()
+
+    for (let i = 0; i < stellationsRels.length; i++) {
+      const stellationRel = stellationsRels[i]
+      let rel = ''
+      let fail = false
+      for (let j = 0; j < stellationRel.length; j++) {
+        const genIndex = stellationRel[j]
+        const gen = reflectionsGens[genIndex]
+        if (gen) {
+          rel += gen
+        } else {
+          const rotation = rotationsGens.find(
+            ([v, k]) =>
+              v[0] === genIndex &&
+              j < stellationRel.length - 1 &&
+              v[1] === stellationRel[j + 1]
+          )
+          if (rotation) {
+            rel += rotation[1]
+            j++
+          } else {
+            fail = true
+            break
+          }
+        }
+      }
+      if (!fail) {
+        rels.push(rel)
+      }
     }
   }
-  console.log(...rels)
 
   return rels
 }
 
+const repeat = (n, arr) => Array(n).fill(arr).flat()
 const addSteallationRelationsForFiveHalf = (
-  rels,
-  transforms,
   coxeter,
   stellation,
   group,
   pairs
 ) => {
+  const rels = []
   // We handle at least:
   // 3 5/2
   // 5 5/2
@@ -213,19 +250,19 @@ const addSteallationRelationsForFiveHalf = (
   const stellations = pairs.filter(([i, j]) => stellation[i][j] > 1)
   // We handle only 5/2s
   if (!stellations.map(([i, j]) => coxeter[i][j] === 5)) {
-    return
+    return rels
   }
   const ms = pairs.map(([i, j]) => coxeter[i][j])
   // We handle only 3s and 5s except on border on dimensions > 3
   if (
     ms.filter(m => m !== 3 && m !== 5).length > (coxeter.length === 3 ? 0 : 1)
   ) {
-    return
+    return rels
   }
   if (ms.filter(m => m !== 3 && m !== 5).length === 1) {
     const nonThreeFive = ms.findIndex(m => m !== 3 && m !== 5)
     if (![0, ms.length - 1].includes(nonThreeFive)) {
-      return
+      return rels
     }
   }
   const mss = [ms, [...ms].reverse()]
@@ -263,7 +300,7 @@ const addSteallationRelationsForFiveHalf = (
       { m: [null, 5, 3, 5], s: [null, 1, 1, 2] },
     ].some(matchCase)
   ) {
-    return
+    return rels
   }
 
   if (matchCase({ m: [5, 5, 5, 3], s: [1, 1, 2, 1] })) {
@@ -273,7 +310,7 @@ const addSteallationRelationsForFiveHalf = (
 
   // We handle at most n - 3 3s
   if (ms.filter(m => m === 3).length > coxeter.length - 3) {
-    return
+    return rels
   }
   const fivesPairs = []
   let pair = []
@@ -289,81 +326,57 @@ const addSteallationRelationsForFiveHalf = (
       }
     }
   }
-  const reflectionsGens = Object.fromEntries(
-    Object.entries(transforms)
-      .filter(([_, transform]) => transform.length === 1)
-      .map(([k, v]) => [v[0], k])
-  )
   for (let i = 0; i < fivesPairs.length; i++) {
     const [a, b] = fivesPairs[i]
-    let rel = ''
+    const rel = []
     for (let j = a; j < b + 2; j++) {
-      rel += reflectionsGens[group[j]]
+      rel.push(group[j])
     }
-    rel += rel
-      .slice(1, rel.length - 1)
-      .split('')
-      .reverse()
-      .join('')
-    rels.push(rel.repeat(3))
+    rel.push(...rel.slice(1, rel.length - 1).reverse())
+    rels.push(repeat(3, rel))
   }
+  return rels
 }
 
 const addSteallationRelationsForStarFiveThrees = (
-  rels,
-  transforms,
   coxeter,
   stellation,
   group,
   pairs
 ) => {
+  const rels = []
   // In dimension 4
   if (coxeter.length !== 4) {
-    return
+    return rels
   }
   const stellations = pairs.filter(([i, j]) => stellation[i][j] > 1)
   // We handle only 5/2s
   if (!stellations.map(([i, j]) => coxeter[i][j] === 5)) {
-    return
+    return rels
   }
   const ms = pairs.map(([i, j]) => coxeter[i][j])
   // We handle only 3s and 5s
   if (ms.find(m => m !== 3 && m !== 5)) {
-    return
+    return rels
   }
   // We handle only one 3
   if (ms.filter(m => m === 3).length !== 1) {
-    return
+    return rels
   }
-  const reflectionsGens = Object.fromEntries(
-    Object.entries(transforms)
-      .filter(([_, transform]) => transform.length === 1)
-      .map(([k, v]) => [v[0], k])
-  )
+
   const three = pairs[ms.findIndex(m => m === 3)]
   const fives = pairs.filter(([i, j]) => coxeter[i][j] === 5)
-
   rels.push(
     // 0131
-    [...fives[0], ...fives[1]]
-      .map(i => reflectionsGens[i])
-      .join('')
-      .repeat(3)
+    repeat(3, [...fives[0], ...fives[1]])
   )
   rels.push(
     // 123
-    (
-      [fives[1][0], ...three]
-        .reverse()
-        .map(i => reflectionsGens[i])
-        .join('')
-        .repeat(3) +
+    repeat(2, [
+      ...repeat(3, [fives[1][0], ...three].reverse()),
       // 10
-      [...fives[0]]
-        .reverse()
-        .map(i => reflectionsGens[i])
-        .join('')
-        .repeat(2)
-    ).repeat(2)
+      ...repeat(2, [...fives[0]].reverse()),
+    ])
   )
+  return rels
 }
