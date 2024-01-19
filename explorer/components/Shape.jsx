@@ -205,7 +205,9 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                             ? formatCount(count)
                             : null}
                         </div>
-                        <div>
+                        <div
+                          className={key.startsWith('s') ? ' shape-snub' : ''}
+                        >
                           {[1, 2].includes(level.dimensions) &&
                           !level.fundamental ? (
                             <button

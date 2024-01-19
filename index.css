@@ -353,6 +353,10 @@ select option {
 .shape-detail-button:not([disabled]):active {
   background-color: rgba(255, 255, 255, 0.15);
 }
+.shape-snub {
+  opacity: 0.66;
+}
+
 .shape .iterate {
   font-size: 1.25em;
 }

@@ -297,7 +297,7 @@ export const getShape = (
   if (shape === root && mirrors.some(m => isSnub(m))) {
     // Snubs generate one more simplex facet
     // Add missing part at the end
-
+    let snubgens = ''
     let snubshape = []
 
     for (let i = 1; i < dimensions; i++) {
@@ -306,9 +306,12 @@ export const getShape = (
         // Extract all edges
         const edges = []
         const visitShape = subshape => {
-          subshape.children.forEach(visitShape)
-          if (subshape.dimensions === 1 && subshape.new) {
-            edges.push(subshape)
+          if (subshape.dimensions === 1) {
+            if (subshape.new) {
+              edges.push(subshape)
+            }
+          } else {
+            subshape.children.forEach(visitShape)
           }
         }
         visitShape(shape)
@@ -333,7 +336,6 @@ export const getShape = (
             missingEdges.splice(missingEdges.indexOf(edge.gens), 1)
           }
         }
-
         const children = snubshape
         snubshape = []
         const snubCoxeter = ident(1).map((row, i) =>
@@ -369,11 +371,13 @@ export const getShape = (
         }
       } else if (i === 2) {
         // We add the missing faces
-        const snubCoxeter = ident(2).map((row, i) =>
-          row.map((_, j) => (i === j ? 1 : i === j + 1 || i === j - 1 ? 3 : 2))
-        )
-        const snubStellation = ident(2).map(row => row.map(() => 1))
-        const snubMirrors = range(2).map(() => 's')
+        const coxeter2 = m =>
+          ident(2).map((row, i) =>
+            row.map((_, j) =>
+              i === j ? 1 : i === j + 1 || i === j - 1 ? m : 2
+            )
+          )
+        const stellation2 = s => ident(2).map(row => row.map(() => s))
 
         const extra = {}
         // Extra faces are transforms that end on same generator
@@ -383,7 +387,19 @@ export const getShape = (
         const conjugations = Object.entries(root.transforms).filter(
           ([edge, transform]) => transform.length === 3
         )
+        let rotationSnubgens = ''
 
+        const visitShape = subshape => {
+          if (subshape.dimensions === 2) {
+            if (subshape.new && subshape.gens.length === 1) {
+              rotationSnubgens += subshape.gens
+            }
+          } else {
+            subshape.children.forEach(visitShape)
+          }
+        }
+        visitShape(shape)
+        snubgens += rotationSnubgens
         // Rotation -> Rotation
         for (let i = 0; i < rotations.length; i++) {
           const [gen1, transform1] = rotations[i]
@@ -393,7 +409,8 @@ export const getShape = (
               transform1[transform1.length - 1] ===
               transform2[transform2.length - 1]
             ) {
-              extra[gen1 + gen2] = ['', gen1, gen2]
+              extra[gen1 + gen2] = { facet: ['', gen1, gen2] }
+              snubgens += gen1 + gen2
             }
           }
         }
@@ -407,7 +424,8 @@ export const getShape = (
             if (transform1[0] === transform2[0]) {
               if (
                 coxeter[transform1[1]][transform2[1]] !== 2 &&
-                coxeter[transform1[1]][transform2[0]] !== 2
+                (coxeter[transform1[1]][transform1[0]] !== 2 ||
+                  coxeter[transform1[0]][transform2[1]] !== 2)
               ) {
                 const m = coxeter[transform1[1]][transform2[1]]
                 const double =
@@ -421,13 +439,12 @@ export const getShape = (
                   }
                   facet.push((gen2 + gen1).repeat(k))
                 }
-                extra[gen1 + gen2] = facet
-              } else if (
-                coxeter[transform1[0]][transform2[1]] !== 2 ||
-                (coxeter[transform1[1]][transform2[0]] !== 2 &&
-                  mirrors[transform1[0]])
-              ) {
-                extra[gen1 + gen2] = ['', gen1, gen1 + gen2, gen2]
+                extra[gen1 + gen2] = {
+                  facet,
+                  snubCoxeter: coxeter2(facet.length),
+                  snubMirrors: ['s', double ? 1 : 0],
+                }
+                snubgens += gen1 + gen2
               }
             }
           }
@@ -435,16 +452,29 @@ export const getShape = (
           // Conjugation -> Rotation
           for (let j = 0; j < rotations.length; j++) {
             const [gen2, transform2] = rotations[j]
-            if (transform2[1] === transform1[2]) {
-              if (coxeter[transform1[2]][transform2[1]] === 2) {
-                if (!mirrors[transform1[1]]) {
-                  extra[gen1 + gen2] = ['', gen1, gen2]
-                }
-              } else if (
+            if (transform1[0] === transform2[1]) {
+              if (
+                coxeter[transform1[1]][transform2[0]] !== 2 ||
                 coxeter[transform1[1]][transform2[1]] !== 2 ||
                 mirrors[transform1[1]]
               ) {
-                extra[gen1 + gen2] = ['', gen1, gen1 + gen2, gen2]
+                if (
+                  mirrors[transform1[1]] ||
+                  (coxeter[transform1[1]][transform2[0]] !== 2 &&
+                    coxeter[transform1[1]][transform2[1]] !== 2)
+                ) {
+                  extra[gen1 + gen2] = {
+                    facet: ['', gen1, gen1 + gen2, gen2],
+                    snubCoxeter: coxeter2(4),
+                  }
+                } else {
+                  if (coxeter[transform1[1]][transform2[0]] !== 2) {
+                    extra[gen1 + gen2] = { facet: ['', gen2, gen1 + gen2] }
+                  } else {
+                    extra[gen1 + gen2] = { facet: ['', gen1, gen2] }
+                  }
+                }
+                snubgens += gen1 + gen2
               }
             }
           }
@@ -457,13 +487,13 @@ export const getShape = (
         }
         const extraFaces = Object.entries(extra)
         for (let j = 0; j < extraFaces.length; j++) {
-          const [gens, facet] = extraFaces[j]
-
+          const [gens, { facet, snubCoxeter, snubStellation, snubMirrors }] =
+            extraFaces[j]
           const subParams = {
             dimensions: 2,
-            coxeter: snubCoxeter,
-            stellation: snubStellation,
-            mirrors: snubMirrors,
+            coxeter: snubCoxeter || coxeter2(3),
+            stellation: snubStellation || stellation2(1),
+            mirrors: snubMirrors || ['s', 's'],
           }
           subParams.gens = gens
 
@@ -482,24 +512,28 @@ export const getShape = (
         }
       } else {
         // We add the missing cells (no idea on facet shape though)
-        const snubCoxeter = ident(dimensions - 1).map((row, i) =>
+        const snubCoxeter = ident(i).map((row, i) =>
           row.map((_, j) => (i === j ? 1 : 2))
         )
-        const snubStellation = ident(dimensions - 1).map(row =>
-          row.map(() => 1)
-        )
-        const snubMirrors = range(dimensions - 1).map(() => 's')
+        const snubStellation = ident(i).map(row => row.map(() => 1))
+        const snubMirrors = range(i).map(() => 's')
         const children = snubshape
         snubshape = []
+        let snubgens_ = snubgens
         const subShape = {
           new: true,
           done: true,
-          dimensions: dimensions - 1,
+          key: `s${i}`,
+          gens: shape.gens
+            .split('')
+            .filter(g => !snubgens_.includes(g))
+            .join(''),
+          dimensions: i,
           coxeter: snubCoxeter,
           stellation: snubStellation,
           mirrors: snubMirrors,
 
-          facet: [''], // ?
+          facet: [], // ?
 
           children,
         }

@@ -24,7 +24,7 @@ export const getPolytope = (
   }
 
   const isInvariant = (g, subshape, root) => {
-    if (subshape.done === false) {
+    if (subshape.done === false || subshape.facet.length === 0) {
       // Infinite face, can't determine, include only generating mirrors
       // Ignore commuting gens
       return subshape.gens.includes(g)
