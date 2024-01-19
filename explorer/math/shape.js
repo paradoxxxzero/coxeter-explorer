@@ -223,7 +223,7 @@ export const getShape = (
       isFacet(subshape.facet, subshape.dimensions, root.transforms) ||
       hosotopeFacet
     ) {
-      if (subshape.dimensions === 2) {
+      if (isnew && subshape.dimensions === 2) {
         const unorderedFacet = [...subshape.facet]
         const double = subshape.gens
           .split('')
