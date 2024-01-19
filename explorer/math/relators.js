@@ -159,7 +159,7 @@ export const getRelators = (transforms, coxeter, stellation) => {
     const groupType = getGroupType(coxeter)
     if (groupType.type === 'c') {
       // C-string groups with stellation i.e. 5/2 3 3 5
-      addSteallationRelationsForFiveThrees(
+      addSteallationRelationsForFiveHalf(
         rels,
         transforms,
         coxeter,
@@ -179,11 +179,12 @@ export const getRelators = (transforms, coxeter, stellation) => {
       )
     }
   }
+  console.log(...rels)
 
   return rels
 }
 
-const addSteallationRelationsForFiveThrees = (
+const addSteallationRelationsForFiveHalf = (
   rels,
   transforms,
   coxeter,
@@ -191,16 +192,85 @@ const addSteallationRelationsForFiveThrees = (
   group,
   pairs
 ) => {
+  // We handle at least:
+  // 3 5/2
+  // 5 5/2
+  // 3 5 5/2
+  // 5 5/2 5
+  // 5/2 5 5/2
+  // 5 3 5/2
+  // x 5 5/2
+  // 5/2 3 3 5
+  // 5/2 3 5 5/2
+  // 5/2 5 5/2 5
+  // 3 5/2 5 3
+  // x 3 5 5/2
+  // x 5 5/2 5
+  // x 5 3 5/2
+  // 3 5 3 5/2
+  // 5 5 5/2 3
+
   const stellations = pairs.filter(([i, j]) => stellation[i][j] > 1)
   // We handle only 5/2s
   if (!stellations.map(([i, j]) => coxeter[i][j] === 5)) {
     return
   }
   const ms = pairs.map(([i, j]) => coxeter[i][j])
-  // We handle only 3s and 5s
-  if (ms.find(m => m !== 3 && m !== 5)) {
+  // We handle only 3s and 5s except on border on dimensions > 3
+  if (
+    ms.filter(m => m !== 3 && m !== 5).length > (coxeter.length === 3 ? 0 : 1)
+  ) {
     return
   }
+  if (ms.filter(m => m !== 3 && m !== 5).length === 1) {
+    const nonThreeFive = ms.findIndex(m => m !== 3 && m !== 5)
+    if (![0, ms.length - 1].includes(nonThreeFive)) {
+      return
+    }
+  }
+  const mss = [ms, [...ms].reverse()]
+  const sm = pairs.map(([i, j]) => stellation[i][j])
+  const sms = [sm, [...sm].reverse()]
+
+  const matchCase = ({ m, s }) => {
+    if (m.length !== coxeter.length - 1) {
+      return false
+    }
+    for (let k = 0; k < mss.length; k++) {
+      const mm = mss[k]
+      const ss = sms[k]
+      if (
+        mm.every((mmi, i) => mmi === m[i] || m[i] === null) &&
+        ss.every((ssi, i) => ssi === s[i] || s[i] === null)
+      ) {
+        return true
+      }
+    }
+  }
+
+  // Handle some hyperbolic cases
+  // x 5 5/2
+  if (matchCase({ m: [null, 5, 5], s: [null, 1, 2] })) {
+    // Disable relation on null
+    ms[sm[0] === 2 ? ms.length - 1 : 0] = 0
+  }
+
+  // Cases without extra relations
+  if (
+    [
+      { m: [null, 3, 5, 5], s: [null, 1, 1, 2] },
+      { m: [null, 5, 5, 5], s: [null, 1, 2, 1] },
+      { m: [null, 5, 3, 5], s: [null, 1, 1, 2] },
+    ].some(matchCase)
+  ) {
+    return
+  }
+
+  if (matchCase({ m: [5, 5, 5, 3], s: [1, 1, 2, 1] })) {
+    // Disable relation on first five
+    ms[sm[1] === 2 ? ms.length - 1 : 0] = 0
+  }
+
   // We handle at most n - 3 3s
   if (ms.filter(m => m === 3).length > coxeter.length - 3) {
     return
