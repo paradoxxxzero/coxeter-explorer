@@ -155,23 +155,17 @@ const words = function (params) {
   }
 }
 
-export const wordToCoset = (params, word, raise = false) => {
+export const wordToCoset = (params, word) => {
   // Start at 1
   let cosetId = quotient(params, 1)
   for (let i = word.length - 1; i >= 0; i--) {
     const coset = params.cosets.get(cosetId)
     if (coset.size < params.gens.length * 2) {
-      if (raise) {
-        throw new Error('Unfinished')
-      }
       return
     }
     cosetId = quotient(params, coset.get(word[i]))
     const nextCoset = params.cosets.get(cosetId)
     if (nextCoset.size < params.gens.length * 2) {
-      if (raise) {
-        throw new Error('Unfinished')
-      }
       return
     }
   }

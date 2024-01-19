@@ -384,13 +384,14 @@ export const getShape = (
           ([edge, transform]) => transform.length === 3
         )
 
+        // Rotation -> Rotation
         for (let i = 0; i < rotations.length; i++) {
-          const [gen1, transforms1] = rotations[i]
+          const [gen1, transform1] = rotations[i]
           for (let j = i + 1; j < rotations.length; j++) {
-            const [gen2, transforms2] = rotations[j]
+            const [gen2, transform2] = rotations[j]
             if (
-              transforms1[transforms1.length - 1] ===
-              transforms2[transforms2.length - 1]
+              transform1[transform1.length - 1] ===
+              transform2[transform2.length - 1]
             ) {
               extra[gen1 + gen2] = ['', gen1, gen2]
             }
@@ -400,10 +401,14 @@ export const getShape = (
         for (let i = 0; i < conjugations.length; i++) {
           const [gen1, transform1] = conjugations[i]
 
+          // Conjugation -> Conjugation
           for (let j = i + 1; j < conjugations.length; j++) {
             const [gen2, transform2] = conjugations[j]
             if (transform1[0] === transform2[0]) {
-              if (coxeter[transform1[1]][transform2[1]] !== 2) {
+              if (
+                coxeter[transform1[1]][transform2[1]] !== 2 &&
+                coxeter[transform1[1]][transform2[0]] !== 2
+              ) {
                 const m = coxeter[transform1[1]][transform2[1]]
                 const double =
                   mirrors[transform2[1]] ||
@@ -416,25 +421,29 @@ export const getShape = (
                   }
                   facet.push((gen2 + gen1).repeat(k))
                 }
-
                 extra[gen1 + gen2] = facet
               } else if (
                 coxeter[transform1[0]][transform2[1]] !== 2 ||
-                mirrors[transform1[0]]
+                (coxeter[transform1[1]][transform2[0]] !== 2 &&
+                  mirrors[transform1[0]])
               ) {
                 extra[gen1 + gen2] = ['', gen1, gen1 + gen2, gen2]
               }
             }
           }
 
+          // Conjugation -> Rotation
           for (let j = 0; j < rotations.length; j++) {
-            const [gen2, transforms2] = rotations[j]
-            if (transforms2[1] === transform1[2]) {
-              if (coxeter[transform1[2]][transforms2[1]] === 2) {
+            const [gen2, transform2] = rotations[j]
+            if (transform2[1] === transform1[2]) {
+              if (coxeter[transform1[2]][transform2[1]] === 2) {
                 if (!mirrors[transform1[1]]) {
                   extra[gen1 + gen2] = ['', gen1, gen2]
                 }
-              } else {
+              } else if (
+                coxeter[transform1[1]][transform2[1]] !== 2 ||
+                mirrors[transform1[1]]
+              ) {
                 extra[gen1 + gen2] = ['', gen1, gen1 + gen2, gen2]
               }
             }

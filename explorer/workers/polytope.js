@@ -29,12 +29,24 @@ export const getPolytope = (
       // Ignore commuting gens
       return subshape.gens.includes(g)
     }
-    const facetCosets = subshape.facet
-      .map(facet => wordToCoset(root, facet, true))
-      .sort()
-    const facetCosetsAfterG = subshape.facet
-      .map(facet => wordToCoset(root, g + facet, true))
-      .sort()
+    const facetCosets = []
+    const facetCosetsAfterG = []
+    for (const facet of subshape.facet) {
+      const coset = wordToCoset(root, facet)
+      if (!coset) {
+        // Unfinished
+        return null
+      }
+      const cosetsAfterG = wordToCoset(root, g + facet)
+      if (!cosetsAfterG) {
+        // Unfinished
+        return null
+      }
+      facetCosets.push(coset)
+      facetCosetsAfterG.push(cosetsAfterG)
+    }
+    facetCosets.sort((a, b) => a - b)
+    facetCosetsAfterG.sort((a, b) => a - b)
     return facetCosets.every((coset, i) => coset === facetCosetsAfterG[i])
   }
 
@@ -64,18 +76,23 @@ export const getPolytope = (
       const eigenvalues = space.eigens.values
 
       if (!cache.has(key)) {
-        let subgens
-        try {
-          subgens =
-            subshape.dimensions === 0
-              ? shape.subgens
-              : shape.gens
-                  .split('')
-                  .filter(g => isInvariant(g, subshape, polytope.root))
-                  .join('')
-        } catch (e) {
-          // Root iteration not enough processed, do nothing for now
-          return
+        let subgens = ''
+        if (subshape.dimensions === 0) {
+          subgens = shape.subgens
+        } else {
+          for (let i = 0; i < shape.gens.length; i++) {
+            const invariant = isInvariant(
+              shape.gens[i],
+              subshape,
+              polytope.root
+            )
+            if (invariant === null) {
+              // Root iteration not enough processed, do nothing for now
+              return
+            } else if (invariant) {
+              subgens += shape.gens[i]
+            }
+          }
         }
 
         // Handle hosotope edges
