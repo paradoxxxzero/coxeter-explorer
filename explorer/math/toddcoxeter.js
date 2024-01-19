@@ -113,6 +113,12 @@ const words = function (params) {
     const coset = params.cosets.get(cosetId)
     const word = params.words.get(cosetId)
 
+    if (typeof word === 'undefined') {
+      // Retry at the end
+      params.remaining.push(params.remaining.shift())
+      continue
+    }
+
     if (coset.size < params.gens.length * 2) {
       // Might be a coincidence stop here
       return

@@ -529,6 +529,7 @@ export const rotate = (offset, [i, j], dimensions, metric, zoom) => {
   const sint = sinx(offset) // ~offset
   const cost = sqrt(1 - c * sint * sint)
   if (isNaN(cost) || isNaN(sint)) {
+    debugger
     console.warn('???')
     return matrix
   }
@@ -1073,4 +1074,97 @@ const analyticGeometry = (space, centered) => {
       return normals
     }
   }
+}
+
+export const getCGroup = coxeter => {
+  // C-Groups are all diagrams that are linear (no loops) and have every mirrors attached
+  const pairs = []
+  for (let i = 0; i < coxeter.length; i++) {
+    for (let j = i + 1; j < coxeter.length; j++) {
+      if (coxeter[i][j] !== 2) {
+        pairs.push([i, j])
+      }
+    }
+  }
+  // C-Groups have fixed length
+  if (pairs.length !== coxeter.length - 1) {
+    return
+  }
+  const counts = new Array(coxeter.length).fill(0)
+  pairs.forEach(([i, j]) => {
+    counts[i]++
+    counts[j]++
+  })
+  // C-Groups are linear
+  if (counts.some(c => c > 3)) {
+    return
+  }
+  // C-Groups have a start and an end
+  if (counts.filter(c => c === 1).length !== 2) {
+    return
+  }
+  const start = counts.indexOf(1)
+  const cgroup = [start]
+  const cpairs = []
+  for (let i = 0; i < coxeter.length - 1; i++) {
+    const last = cgroup[cgroup.length - 1]
+    const pairIndex = pairs.findIndex(pair => pair.includes(last))
+    let pair = pairs[pairIndex]
+    pairs.splice(pairIndex, 1)
+    if (pair[0] === last) {
+      pair.reverse()
+    }
+    cgroup.push(pair[0])
+    cpairs.push(pair.reverse())
+  }
+  return {
+    group: cgroup,
+    pairs: cpairs,
+  }
+}
+
+export const getStarGroup = coxeter => {
+  // We consider here a star group as a diagram where all mirrors are attached to a single node
+  const counts = new Array(coxeter.length).fill(0)
+  for (let i = 0; i < coxeter.length; i++) {
+    for (let j = i + 1; j < coxeter.length; j++) {
+      if (coxeter[i][j] !== 2) {
+        counts[i]++
+        counts[j]++
+      }
+    }
+  }
+  // Star groups have a single node with all mirrors attached
+  if (counts.filter(c => c === 3).length !== 1) {
+    return
+  }
+  if (counts.filter(c => c === 1).length !== coxeter.length - 1) {
+    return
+  }
+  const starIndex = counts.indexOf(3)
+  const pairs = counts.map((c, i) => [i, starIndex]).filter(([i, j]) => i !== j)
+  return {
+    group: [starIndex],
+    pairs,
+  }
+}
+
+export const getGroupType = coxeter => {
+  const cgroup = getCGroup(coxeter)
+  if (cgroup) {
+    return {
+      type: 'c',
+      description: 'C-Group',
+      ...cgroup,
+    }
+  }
+  const star = getStarGroup(coxeter)
+  if (star) {
+    return {
+      type: 'star',
+      description: 'Star Group',
+      ...star,
+    }
+  }
+  return { type: 'other', description: 'Other Group' }
 }

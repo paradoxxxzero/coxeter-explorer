@@ -1,6 +1,10 @@
 import { invertCase, itoa } from '.'
 import { isSnub } from '../mirrors'
-import { getStellationOppositeAngle } from './hypermath'
+import {
+  getCGroup,
+  getGroupType,
+  getStellationOppositeAngle,
+} from './hypermath'
 
 const findPaths = (rotations, word = '', chain = []) => {
   const paths = []
@@ -144,271 +148,152 @@ export const getRelators = (transforms, coxeter, stellation) => {
   }
 
   // Finally add extra relations generated from stellations
-  if (!stellation.every(row => row.every(x => x === 1))) {
-    // TODO: REWRITE!
-    // TODO: Handle fakestellation for imaginary coxeter
-    if (
-      coxeter.length === 4 &&
-      stellation[0][1] > 1 !== stellation[2][3] > 1 &&
-      coxeter[0][1] > 3 &&
-      coxeter[2][3] > 3
-    ) {
-      /// ?????????
-      if (stellation[0][1] > 1) {
-        rels.push(
-          'abcdcb'.repeat(
-            getStellationOppositeAngle(
-              coxeter[0][1],
-              coxeter[1][2],
-              coxeter[0][2],
-              stellation[0][1]
-            )
-          )
-        )
-      }
-      if (stellation[2][3] > 1) {
-        rels.push(
-          'abcdcb'.repeat(
-            getStellationOppositeAngle(
-              coxeter[2][3],
-              coxeter[1][2],
-              coxeter[1][3],
-              stellation[2][3]
-            )
-          )
-        )
-      }
-    } else {
-      for (let i = 1; i < coxeter.length; i++) {
-        for (let j = 0; j < i; j++) {
-          if (stellation[j][i] > 1) {
-            if (j + 2 < coxeter.length) {
-              const angle = getStellationOppositeAngle(
-                coxeter[j + 1][i + 1],
-                coxeter[j][i],
-                coxeter[j][i + 1],
-                stellation[j][i]
-              )
-              if (angle) {
-                rels.push(
-                  (itoa(j) + itoa(i) + itoa(j + 2) + itoa(i)).repeat(angle)
-                )
-              }
-            }
-            if (j - 1 >= 0) {
-              const angle = getStellationOppositeAngle(
-                coxeter[j - 1][i - 1],
-                coxeter[j][i],
-                coxeter[j - 1][i],
-                stellation[j][i]
-              )
-              if (angle) {
-                rels.push(
-                  (itoa(j) + itoa(i) + itoa(j) + itoa(j - 1)).repeat(angle)
-                )
-              }
-            }
-          }
-        }
-      }
+  // https://www.cambridge.org/core/services/aop-cambridge-core/content/view/\
+  // 54D0A3028E232240C35FE036D5C32BA7/S0008414X00019386a.pdf
+
+  if (
+    coxeter.length > 2 &&
+    coxeter.length < 6 &&
+    stellation.some((row, i) => row.some((s, j) => s > 1 && coxeter[i][j] > 1))
+  ) {
+    const groupType = getGroupType(coxeter)
+    if (groupType.type === 'c') {
+      // C-string groups with stellation i.e. 5/2 3 3 5
+      addSteallationRelationsForFiveThrees(
+        rels,
+        transforms,
+        coxeter,
+        stellation,
+        groupType.group,
+        groupType.pairs
+      )
+    }
+    if (groupType.type === 'star') {
+      addSteallationRelationsForStarFiveThrees(
+        rels,
+        transforms,
+        coxeter,
+        stellation,
+        groupType.group,
+        groupType.pairs
+      )
     }
   }
+
   return rels
 }
 
-export const getGroupParams = (
-  dimensions,
+const addSteallationRelationsForFiveThrees = (
+  rels,
+  transforms,
   coxeter,
   stellation,
-  mirrors,
-  space,
-  skips = []
+  group,
+  pairs
 ) => {
-  let gens = ''
-
-  const subgens = mirrors
-    .map((m, i) => (skips.includes(i) || m ? '' : itoa(i)))
-    .join('')
-
-  const transforms = {}
-
-  const rels = []
-
-  for (let i = 0; i < dimensions; i++) {
-    if (skips.includes(i)) {
-      continue
-    }
-
-    if (!isSnub(mirrors[i])) {
-      const c = itoa(i)
-      gens += c
-      // Case of not snub => Normal reflection
-      transforms[c] = [i]
-      rels.push(c.repeat(2))
-    }
-
-    for (let j = i + 1; j < dimensions; j++) {
-      if (skips.includes(j)) {
-        continue
-      }
-      const m = coxeter[i][j]
-
-      if (isSnub(mirrors[i]) && isSnub(mirrors[j])) {
-        // Case of snub + snub => rotation
-        const c = itoa((i + 1) * dimensions + j)
-        gens += c
-        transforms[c] = [i, j]
-        if (m > 1) {
-          rels.push(c.repeat(m))
-        }
-      } else if (isSnub(mirrors[i]) && !isSnub(mirrors[j])) {
-        // Case of snub + not snub => conjugate reflection
-        const c = itoa((i + 1) * dimensions + j)
-        gens += c
-        transforms[c] = [i, j, i]
-        rels.push(c.repeat(2))
-        if (m > 1) {
-          rels.push((c + itoa(j)).repeat(m % 2 === 0 ? m / 2 : m))
-        }
-      } else if (!isSnub(mirrors[i]) && isSnub(mirrors[j])) {
-        // Case of snub + not snub => conjugate reflection
-        const c = itoa((i + 1) * dimensions + j)
-        gens += c
-        transforms[c] = [j, i, j]
-        rels.push(c.repeat(2))
-        if (m > 1) {
-          rels.push((c + itoa(i)).repeat(m % 2 === 0 ? m / 2 : m))
-        }
-      } else if (m > 1) {
-        // Case of not snub + not snub
-        rels.push((itoa(i) + itoa(j)).repeat(m))
+  const stellations = pairs.filter(([i, j]) => stellation[i][j] > 1)
+  // We handle only 5/2s
+  if (!stellations.map(([i, j]) => coxeter[i][j] === 5)) {
+    return
+  }
+  const ms = pairs.map(([i, j]) => coxeter[i][j])
+  // We handle only 3s and 5s
+  if (ms.find(m => m !== 3 && m !== 5)) {
+    return
+  }
+  // We handle at most n - 3 3s
+  if (ms.filter(m => m === 3).length > coxeter.length - 3) {
+    return
+  }
+  const fivesPairs = []
+  let pair = []
+  for (let i = 0; i < ms.length; i++) {
+    const m = ms[i]
+    if (m === 5) {
+      if (!pair.length) {
+        pair.push(i)
+      } else {
+        pair.push(i)
+        fivesPairs.push(pair)
+        pair = [i]
       }
     }
   }
-  const conjugations = Object.entries(transforms).filter(
-    ([k, v]) => v.length === 3
+  const reflectionsGens = Object.fromEntries(
+    Object.entries(transforms)
+      .filter(([_, transform]) => transform.length === 1)
+      .map(([k, v]) => [v[0], k])
   )
-  const rotations = Object.entries(transforms).filter(
-    ([k, v]) => v.length === 2
+  for (let i = 0; i < fivesPairs.length; i++) {
+    const [a, b] = fivesPairs[i]
+    let rel = ''
+    for (let j = a; j < b + 2; j++) {
+      rel += reflectionsGens[group[j]]
+    }
+    rel += rel
+      .slice(1, rel.length - 1)
+      .split('')
+      .reverse()
+      .join('')
+    rels.push(rel.repeat(3))
+  }
+}
+
+const addSteallationRelationsForStarFiveThrees = (
+  rels,
+  transforms,
+  coxeter,
+  stellation,
+  group,
+  pairs
+) => {
+  // In dimension 4
+  if (coxeter.length !== 4) {
+    return
+  }
+  const stellations = pairs.filter(([i, j]) => stellation[i][j] > 1)
+  // We handle only 5/2s
+  if (!stellations.map(([i, j]) => coxeter[i][j] === 5)) {
+    return
+  }
+  const ms = pairs.map(([i, j]) => coxeter[i][j])
+  // We handle only 3s and 5s
+  if (ms.find(m => m !== 3 && m !== 5)) {
+    return
+  }
+  // We handle only one 3
+  if (ms.filter(m => m === 3).length !== 1) {
+    return
+  }
+  const reflectionsGens = Object.fromEntries(
+    Object.entries(transforms)
+      .filter(([_, transform]) => transform.length === 1)
+      .map(([k, v]) => [v[0], k])
   )
-  if (rotations.length > 1) {
-    // Find closed path in rotations
-    const paths = findPaths(rotations)
-    // Paths should be reversed for some reason
-    rels.push(...paths.map(p => p.split('').reverse().join('')))
-  }
-  if (conjugations.length > 1) {
-    // Find relationsn between conjugate reflections
-    for (let i = 0; i < conjugations.length; i++) {
-      const [gen1, conjugate1] = conjugations[i]
-      for (let j = i + 1; j < conjugations.length; j++) {
-        const [gen2, conjugate2] = conjugations[j]
-        if (conjugate1[1] === conjugate2[1]) {
-          const conjugatesRotation = rotations.find(
-            ([_, rotation]) =>
-              rotation[0] === conjugate1[0] && rotation[1] === conjugate2[0]
-          )
-          if (conjugatesRotation) {
-            const genRotation = conjugatesRotation[0]
-            rels.push(
-              gen1.toUpperCase() +
-                genRotation.toUpperCase() +
-                gen2 +
-                genRotation
-            )
-          }
-        } else if (conjugate1[0] === conjugate2[0]) {
-          const m = coxeter[conjugate1[1]][conjugate2[1]]
-          if (m > 1) {
-            rels.push((gen1 + gen2).repeat(m))
-          }
-        }
-      }
-    }
-  }
-  if (
-    !mirrors.some(m => isSnub(m)) &&
-    !stellation.every(row => row.every(x => x === 1)) &&
-    space.curvature > 0
-  ) {
-    // TODO: Improve generalization
-    if (
-      dimensions === 4 &&
-      stellation[0][1] > 1 !== stellation[2][3] > 1 &&
-      coxeter[0][1] > 3 &&
-      coxeter[2][3] > 3
-    ) {
-      /// ?????????
-      if (![0, 1, 2, 3].some(i => skips.includes(i))) {
-        if (stellation[0][1] > 1) {
-          rels.push(
-            'abcdcb'.repeat(
-              getStellationOppositeAngle(
-                coxeter[0][1],
-                coxeter[1][2],
-                coxeter[0][2],
-                stellation[0][1]
-              )
-            )
-          )
-        }
-        if (stellation[2][3] > 1) {
-          rels.push(
-            'abcdcb'.repeat(
-              getStellationOppositeAngle(
-                coxeter[2][3],
-                coxeter[1][2],
-                coxeter[1][3],
-                stellation[2][3]
-              )
-            )
-          )
-        }
-      }
-    } else {
-      for (let i = 1; i < dimensions; i++) {
-        for (let j = 0; j < i; j++) {
-          if (stellation[j][i] > 1) {
-            if (j + 2 < dimensions) {
-              const angle = getStellationOppositeAngle(
-                coxeter[j + 1][i + 1],
-                coxeter[j][i],
-                coxeter[j][i + 1],
-                stellation[j][i]
-              )
-              if (
-                angle &&
-                !skips.includes(j) &&
-                !skips.includes(i) &&
-                !skips.includes(j + 2)
-              ) {
-                rels.push(
-                  (itoa(j) + itoa(i) + itoa(j + 2) + itoa(i)).repeat(angle)
-                )
-              }
-            }
-            if (j - 1 >= 0) {
-              const angle = getStellationOppositeAngle(
-                coxeter[j - 1][i - 1],
-                coxeter[j][i],
-                coxeter[j - 1][i],
-                stellation[j][i]
-              )
-              if (
-                angle &&
-                !skips.includes(j) &&
-                !skips.includes(i) &&
-                !skips.includes(j - 1)
-              ) {
-                rels.push(
-                  (itoa(j) + itoa(i) + itoa(j) + itoa(j - 1)).repeat(angle)
-                )
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  return { gens, subgens, rels, transforms }
+  const three = pairs[ms.findIndex(m => m === 3)]
+  const fives = pairs.filter(([i, j]) => coxeter[i][j] === 5)
+
+  rels.push(
+    // 0131
+    [...fives[0], ...fives[1]]
+      .map(i => reflectionsGens[i])
+      .join('')
+      .repeat(3)
+  )
+  rels.push(
+    // 123
+    (
+      [fives[1][0], ...three]
+        .reverse()
+        .map(i => reflectionsGens[i])
+        .join('')
+        .repeat(3) +
+      // 10
+      [...fives[0]]
+        .reverse()
+        .map(i => reflectionsGens[i])
+        .join('')
+        .repeat(2)
+    ).repeat(2)
+  )
 }
