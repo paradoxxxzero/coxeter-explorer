@@ -25,6 +25,7 @@ onmessage = ({
     if (first) {
       cache = new Map()
       shape = getShape(dimensions, coxeter, stellation, mirrors, space)
+      self.shape = shape
     }
     const fundamental = mirrors.every(m => !m)
     const dual = mirrors.some(m => isDual(m))
@@ -99,7 +100,7 @@ onmessage = ({
       polytope[2] = {
         dimensions: 2,
         processing: 1,
-        count: 1,
+        count: 0,
         detail: [
           {
             key: 'f',
@@ -108,7 +109,7 @@ onmessage = ({
             mirrors: shape.mirrors,
             dual,
 
-            count: 1,
+            count: 0,
             done: true,
           },
         ],
@@ -120,7 +121,7 @@ onmessage = ({
             mirrors: shape.mirrors,
             dual,
 
-            count: 1,
+            count: 0,
             done: true,
           },
         ],

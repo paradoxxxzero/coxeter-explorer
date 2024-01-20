@@ -336,6 +336,11 @@ select option {
   margin: 0 0.5em;
   justify-content: center;
 } */
+.shape-view-diagram {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+}
 .shape-detail-button {
   background: none;
   border: none;

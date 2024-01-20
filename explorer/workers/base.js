@@ -1,8 +1,7 @@
 import { abs } from '../math'
 import { normalize, reflect } from '../math/hypermath'
-import { addV, mulV, transpose } from '../math/matrix'
+import { addV, cross, mulV, transpose } from '../math/matrix'
 import { wordToCoset } from '../math/toddcoxeter'
-import { isSnub } from '../mirrors'
 
 export const getBaseObjects = (rank, cached, shape, polytope) => {
   const objects = []
@@ -23,6 +22,16 @@ export const getBaseObjects = (rank, cached, shape, polytope) => {
         if (vertexId && polytope.root.vertices.has(vertexId)) {
           vertex.vertices.push(polytope.root.vertices.get(vertexId))
         }
+      }
+      if (polytope.root.hosotope && polytope.root.vertices.size === 1) {
+        // Monogon
+        vertex.vertices.push(
+          reflect(
+            vertex.vertices[0],
+            polytope.root.rootNormals[polytope.root.hosotope.index - 1],
+            polytope.root.metric
+          )
+        )
       }
       if (vertex.vertices.length < rank + 1) {
         continue
@@ -57,6 +66,18 @@ export const getBaseObjects = (rank, cached, shape, polytope) => {
           ...vertex,
           vertices: [hosotopeVertex, vertex.vertices[1]],
         })
+        // Monogon
+        if (polytope.root.vertices.size === 1) {
+          const oppositeHosotopeVertex = hosotopeVertex.map(x => -x)
+          objects.push({
+            ...vertex,
+            vertices: [vertex.vertices[0], oppositeHosotopeVertex],
+          })
+          objects.push({
+            ...vertex,
+            vertices: [oppositeHosotopeVertex, vertex.vertices[1]],
+          })
+        }
       } else {
         objects.push(vertex)
       }
@@ -75,6 +96,10 @@ export const getBaseObjects = (rank, cached, shape, polytope) => {
         }
       }
       if (polytope.root.hosotope) {
+        // Monogon
+        if (polytope.root.vertices.size === 1) {
+          faceVertices.push(faceVertices[0].map(x => -x))
+        }
         let hosotopePair
         if (!polytope.root.hosotopePair) {
           const hosotopeVertex = normalize(
@@ -108,6 +133,10 @@ export const getBaseObjects = (rank, cached, shape, polytope) => {
         }
         faceVertices.splice(1, 0, hosotopePair[0])
         faceVertices.push(hosotopePair[1])
+        // Monogon
+        if (polytope.root.vertices.size === 1) {
+          faceVertices[3] = faceVertices[1].map(x => -x)
+        }
       }
       if (faceVertices.length < rank + 1) {
         continue
@@ -153,19 +182,17 @@ export const getBaseObjects = (rank, cached, shape, polytope) => {
       centroid = mulV(centroid, 1 / faceVertices.length)
       const centroids = []
       if (centroid.every(a => abs(a) < 1e-12)) {
-        const zeroes = faceVertices[0]
-          .map((a, i) => (a === 0 ? i : null))
-          .filter(a => a !== null)
-        if (!zeroes.length) {
+        const normal3 = cross(faceVertices[0], faceVertices[1])
+        const base = new Array(shape.dimensions).fill(0)
+        normal3.map((a, i) => (base[i] = a))
+        centroids.push(base)
+        centroids.push(base.map(a => -a))
+        for (let j = 3; j < shape.dimensions; j++) {
+          const centroid = [...base]
+          centroid[2] = 0
+          centroid[j] = base[2]
           centroids.push(centroid)
-        } else {
-          for (let i = 0; i < zeroes.length; i++) {
-            const zero = zeroes[i]
-            for (let p = -1; p < 2; p += 2) {
-              const point = centroid.map((a, j) => (j === zero ? p : a))
-              centroids.push(point)
-            }
-          }
+          centroids.push(centroid.map(a => -a))
         }
       } else {
         centroids.push(centroid)

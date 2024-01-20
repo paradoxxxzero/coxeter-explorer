@@ -142,6 +142,7 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
         {[...runtime.polytope]
           .reverse()
           .filter(level => level)
+          .filter(level => level.count > 0)
           .map(level => (
             <Fragment key={`shape-${level.dimensions}`}>
               <div
@@ -206,7 +207,9 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                             : null}
                         </div>
                         <div
-                          className={key.startsWith('s') ? ' shape-snub' : ''}
+                          className={`shape-view-diagram ${
+                            key.startsWith('s') ? ' shape-snub' : ''
+                          }`}
                         >
                           {[1, 2].includes(level.dimensions) &&
                           !level.fundamental ? (
@@ -226,7 +229,6 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                           {coxeter ? (
                             <button
                               className="shape-detail-button"
-                              disabled={coxeter.length < 2}
                               onClick={() =>
                                 updateParams({
                                   coxeter,

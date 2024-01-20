@@ -204,12 +204,36 @@ export const getShape = (
       }
       ToddCoxeter(subshape)
       subshape.facet = Array.from(subshape.words.values())
+
+      if (subshape.dimensions === 1) {
+        // Digon
+        subshape.coxeter = [
+          [1, 2],
+          [2, 1],
+        ]
+        subshape.stellation = [
+          [1, 1],
+          [1, 1],
+        ]
+        subshape.mirrors = [1, 0]
+      }
+      if (subshape.dimensions === 0) {
+        // Monogon (henegon)
+        subshape.coxeter = [
+          [1, 2],
+          [2, 1],
+        ]
+        subshape.stellation = [
+          [1, 1],
+          [1, 1],
+        ]
+        subshape.mirrors = ['s', 0]
+      }
       root.solved.set(key, subshape)
     }
 
     const subshape = root.solved.get(key)
 
-    // TODO: Replace in term of gens
     const hosotopeFacet =
       root.hosotope &&
       subshape.removed.length &&
@@ -483,7 +507,7 @@ export const getShape = (
         snubshape = []
 
         if (!Object.keys(extra).length) {
-          extra[''] = ['']
+          extra[''] = { facet: [''] }
         }
         const extraFaces = Object.entries(extra)
         for (let j = 0; j < extraFaces.length; j++) {
