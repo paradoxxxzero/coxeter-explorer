@@ -459,6 +459,27 @@ select option {
 .number-control {
   position: relative;
 }
+
+.parameters [data-autosize] {
+  display: inline-grid;
+  vertical-align: top;
+  align-items: center;
+  position: relative;
+}
+
+.parameters [data-autosize]::after {
+  content: attr(data-autosize) ' ';
+  visibility: hidden;
+  white-space: pre-wrap;
+}
+
+.parameters [data-autosize]::after,
+.parameters [data-autosize] input {
+  width: auto;
+  min-width: 1em;
+  grid-area: 1 / 2;
+}
+
 .rels input {
   color: white;
   border: none;

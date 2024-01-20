@@ -466,12 +466,20 @@ export default function UI({
           {['advanced', 'full'].includes(showUI) && (
             <aside className="parameters">
               {showUI === 'full' && (
-                <label className="rels number-label">
-                  {runtime.polytope?.root
-                    ? `{${runtime.polytope.root.gens}} / {${runtime.polytope.root.subgens}} |`
-                    : ''}
+                <label className="rels" data-autosize={params.extrarels}>
+                  <span>
+                    {runtime.polytope?.root
+                      ? `{${runtime.polytope.root.gens
+                          .split('')
+                          .join(', ')}} / {${runtime.polytope.root.subgens
+                          .split('')
+                          .join(', ')}} | `
+                      : '{} | '}
+                  </span>
                   <input
                     name="extrarels"
+                    size={4}
+                    title={runtime.polytope?.root?.rels.join(',')}
                     placeholder={runtime.polytope?.root?.rels.join(',')}
                     value={params.extrarels}
                     onChange={handleRawChange}
