@@ -106,16 +106,22 @@ const words = function (params) {
       params.vertices.set(start, params.rootVertex)
     }
   }
-
+  const retriedWords = new Set()
   while (params.remaining.length > 0) {
     const rawCosetId = params.remaining[0]
     const cosetId = quotient(params, rawCosetId)
     const coset = params.cosets.get(cosetId)
     const word = params.words.get(cosetId)
 
-    if (typeof word === 'undefined') {
+    if (word === undefined) {
       // Retry at the end
+      if (retriedWords.has(rawCosetId)) {
+        // We never found it
+        console.warn('Failed to find word for coset', rawCosetId)
+        return
+      }
       params.remaining.push(params.remaining.shift())
+      retriedWords.add(rawCosetId)
       continue
     }
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { details, projections } from '../../statics.js'
-import { range } from '../../utils.js'
+import { debounce, range } from '../../utils.js'
 import { ambiances } from '../ambiances.js'
 import { defaultParams } from '../default.js'
 import {
@@ -26,6 +26,7 @@ import Presets from './Presets'
 import Rotation from './Rotation.jsx'
 import Shape from './Shape.jsx'
 import Space from './Space'
+import { expand, factor } from '../math/relators.js'
 
 const getShowUI = () => {
   try {
@@ -152,6 +153,31 @@ export default function UI({
       updateRotations('auto', rotations.auto === 'free' ? 'damp' : 'free')
     },
     [rotations.auto, updateRotations]
+  )
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const updateCleanRels = useCallback(
+    debounce(value => {
+      updateParams({
+        extrarels: value
+          .split(',')
+          .map(r => factor(expand(r)))
+          .join(', '),
+      })
+    }, 2000),
+    [updateParams]
+  )
+  const handleExtraRelsChange = useCallback(
+    e => {
+      const { value } = e.target
+      updateParams({ extrarels: value })
+      updateCleanRels(value)
+    },
+    [updateParams, updateCleanRels]
+  )
+
+  const cleanRels = useMemo(
+    () => runtime.polytope?.root?.rels.map(r => factor(r)).join(', '),
+    [runtime.polytope?.root?.rels.join(',')]
   )
 
   const exportImage = useCallback(async () => {
@@ -465,24 +491,22 @@ export default function UI({
 
           {['advanced', 'full'].includes(showUI) && (
             <aside className="parameters">
-              {showUI === 'full' && (
+              {showUI === 'full' && runtime.polytope?.root && (
                 <label className="rels" data-autosize={params.extrarels}>
                   <span>
-                    {runtime.polytope?.root
-                      ? `{${runtime.polytope.root.gens
-                          .split('')
-                          .join(', ')}} / {${runtime.polytope.root.subgens
-                          .split('')
-                          .join(', ')}} | `
-                      : '{} | '}
+                    {`{${runtime.polytope.root.gens
+                      .split('')
+                      .join(', ')}} / {${runtime.polytope.root.subgens
+                      .split('')
+                      .join(', ')}} | `}
                   </span>
                   <input
                     name="extrarels"
                     size={4}
-                    title={runtime.polytope?.root?.rels.join(',')}
-                    placeholder={runtime.polytope?.root?.rels.join(',')}
+                    title={cleanRels}
+                    placeholder={cleanRels}
                     value={params.extrarels}
-                    onChange={handleRawChange}
+                    onChange={handleExtraRelsChange}
                   />
                 </label>
               )}

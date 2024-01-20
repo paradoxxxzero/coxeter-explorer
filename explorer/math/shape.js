@@ -2,7 +2,7 @@ import { itoa } from '.'
 import { range } from '../../utils'
 import { isEnabled, isSnub } from '../mirrors'
 import { ident, submatrix, subvector } from './matrix'
-import { getRelators } from './relators'
+import { expand, factor, getRelators } from './relators'
 import { ToddCoxeter } from './toddcoxeter'
 
 export const reorder = (i, n, double) => {
@@ -119,8 +119,15 @@ export const getShape = (
     if (extrarels) {
       const extraRels = extrarels.split(',')
       for (let i = 0; i < extraRels.length; i++) {
-        const rel = extraRels[i]
-        if (rel && rel.split('').every(g => gens.includes(g))) {
+        let rel = extraRels[i]
+        rel = rel.replace(/\s/g, '')
+        if (!rel) {
+          continue
+        }
+
+        rel = expand(rel)
+
+        if (rel.split('').every(g => gens.includes(g.toLowerCase()))) {
           rels.push(rel)
         }
       }

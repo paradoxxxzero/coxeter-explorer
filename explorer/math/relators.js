@@ -379,3 +379,80 @@ const addSteallationRelationsForStarFiveThrees = (
   )
   return rels
 }
+
+export const expand = rel => {
+  rel = rel.replace(/(\w)(\^-?\d+)/g, '($1)$2')
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    let newRel = rel.replace(/\((\w+)\)\^(-?\d+)/g, (_, g, n) => {
+      n = parseInt(n)
+      if (n < 0) {
+        g = g
+          .split('')
+          .reverse()
+          .map(c => invertCase(c))
+          .join('')
+        n = -n
+      }
+      return g.repeat(n)
+    })
+    if (newRel === rel) {
+      break
+    }
+    rel = newRel
+  }
+  return rel
+}
+
+export const factor = rel => {
+  // Inverse operation of previous expand
+  // Converts aa into a^2
+  // Converts ababab into (ab)^3
+  // Converts BABABA into (ab)^-3
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    let newRel = rel.replace(/(\w+)(\1)+/g, (_, g1) => {
+      const n = _.length / g1.length
+      return `(${g1})^${n}`
+    })
+    // Fold factorizations like ((ac)^2)^3 into (ac)^6
+    newRel = newRel.replace(/\(\((\w+)\)\^(\d+)\)\^(\d+)/g, (_, g, n1, n2) => {
+      return `(${g})^${parseInt(n1) * parseInt(n2)}`
+    })
+    // Also factorize (ac)^2ac into (ac)^3
+    newRel = newRel.replace(/\((\w+)\)\^(\d+)(\1)/g, (_, g, n1) => {
+      return `(${g})^${parseInt(n1) + 1}`
+    })
+    // Also factorize ac(ac)^2 into (ac)^3
+    newRel = newRel.replace(/(\w+)\(\1\)\^(\d+)/g, (_, g, n1) => {
+      return `(${g})^${parseInt(n1) + 1}`
+    })
+
+    if (newRel === rel) {
+      break
+    }
+    rel = newRel
+  }
+  rel = rel.replace(/\(([A-Z]+)\)\^(\d+)/g, (_, g, n) => {
+    g = g
+      .split('')
+      .reverse()
+      .map(c => invertCase(c))
+      .join('')
+    return `(${g})^-${n}`
+  })
+  rel = rel.replace(/([A-Z]+)/g, (_, g) => {
+    g = g
+      .split('')
+      .reverse()
+      .map(c => invertCase(c))
+      .join('')
+    return `(${g})^-1`
+  })
+
+  rel = rel.replace(/\((\w)\)(\^-?\d+)/g, '$1$2')
+
+  return rel
+}
+typeof window !== 'undefined' && (window.factor = factor)
