@@ -76,6 +76,7 @@ export const useProcess = (runtime, setRuntime) => {
   }, [
     runtime.space,
     runtime.ambiance,
+    runtime.extrarels,
     runtime.drawVertex,
     runtime.drawEdge,
     runtime.drawFace,
@@ -129,6 +130,7 @@ export const useProcess = (runtime, setRuntime) => {
             : runtime.batch,
         hidden: runtime.hidden,
         reciprocation: runtime.reciprocation,
+        extrarels: runtime.extrarels,
       })
       return {
         ...runtime,
@@ -143,6 +145,7 @@ export const useProcess = (runtime, setRuntime) => {
     runtime.drawVertex,
     runtime.drawEdge,
     runtime.drawFace,
+    runtime.extrarels,
     runtime.batch,
     runtime.shaper,
     runtime.space,

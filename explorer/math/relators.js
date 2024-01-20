@@ -217,7 +217,6 @@ export const getRelators = (transforms, coxeter, stellation) => {
       }
     }
   }
-
   return rels
 }
 

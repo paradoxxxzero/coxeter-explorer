@@ -59,6 +59,7 @@ export const getShape = (
   stellation,
   mirrors,
   space,
+  extrarels,
   shape = null,
   root = null
 ) => {
@@ -115,6 +116,15 @@ export const getShape = (
       .map(([gen]) => gen)
       .join('')
     const rels = getRelators(transforms, coxeter, stellation)
+    if (extrarels) {
+      const extraRels = extrarels.split(',')
+      for (let i = 0; i < extraRels.length; i++) {
+        const rel = extraRels[i]
+        if (rel && rel.split('').every(g => gens.includes(g))) {
+          rels.push(rel)
+        }
+      }
+    }
     shape = {
       new: true,
       key: '',
@@ -276,6 +286,7 @@ export const getShape = (
             stellation,
             mirrors,
             space,
+            extrarels,
             subShape,
             root
           )
@@ -308,6 +319,7 @@ export const getShape = (
             stellation,
             mirrors,
             space,
+            extrarels,
             subShape,
             root
           )

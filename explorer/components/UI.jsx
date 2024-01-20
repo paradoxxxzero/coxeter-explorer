@@ -465,6 +465,19 @@ export default function UI({
 
           {['advanced', 'full'].includes(showUI) && (
             <aside className="parameters">
+              {showUI === 'full' && (
+                <label className="rels number-label">
+                  {runtime.polytope?.root
+                    ? `{${runtime.polytope.root.gens}} / {${runtime.polytope.root.subgens}} |`
+                    : ''}
+                  <input
+                    name="extrarels"
+                    placeholder={runtime.polytope?.root?.rels.join(',')}
+                    value={params.extrarels}
+                    onChange={handleRawChange}
+                  />
+                </label>
+              )}
               {runtime.space?.curvature ? (
                 <label className="boolean-label">
                   Normalize

@@ -19,12 +19,20 @@ onmessage = ({
     batch,
     hidden,
     reciprocation,
+    extrarels,
   },
 }) => {
   try {
     if (first) {
       cache = new Map()
-      shape = getShape(dimensions, coxeter, stellation, mirrors, space)
+      shape = getShape(
+        dimensions,
+        coxeter,
+        stellation,
+        mirrors,
+        space,
+        extrarels
+      )
       self.shape = shape
     }
     const fundamental = mirrors.every(m => !m)
@@ -142,7 +150,11 @@ onmessage = ({
     )
 
     const { infos, data } = fillData(shape.dimensions, objects, ambiance, draw)
-    polytope.root = undefined
+    polytope.root = {
+      gens: shape.gens,
+      subgens: shape.subgens,
+      rels: shape.rels,
+    }
     postMessage(
       { polytope, infos, data },
       data
