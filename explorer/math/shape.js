@@ -210,7 +210,7 @@ export const getShape = (
         ),
         removed,
         key,
-        limit: space.curvature > 0 ? 5000 : 1000,
+        limit: space.curvature > 0 ? 2500 : 1000,
       }
       ToddCoxeter(subshape)
       subshape.facet = Array.from(subshape.words.values())
