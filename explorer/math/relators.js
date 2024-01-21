@@ -381,6 +381,7 @@ const addSteallationRelationsForStarFiveThrees = (
 }
 
 export const expand = rel => {
+  rel = rel.replace(/\s/g, '')
   rel = rel.replace(/(\w)(\^-?\d+)/g, '($1)$2')
   // eslint-disable-next-line no-constant-condition
   while (true) {
@@ -411,6 +412,7 @@ export const factor = rel => {
   // Converts BABABA into (ab)^-3
 
   // eslint-disable-next-line no-constant-condition
+  rel = rel.replace(/\s/g, '')
   while (true) {
     let newRel = rel.replace(/(\w+)(\1)+/g, (_, g1) => {
       const n = _.length / g1.length

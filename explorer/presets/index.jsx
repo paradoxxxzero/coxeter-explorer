@@ -23,7 +23,10 @@ const coxeter_ = (...args) => {
   return { coxeter, dimensions }
 }
 const stellation_ = (...args) => {
-  // Simple stellatoin shortcut
+  // Simple stellation shortcut
+  if (Array.isArray(args[0])) {
+    return { stellation: args }
+  }
   const dimensions = args.length + 1
   const stellation = new Array(dimensions)
     .fill()
@@ -847,6 +850,12 @@ export const presets = [
         name: 'Snub Tetrahedron',
         params: polytope([3, 3], ['s', 's', 's']),
       },
+      {
+        name: 'Tetrahemihexahedron',
+        params: polytope([3, 3], [1, 0, 1], [2, 1, 1], {
+          extrarels: 'abcb',
+        }),
+      },
     ],
   },
   {
@@ -913,6 +922,52 @@ export const presets = [
         name: 'Cube Octahedron Compound',
         params: polytope([4, 3], ['c', 0, 0], { reciprocation: 1 }),
       },
+      {
+        name: 'Hemi-Cube',
+        params: polytope([4, 3], [1, 0, 0], { extrarels: '(abc)^3' }),
+      },
+      {
+        name: 'Hemi-Octahedron',
+        params: polytope([3, 4], [1, 0, 0], { extrarels: '(abc)^3' }),
+      },
+      {
+        name: 'Octahemioctahedron',
+        params: polytope(
+          [
+            [1, 3, 3],
+            [3, 1, 3],
+            [3, 3, 1],
+          ],
+          [0, 1, 1],
+          [
+            [1, 2, 1],
+            [2, 1, 1],
+            [1, 1, 1],
+          ],
+          {
+            extrarels: '(abcb)^2',
+          }
+        ),
+      },
+      {
+        name: 'Cubohemioctahedron',
+        params: polytope(
+          [
+            [1, 4, 4],
+            [4, 1, 3],
+            [4, 3, 1],
+          ],
+          [0, 1, 1],
+          [
+            [1, 3, 1],
+            [3, 1, 1],
+            [1, 1, 1],
+          ],
+          {
+            extrarels: '(abcb)^2',
+          }
+        ),
+      },
     ],
   },
   {
@@ -974,6 +1029,130 @@ export const presets = [
       {
         name: 'Dodecahedron Icosahedron Compound',
         params: polytope([5, 3], ['c', 0, 0], { reciprocation: 1 }),
+      },
+
+      {
+        name: 'Hemi-Dodecahedron',
+        params: polytope([5, 3], [1, 0, 0], { extrarels: '(abc)^5' }),
+      },
+      {
+        name: 'Hemi-Icosahedron',
+        params: polytope([3, 5], [1, 0, 0], { extrarels: '(abc)^5' }),
+      },
+      // TODO: Determine extrarels
+      {
+        name: 'Small Dodecahemidodecahedron',
+        params: polytope(
+          [
+            [1, 5, 5],
+            [5, 1, 5],
+            [5, 5, 1],
+          ],
+          [0, 1, 1],
+          [
+            [1, 4, 1],
+            [4, 1, 1],
+            [1, 1, 1],
+          ],
+          {
+            extrarels: '(abcb)^2',
+          }
+        ),
+      },
+      {
+        name: 'Small Icosihemidodecahedron',
+        params: polytope(
+          [
+            [1, 3, 3],
+            [3, 1, 5],
+            [4, 5, 1],
+          ],
+          [0, 1, 1],
+          [
+            [1, 2, 1],
+            [2, 1, 1],
+            [1, 1, 1],
+          ],
+          {
+            extrarels: '(abcb)^3',
+          }
+        ),
+      },
+      {
+        name: 'Great Dodecahemicosahedron',
+        params: polytope(
+          [
+            [1, 5, 3],
+            [5, 1, 5],
+            [3, 5, 1],
+          ],
+          [1, 0, 1],
+          [
+            [1, 4, 1],
+            [4, 1, 1],
+            [1, 1, 1],
+          ],
+          {
+            extrarels: '(abcb)^3',
+          }
+        ),
+      },
+      {
+        name: 'Small Dodecahemicosahedron',
+        params: polytope(
+          [
+            [1, 5, 3],
+            [5, 1, 5],
+            [3, 5, 1],
+          ],
+          [0, 1, 1],
+          [
+            [1, 2, 1],
+            [2, 1, 3],
+            [1, 3, 1],
+          ],
+          {
+            extrarels: '(abcb)^3',
+          }
+        ),
+      },
+      {
+        name: 'Great Icosihemidodecahedron',
+        params: polytope(
+          [
+            [1, 3, 3],
+            [3, 1, 5],
+            [3, 5, 1],
+          ],
+          [0, 1, 1],
+          [
+            [1, 2, 1],
+            [2, 1, 3],
+            [1, 3, 1],
+          ],
+          {
+            extrarels: '(abcb)^3',
+          }
+        ),
+      },
+      {
+        name: 'Great Dodecahemidodecahedron',
+        params: polytope(
+          [
+            [1, 5, 5],
+            [5, 1, 5],
+            [5, 5, 1],
+          ],
+          [0, 1, 1],
+          [
+            [1, 3, 2],
+            [3, 1, 3],
+            [2, 3, 1],
+          ],
+          {
+            extrarels: '(abcb)^2',
+          }
+        ),
       },
     ],
   },

@@ -181,7 +181,7 @@ export const getBaseObjects = (rank, cached, shape, polytope) => {
       }
       centroid = mulV(centroid, 1 / faceVertices.length)
       const centroids = []
-      if (centroid.every(a => abs(a) < 1e-12)) {
+      if (polytope.root.hosotope && centroid.every(a => abs(a) < 1e-12)) {
         const normal3 = cross(faceVertices[0], faceVertices[1])
         const base = new Array(shape.dimensions).fill(0)
         normal3.map((a, i) => (base[i] = a))
