@@ -154,6 +154,7 @@ onmessage = ({
       gens: shape.gens,
       subgens: shape.subgens,
       rels: shape.rels,
+      transforms: shape.transforms,
     }
     postMessage(
       { polytope, infos, data },

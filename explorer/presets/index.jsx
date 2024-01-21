@@ -852,9 +852,7 @@ export const presets = [
       },
       {
         name: 'Tetrahemihexahedron',
-        params: polytope([3, 3], [1, 0, 1], [2, 1, 1], {
-          extrarels: 'abcb',
-        }),
+        params: polytope([3, 3], [1, 0, 1], [2, 1, 1]),
       },
     ],
   },

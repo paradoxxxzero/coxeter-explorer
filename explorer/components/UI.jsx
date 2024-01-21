@@ -494,11 +494,16 @@ export default function UI({
               {showUI === 'full' && runtime.polytope?.root && (
                 <label className="rels" data-autosize={params.extrarels}>
                   <span>
-                    {`{${runtime.polytope.root.gens
+                    {runtime.polytope.root.gens
                       .split('')
-                      .join(', ')}} / {${runtime.polytope.root.subgens
-                      .split('')
-                      .join(', ')}} | `}
+                      .map(g => (
+                        <span className="generator" key={g}>
+                          {g}
+                          <sub>{runtime.polytope.root.transforms[g]}</sub>
+                        </span>
+                      ))
+                      .reduce((a, b) => [a, ', ', b])}{' '}
+                    / {runtime.polytope.root.subgens.split('').join(', ')} |{' '}
                   </span>
                   <input
                     name="extrarels"
