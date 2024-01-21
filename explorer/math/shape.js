@@ -2,7 +2,7 @@ import { itoa } from '.'
 import { range } from '../../utils'
 import { isEnabled, isSnub } from '../mirrors'
 import { ident, submatrix, subvector } from './matrix'
-import { expand, factor, getRelators } from './relators'
+import { expand, getExtraRelators, getRelators } from './relators'
 import { ToddCoxeter } from './toddcoxeter'
 
 export const reorder = (i, n, double) => {
@@ -115,11 +115,12 @@ export const getShape = (
       // Quotiented for conjugate reflection if all mirrors are not active (same)
       .map(([gen]) => gen)
       .join('')
-    const rels = getRelators(transforms, coxeter, stellation)
+    const rels = getRelators(transforms, coxeter)
     if (extrarels) {
-      const extraRels = extrarels.split(',')
-      for (let i = 0; i < extraRels.length; i++) {
-        let rel = extraRels[i]
+      const extrarelsRaw = extrarels.split(',')
+      extrarels = []
+      for (let i = 0; i < extrarelsRaw.length; i++) {
+        let rel = extrarelsRaw[i]
         rel = rel.replace(/\s/g, '')
         if (!rel) {
           continue
@@ -128,10 +129,15 @@ export const getShape = (
         rel = expand(rel)
 
         if (rel.split('').every(g => gens.includes(g.toLowerCase()))) {
-          rels.push(rel)
+          extrarels.push(rel)
         }
       }
+    } else {
+      extrarels = getExtraRelators(transforms, coxeter, stellation)
     }
+
+    rels.push(...extrarels)
+
     shape = {
       new: true,
       key: '',
@@ -143,6 +149,7 @@ export const getShape = (
       subgens,
       transforms,
       rels,
+      extrarels,
       facet: [''],
       removed: [],
       children: [],

@@ -9,6 +9,7 @@ import {
 import { dot, multiplyVector, transpose } from '../math/matrix'
 import { mirrorValue } from '../mirrors'
 import Shaper from '../workers/shape.worker?worker'
+import { factor } from '../math/relators'
 
 export const useProcess = (runtime, setRuntime) => {
   useEffect(() => {
@@ -169,7 +170,7 @@ export const useProcess = (runtime, setRuntime) => {
       if (!data.error) {
         setRuntime(runtime => {
           runtime.meshes.fillData(data)
-          return {
+          const newRuntime = {
             ...runtime,
             processing: !data.polytope.done,
             iteration:
@@ -178,6 +179,15 @@ export const useProcess = (runtime, setRuntime) => {
                 : runtime.iteration + 1,
             polytope: data.polytope,
           }
+          if (!runtime.extrarels && data.polytope.root.extrarels?.length) {
+            const extrarels = data.polytope.root.extrarels
+              .map(r => factor(r))
+              .join(', ')
+            if (extrarels) {
+              newRuntime.extrarels = extrarels
+            }
+          }
+          return newRuntime
         })
       } else {
         console.error(data.error)

@@ -1,4 +1,4 @@
-import { PI, abs, atan, cos, sign, sin, sqrt, tan } from '.'
+import { PI, abs, atan, cos, sign, sin, sqrt } from '.'
 
 export const dot = (v1, v2) => {
   let sum = 0

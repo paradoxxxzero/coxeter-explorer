@@ -157,10 +157,19 @@ export default function UI({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const updateCleanRels = useCallback(
     debounce(value => {
+      const clean = r => {
+        const expanded = expand(r)
+        if (
+          !expanded.split('').every(r => runtime.polytope.root.gens.includes(r))
+        ) {
+          return r
+        }
+        return factor(expanded)
+      }
       updateParams({
         extrarels: value
           .split(',')
-          .map(r => factor(expand(r)))
+          .map(r => clean(r))
           .join(', '),
       })
     }, 2000),
@@ -177,6 +186,7 @@ export default function UI({
 
   const cleanRels = useMemo(
     () => runtime.polytope?.root?.rels.map(r => factor(r)).join(', '),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [runtime.polytope?.root?.rels.join(',')]
   )
 
@@ -492,7 +502,10 @@ export default function UI({
           {['advanced', 'full'].includes(showUI) && (
             <aside className="parameters">
               {showUI === 'full' && runtime.polytope?.root && (
-                <label className="rels" data-autosize={params.extrarels}>
+                <label
+                  className="rels"
+                  data-autosize={params.extrarels || runtime.extrarels}
+                >
                   <span>
                     {runtime.polytope.root.gens
                       .split('')
@@ -510,7 +523,7 @@ export default function UI({
                     size={4}
                     title={cleanRels}
                     placeholder={cleanRels}
-                    value={params.extrarels}
+                    value={params.extrarels || runtime.extrarels}
                     onChange={handleExtraRelsChange}
                   />
                 </label>

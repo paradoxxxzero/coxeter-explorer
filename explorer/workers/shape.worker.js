@@ -33,6 +33,7 @@ onmessage = ({
         space,
         extrarels
       )
+      // eslint-disable-next-line no-restricted-globals
       self.shape = shape
     }
     const fundamental = mirrors.every(m => !m)
@@ -155,6 +156,7 @@ onmessage = ({
       subgens: shape.subgens,
       rels: shape.rels,
       transforms: shape.transforms,
+      extrarels: shape.extrarels,
     }
     postMessage(
       { polytope, infos, data },

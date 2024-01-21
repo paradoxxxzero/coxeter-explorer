@@ -33,7 +33,7 @@ const findPaths = (rotations, word = '', chain = []) => {
   return paths
 }
 
-export const getRelators = (transforms, coxeter, stellation) => {
+export const getRelators = (transforms, coxeter) => {
   const rels = []
   const transformsEntries = Object.entries(transforms)
   const reflectionsEntries = transformsEntries.filter(
@@ -141,11 +141,14 @@ export const getRelators = (transforms, coxeter, stellation) => {
     // Paths should be reversed for some reason
     rels.push(...paths.map(p => p.split('').reverse().join('')))
   }
+  return rels
+}
 
+export const getExtraRelators = (transforms, coxeter, stellation) => {
   // Finally add extra relations generated from stellations
   // https://www.cambridge.org/core/services/aop-cambridge-core/content/view/\
   // 54D0A3028E232240C35FE036D5C32BA7/S0008414X00019386a.pdf
-
+  const rels = []
   if (
     coxeter.length > 2 &&
     coxeter.length < 6 &&
@@ -411,8 +414,8 @@ export const factor = rel => {
   // Converts ababab into (ab)^3
   // Converts BABABA into (ab)^-3
 
-  // eslint-disable-next-line no-constant-condition
   rel = rel.replace(/\s/g, '')
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     let newRel = rel.replace(/(\w+)(\1)+/g, (_, g1) => {
       const n = _.length / g1.length
