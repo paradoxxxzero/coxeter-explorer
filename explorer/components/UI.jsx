@@ -157,6 +157,9 @@ export default function UI({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const updateCleanRels = useCallback(
     debounce(value => {
+      if (!runtime.polytope?.root) {
+        return
+      }
       const clean = r => {
         const expanded = expand(r)
         if (

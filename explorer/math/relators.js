@@ -148,14 +148,13 @@ export const getExtraRelators = (transforms, coxeter, stellation) => {
   // Finally add extra relations generated from stellations
   // https://www.cambridge.org/core/services/aop-cambridge-core/content/view/\
   // 54D0A3028E232240C35FE036D5C32BA7/S0008414X00019386a.pdf
-  const rels = []
+  const stellationsRels = []
   if (
     coxeter.length > 2 &&
     coxeter.length < 6 &&
     stellation.some((row, i) => row.some((s, j) => s > 1 && coxeter[i][j] > 1))
   ) {
     const groupType = getGroupType(coxeter)
-    const stellationsRels = []
     if (groupType.type === 'c') {
       // C-string groups with stellation i.e. 5/2 3 3 5
       stellationsRels.push(
@@ -176,49 +175,90 @@ export const getExtraRelators = (transforms, coxeter, stellation) => {
         )
       )
     }
+  }
 
-    const reflectionsGens = Object.fromEntries(
-      Object.entries(transforms)
-        .filter(([_, transform]) => transform.length === 1)
-        .map(([k, v]) => [v[0], k])
-    )
-    const rotationsGens = Object.entries(transforms)
-      .filter(([_, transform]) => transform.length === 2)
-      .map(([k, v]) => [
-        [v, k],
-        [[...v].reverse(), invertCase(k)],
-      ])
-      .flat()
+  // Other sporadic finds, not proved
+  // 5 5/3 3
+  if (
+    coxeter.length === 3 &&
+    coxeter[0][1] === 5 &&
+    coxeter[0][2] === 3 &&
+    coxeter[1][2] === 5 &&
+    ((stellation[0][1] === 3 &&
+      stellation[0][2] === 1 &&
+      stellation[1][2] === 1) ||
+      (stellation[0][1] === 1 &&
+        stellation[0][2] === 1 &&
+        stellation[1][2] === 3))
+  ) {
+    stellationsRels.push(repeat(2, [0, 1, 2, 1]))
+  }
 
-    for (let i = 0; i < stellationsRels.length; i++) {
-      const stellationRel = stellationsRels[i]
-      let rel = ''
-      let fail = false
-      for (let j = 0; j < stellationRel.length; j++) {
-        const genIndex = stellationRel[j]
-        const gen = reflectionsGens[genIndex]
-        if (gen) {
-          rel += gen
+  // Adapt transforms to relations
+  const reflectionsGens = Object.fromEntries(
+    Object.entries(transforms)
+      .filter(([_, transform]) => transform.length === 1)
+      .map(([k, v]) => [v[0], k])
+  )
+  const rotationsGens = Object.entries(transforms)
+    .filter(([_, transform]) => transform.length === 2)
+    .map(([k, v]) => [
+      [v, k],
+      [[...v].reverse(), invertCase(k)],
+    ])
+    .flat()
+
+  const rels = []
+  for (let i = 0; i < stellationsRels.length; i++) {
+    const stellationRel = stellationsRels[i]
+    let rel = ''
+    let fail = false
+    for (let j = 0; j < stellationRel.length; j++) {
+      const genIndex = stellationRel[j]
+      const gen = reflectionsGens[genIndex]
+      if (gen) {
+        rel += gen
+      } else {
+        const rotation = rotationsGens.find(
+          ([v, k]) =>
+            v[0] === genIndex &&
+            j < stellationRel.length - 1 &&
+            v[1] === stellationRel[j + 1]
+        )
+        if (rotation) {
+          rel += rotation[1]
+          j++
         } else {
-          const rotation = rotationsGens.find(
-            ([v, k]) =>
-              v[0] === genIndex &&
-              j < stellationRel.length - 1 &&
-              v[1] === stellationRel[j + 1]
-          )
-          if (rotation) {
-            rel += rotation[1]
-            j++
-          } else {
-            fail = true
-            break
-          }
+          fail = true
+          break
         }
       }
-      if (!fail) {
-        rels.push(rel)
-      }
     }
+    if (!fail) {
+      rels.push(rel)
+    }
+  }
+
+  // Semi Snub sporadic finds, not proved
+  if (
+    coxeter.length === 3 &&
+    transforms['a'].length === 2 &&
+    transforms['b'].length === 3 &&
+    transforms['c'].length === 3 &&
+    coxeter[0][1] !== 2 &&
+    coxeter[1][2] === 3
+  ) {
+    rels.push('abcb'.repeat(2))
+  }
+  if (
+    coxeter.length === 3 &&
+    transforms['a'].length === 1 &&
+    transforms['b'].length === 3 &&
+    transforms['c'].length === 3 &&
+    coxeter[1][2] !== 2 &&
+    coxeter[0][1] === 3
+  ) {
+    rels.push('dcbc'.repeat(2))
   }
   return rels
 }

@@ -4,7 +4,6 @@ export const parse = (raw, min, max, step, coxeter) => {
   let valid = true
   let value = 0
   let fraction = null
-
   if (coxeter && ['∞', 'inf', 'Infinity'].includes(raw)) {
     raw = '∞'
     value = 0
@@ -22,7 +21,7 @@ export const parse = (raw, min, max, step, coxeter) => {
       numeratorRaw = `${value}`
     }
     fraction = denominator === '' ? '' : parseInt(denominator)
-    raw = `${numeratorRaw}/${fraction}`
+    raw = `${numeratorRaw}/${isNaN(fraction) ? denominator : fraction}`
   } else {
     value =
       raw === ''
@@ -43,8 +42,8 @@ export const parse = (raw, min, max, step, coxeter) => {
     fraction === '' ||
     fraction === 0 ||
     fraction === 1 ||
-    fraction < min ||
-    fraction > max ||
+    (fraction !== null && fraction < min) ||
+    (fraction !== null && fraction > max) ||
     (step % 1 === 0 && fraction % step !== 0)
   )
 
