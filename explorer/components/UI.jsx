@@ -492,47 +492,49 @@ export default function UI({
 
           {['advanced', 'full'].includes(showUI) && (
             <aside className="parameters">
-              {showUI === 'full' && runtime.polytope?.root && (
-                <div className="rels">
-                  <label className="number-label">
-                    <span>
-                      {runtime.polytope.root.gens
-                        .split('')
-                        .map(g => (
-                          <span className="generator" key={g}>
-                            {g}
-                            <sub>{runtime.polytope.root.transforms[g]}</sub>
-                          </span>
-                        ))
-                        .reduce((a, b) => [a, ', ', b])}{' '}
-                      / {runtime.polytope.root.subgens.split('').join(', ')} |{' '}
-                    </span>
-                    <div
-                      data-autosize={
-                        params.extrarels || runtime.polytope.root.extrarels
-                      }
-                    >
-                      <input
-                        name="extrarels"
-                        size={4}
-                        title={cleanRels}
-                        placeholder={runtime.polytope.root.extrarels}
-                        value={params.extrarels}
-                        onChange={handleRawChange}
-                      />
-                    </div>
-                  </label>
-                  {params.extrarels && (
-                    <button
-                      className="button clean-rels-button"
-                      onClick={handleCleanExtraRels}
-                      title="Clean"
-                    >
-                      ^n
-                    </button>
-                  )}
-                </div>
-              )}
+              {(showUI === 'full' ||
+                (showUI === 'advanced' && params.extrarels)) &&
+                runtime.polytope?.root && (
+                  <div className="rels">
+                    <label className="number-label">
+                      <span>
+                        {runtime.polytope.root.gens
+                          .split('')
+                          .map(g => (
+                            <span className="generator" key={g}>
+                              {g}
+                              <sub>{runtime.polytope.root.transforms[g]}</sub>
+                            </span>
+                          ))
+                          .reduce((a, b) => [a, ', ', b])}{' '}
+                        / {runtime.polytope.root.subgens.split('').join(', ')} |{' '}
+                      </span>
+                      <div
+                        data-autosize={
+                          params.extrarels || runtime.polytope.root.extrarels
+                        }
+                      >
+                        <input
+                          name="extrarels"
+                          size={4}
+                          title={cleanRels}
+                          placeholder={runtime.polytope.root.extrarels}
+                          value={params.extrarels}
+                          onChange={handleRawChange}
+                        />
+                      </div>
+                    </label>
+                    {params.extrarels && (
+                      <button
+                        className="button clean-rels-button"
+                        onClick={handleCleanExtraRels}
+                        title="Clean"
+                      >
+                        ^n
+                      </button>
+                    )}
+                  </div>
+                )}
               {runtime.space?.curvature ? (
                 <label className="boolean-label">
                   Normalize

@@ -82,22 +82,202 @@ const polytope = (coxeterArgs, mirrors, stellationArgs, extra) => {
   return params
 }
 
-const withSubforms = preset => {
+const withSubforms = (preset, extra = []) => {
   return {
     ...preset,
-    subforms: Object.entries(getOperators(preset.params.dimensions)).map(
-      ([name, mirrors]) => {
-        return {
-          name: `${name} ${preset.name}`,
-          params: {
-            ...preset.params,
-            mirrors,
-          },
+    subforms: [
+      ...Object.entries(getOperators(preset.params.dimensions)).map(
+        ([name, mirrors]) => {
+          return {
+            name: `${name} ${preset.name}`,
+            params: {
+              ...preset.params,
+              mirrors,
+            },
+          }
         }
-      }
-    ),
+      ),
+      ...extra,
+    ],
   }
 }
+const tiling = (coxeterArgs, mirrors, stellationArgs, extra) => {
+  if (stellationArgs && !Array.isArray(stellationArgs)) {
+    extra = stellationArgs
+    stellationArgs = null
+  }
+  return {
+    ...polytope(coxeterArgs, mirrors, stellationArgs),
+    ambiance: 'cathedral',
+    sizeEdge: 40,
+    sizeVertex: 50,
+    drawVertex: false,
+    curve: true,
+    zoom: 8,
+    ...extra,
+  }
+}
+const ehoneycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
+  if (stellationArgs && !Array.isArray(stellationArgs)) {
+    extra = stellationArgs
+    stellationArgs = null
+  }
+  return {
+    ...polytope(coxeterArgs, mirrors, stellationArgs),
+    ambiance: 'neon',
+    drawFace: false,
+    drawVertex: false,
+    centered: false,
+    sizeEdge: 25,
+    zoom: 2,
+    ...extra,
+  }
+}
+const honeycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
+  if (stellationArgs && !Array.isArray(stellationArgs)) {
+    extra = stellationArgs
+    stellationArgs = null
+  }
+  const poly = polytope(coxeterArgs, mirrors, stellationArgs)
+  const dimensions = poly.dimemsions
+  return {
+    ...poly,
+    ambiance: 'neon',
+    drawFace: false,
+    drawVertex: false,
+    curve: true,
+    centered: false,
+    sizeEdge: dimensions > 4 ? 15 : 25,
+    zoom: 1.5,
+    ...extra,
+  }
+}
+
+const getOperators = d => {
+  if (d === 3) {
+    return {
+      Rectified: [0, 1, 0],
+      Truncated: [1, 1, 0],
+      Cantellated: [1, 0, 1],
+      Runcitruncated: [1, 1, 0],
+      Bitruncated: [0, 1, 1],
+      Omnitruncated: [1, 1, 1],
+      // Birectified: [0, 0, 1],
+      // 'Trirectified': [0, 0, 0],
+      Snub: ['s', 's', 's'],
+    }
+  }
+  if (d === 4) {
+    return {
+      Rectified: [0, 1, 0, 0],
+      Truncated: [1, 1, 0, 0],
+      Cantellated: [1, 0, 1, 0],
+      Cantitruncated: [1, 1, 1, 0],
+      Runcitruncated: [1, 1, 0, 1],
+      Runcinated: [1, 0, 0, 1],
+      Bitruncated: [0, 1, 1, 0],
+      Omnitruncated: [1, 1, 1, 1],
+      // Birectified: [0, 0, 1, 0],
+      // 'Trirectified': [0, 0, 0, 1],
+      Omnisnub: ['s', 's', 's', 's'],
+    }
+  }
+  if (d === 5) {
+    return {
+      Rectified: [0, 1, 0, 0, 0],
+      Birectified: [0, 0, 1, 0, 0],
+      // Trirectified: [0, 0, 0, 1, 0],
+      // Quadrirectified: [0, 0, 0, 0, 1],
+      Truncated: [1, 1, 0, 0, 0],
+      Cantellated: [1, 0, 1, 0, 0],
+      Runcinated: [1, 0, 0, 1, 0],
+      Stericated: [1, 0, 0, 0, 1],
+      Omnitruncated: [1, 1, 1, 1, 1],
+      Omnisnub: ['s', 's', 's', 's', 's'],
+    }
+  }
+  if (d === 6) {
+    return {
+      Rectified: [0, 1, 0, 0, 0, 0],
+      Birectified: [0, 0, 1, 0, 0, 0],
+      Truncated: [1, 1, 0, 0, 0, 0],
+      Bitruncated: [0, 1, 1, 0, 0, 0],
+      Tritruncated: [0, 0, 1, 1, 0, 0],
+      Cantellated: [1, 0, 1, 0, 0, 0],
+      Bicantellated: [0, 1, 0, 1, 0, 0],
+      Runcinated: [1, 0, 0, 1, 0, 0],
+      Biruncinated: [0, 1, 0, 0, 1, 0],
+      Stericated: [1, 0, 0, 0, 1, 0],
+      Pentellated: [1, 0, 0, 0, 0, 1],
+      Omnitruncated: [1, 1, 1, 1, 1, 1],
+      // Omnisnub: ['s', 's', 's', 's', 's', 's'],
+    }
+  }
+  if (d === 7) {
+    return {
+      Rectified: [0, 1, 0, 0, 0, 0, 0],
+      Birectified: [0, 0, 1, 0, 0, 0, 0],
+      Truncated: [1, 1, 0, 0, 0, 0, 0],
+      Bitruncated: [0, 1, 1, 0, 0, 0, 0],
+      Tritruncated: [0, 0, 1, 1, 0, 0, 0],
+      Cantellated: [1, 0, 1, 0, 0, 0, 0],
+      Bicantellated: [0, 1, 0, 1, 0, 0, 0],
+      Runcinated: [1, 0, 0, 1, 0, 0, 0],
+      Biruncinated: [0, 1, 0, 0, 1, 0, 0],
+      Stericated: [1, 0, 0, 0, 1, 0, 0],
+      Pentellated: [1, 0, 0, 0, 0, 1, 0],
+      Hexicated: [1, 0, 0, 0, 0, 0, 1],
+      Omnitruncated: [1, 1, 1, 1, 1, 1, 1],
+      // Omnisnub: ['s', 's', 's', 's', 's', 's', 's'],
+    }
+  }
+  if (d === 8) {
+    return {
+      Rectified: [0, 1, 0, 0, 0, 0, 0, 0],
+      Birectified: [0, 0, 1, 0, 0, 0, 0, 0],
+      Truncated: [1, 1, 0, 0, 0, 0, 0, 0],
+      Bitruncated: [0, 1, 1, 0, 0, 0, 0, 0],
+      Tritruncated: [0, 0, 1, 1, 0, 0, 0, 0],
+      Quadritruncated: [0, 0, 0, 1, 1, 0, 0, 0],
+      Cantellated: [1, 0, 1, 0, 0, 0, 0, 0],
+      Bicantellated: [0, 1, 0, 1, 0, 0, 0, 0],
+      Tricantellated: [0, 0, 1, 0, 1, 0, 0, 0],
+      Runcinated: [1, 0, 0, 1, 0, 0, 0, 0],
+      Biruncinated: [0, 1, 0, 0, 1, 0, 0, 0],
+      Triruncinated: [0, 0, 1, 0, 0, 1, 0, 0],
+      Stericated: [1, 0, 0, 0, 1, 0, 0, 0],
+      Pentellated: [1, 0, 0, 0, 0, 1, 0, 0],
+      Hexicated: [1, 0, 0, 0, 0, 0, 1, 0],
+      Heptellated: [1, 0, 0, 0, 0, 0, 0, 1],
+      Omnitruncated: [1, 1, 1, 1, 1, 1, 1, 1],
+      // Omnisnub: ['s', 's', 's', 's', 's', 's', 's', 's'],
+    }
+  }
+  if (d === 9) {
+    return {
+      Rectified: [0, 1, 0, 0, 0, 0, 0, 0, 0],
+      Birectified: [0, 0, 1, 0, 0, 0, 0, 0, 0],
+      Truncated: [1, 1, 0, 0, 0, 0, 0, 0, 0],
+      Bitruncated: [0, 1, 1, 0, 0, 0, 0, 0, 0],
+      Tritruncated: [0, 0, 1, 1, 0, 0, 0, 0, 0],
+      Quadritruncated: [0, 0, 0, 1, 1, 0, 0, 0, 0],
+      Cantellated: [1, 0, 1, 0, 0, 0, 0, 0, 0],
+      Bicantellated: [0, 1, 0, 1, 0, 0, 0, 0, 0],
+      Tricantellated: [0, 0, 1, 0, 1, 0, 0, 0, 0],
+      Runcinated: [1, 0, 0, 1, 0, 0, 0, 0, 0],
+      Biruncinated: [0, 1, 0, 0, 1, 0, 0, 0, 0],
+      Triruncinated: [0, 0, 1, 0, 0, 1, 0, 0, 0],
+      Stericated: [1, 0, 0, 0, 1, 0, 0, 0, 0],
+      Pentellated: [1, 0, 0, 0, 0, 1, 0, 0, 0],
+      Hexicated: [1, 0, 0, 0, 0, 0, 1, 0, 0],
+      Heptellated: [1, 0, 0, 0, 0, 0, 0, 1, 0],
+      Octellated: [1, 0, 0, 0, 0, 0, 0, 0, 1],
+      Omnitruncated: [1, 1, 1, 1, 1, 1, 1, 1, 1],
+      // Omnisnub: ['s', 's', 's', 's', 's', 's', 's', 's', 's'],
+    }
+  }
+}
+
 const ngonal = {
   0: 'Apeirogonal',
   3: 'Triangular',
@@ -220,170 +400,6 @@ const tilings = ([p, q, r]) => {
         params: tiling(coxeter, ['b', 'b', 'b']),
       },
     ].map(({ name, params }) => ({ name: name.replace(/aa/g, 'a'), params })),
-  }
-}
-
-const tiling = (coxeterArgs, mirrors, stellationArgs, extra) => {
-  if (stellationArgs && !Array.isArray(stellationArgs)) {
-    extra = stellationArgs
-    stellationArgs = null
-  }
-  return {
-    ...polytope(coxeterArgs, mirrors, stellationArgs),
-    ambiance: 'cathedral',
-    sizeEdge: 40,
-    sizeVertex: 50,
-    drawVertex: false,
-    curve: true,
-    zoom: 1,
-    ...extra,
-  }
-}
-const ehoneycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
-  if (stellationArgs && !Array.isArray(stellationArgs)) {
-    extra = stellationArgs
-    stellationArgs = null
-  }
-  return {
-    ...polytope(coxeterArgs, mirrors, stellationArgs),
-    ambiance: 'neon',
-    drawFace: false,
-    drawVertex: false,
-    centered: false,
-    sizeEdge: 20,
-    zoom: 2,
-    ...extra,
-  }
-}
-const honeycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
-  if (stellationArgs && !Array.isArray(stellationArgs)) {
-    extra = stellationArgs
-    stellationArgs = null
-  }
-  const poly = polytope(coxeterArgs, mirrors, stellationArgs)
-  const dimensions = poly.matrix.length
-  return {
-    ...poly,
-    ambiance: 'neon',
-    drawFace: false,
-    drawVertex: false,
-    curve: true,
-    centered: false,
-    sizeEdge: dimensions > 4 ? 15 : 25,
-    zoom: 1.5,
-    ...extra,
-  }
-}
-
-const getOperators = d => {
-  if (d === 4) {
-    return {
-      Rectified: [0, 1, 0, 0],
-      Truncated: [1, 1, 0, 0],
-      Cantellated: [1, 0, 1, 0],
-      Cantitruncated: [1, 1, 1, 0],
-      Runcitruncated: [1, 1, 0, 1],
-      Runcinated: [1, 0, 0, 1],
-      Bitruncated: [0, 1, 1, 0],
-      Omnitruncated: [1, 1, 1, 1],
-      // Birectified: [0, 0, 1, 0],
-      // 'Trirectified': [0, 0, 0, 1] ,
-      Omnisnub: ['s', 's', 's', 's'],
-    }
-  }
-  if (d === 5) {
-    return {
-      Rectified: [0, 1, 0, 0, 0],
-      Birectified: [0, 0, 1, 0, 0],
-      // Trirectified: [0, 0, 0, 1, 0],
-      // Quadrirectified: [0, 0, 0, 0, 1],
-      Truncated: [1, 1, 0, 0, 0],
-      Cantellated: [1, 0, 1, 0, 0],
-      Runcinated: [1, 0, 0, 1, 0],
-      Stericated: [1, 0, 0, 0, 1],
-      Omnitruncated: [1, 1, 1, 1, 1],
-      Omnisnub: ['s', 's', 's', 's', 's'],
-    }
-  }
-  if (d === 6) {
-    return {
-      Rectified: [0, 1, 0, 0, 0, 0],
-      Birectified: [0, 0, 1, 0, 0, 0],
-      Truncated: [1, 1, 0, 0, 0, 0],
-      Bitruncated: [0, 1, 1, 0, 0, 0],
-      Tritruncated: [0, 0, 1, 1, 0, 0],
-      Cantellated: [1, 0, 1, 0, 0, 0],
-      Bicantellated: [0, 1, 0, 1, 0, 0],
-      Runcinated: [1, 0, 0, 1, 0, 0],
-      Biruncinated: [0, 1, 0, 0, 1, 0],
-      Stericated: [1, 0, 0, 0, 1, 0],
-      Pentellated: [1, 0, 0, 0, 0, 1],
-      Omnitruncated: [1, 1, 1, 1, 1, 1],
-      // Omnisnub: ['s', 's', 's', 's', 's', 's'],
-    }
-  }
-  if (d === 7) {
-    return {
-      Rectified: [0, 1, 0, 0, 0, 0, 0],
-      Birectified: [0, 0, 1, 0, 0, 0, 0],
-      Truncated: [1, 1, 0, 0, 0, 0, 0],
-      Bitruncated: [0, 1, 1, 0, 0, 0, 0],
-      Tritruncated: [0, 0, 1, 1, 0, 0, 0],
-      Cantellated: [1, 0, 1, 0, 0, 0, 0],
-      Bicantellated: [0, 1, 0, 1, 0, 0, 0],
-      Runcinated: [1, 0, 0, 1, 0, 0, 0],
-      Biruncinated: [0, 1, 0, 0, 1, 0, 0],
-      Stericated: [1, 0, 0, 0, 1, 0, 0],
-      Pentellated: [1, 0, 0, 0, 0, 1, 0],
-      Hexicated: [1, 0, 0, 0, 0, 0, 1],
-      Omnitruncated: [1, 1, 1, 1, 1, 1, 1],
-      // Omnisnub: ['s', 's', 's', 's', 's', 's', 's'],
-    }
-  }
-  if (d === 8) {
-    return {
-      Rectified: [0, 1, 0, 0, 0, 0, 0, 0],
-      Birectified: [0, 0, 1, 0, 0, 0, 0, 0],
-      Truncated: [1, 1, 0, 0, 0, 0, 0, 0],
-      Bitruncated: [0, 1, 1, 0, 0, 0, 0, 0],
-      Tritruncated: [0, 0, 1, 1, 0, 0, 0, 0],
-      Quadritruncated: [0, 0, 0, 1, 1, 0, 0, 0],
-      Cantellated: [1, 0, 1, 0, 0, 0, 0, 0],
-      Bicantellated: [0, 1, 0, 1, 0, 0, 0, 0],
-      Tricantellated: [0, 0, 1, 0, 1, 0, 0, 0],
-      Runcinated: [1, 0, 0, 1, 0, 0, 0, 0],
-      Biruncinated: [0, 1, 0, 0, 1, 0, 0, 0],
-      Triruncinated: [0, 0, 1, 0, 0, 1, 0, 0],
-      Stericated: [1, 0, 0, 0, 1, 0, 0, 0],
-      Pentellated: [1, 0, 0, 0, 0, 1, 0, 0],
-      Hexicated: [1, 0, 0, 0, 0, 0, 1, 0],
-      Heptellated: [1, 0, 0, 0, 0, 0, 0, 1],
-      Omnitruncated: [1, 1, 1, 1, 1, 1, 1, 1],
-      // Omnisnub: ['s', 's', 's', 's', 's', 's', 's', 's'],
-    }
-  }
-  if (d === 9) {
-    return {
-      Rectified: [0, 1, 0, 0, 0, 0, 0, 0, 0],
-      Birectified: [0, 0, 1, 0, 0, 0, 0, 0, 0],
-      Truncated: [1, 1, 0, 0, 0, 0, 0, 0, 0],
-      Bitruncated: [0, 1, 1, 0, 0, 0, 0, 0, 0],
-      Tritruncated: [0, 0, 1, 1, 0, 0, 0, 0, 0],
-      Quadritruncated: [0, 0, 0, 1, 1, 0, 0, 0, 0],
-      Cantellated: [1, 0, 1, 0, 0, 0, 0, 0, 0],
-      Bicantellated: [0, 1, 0, 1, 0, 0, 0, 0, 0],
-      Tricantellated: [0, 0, 1, 0, 1, 0, 0, 0, 0],
-      Runcinated: [1, 0, 0, 1, 0, 0, 0, 0, 0],
-      Biruncinated: [0, 1, 0, 0, 1, 0, 0, 0, 0],
-      Triruncinated: [0, 0, 1, 0, 0, 1, 0, 0, 0],
-      Stericated: [1, 0, 0, 0, 1, 0, 0, 0, 0],
-      Pentellated: [1, 0, 0, 0, 0, 1, 0, 0, 0],
-      Hexicated: [1, 0, 0, 0, 0, 0, 1, 0, 0],
-      Heptellated: [1, 0, 0, 0, 0, 0, 0, 1, 0],
-      Octellated: [1, 0, 0, 0, 0, 0, 0, 0, 1],
-      Omnitruncated: [1, 1, 1, 1, 1, 1, 1, 1, 1],
-      // Omnisnub: ['s', 's', 's', 's', 's', 's', 's', 's', 's'],
-    }
   }
 }
 
@@ -1837,8 +1853,8 @@ export const presets = [
     ),
   },
   {
-    name: 'Triangle',
-    params: polytope(
+    name: 'Triangular',
+    params: tiling(
       [
         [1, 3, 3],
         [3, 1, 3],
@@ -1846,22 +1862,161 @@ export const presets = [
       ],
       [1, 0, 0]
     ),
+    subforms: [
+      {
+        name: 'Truncated Triangular',
+        params: tiling(
+          [
+            [1, 3, 3],
+            [3, 1, 3],
+            [3, 3, 1],
+          ],
+          [1, 1, 0]
+        ),
+      },
+      {
+        name: 'Snub Triangular',
+        params: tiling(
+          [
+            [1, 3, 3],
+            [3, 1, 3],
+            [3, 3, 1],
+          ],
+          ['s', 's', 's']
+        ),
+      },
+      {
+        name: 'Rhobille',
+        params: tiling(
+          [
+            [1, 3, 3],
+            [3, 1, 3],
+            [3, 3, 1],
+          ],
+          ['m', 'm', 's']
+        ),
+      },
+    ],
   },
   {
     name: 'Square',
-    params: polytope([4, 4], [1, 0, 0]),
+    params: tiling([4, 4], [1, 0, 0]),
+    subforms: [
+      {
+        name: 'Truncated Square',
+        params: tiling([4, 4], [1, 1, 0]),
+      },
+      {
+        name: 'Rectified Square',
+        params: tiling([4, 4], [0, 1, 0]),
+      },
+      {
+        name: 'Cantellated Square',
+        params: tiling([4, 4], [1, 0, 1]),
+      },
+      {
+        name: 'Triakis Square',
+        params: tiling([4, 4], ['m', 'm', 0]),
+      },
+      {
+        name: 'Snub Square',
+        params: tiling([4, 4], ['s', 's', 's']),
+      },
+      {
+        name: 'Cairo Pentagonal',
+        params: tiling([4, 4], ['b', 'b', 'b']),
+      },
+      {
+        name: 'Snub Square (2)',
+        params: tiling([4, 4], ['s', 's', 0]),
+      },
+      {
+        name: 'Snub Square (3)',
+        params: tiling([4, 4], ['s', 's', 1]),
+      },
+      {
+        name: 'Snub Square (4)',
+        params: tiling([4, 4], ['s', 1, 0]),
+      },
+      {
+        name: 'Snub Square (5)',
+        params: tiling([4, 4], ['s', 0, 1]),
+      },
+      {
+        name: 'Snub Square (6)',
+        params: tiling([4, 4], ['s', 1, 1]),
+      },
+    ],
+  },
+  withSubforms(
+    {
+      name: 'Hexagonal',
+      params: tiling([6, 3], [1, 0, 0]),
+    },
+    [
+      {
+        name: 'Triakis Triangular',
+        params: tiling([6, 3], ['m', 'm', 0]),
+      },
+      {
+        name: 'Deltaoidal Trihexagonal',
+        params: tiling([6, 3], ['m', 0, 'm']),
+      },
+      {
+        name: 'Kisrhombille',
+        params: tiling([6, 3], ['m', 'm', 'm']),
+      },
+      {
+        name: 'Floret Pentagonal',
+        params: tiling([6, 3], ['b', 'b', 'b']),
+      },
+      {
+        name: 'Snub Hexagonal (2)',
+        params: tiling([6, 3], ['s', 's', 0]),
+      },
+      {
+        name: 'Snub Hexagonal (3)',
+        params: tiling([6, 3], ['s', 's', 1]),
+      },
+      {
+        name: 'Snub Hexagonal (4)',
+        params: tiling([6, 3], ['s', 1, 0]),
+      },
+      {
+        name: 'Snub Hexagonal (5)',
+        params: tiling([6, 3], ['s', 0, 1]),
+      },
+      {
+        name: 'Snub Hexagonal (6)',
+        params: tiling([6, 3], ['s', 1, 1]),
+      },
+    ]
+  ),
+  {
+    name: 'Apeirogonal Hosohedron',
+    params: tiling([2, 0], [1, 0, 0]),
+    subforms: [
+      {
+        name: 'Apeirogonal Dihedron',
+        params: tiling([2, 0], [0, 0, 1]),
+      },
+      {
+        name: 'Apeirogonal Prism',
+        params: tiling([2, 0], [1, 1, 0]),
+      },
+      {
+        name: 'Apeirogonal Antiprism',
+        params: tiling([2, 0], ['s', 's', 0]),
+      },
+      {
+        name: 'Apeirogonal Deltohedron',
+        params: tiling([2, 0], ['b', 'b', 0]),
+      },
+    ],
   },
   {
-    name: 'Hexagonal',
-    params: polytope([6, 3], [1, 0, 0]),
-  },
-  {
-    name: 'Snub Square',
-    params: tiling([4, 4], ['s', 's', 0]),
-  },
-  {
-    name: 'Snub Trihexagonal',
-    params: tiling([6, 3], ['s', 's', 's']),
+    name: 'Elongated Triangular',
+    params: tiling([0, 2, 0], [0, 's', 's', 1]),
   },
   {
     type: 'group',
