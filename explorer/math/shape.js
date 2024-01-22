@@ -2,7 +2,7 @@ import { itoa } from '.'
 import { range } from '../../utils'
 import { isEnabled, isSnub } from '../mirrors'
 import { ident, submatrix, subvector } from './matrix'
-import { expand, getExtraRelators, getRelators } from './relators'
+import { expand, factor, getExtraRelators, getRelators } from './relators'
 import { ToddCoxeter } from './toddcoxeter'
 
 export const reorder = (i, n, double) => {
@@ -118,7 +118,6 @@ export const getShape = (
     const rels = getRelators(transforms, coxeter)
     if (extrarels) {
       const extrarelsRaw = extrarels.split(',')
-      extrarels = []
       for (let i = 0; i < extrarelsRaw.length; i++) {
         let rel = extrarelsRaw[i]
         rel = rel.replace(/\s/g, '')
@@ -129,14 +128,14 @@ export const getShape = (
         rel = expand(rel)
 
         if (rel.split('').every(g => gens.includes(g.toLowerCase()))) {
-          extrarels.push(rel)
+          rels.push(rel)
         }
       }
     } else {
-      extrarels = getExtraRelators(transforms, coxeter, stellation)
+      const newRels = getExtraRelators(transforms, coxeter, stellation)
+      rels.push(...newRels)
+      extrarels = newRels.map(r => factor(r)).join(', ')
     }
-
-    rels.push(...extrarels)
 
     shape = {
       new: true,

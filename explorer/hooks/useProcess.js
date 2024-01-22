@@ -170,7 +170,7 @@ export const useProcess = (runtime, setRuntime) => {
       if (!data.error) {
         setRuntime(runtime => {
           runtime.meshes.fillData(data)
-          const newRuntime = {
+          return {
             ...runtime,
             processing: !data.polytope.done,
             iteration:
@@ -179,15 +179,6 @@ export const useProcess = (runtime, setRuntime) => {
                 : runtime.iteration + 1,
             polytope: data.polytope,
           }
-          if (!runtime.extrarels && data.polytope.root.extrarels?.length) {
-            const extrarels = data.polytope.root.extrarels
-              .map(r => factor(r))
-              .join(', ')
-            if (extrarels) {
-              newRuntime.extrarels = extrarels
-            }
-          }
-          return newRuntime
         })
       } else {
         console.error(data.error)

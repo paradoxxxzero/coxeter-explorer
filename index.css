@@ -483,6 +483,11 @@ select option {
   padding: 0.25em;
 }
 
+.rels {
+  display: flex;
+  flex-direction: row;
+}
+
 .rels input {
   color: white;
   border: none;
@@ -499,6 +504,11 @@ select option {
 .number-label {
   margin-right: 0.25em;
 }
+.clean-rels-button {
+  margin: 0 -0.5em 0 -0.75em;
+  font-size: 1.25em;
+}
+
 .number .plusminus {
   background: none;
   border: none;

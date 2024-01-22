@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { details, projections } from '../../statics.js'
-import { debounce, range } from '../../utils.js'
+import { range } from '../../utils.js'
 import { ambiances } from '../ambiances.js'
 import { defaultParams } from '../default.js'
 import {
@@ -17,6 +17,7 @@ import {
   unlockIcon,
 } from '../icons.jsx'
 import { ident } from '../math/matrix'
+import { expand, factor } from '../math/relators.js'
 import { defaultProjection } from '../params.js'
 import { presets } from '../presets/index.jsx'
 import Boolean from './Boolean'
@@ -26,7 +27,6 @@ import Presets from './Presets'
 import Rotation from './Rotation.jsx'
 import Shape from './Shape.jsx'
 import Space from './Space'
-import { expand, factor } from '../math/relators.js'
 
 const getShowUI = () => {
   try {
@@ -154,38 +154,26 @@ export default function UI({
     },
     [rotations.auto, updateRotations]
   )
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const updateCleanRels = useCallback(
-    debounce(value => {
-      if (!runtime.polytope?.root) {
-        return
+  const handleCleanExtraRels = useCallback(() => {
+    if (!runtime.polytope?.root || !params.extrarels) {
+      return
+    }
+    const clean = r => {
+      const expanded = expand(r)
+      if (
+        !expanded.split('').every(r => runtime.polytope.root.gens.includes(r))
+      ) {
+        return r
       }
-      const clean = r => {
-        const expanded = expand(r)
-        if (
-          !expanded.split('').every(r => runtime.polytope.root.gens.includes(r))
-        ) {
-          return r
-        }
-        return factor(expanded)
-      }
-      updateParams({
-        extrarels: value
-          .split(',')
-          .map(r => clean(r))
-          .join(', '),
-      })
-    }, 2000),
-    [updateParams]
-  )
-  const handleExtraRelsChange = useCallback(
-    e => {
-      const { value } = e.target
-      updateParams({ extrarels: value })
-      updateCleanRels(value)
-    },
-    [updateParams, updateCleanRels]
-  )
+      return factor(expanded)
+    }
+    updateParams({
+      extrarels: params.extrarels
+        .split(',')
+        .map(r => clean(r))
+        .join(', '),
+    })
+  }, [params.extrarels, runtime.polytope?.root, updateParams])
 
   const cleanRels = useMemo(
     () => runtime.polytope?.root?.rels.map(r => factor(r)).join(', '),
@@ -505,31 +493,45 @@ export default function UI({
           {['advanced', 'full'].includes(showUI) && (
             <aside className="parameters">
               {showUI === 'full' && runtime.polytope?.root && (
-                <label
-                  className="rels"
-                  data-autosize={params.extrarels || runtime.extrarels}
-                >
-                  <span>
-                    {runtime.polytope.root.gens
-                      .split('')
-                      .map(g => (
-                        <span className="generator" key={g}>
-                          {g}
-                          <sub>{runtime.polytope.root.transforms[g]}</sub>
-                        </span>
-                      ))
-                      .reduce((a, b) => [a, ', ', b])}{' '}
-                    / {runtime.polytope.root.subgens.split('').join(', ')} |{' '}
-                  </span>
-                  <input
-                    name="extrarels"
-                    size={4}
-                    title={cleanRels}
-                    placeholder={cleanRels}
-                    value={params.extrarels || runtime.extrarels}
-                    onChange={handleExtraRelsChange}
-                  />
-                </label>
+                <div className="rels">
+                  <label className="number-label">
+                    <span>
+                      {runtime.polytope.root.gens
+                        .split('')
+                        .map(g => (
+                          <span className="generator" key={g}>
+                            {g}
+                            <sub>{runtime.polytope.root.transforms[g]}</sub>
+                          </span>
+                        ))
+                        .reduce((a, b) => [a, ', ', b])}{' '}
+                      / {runtime.polytope.root.subgens.split('').join(', ')} |{' '}
+                    </span>
+                    <div
+                      data-autosize={
+                        params.extrarels || runtime.polytope.root.extrarels
+                      }
+                    >
+                      <input
+                        name="extrarels"
+                        size={4}
+                        title={cleanRels}
+                        placeholder={runtime.polytope.root.extrarels}
+                        value={params.extrarels}
+                        onChange={handleRawChange}
+                      />
+                    </div>
+                  </label>
+                  {params.extrarels && (
+                    <button
+                      className="button clean-rels-button"
+                      onClick={handleCleanExtraRels}
+                      title="Clean"
+                    >
+                      ^n
+                    </button>
+                  )}
+                </div>
               )}
               {runtime.space?.curvature ? (
                 <label className="boolean-label">
