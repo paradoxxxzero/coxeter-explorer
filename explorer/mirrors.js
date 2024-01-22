@@ -1,4 +1,3 @@
-export const isEnabled = m => m !== '' && m !== 'x'
 export const isDual = m => m === 'm' || m === 'b' || m === 'c' || m === 'd'
 export const isCompound = m => m === 'c' || m === 'd'
 export const isSnub = m => m === 's' || m === 'b' || m === 'd'
@@ -23,8 +22,6 @@ export const mirrorTypes = {
   compound: 'c',
   snubCompound: 'd',
   custom: 0.5,
-  activeVoid: 'x',
-  void: '',
 }
 
 export const mirrorToType = v =>

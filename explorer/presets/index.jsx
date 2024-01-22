@@ -545,12 +545,13 @@ export const presets = [
         Tetrahedron
       </>
     ),
-    params: tiling([3, 3, 6], [1, 0, 0, ''], {
+    params: tiling([3, 3, 6], [1, 0, 0, 0], {
       drawVertex: false,
       drawFace: true,
       curve: true,
       centered: true,
       ambiance: 'pure',
+      extrarels: 'd',
     }),
   },
   {
@@ -560,12 +561,13 @@ export const presets = [
         Horoball
       </>
     ),
-    params: tiling([6, 3, 4], [1, 0, 0, ''], {
+    params: tiling([6, 3, 4], [1, 0, 0, 0], {
       drawVertex: false,
       drawFace: true,
       curve: true,
       centered: false,
       ambiance: 'colorful',
+      extrarels: 'd',
     }),
   },
   {
@@ -599,13 +601,14 @@ export const presets = [
         Pentahedron
       </>
     ),
-    params: tiling([5, 3, 6], [1, 0, 0, ''], {
+    params: tiling([5, 3, 6], [1, 0, 0, 0], {
       drawVertex: false,
       drawFace: true,
       curve: true,
       centered: true,
       ambiance: 'pure',
       zoom: 1.5,
+      extrarels: 'd',
     }),
   },
   {

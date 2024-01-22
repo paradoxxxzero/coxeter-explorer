@@ -1,6 +1,6 @@
 import { itoa } from '.'
 import { range } from '../../utils'
-import { isEnabled, isSnub } from '../mirrors'
+import { isSnub } from '../mirrors'
 import { ident, submatrix, subvector } from './matrix'
 import { expand, factor, getExtraRelators, getRelators } from './relators'
 import { ToddCoxeter } from './toddcoxeter'
@@ -74,10 +74,6 @@ export const getShape = (
     const transforms = {}
 
     for (let i = 0; i < dimensions; i++) {
-      if (!isEnabled(mirrors[i])) {
-        continue
-      }
-
       if (!isSnub(mirrors[i])) {
         const c = itoa(gi++)
         gens += c
@@ -86,10 +82,6 @@ export const getShape = (
       }
 
       for (let j = i + 1; j < dimensions; j++) {
-        if (!isEnabled(mirrors[j])) {
-          continue
-        }
-
         if (isSnub(mirrors[i]) && isSnub(mirrors[j])) {
           // Case of snub + snub => rotation
           const c = itoa(gi++)

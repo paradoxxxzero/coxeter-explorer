@@ -8,7 +8,6 @@ import {
   dualize,
   isCompound,
   isDual,
-  isEnabled,
   uncompoundize,
   undualize,
 } from '../mirrors'
@@ -88,11 +87,7 @@ export default memo(function CoxeterMatrix({
       ) {
         newMirrors = newMirrors.map(compoundize)
       } else {
-        if (
-          value !== 0 &&
-          isEnabled(value) &&
-          newMirrors.some(m => isCompound(m))
-        ) {
+        if (value !== 0 && newMirrors.some(m => isCompound(m))) {
           newMirrors = newMirrors.map(uncompoundize)
         }
       }
@@ -100,11 +95,7 @@ export default memo(function CoxeterMatrix({
       if (isDual(value) || (oldValue === 0 && newMirrors.some(isDual))) {
         newMirrors = newMirrors.map(dualize)
       } else {
-        if (
-          value !== 0 &&
-          isEnabled(value) &&
-          newMirrors.some(m => isDual(m))
-        ) {
+        if (value !== 0 && newMirrors.some(m => isDual(m))) {
           newMirrors = newMirrors.map(undualize)
         }
       }
