@@ -35,8 +35,16 @@ vec4 viewProject(vec3 position) {
   return viewProjection * vec4(position, 1.);
 }
 
+vec3 xproject(in float v) {
+  return vec3(v, 0., 0.);
+}
+
 vec3 xproject(in vec2 v) {
   return vec3(v, 0.);
+}
+
+vec3 pureproject(in float v) {
+  return vec3(v, 1., 1.);
 }
 
 vec3 pureproject(in vec2 v) {
@@ -224,6 +232,7 @@ vec3 pureproject(in vecN v) {
 
 vec3 inflate(in vec3 point, in vecN pos, in vec3 norm, in float size) {
   // Removing 3d length in perspective computation
+  #if DIMENSIONS >= 2
   #if DIMENSIONS < 5
   pos.xy = vec2(1.);
   #if DIMENSIONS >= 3 && PROJECTION3 == -1
@@ -231,6 +240,9 @@ vec3 inflate(in vec3 point, in vecN pos, in vec3 norm, in float size) {
   #endif
   #else
   pos.v.xyz = vec3(1.);
+  #endif
+  #else
+  pos = 1.;
   #endif
   vec3 inv = clamp(abs(pureproject(pos)), 0.01, 16.);
   size = size * .01;

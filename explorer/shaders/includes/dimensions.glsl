@@ -75,6 +75,9 @@ struct mat9 {
 };
 #endif
 
+bool nan(in float v) {
+  return isnan(v);
+}
 bool nan(in vec2 v) {
   return isnan(v.x) || isnan(v.y);
 }
@@ -117,6 +120,21 @@ bool nan(in vec9 v) {
 }
 #endif
 
+float ndot(in float v, in float w) {
+  return v * w;
+}
+float nadd(in float v, in float w) {
+  return v + w;
+}
+float nsub(in float v, in float w) {
+  return v - w;
+}
+float nmul(in float v, in float s) {
+  return v * s;
+}
+float nonlast(in float v) {
+  return v;
+}
 #if DIMENSIONS >= 2
 float ndot(in vec2 v, in vec2 w) {
   return dot(v, w);
@@ -254,6 +272,9 @@ vec8 nonlast(in vec9 v) {
 }
 #endif
 
+float adapt(in float m) {
+  return m;
+}
 vec2 adapt(in vec2 m) {
   return m;
 }
@@ -287,7 +308,15 @@ vec9 adapt(in mat3 m) {
 }
 #endif
 
-#if DIMENSIONS == 2
+#if DIMENSIONS == 0
+float multiplyMatrix(float m, float v) {
+  return m * v;
+}
+#elif DIMENSIONS == 1
+float multiplyMatrix(float m, float v) {
+  return m * v;
+}
+#elif DIMENSIONS == 2
 vec2 multiplyMatrix(mat2 m, vec2 v) {
   return m * v;
 }
@@ -321,6 +350,9 @@ vec9 multiplyMatrix(mat9 m, vec9 v) {
 }
 #endif
 
+float nget(in float v, in int i) {
+  return v;
+}
 float nget(in vec2 v, in int i) {
   i = (i + DIMENSIONS) % DIMENSIONS;
   return v[i];
@@ -390,6 +422,9 @@ float nget(in vec9 v, in int i) {
 }
 #endif
 
+void nset(inout float v, in int i, in float x) {
+  v = x;
+}
 void nset(inout vec2 v, in int i, in float x) {
   i = (i + DIMENSIONS) % DIMENSIONS;
   v[i] = x;

@@ -211,8 +211,7 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                             key.startsWith('s') ? ' shape-snub' : ''
                           }`}
                         >
-                          {[1, 2].includes(level.dimensions) &&
-                          !level.fundamental ? (
+                          {level.dimensions < 3 && !level.fundamental ? (
                             <button
                               className="shape-hidden button"
                               data-key={key}
@@ -225,7 +224,9 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                                 ? eyeOffIcon
                                 : eyeIcon}
                             </button>
-                          ) : null}
+                          ) : (
+                            <div />
+                          )}
                           {coxeter ? (
                             <button
                               className="shape-detail-button"

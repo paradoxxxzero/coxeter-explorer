@@ -9,7 +9,6 @@ import {
 import { dot, multiplyVector, transpose } from '../math/matrix'
 import { mirrorValue } from '../mirrors'
 import Shaper from '../workers/shape.worker?worker'
-import { factor } from '../math/relators'
 
 export const useProcess = (runtime, setRuntime) => {
   useEffect(() => {
@@ -45,7 +44,6 @@ export const useProcess = (runtime, setRuntime) => {
             ? 'ultraideal'
             : 'inside'
         )
-
       return {
         ...runtime,
         space,

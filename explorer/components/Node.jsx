@@ -36,12 +36,6 @@ export const mirrorSymbols = {
       <path d="M 16 0 L 16 32" />
     </>
   ),
-  holosnub: (
-    <>
-      <circle cx="16" cy="16" r={circleSize} />
-      <circle cx="16" cy="16" r={dotSize} />
-    </>
-  ),
   compound: (
     <>
       <circle cx="16" cy="16" r={circleSize - 4} />
@@ -64,22 +58,15 @@ export const mirrorSymbols = {
       <path d="M 10 14 L 10 18 L 22 18 L 22 14" />
     </>
   ),
-  activeVoid: (
-    <>
-      <circle cx="16" cy="16" r={circleSize} />
-      <path d="M 6 6 L 26 26" />
-      <path d="M 6 26 L 26 6" />
-    </>
-  ),
   void: (
     <>
-      <path d="M 10 10 L 22 22" />
-      <path d="M 10 22 L 22 10" />
+      <circle cx="16" cy="16" r={circleSize - 4} />
+      <path d="M 4 28 L 28 4" />
     </>
   ),
 }
 
-export default function Node({ index, value, boundness, onChange }) {
+export default function Node({ index, value, boundness, disabled, onChange }) {
   const ref = useRef(null)
   const [menu, setMenu] = useState(false)
 
@@ -129,9 +116,9 @@ export default function Node({ index, value, boundness, onChange }) {
         strokeWidth="2"
         stroke="currentColor"
         fill="black"
-        onClick={handleClick}
-        onContextMenu={handleMenu}
-        onWheel={handleWheel}
+        onClick={disabled ? undefined : handleClick}
+        onContextMenu={disabled ? undefined : handleMenu}
+        onWheel={disabled ? undefined : handleWheel}
       >
         {mirrorSymbols[type]}
       </svg>

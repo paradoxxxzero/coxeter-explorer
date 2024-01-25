@@ -19,6 +19,9 @@ const translate = (
   metric,
   zoom
 ) => {
+  if (dimensions < 2) {
+    return [[], []]
+  }
   const { combinations } = rotations
   const couples = [[], []]
 
@@ -81,7 +84,15 @@ export const keydown = (
     return
   }
   const rotateStep = (x, y, shift) =>
-    translate([x, y], shift, rotations, matrix, dimensions, metric, zoom)
+    translate(
+      [x, y],
+      dimensions < 3 ? 0 : shift,
+      rotations,
+      matrix,
+      dimensions,
+      metric,
+      zoom
+    )
 
   if (code === 'ArrowLeft' || code === 'KeyA') {
     rotateStep(step, 0, 0)

@@ -4,14 +4,14 @@ export default function Space({ type, subtype, order, dimensions }) {
       className="space"
       title={`${type} ${subtype}${order > 1 ? `of order ${order}` : ''}`}
     >
-      {type === null || type === 'indefinite'
+      {type === null || type === 'indefinite' || type === 'empty'
         ? '𝕏'
         : type === 'affine'
         ? '𝔼'
         : type === 'finite'
         ? '𝕊'
         : 'ℍ'}
-      {dimensions ? (
+      {dimensions !== null ? (
         <sup>
           {dimensions - 1}
           {order > 1 ? <sup>{order}</sup> : null}

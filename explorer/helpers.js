@@ -1,18 +1,19 @@
 import { diffuseLight, projections, shadings, specularLight } from '../statics'
 import { range } from '../utils'
+import { ambiances } from './ambiances'
 import { min } from './math'
 import { columnMajor, ident } from './math/matrix'
 import { render } from './render'
 import complex from './shaders/includes/complex.glsl?raw'
 import dimensions from './shaders/includes/dimensions.glsl?raw'
+import fragment from './shaders/includes/fragment.glsl?raw'
 import globals from './shaders/includes/globals.glsl?raw'
 import helpers from './shaders/includes/helpers.glsl?raw'
 import lighting from './shaders/includes/lighting.glsl?raw'
 import project from './shaders/includes/project.glsl?raw'
-import fragment from './shaders/includes/fragment.glsl?raw'
 import vertexout from './shaders/includes/vertexout.glsl?raw'
 import vertexouthead from './shaders/includes/vertexouthead.glsl?raw'
-import { ambiances } from './ambiances'
+import { getArity } from './utils'
 
 export const includes = {
   globals,
@@ -54,6 +55,8 @@ const preprocessDimensions = (source, dimensions) =>
     .replace(/\b_N_\b/g, `${dimensions}`)
     .replace(/\b_Nf_\b/g, `${dimensions}.`)
     .replace(/\PROJECTION_N\b/g, `PROJECTION${dimensions}`)
+    .replace(/\bvec[01]\b/g, `float`)
+    .replace(/\bmat[01]\b/g, `float`)
 
 const preprocess = (source, dimensions) =>
   preprocessDimensions(
@@ -332,6 +335,12 @@ export const uniform = (rt, program, name, type) => {
     program,
     update(value) {
       gl.useProgram(this.program)
+      if (type.startsWith('m0')) {
+        return
+      }
+      if (type.startsWith('m1')) {
+        type = type.replace('m', '')
+      }
       if (type.startsWith('m')) {
         const n = parseInt(type.slice(1, 2))
         if (n > 4) {
@@ -488,7 +497,7 @@ export const mesh = (
     })),
   ]
 
-  arity = arity > 4 ? 9 : arity
+  arity = getArity(arity)
   const mesh = {
     attributes: {},
     varying,
@@ -511,7 +520,7 @@ export const mesh = (
       this.recompile(rt, newVertex, newFragment, uniforms(rt))
     },
     changeArity(arity) {
-      arity = arity > 4 ? 9 : arity
+      arity = getArity(arity)
       if (this.arity === arity) {
         return
       }
@@ -548,7 +557,6 @@ export const mesh = (
       }
 
       this.attributes.color.update(data[0], info.start, info.size)
-
       for (let j = 0; j < this.varying.length; j++) {
         const attr = this.varying[j]
         this.attributes[attr].update(data[j + 1], info.start, info.size)

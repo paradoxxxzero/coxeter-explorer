@@ -85,6 +85,17 @@ export const getSignature = gram => {
 }
 
 export const getSpace = gram => {
+  if (!gram.length) {
+    return {
+      eigens: { values: [], vectors: [] },
+      gram: [],
+      metric: [],
+      type: 'empty',
+      curvature: 1,
+      subtype: 'compact',
+      order: 1,
+    }
+  }
   const signature = getSignature(gram)
   // Eigenvalues/eigenvectors of gram matrix
   const eigens = signature.eigens
@@ -94,9 +105,10 @@ export const getSpace = gram => {
   const sign_ = '-0+'.split('').find(c => signature[c] > 0)
   const curvature = { '+': 1, 0: 0, '-': -1 }[sign_]
   const type = { 1: 'finite', 0: 'affine', '-1': 'hyperbolic' }[curvature]
-  const subsignatures = range(gram.length).map(i =>
-    getSignature(submatrix(gram, [i]))
-  )
+  const subsignatures =
+    gram.length > 1
+      ? range(gram.length).map(i => getSignature(submatrix(gram, [i])))
+      : []
   const subtype = !subsignatures.some(s => s['-'] || s['0'])
     ? 'compact'
     : !subsignatures.some(s => s['-'])
@@ -123,6 +135,12 @@ export const nonzero = m =>
 export const nonnegative = m => m.map(row => row.map(v => abs(v)))
 
 export const getGeometry = (space, centered) => {
+  if (space.type === 'empty') {
+    return {
+      normals: [],
+      vertices: [[0]],
+    }
+  }
   const eigens = space.eigens
   const metric = space.metric
 
@@ -202,32 +220,32 @@ export const getGeometry = (space, centered) => {
   // by doing so we will be aligned with the coxeter plane
   const eigenValues = eigens.values.slice()
   const eigenVectors = eigens.vectors.slice()
+  if (eigenValues.length > 1) {
+    // We want to align with the coxeter plane
+    // so we put the biggest eigenvalue first
+    // then the smallest positive eigenvalue
+    // then the rest as previously ordered
+    // The biggest is alread first
+    const smallest = min(...eigenValues.filter(v => v > 0))
+    const smallestIndex = eigenValues.indexOf(smallest)
 
-  // We want to align with the coxeter plane
-  // so we put the biggest eigenvalue first
-  // then the smallest positive eigenvalue
-  // then the rest as previously ordered
-  // The biggest is alread first
-  const smallest = min(...eigenValues.filter(v => v > 0))
-  const smallestIndex = eigenValues.indexOf(smallest)
+    ;[metric[smallestIndex][smallestIndex], metric[1][1]] = [
+      metric[1][1],
+      metric[smallestIndex][smallestIndex],
+    ]
 
-  ;[metric[smallestIndex][smallestIndex], metric[1][1]] = [
-    metric[1][1],
-    metric[smallestIndex][smallestIndex],
-  ]
+    eigenVectors.splice(1, 0, eigenVectors.splice(smallestIndex, 1)[0])
 
-  eigenVectors.splice(1, 0, eigenVectors.splice(smallestIndex, 1)[0])
+    eigenValues.splice(smallestIndex, 1)
+    eigenValues.splice(1, 0, smallest)
 
-  eigenValues.splice(smallestIndex, 1)
-  eigenValues.splice(1, 0, smallest)
-
-  eigenValues.forEach((v, i) => {
-    // For euclidean space, replace null eigenvalues with a zoom
-    if (v === 0) {
-      eigenValues[i] = 0.05 // ??
-    }
-  })
-
+    eigenValues.forEach((v, i) => {
+      // For euclidean space, replace null eigenvalues with a zoom
+      if (v === 0) {
+        eigenValues[i] = 0.05 // ??
+      }
+    })
+  }
   const Q = transpose(eigenVectors)
 
   // Sort values biggest first - negative will be last

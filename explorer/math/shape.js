@@ -147,7 +147,7 @@ export const getShape = (
     }
     root = shape
     root.solved = new Map()
-    if (mirrors.filter(m => m).length === 1) {
+    if (mirrors.length > 1 && mirrors.filter(m => m).length === 1) {
       const mirrorIndex = mirrors.findIndex(m => m)
       if (coxeter[mirrorIndex].every((m, i) => mirrorIndex === i || m === 2)) {
         // Choose a generator to generate the lunes
@@ -220,30 +220,6 @@ export const getShape = (
       ToddCoxeter(subshape)
       subshape.facet = Array.from(subshape.words.values())
 
-      if (subshape.dimensions === 1) {
-        // Digon
-        subshape.coxeter = [
-          [1, 2],
-          [2, 1],
-        ]
-        subshape.stellation = [
-          [1, 1],
-          [1, 1],
-        ]
-        subshape.mirrors = [1, 0]
-      }
-      if (subshape.dimensions === 0) {
-        // Monogon (henegon)
-        subshape.coxeter = [
-          [1, 2],
-          [2, 1],
-        ]
-        subshape.stellation = [
-          [1, 1],
-          [1, 1],
-        ]
-        subshape.mirrors = ['s', 0]
-      }
       root.solved.set(key, subshape)
     }
 

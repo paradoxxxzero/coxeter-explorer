@@ -320,6 +320,13 @@ export const det = m => {
   return sum
 }
 export const columnMajor = m => {
+  // Convert a matrix m to column-major order
+  if (m.length === 0) {
+    return
+  }
+  if (m.length === 1) {
+    return m[0]
+  }
   if (m.length === 2) {
     // prettier-ignore
     return [

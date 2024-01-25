@@ -996,7 +996,7 @@ export const presets = [
         params: polytope([5, 3], [0, 1, 0]),
       },
       {
-        name: 'Truncate Dodecahedron',
+        name: 'Truncated Dodecahedron',
         params: polytope([5, 3], [1, 1, 0]),
       },
       {

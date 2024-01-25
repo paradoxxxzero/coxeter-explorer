@@ -1,7 +1,4 @@
 import { Fragment, memo, useCallback, useEffect, useRef, useState } from 'react'
-import Value from './Value'
-import Link from './Link'
-import Node from './Node'
 import { min } from '../math'
 import {
   compoundize,
@@ -12,6 +9,9 @@ import {
   undualize,
 } from '../mirrors'
 import CoxeterDiagram from './CoxeterDiagram'
+import Link from './Link'
+import Node from './Node'
+import Value from './Value'
 
 const getType = (coxeter, i) =>
   coxeter[i].some((m, j) => j < i && m < 0)
@@ -127,37 +127,43 @@ export default memo(function CoxeterMatrix({
       style={scale === 1 ? undefined : { transform: `scale(${scale})` }}
       ref={ref}
     >
-      <div className="coxeter-matrix">
-        {[...Array(dimensions).keys()].map(i => (
-          <Fragment key={i}>
-            {i > 0 && (
-              <div className="coxeter-column">
-                {[...Array(i).keys()].map(
-                  j =>
-                    (extended || i === j + 1) && (
-                      <Value
-                        i={i}
-                        j={j}
-                        value={coxeter[i][j]}
-                        stellation={stellation[i][j]}
-                        key={`${i}x${j}`}
-                        onChange={handleChange}
-                      />
-                    )
-                )}
-              </div>
-            )}
-            {i > 0 && <Link type={getType(coxeter, i)} />}
-            <Node
-              index={i}
-              value={mirrors[i]}
-              onChange={handleMirrorChange}
-              boundness={space?.boundnesses[i]}
-            />
-            {i < dimensions - 1 && <Link type={getType(coxeter, i + 1)} />}
-          </Fragment>
-        ))}
-      </div>
+      {dimensions === 0 ? (
+        <div className="coxeter-matrix">
+          <Node index={0} value="x" disabled />
+        </div>
+      ) : (
+        <div className="coxeter-matrix">
+          {[...Array(dimensions).keys()].map(i => (
+            <Fragment key={i}>
+              {i > 0 && (
+                <div className="coxeter-column">
+                  {[...Array(i).keys()].map(
+                    j =>
+                      (extended || i === j + 1) && (
+                        <Value
+                          i={i}
+                          j={j}
+                          value={coxeter[i][j]}
+                          stellation={stellation[i][j]}
+                          key={`${i}x${j}`}
+                          onChange={handleChange}
+                        />
+                      )
+                  )}
+                </div>
+              )}
+              {i > 0 && <Link type={getType(coxeter, i)} />}
+              <Node
+                index={i}
+                value={mirrors[i]}
+                onChange={handleMirrorChange}
+                boundness={space?.boundnesses[i]}
+              />
+              {i < dimensions - 1 && <Link type={getType(coxeter, i + 1)} />}
+            </Fragment>
+          ))}
+        </div>
+      )}
       <div className="coxeter-toggles">
         {preview && extended && (
           <div className="coxeter-preview">
@@ -177,7 +183,7 @@ export default memo(function CoxeterMatrix({
             +
           </button>
         )}
-        {dimensions > 2 && (
+        {dimensions > 0 && (
           <button
             className="button"
             onClick={() => onChange('dimensions', dimensions - 1)}

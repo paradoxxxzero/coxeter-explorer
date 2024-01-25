@@ -277,34 +277,36 @@ export default function UI({
         <div className="ui-row ui-row-top">
           {['simple', 'advanced', 'full'].includes(showUI) ? (
             <aside className="controls">
-              <button
-                className="rotation-button button"
-                onClick={handleShift}
-                title="Rotation Mode"
-              >
-                <div
-                  className="rotation"
-                  style={{
-                    transform: `rotate(${
-                      (rotations.shift / rotations.maxShift) * 360
-                    }deg)`,
-                  }}
+              {rotations.maxShift > 1 ? (
+                <button
+                  className="rotation-button button"
+                  onClick={handleShift}
+                  title="Rotation Mode"
                 >
-                  {rotationShiftIcon}
-                </div>
-                <sup>{rotations.shift + 1}</sup>
-                <Rotation
-                  rotations={rotations}
-                  space={runtime.space}
-                  axis={0}
-                />
+                  <div
+                    className="rotation"
+                    style={{
+                      transform: `rotate(${
+                        (rotations.shift / rotations.maxShift) * 360
+                      }deg)`,
+                    }}
+                  >
+                    {rotationShiftIcon}
+                  </div>
+                  <sup>{rotations.shift + 1}</sup>
+                  <Rotation
+                    rotations={rotations}
+                    space={runtime.space}
+                    axis={0}
+                  />
 
-                <Rotation
-                  rotations={rotations}
-                  space={runtime.space}
-                  axis={1}
-                />
-              </button>
+                  <Rotation
+                    rotations={rotations}
+                    space={runtime.space}
+                    axis={1}
+                  />
+                </button>
+              ) : null}
 
               <div className="subcontrols">
                 <button className="button" onClick={handleLock}>
@@ -494,47 +496,48 @@ export default function UI({
             <aside className="parameters">
               {(showUI === 'full' ||
                 (showUI === 'advanced' && params.extrarels)) &&
-                runtime.polytope?.root && (
-                  <div className="rels">
-                    <label className="number-label">
-                      <span>
-                        {runtime.polytope.root.gens
-                          .split('')
-                          .map(g => (
-                            <span className="generator" key={g}>
-                              {g}
-                              <sub>{runtime.polytope.root.transforms[g]}</sub>
-                            </span>
-                          ))
-                          .reduce((a, b) => [a, ', ', b])}{' '}
-                        / {runtime.polytope.root.subgens.split('').join(', ')} |{' '}
-                      </span>
-                      <div
-                        data-autosize={
-                          params.extrarels || runtime.polytope.root.extrarels
-                        }
-                      >
-                        <input
-                          name="extrarels"
-                          size={4}
-                          title={cleanRels}
-                          placeholder={runtime.polytope.root.extrarels}
-                          value={params.extrarels}
-                          onChange={handleRawChange}
-                        />
-                      </div>
-                    </label>
-                    {params.extrarels && (
-                      <button
-                        className="button clean-rels-button"
-                        onClick={handleCleanExtraRels}
-                        title="Clean"
-                      >
-                        ^n
-                      </button>
-                    )}
-                  </div>
-                )}
+              runtime.polytope?.root &&
+              runtime.polytope.root.gens.length ? (
+                <div className="rels">
+                  <label className="number-label">
+                    <span>
+                      {runtime.polytope.root.gens
+                        .split('')
+                        .map(g => (
+                          <span className="generator" key={g}>
+                            {g}
+                            <sub>{runtime.polytope.root.transforms[g]}</sub>
+                          </span>
+                        ))
+                        .reduce((a, b) => [a, ', ', b])}{' '}
+                      / {runtime.polytope.root.subgens.split('').join(', ')} |{' '}
+                    </span>
+                    <div
+                      data-autosize={
+                        params.extrarels || runtime.polytope.root.extrarels
+                      }
+                    >
+                      <input
+                        name="extrarels"
+                        size={4}
+                        title={cleanRels}
+                        placeholder={runtime.polytope.root.extrarels}
+                        value={params.extrarels}
+                        onChange={handleRawChange}
+                      />
+                    </div>
+                  </label>
+                  {params.extrarels && (
+                    <button
+                      className="button clean-rels-button"
+                      onClick={handleCleanExtraRels}
+                      title="Clean"
+                    >
+                      ^n
+                    </button>
+                  )}
+                </div>
+              ) : null}
               {runtime.space?.curvature ? (
                 <label className="boolean-label">
                   Normalize

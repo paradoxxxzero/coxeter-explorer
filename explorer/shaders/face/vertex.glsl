@@ -8,7 +8,11 @@ in vec2 uv;
 in vec3 normal;
 in vec3 color;
 
-#if DIMENSIONS == 2
+#if DIMENSIONS < 2
+in float position;
+in float target;
+in float center;
+#elif DIMENSIONS == 2
 in vec2 position;
 in vec2 target;
 in vec2 center;
@@ -47,9 +51,13 @@ void main() {
   #endif
 
   vec3 proj = xproject(pos);
+  #if DIMENSIONS < 3
+  vec3 norm = vec3(0, 0, -1);
+  #else
   vec3 drdx = xproject(next) - proj;
   vec3 drdy = xproject(other) - proj;
 
   vec3 norm = normalize(cross(drdx, drdy));
+  #endif
   #include vertexout
 }

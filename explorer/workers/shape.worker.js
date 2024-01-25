@@ -1,4 +1,4 @@
-import { getShape, reorder } from '../math/shape'
+import { getShape } from '../math/shape'
 import { isCompound, isDual } from '../mirrors'
 import { fillData } from './datafiller'
 import { getObjects } from './objects'
@@ -36,7 +36,7 @@ onmessage = ({
       // eslint-disable-next-line no-restricted-globals
       self.shape = shape
     }
-    const fundamental = mirrors.every(m => !m)
+    const fundamental = mirrors.length && mirrors.every(m => !m)
     const dual = mirrors.some(m => isDual(m))
     const compound = mirrors.some(m => isCompound(m))
 
@@ -78,64 +78,6 @@ onmessage = ({
         computeWords,
         polytope
       )
-    }
-
-    // Handle displaying the 2D shape face
-    if (shape.dimensions === 2) {
-      shape.currentWords = new Map([[1, '']])
-
-      const double = shape.gens
-        .split('')
-        .every(g => shape.mirrors[shape.transforms[g][0]])
-      const rotation = shape.gens
-        .split('')
-        .every(g => shape.transforms[g].length === 2)
-
-      const unorderedFacet = Array.from(polytope.root.words.values())
-      shape.facet = new Array(unorderedFacet.length)
-      for (let i = 0; i < unorderedFacet.length; i++) {
-        shape.facet[i] =
-          unorderedFacet[rotation ? i : reorder(i, shape.facet.length, double)]
-      }
-      shape.done = true
-      cache.set('f', {
-        ...shape,
-        subgens: shape.subgens,
-        facet: shape.facet,
-        subdimensions: shape.dimensions,
-        mirrors: shape.mirrors,
-        compute: true,
-      })
-      polytope[2] = {
-        dimensions: 2,
-        processing: 1,
-        count: 0,
-        detail: [
-          {
-            key: 'f',
-            coxeter: shape.coxeter,
-            stellation: shape.stellation,
-            mirrors: shape.mirrors,
-            dual,
-
-            count: 0,
-            done: true,
-          },
-        ],
-        aggregated: [
-          {
-            key: 'f',
-            coxeter: shape.coxeter,
-            stellation: shape.stellation,
-            mirrors: shape.mirrors,
-            dual,
-
-            count: 0,
-            done: true,
-          },
-        ],
-        done: true,
-      }
     }
 
     const objects = getObjects(

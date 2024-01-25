@@ -1,7 +1,6 @@
 export const isDual = m => m === 'm' || m === 'b' || m === 'c' || m === 'd'
 export const isCompound = m => m === 'c' || m === 'd'
 export const isSnub = m => m === 's' || m === 'b' || m === 'd'
-export const isHoloSnub = m => m === 'ß'
 
 // active -> s, snub -> snubDual
 export const dualize = m => (isDual(m) ? m : m ? { s: 'b' }[m] || 'm' : m)
@@ -25,4 +24,6 @@ export const mirrorTypes = {
 }
 
 export const mirrorToType = v =>
-  (Object.entries(mirrorTypes).find(([k, w]) => w === v) || ['custom'])[0]
+  (Object.entries({ ...mirrorTypes, void: 'x' }).find(([k, w]) => w === v) || [
+    'custom',
+  ])[0]

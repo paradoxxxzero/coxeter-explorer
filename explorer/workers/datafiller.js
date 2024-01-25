@@ -1,10 +1,11 @@
 import { types } from '../../statics'
 import { ambiances } from '../ambiances'
+import { getArity } from '../utils'
 
 export const fillData = (dimensions, objects, ambiance, draw) => {
   const data = []
   const infos = []
-  const arity = dimensions > 4 ? 9 : dimensions
+  const arity = getArity(dimensions)
   for (let i = 0; i < objects.length; i++) {
     const parts = objects[i]
     if (!parts) {
@@ -24,7 +25,6 @@ export const fillData = (dimensions, objects, ambiance, draw) => {
       if (!objects) {
         continue
       }
-
       for (let k = 0; k < objects.length; k++) {
         const object = objects[k]
 

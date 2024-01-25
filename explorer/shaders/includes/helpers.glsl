@@ -1,3 +1,7 @@
+float len(in float v) {
+  return 1.;
+}
+
 #loopN2
 float len(in vecN v) {
   return sqrt(ndot(v, v));
@@ -9,6 +13,10 @@ float xdot(in vecN v) {
 }
 
 vecN xnormalize(in vecN v) {
+  float x = xdot(v);
+  if(x == 0.) {
+    return v;
+  }
   float n = 1. / sqrt(curvature * xdot(v));
   return nmul(v, n);
 }

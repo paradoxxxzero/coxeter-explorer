@@ -9,7 +9,9 @@ in vec2 uv;
 in vec3 normal;
 in vec3 color;
 
-#if DIMENSIONS == 2
+#if DIMENSIONS < 2
+in float position;
+#elif DIMENSIONS == 2
 in vec2 position;
 #elif DIMENSIONS == 3
 in vec3 position;
@@ -25,7 +27,7 @@ in mat3 position;
 void main() {
   vecN pos = multiplyMatrix(matrix, adapt(position));
 
-  #if defined(SEGMENTS) && CURVATURE != 0
+  #if defined(SEGMENTS) && CURVATURE != 0 && DIMENSIONS >= 2
     // Normalization is done mainly to remove OOD points
   pos = xnormalize(pos);
   #endif

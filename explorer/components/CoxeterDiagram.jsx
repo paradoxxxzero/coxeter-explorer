@@ -6,17 +6,10 @@ export default function CoxeterDiagram({ coxeter, stellation, mirrors }) {
   const dimensions = coxeter.length
 
   const [nodes, links] = useMemo(() => {
-    if (dimensions === 0) {
-      return [[], []]
-    }
     const nodes = getNodes(mirrors, dimensions, coxeter)
     const links = getLinks(dimensions, coxeter, stellation, nodes)
     return [nodes, links]
   }, [mirrors, dimensions, coxeter, stellation])
-
-  if (nodes.length === 0) {
-    return null
-  }
 
   return (
     <svg

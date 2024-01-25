@@ -344,7 +344,7 @@ select option {
 .shape-detail-button {
   background: none;
   border: none;
-  font-size: 1em;
+  font-size: 1.25em;
   color: rgba(255, 255, 255, 1);
   justify-self: flex-start;
   padding: 0;

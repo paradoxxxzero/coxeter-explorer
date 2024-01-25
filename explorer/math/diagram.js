@@ -6,6 +6,9 @@ const baseSize = 32
 const textSpacing = 18
 
 export const getNodes = (mirrors, dimensions, coxeter) => {
+  if (!mirrors.length) {
+    mirrors = ['x']
+  }
   const nodes = mirrors.map((mirror, i) => {
     const type = mirrorToType(mirror)
     return {
