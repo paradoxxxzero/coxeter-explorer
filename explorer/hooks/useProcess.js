@@ -74,6 +74,8 @@ export const useProcess = (runtime, setRuntime) => {
     })
   }, [
     runtime.space,
+    runtime.crosssection,
+    runtime.section,
     runtime.ambiance,
     runtime.extrarels,
     runtime.drawVertex,
@@ -130,6 +132,7 @@ export const useProcess = (runtime, setRuntime) => {
         hidden: runtime.hidden,
         reciprocation: runtime.reciprocation,
         extrarels: runtime.extrarels,
+        section: runtime.crosssection ? runtime.section : null,
       })
       return {
         ...runtime,
@@ -138,6 +141,8 @@ export const useProcess = (runtime, setRuntime) => {
       }
     })
   }, [
+    runtime.crosssection,
+    runtime.section,
     runtime.iteration,
     runtime.limit,
     runtime.ambiance,

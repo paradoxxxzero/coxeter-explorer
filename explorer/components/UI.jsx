@@ -478,6 +478,17 @@ export default function UI({
                     </div>
                   ))
                 : null}
+
+              <Number
+                name="section"
+                label="Cross Section"
+                min={-Infinity}
+                step={0.1}
+                value={params.section}
+                toggler={params.crosssection}
+                togglerName="crosssection"
+                onChange={handleChange}
+              />
             </aside>
           )}
         </div>

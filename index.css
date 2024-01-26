@@ -458,6 +458,7 @@ select option {
 }
 .number-control {
   position: relative;
+  max-width: fit-content;
 }
 
 .parameters [data-autosize] {

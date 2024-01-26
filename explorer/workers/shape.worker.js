@@ -1,5 +1,6 @@
 import { getShape } from '../math/shape'
 import { isCompound, isDual } from '../mirrors'
+import { crossSection } from './crossSection'
 import { fillData } from './datafiller'
 import { getObjects } from './objects'
 import { getPolytope } from './polytope'
@@ -20,6 +21,7 @@ onmessage = ({
     hidden,
     reciprocation,
     extrarels,
+    section,
   },
 }) => {
   try {
@@ -46,9 +48,16 @@ onmessage = ({
       : dual
       ? {
           [dimensions - 1]: true,
-          [dimensions - 2]: draw.edge || draw.face,
-          [dimensions - 3]: draw.face,
           0: true,
+          1: draw.edge || draw.face,
+          2: draw.face,
+        }
+      : section !== null
+      ? {
+          0: true,
+          1: true,
+          2: draw.edge,
+          3: draw.face,
         }
       : {
           0: true,
@@ -80,7 +89,7 @@ onmessage = ({
       )
     }
 
-    const objects = getObjects(
+    let objects = getObjects(
       shape,
       cache,
       space,
@@ -92,8 +101,16 @@ onmessage = ({
       reciprocation
     )
 
+    if (section !== null) {
+      // TODO: migrate in getObjects
+      objects = crossSection(polytope, objects, section)
+    }
+
     const { infos, data } = fillData(shape.dimensions, objects, ambiance, draw)
-    polytope.root = {
+    const poly = [...polytope]
+    poly.done = polytope.done
+    poly.size = polytope.size
+    poly.root = {
       gens: shape.gens,
       subgens: shape.subgens,
       rels: shape.rels,
@@ -101,7 +118,11 @@ onmessage = ({
       extrarels: shape.extrarels,
     }
     postMessage(
-      { polytope, infos, data },
+      {
+        polytope: poly,
+        infos,
+        data,
+      },
       data
         .flat(1)
         .filter(a => a)

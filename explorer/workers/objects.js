@@ -52,7 +52,6 @@ export const getObjects = (
       for (let j = 0; j < polytope[i].detail.length; j++) {
         const detail = polytope[i].detail[j]
         const cached = cache.get(detail.key)
-
         if (
           (!detail.dual && hidden.includes(detail.key)) ||
           !cached.compute ||
