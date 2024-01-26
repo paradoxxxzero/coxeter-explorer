@@ -11,7 +11,7 @@ export default function Space({ type, subtype, order, dimensions }) {
         : type === 'finite'
         ? '𝕊'
         : 'ℍ'}
-      {dimensions !== null ? (
+      {dimensions !== undefined ? (
         <sup>
           {dimensions - 1}
           {order > 1 ? <sup>{order}</sup> : null}

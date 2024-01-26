@@ -189,20 +189,17 @@ export const ambiances = Object.fromEntries(
       color: ({ word }) => hsl(-(word.length * 0.07) % 1, 1, 0.8),
       // culling: true,
     },
-    shape: {
+    flare: {
       background: [1, 1, 1, 1],
-      transparency: 'oit',
+      transparency: 'blend',
+      diffuse: 'cel',
       face: {
-        gouraud: true,
-        opacity: 0.2,
-        diffuse: 'fresnel',
+        opacity: 0.6,
+        gouraud: false,
       },
-      color: ({ faceSize, type, idx, size }) =>
-        type === 'face'
-          ? hsl(((faceSize - 2) * 0.21) % 1, 1, 0.8)
-          : hsl(idx / size, 0.75, 0.5),
+      color: ({ word }) => hsl((word.length * 0.09) % 1, 1, 0.8),
     },
-    subShape: {
+    shape: {
       background: [1, 1, 1, 1],
       transparency: 'oit',
       face: {
@@ -215,12 +212,12 @@ export const ambiances = Object.fromEntries(
     },
     reflection: {
       background: [1, 1, 1, 1],
+      transparency: 'blend',
       diffuse: 'cel',
       face: {
         opacity: 0.6,
         gouraud: false,
       },
-      transparency: 'blend',
       color: ({ word, type, dimensions, draw }) => {
         const h = word.length ? atoi(word[word.length - 1]) / dimensions : 0
         return hsl(h % 1, 1, type === 'face' ? 0.6 : draw.face ? 0 : 0.8)

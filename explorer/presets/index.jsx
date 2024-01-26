@@ -113,10 +113,27 @@ const tiling = (coxeterArgs, mirrors, stellationArgs, extra) => {
     sizeVertex: 50,
     drawVertex: false,
     curve: true,
+    zoom: 1,
+    ...extra,
+  }
+}
+const etiling = (coxeterArgs, mirrors, stellationArgs, extra) => {
+  if (stellationArgs && !Array.isArray(stellationArgs)) {
+    extra = stellationArgs
+    stellationArgs = null
+  }
+  return {
+    ...polytope(coxeterArgs, mirrors, stellationArgs),
+    ambiance: 'cathedral',
+    sizeEdge: 40,
+    sizeVertex: 50,
+    drawVertex: false,
+    curve: true,
     zoom: 8,
     ...extra,
   }
 }
+
 const ehoneycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
   if (stellationArgs && !Array.isArray(stellationArgs)) {
     extra = stellationArgs
@@ -437,8 +454,17 @@ export const presets = [
       drawVertex: false,
       drawFace: true,
       curve: true,
+      sizeEdge: 25,
       ambiance: 'neon',
     }),
+  },
+  {
+    name: (
+      <>
+        <Space type="affine" dimensions={3} /> Floret Pentagonal Tiling
+      </>
+    ),
+    params: etiling([6, 3], ['b', 'b', 'b'], { ambiance: 'reflection' }),
   },
   {
     name: (
@@ -459,6 +485,7 @@ export const presets = [
         drawVertex: false,
         drawFace: true,
         curve: true,
+        sizeEdge: 25,
         ambiance: 'neon',
         centered: true,
       }
@@ -507,7 +534,7 @@ export const presets = [
       {
         sizeVertex: 25,
         sizeEdge: 15,
-        ambiance: 'colorful',
+        ambiance: 'synthwave',
         drawVertex: true,
         projection3: 'orthographic',
         projection4: 'orthographic',
@@ -568,6 +595,7 @@ export const presets = [
       centered: true,
       ambiance: 'pure',
       extrarels: 'd',
+      zoom: 2,
     }),
   },
   {
@@ -584,6 +612,7 @@ export const presets = [
       centered: false,
       ambiance: 'colorful',
       extrarels: 'd',
+      zoom: 2,
     }),
   },
   {
@@ -630,16 +659,16 @@ export const presets = [
   {
     name: (
       <>
-        <Space type="finite" dimensions={4} /> Flat Torus
+        <Space type="finite" dimensions={4} /> Clifford Torus
       </>
     ),
     params: polytope([32, 2, 32], [1, 0, 0, 1], {
       drawVertex: false,
       drawFace: false,
       curve: true,
-      ambiance: 'neon',
+      ambiance: 'glass',
       zoom: 3,
-      sizeEdge: 10,
+      sizeEdge: 20,
     }),
   },
   {
@@ -1854,7 +1883,7 @@ export const presets = [
   },
   {
     name: 'Triangular',
-    params: tiling(
+    params: etiling(
       [
         [1, 3, 3],
         [3, 1, 3],
@@ -1865,7 +1894,7 @@ export const presets = [
     subforms: [
       {
         name: 'Truncated Triangular',
-        params: tiling(
+        params: etiling(
           [
             [1, 3, 3],
             [3, 1, 3],
@@ -1876,7 +1905,7 @@ export const presets = [
       },
       {
         name: 'Snub Triangular',
-        params: tiling(
+        params: etiling(
           [
             [1, 3, 3],
             [3, 1, 3],
@@ -1887,7 +1916,7 @@ export const presets = [
       },
       {
         name: 'Rhobille',
-        params: tiling(
+        params: etiling(
           [
             [1, 3, 3],
             [3, 1, 3],
@@ -1900,123 +1929,123 @@ export const presets = [
   },
   {
     name: 'Square',
-    params: tiling([4, 4], [1, 0, 0]),
+    params: etiling([4, 4], [1, 0, 0]),
     subforms: [
       {
         name: 'Truncated Square',
-        params: tiling([4, 4], [1, 1, 0]),
+        params: etiling([4, 4], [1, 1, 0]),
       },
       {
         name: 'Rectified Square',
-        params: tiling([4, 4], [0, 1, 0]),
+        params: etiling([4, 4], [0, 1, 0]),
       },
       {
         name: 'Cantellated Square',
-        params: tiling([4, 4], [1, 0, 1]),
+        params: etiling([4, 4], [1, 0, 1]),
       },
       {
         name: 'Triakis Square',
-        params: tiling([4, 4], ['m', 'm', 0]),
+        params: etiling([4, 4], ['m', 'm', 0]),
       },
       {
         name: 'Snub Square',
-        params: tiling([4, 4], ['s', 's', 's']),
+        params: etiling([4, 4], ['s', 's', 's']),
       },
       {
         name: 'Cairo Pentagonal',
-        params: tiling([4, 4], ['b', 'b', 'b']),
+        params: etiling([4, 4], ['b', 'b', 'b']),
       },
       {
         name: 'Snub Square (2)',
-        params: tiling([4, 4], ['s', 's', 0]),
+        params: etiling([4, 4], ['s', 's', 0]),
       },
       {
         name: 'Snub Square (3)',
-        params: tiling([4, 4], ['s', 's', 1]),
+        params: etiling([4, 4], ['s', 's', 1]),
       },
       {
         name: 'Snub Square (4)',
-        params: tiling([4, 4], ['s', 1, 0]),
+        params: etiling([4, 4], ['s', 1, 0]),
       },
       {
         name: 'Snub Square (5)',
-        params: tiling([4, 4], ['s', 0, 1]),
+        params: etiling([4, 4], ['s', 0, 1]),
       },
       {
         name: 'Snub Square (6)',
-        params: tiling([4, 4], ['s', 1, 1]),
+        params: etiling([4, 4], ['s', 1, 1]),
       },
     ],
   },
   withSubforms(
     {
       name: 'Hexagonal',
-      params: tiling([6, 3], [1, 0, 0]),
+      params: etiling([6, 3], [1, 0, 0]),
     },
     [
       {
         name: 'Triakis Triangular',
-        params: tiling([6, 3], ['m', 'm', 0]),
+        params: etiling([6, 3], ['m', 'm', 0]),
       },
       {
         name: 'Deltaoidal Trihexagonal',
-        params: tiling([6, 3], ['m', 0, 'm']),
+        params: etiling([6, 3], ['m', 0, 'm']),
       },
       {
         name: 'Kisrhombille',
-        params: tiling([6, 3], ['m', 'm', 'm']),
+        params: etiling([6, 3], ['m', 'm', 'm']),
       },
       {
         name: 'Floret Pentagonal',
-        params: tiling([6, 3], ['b', 'b', 'b']),
+        params: etiling([6, 3], ['b', 'b', 'b']),
       },
       {
         name: 'Snub Hexagonal (2)',
-        params: tiling([6, 3], ['s', 's', 0]),
+        params: etiling([6, 3], ['s', 's', 0]),
       },
       {
         name: 'Snub Hexagonal (3)',
-        params: tiling([6, 3], ['s', 's', 1]),
+        params: etiling([6, 3], ['s', 's', 1]),
       },
       {
         name: 'Snub Hexagonal (4)',
-        params: tiling([6, 3], ['s', 1, 0]),
+        params: etiling([6, 3], ['s', 1, 0]),
       },
       {
         name: 'Snub Hexagonal (5)',
-        params: tiling([6, 3], ['s', 0, 1]),
+        params: etiling([6, 3], ['s', 0, 1]),
       },
       {
         name: 'Snub Hexagonal (6)',
-        params: tiling([6, 3], ['s', 1, 1]),
+        params: etiling([6, 3], ['s', 1, 1]),
       },
     ]
   ),
   {
     name: 'Apeirogonal Hosohedron',
-    params: tiling([2, 0], [1, 0, 0]),
+    params: etiling([2, 0], [1, 0, 0]),
     subforms: [
       {
         name: 'Apeirogonal Dihedron',
-        params: tiling([2, 0], [0, 0, 1]),
+        params: etiling([2, 0], [0, 0, 1]),
       },
       {
         name: 'Apeirogonal Prism',
-        params: tiling([2, 0], [1, 1, 0]),
+        params: etiling([2, 0], [1, 1, 0]),
       },
       {
         name: 'Apeirogonal Antiprism',
-        params: tiling([2, 0], ['s', 's', 0]),
+        params: etiling([2, 0], ['s', 's', 0]),
       },
       {
         name: 'Apeirogonal Deltohedron',
-        params: tiling([2, 0], ['b', 'b', 0]),
+        params: etiling([2, 0], ['b', 'b', 0]),
       },
     ],
   },
   {
     name: 'Elongated Triangular',
-    params: tiling([0, 2, 0], [0, 's', 's', 1]),
+    params: etiling([0, 2, 0], [0, 's', 's', 1]),
   },
   {
     type: 'group',
