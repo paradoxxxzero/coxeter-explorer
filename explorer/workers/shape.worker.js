@@ -47,10 +47,10 @@ onmessage = ({
       ? { [dimensions - 1]: true } // Compute vertices (Fundamental is reversed)
       : dual
       ? {
-          [dimensions - 1]: true,
           0: true,
           1: draw.edge || draw.face,
           2: draw.face,
+          [dimensions - 1]: true,
         }
       : section !== null
       ? {
