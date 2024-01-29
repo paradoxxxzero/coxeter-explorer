@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { details, projections } from '../../statics.js'
+import { details, projections, spaceLetters } from '../../statics.js'
 import { range } from '../../utils.js'
 import { ambiances } from '../ambiances.js'
 import { defaultParams } from '../default.js'
@@ -479,16 +479,39 @@ export default function UI({
                   ))
                 : null}
 
-              <Number
-                name="section"
-                label="Cross Section"
-                min={-Infinity}
-                step={0.1}
-                value={params.section}
-                toggler={params.crosssection}
-                togglerName="crosssection"
-                onChange={handleChange}
-              />
+              {showUI === 'full' && (
+                <>
+                  <label className="boolean-label">
+                    CrossSection
+                    <Boolean
+                      name="crosssection"
+                      value={params.crosssection}
+                      onChange={handleChange}
+                    />
+                  </label>
+                  {params.crosssection
+                    ? range(params.dimensions + 1).map(i => (
+                        <div key={i} className="plane">
+                          <Number
+                            name={`section[${i}]`}
+                            label={
+                              i === params.dimensions ? 'd' : spaceLetters[i]
+                            }
+                            min={-Infinity}
+                            step={0.1}
+                            value={params.section[i]}
+                            onChange={(_, s) =>
+                              handleChange(
+                                'section',
+                                params.section.map((v, j) => (i === j ? s : v))
+                              )
+                            }
+                          />
+                        </div>
+                      ))
+                    : null}
+                </>
+              )}
             </aside>
           )}
         </div>

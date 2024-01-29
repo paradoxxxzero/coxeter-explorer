@@ -41,7 +41,7 @@ export const defaultParams = {
   projection4: 'stereographic',
   zoom: 1.5,
   crosssection: false,
-  section: 0,
+  section: [0, 0, 0, 1, 0],
 
   hidden: [],
   reciprocation: 0,

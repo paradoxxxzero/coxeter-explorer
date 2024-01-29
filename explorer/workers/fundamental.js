@@ -1,4 +1,4 @@
-import { hash } from '../math'
+import { hash, hashV } from '../math'
 import { normalize, reflect } from '../math/hypermath'
 import { mulV, transpose } from '../math/matrix'
 
@@ -38,20 +38,17 @@ export const getFundamentalObjects = (cached, shape, space) => {
         const zero = new Array(shape.dimensions).fill(0)
         vertices.push({
           word,
-          cosetId,
           vertices: zero,
         })
         if (shape.dimensions === 2) {
           for (let i = 0; i < simplex.length; i++) {
             edges.push({
               word,
-              cosetId,
               vertices: [zero, mulV(simplex[i], smallInfinity)],
             })
           }
           faces.push({
             word,
-            cosetId,
             vertices: [
               zero,
               mulV(simplex[i], smallInfinity),
@@ -64,46 +61,26 @@ export const getFundamentalObjects = (cached, shape, space) => {
         if (!cached.hashes.vertex.has(vertexHash)) {
           vertices.push({
             word,
-            cosetId,
             vertices: [simplex[i]],
           })
           cached.hashes.vertex.add(vertexHash)
         }
         for (let j = i + 1; j < simplex.length; j++) {
-          const edgeHash = [simplex[i], simplex[j]]
-            .sort((a, b) => {
-              for (let i = 0; i < a.length; i++) {
-                if (a[i] < b[i]) return -1
-                if (a[i] > b[i]) return 1
-              }
-              return 0
-            })
-            .map(a => hash(a))
-            .join('-')
+          const edgeHash = hashV([simplex[i], simplex[j]])
           if (!cached.hashes.edge.has(edgeHash)) {
             edges.push({
               word,
-              cosetId,
               vertices: [simplex[i], simplex[j]],
             })
             cached.hashes.edge.add(edgeHash)
           }
 
           for (let k = j + 1; k < simplex.length; k++) {
-            const faceHash = [simplex[i], simplex[j], simplex[k]]
-              .sort((a, b) => {
-                for (let i = 0; i < a.length; i++) {
-                  if (a[i] < b[i]) return -1
-                  if (a[i] > b[i]) return 1
-                }
-                return 0
-              })
-              .map(a => hash(a))
-              .join('-')
+            const faceHash = hashV([simplex[i], simplex[j], simplex[k]])
             if (!cached.hashes.face.has(faceHash)) {
               faces.push({
                 word,
-                cosetId,
+                faceSize: 3,
                 vertices: [simplex[i], simplex[j], simplex[k]],
               })
               cached.hashes.face.add(faceHash)

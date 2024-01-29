@@ -4,6 +4,7 @@ import { reorder } from '../math/shape'
 import { ToddCoxeter, countCosets, wordToCoset } from '../math/toddcoxeter'
 
 export const getPolytope = (
+  first,
   batch,
   shape,
   cache,
@@ -218,7 +219,7 @@ export const getPolytope = (
 
   if (shape.dimensions === 0) {
     // Handle displaying the 1D shape egde
-    shape.currentWords = new Map([[1, '']])
+    shape.currentWords = new Map(first ? [[1, '']] : [])
     shape.facet = ['']
     shape.done = true
     const vertices = new Map([[1, [0]]])
@@ -264,7 +265,7 @@ export const getPolytope = (
     }
   } else if (shape.dimensions === 1) {
     // Handle displaying the 1D shape egde
-    shape.currentWords = new Map([[1, '']])
+    shape.currentWords = new Map(first ? [[1, '']] : [])
     shape.facet = Array.from(polytope.root.words.values())
     shape.done = true
     cache.set('e', {
@@ -308,7 +309,7 @@ export const getPolytope = (
   }
   // Handle displaying the 2D shape face
   else if (shape.dimensions === 2) {
-    shape.currentWords = new Map([[1, '']])
+    shape.currentWords = new Map(first ? [[1, '']] : [])
 
     const double = shape.gens
       .split('')
@@ -351,6 +352,50 @@ export const getPolytope = (
       aggregated: [
         {
           key: 'f',
+          coxeter: shape.coxeter,
+          stellation: shape.stellation,
+          mirrors: shape.mirrors,
+          dual,
+
+          count: 0,
+          done: true,
+        },
+      ],
+      done: true,
+    }
+  } else if (shape.dimensions === 3 && computeWords[3]) {
+    // Add the 3D shape cell
+    shape.currentWords = new Map([[1, '']])
+    shape.facet = Array.from(polytope.root.words.values())
+    shape.done = true
+    cache.set('c', {
+      ...shape,
+      subgens: shape.subgens,
+      facet: shape.facet,
+      subdimensions: shape.dimensions,
+      mirrors: shape.mirrors,
+      compute: true,
+      partial: !polytope.root.done,
+    })
+    polytope[3] = {
+      dimensions: 3,
+      processing: 1,
+      count: 0,
+      detail: [
+        {
+          key: 'c',
+          coxeter: shape.coxeter,
+          stellation: shape.stellation,
+          mirrors: shape.mirrors,
+          dual,
+
+          count: 0,
+          done: true,
+        },
+      ],
+      aggregated: [
+        {
+          key: 'c',
           coxeter: shape.coxeter,
           stellation: shape.stellation,
           mirrors: shape.mirrors,

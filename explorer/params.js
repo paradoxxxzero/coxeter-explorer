@@ -129,6 +129,10 @@ export const filterParams = (maybeBadParams, changed = [], oldParams) => {
   if (params.reciprocation > params.dimensions - 1) {
     params.reciprocation = params.dimensions - 1
   }
+  if (params.section.length !== params.dimensions + 1) {
+    params.section = new Array(params.dimensions + 1).fill(0)
+    params.section[params.section.length - 2] = 1
+  }
 
   for (let i = 3; i <= 9; i++) {
     if (i <= params.dimensions) {

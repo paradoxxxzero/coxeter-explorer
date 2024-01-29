@@ -1,6 +1,5 @@
-import { abs } from '../math'
 import { normalize, reflect } from '../math/hypermath'
-import { addV, cross, mulV, transpose } from '../math/matrix'
+import { transpose } from '../math/matrix'
 import { wordToCoset } from '../math/toddcoxeter'
 
 export const getBaseObjects = (rank, cached, shape, polytope) => {
@@ -86,8 +85,6 @@ export const getBaseObjects = (rank, cached, shape, polytope) => {
   } else if (rank === 2) {
     polytope.root.hosotopePair = null
     for (const [cosetId, word] of cached.currentWords) {
-      const parity = word.length % 2 ? 0 : 1
-
       const faceVertices = []
       for (let i = 0; i < cached.facet.length; i++) {
         const vertexId = wordToCoset(polytope.root, word + cached.facet[i])
@@ -147,76 +144,48 @@ export const getBaseObjects = (rank, cached, shape, polytope) => {
         cached.currentWords.delete(cosetId)
       }
 
-      if (
-        faceVertices.length === 3 &&
-        !faceVertices
-          .reduce((a, b) => addV(a, b), new Array(shape.dimensions).fill(0))
-          .every(a => abs(a) < 1e-12)
-      ) {
-        if (parity) {
-          ;[faceVertices[2], faceVertices[1]] = [
-            faceVertices[1],
-            faceVertices[2],
-          ]
+      const vertex = {
+        word,
+        vertices: faceVertices,
+        faceIndex: 0,
+        faceSize: faceVertices.length,
+        partial,
+      }
+      if (partial) {
+        partials.push(vertex)
+      } else {
+        objects.push(vertex)
+      }
+    }
+  } else if (rank === 3) {
+    for (const [cosetId, word] of cached.currentWords) {
+      const cellVertices = []
+      for (let i = 0; i < cached.facet.length; i++) {
+        const vertexId = wordToCoset(polytope.root, word + cached.facet[i])
+        if (vertexId && polytope.root.vertices.has(vertexId)) {
+          cellVertices.push(polytope.root.vertices.get(vertexId))
         }
-        const vertex = {
-          word,
-          vertices: faceVertices,
-          faceIndex: 0,
-          faceSize: 3,
-          partial,
-        }
-        if (partial) {
-          partials.push(vertex)
-        } else {
-          objects.push(vertex)
-        }
+      }
+      if (cellVertices.length < rank + 1) {
         continue
       }
-
-      let centroid = new Array(shape.dimensions).fill(0)
-      for (let j = 0; j < faceVertices.length; j++) {
-        const vertices = faceVertices[j]
-        centroid = addV(centroid, vertices)
+      const partial =
+        cellVertices.length < cached.facet.length || cached.partial
+      if (!partial) {
+        cached.currentWords.delete(cosetId)
       }
-      centroid = mulV(centroid, 1 / faceVertices.length)
-      const centroids = []
-      if (polytope.root.hosotope && centroid.every(a => abs(a) < 1e-12)) {
-        const normal3 = cross(faceVertices[0], faceVertices[1])
-        const base = new Array(shape.dimensions).fill(0)
-        normal3.map((a, i) => (base[i] = a))
-        centroids.push(base)
-        centroids.push(base.map(a => -a))
-        for (let j = 3; j < shape.dimensions; j++) {
-          const centroid = [...base]
-          centroid[2] = 0
-          centroid[j] = base[2]
-          centroids.push(centroid)
-          centroids.push(centroid.map(a => -a))
-        }
+
+      const vertex = {
+        word,
+        vertices: cellVertices,
+        faceIndex: 0,
+        faceSize: cellVertices.length,
+        partial,
+      }
+      if (partial) {
+        partials.push(vertex)
       } else {
-        centroids.push(centroid)
-      }
-      for (let j = 0; j < faceVertices.length; j++) {
-        for (let k = 0; k < centroids.length; k++) {
-          const vertex = {
-            word,
-            vertices: [
-              faceVertices[(j + parity) % faceVertices.length],
-              faceVertices[(j + (1 - parity)) % faceVertices.length],
-              centroids[k],
-            ],
-            faceIndex: j,
-            faceSize: faceVertices.length,
-            partial,
-          }
-
-          if (partial) {
-            partials.push(vertex)
-          } else {
-            objects.push(vertex)
-          }
-        }
+        objects.push(vertex)
       }
     }
   }

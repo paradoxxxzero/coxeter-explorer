@@ -2,7 +2,7 @@ import { getShape } from '../math/shape'
 import { isCompound, isDual } from '../mirrors'
 import { crossSection } from './crossSection'
 import { fillData } from './datafiller'
-import { getObjects } from './objects'
+import { faceToFrag, getObjects } from './objects'
 import { getPolytope } from './polytope'
 
 let cache, shape
@@ -64,8 +64,8 @@ onmessage = ({
           1: draw.edge,
           2: draw.face,
         }
-
     const polytope = getPolytope(
+      first,
       batch,
       shape,
       cache,
@@ -77,6 +77,7 @@ onmessage = ({
     )
     if (compound) {
       getPolytope(
+        first,
         batch,
         shape,
         cache,
@@ -98,14 +99,28 @@ onmessage = ({
       dual,
       polytope,
       hidden,
-      reciprocation
+      reciprocation,
+      section
     )
 
     if (section !== null) {
-      // TODO: migrate in getObjects
       objects = crossSection(polytope, objects, section)
     }
+    if (objects[2] && !fundamental) {
+      // Fundamental is only triangles
+      faceToFrag(objects[2], polytope.root)
+    }
 
+    for (let i = 0; i < objects.length; i++) {
+      const obj = objects[i]
+      if (!obj) {
+        continue
+      }
+      polytope.root.lasts[i] += obj.objects.reduce(
+        (acc, o) => acc + (o ? o.length : 0),
+        0
+      )
+    }
     const { infos, data } = fillData(shape.dimensions, objects, ambiance, draw)
     const poly = [...polytope]
     poly.done = polytope.done

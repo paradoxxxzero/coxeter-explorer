@@ -494,6 +494,12 @@ select option {
   border: none;
   background-color: rgba(150, 150, 150, 0.15);
 }
+
+.plane label {
+  display: flex;
+  margin-left: 0;
+  margin-right: 0;
+}
 .number input {
   color: white;
   border: none;

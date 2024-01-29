@@ -136,10 +136,17 @@ export const getDualObjects = (
 
         normal = mulV(normal, space.curvature / weights)
       }
-      const vertex = { word, vertices: [normal], dual: true, partial }
 
+      const vertex = {
+        word,
+        vertices: [normal],
+        dual: true,
+        partial,
+      }
+
+      const id = `${key}#${word}`
       // We also need to store the adjacency
-      polytope.root.dualVertices.set(`${key}#${word}`, {
+      polytope.root.dualVertices.set(id, {
         vertex: normal,
         facet: vertexIds,
         partial,
@@ -178,12 +185,12 @@ export const getDualObjects = (
       const dualVertices = []
       const dualVerticesId = []
       for (const [
-        vkey,
+        id,
         { vertex, facet, partial: vertexPartial },
       ] of polytope.root.dualVertices.entries()) {
         if (vertexIds.every(vertexId => facet.includes(vertexId))) {
           dualVertices.push(vertex)
-          dualVerticesId.push(vkey)
+          dualVerticesId.push(id)
         }
         partial = partial || vertexPartial
         if (dualVertices.length === 2) {
@@ -194,7 +201,12 @@ export const getDualObjects = (
       if (dualVertices.length !== 2) {
         continue
       }
-      const vertex = { word, vertices: dualVertices, dual: true, partial }
+      const vertex = {
+        word,
+        vertices: dualVertices,
+        dual: true,
+        partial,
+      }
       polytope.root.dualEdges.set(`${key}#${word}`, {
         edge: dualVerticesId,
         partial,
@@ -276,44 +288,18 @@ export const getDualObjects = (
         dualVertices.push(dualVerticesIndexed[index])
       }
 
-      if (dualVertices.length === 3) {
-        const vertex = { word, vertices: dualVertices, dual: true, partial }
-        if (partial) {
-          partials.push(vertex)
-        } else {
-          objects.push(vertex)
-          cached.currentWords.delete(cosetId)
-        }
-        continue
+      const vertex = {
+        word,
+        vertices: dualVertices,
+        dual: true,
+        faceSize: dualVertices.length,
+        partial,
       }
-
-      const parity = word.length % 2 ? 0 : 1
-      let center = new Array(shape.dimensions).fill(0)
-      for (let j = 0; j < dualVertices.length; j++) {
-        const vertices = dualVertices[j]
-        center = addV(center, vertices)
-      }
-      center = mulV(center, 1 / dualVertices.length)
-
-      for (let j = 0; j < dualVertices.length; j++) {
-        const vertex = {
-          word,
-          vertices: [
-            dualVertices[(j + parity) % dualVertices.length],
-            dualVertices[(j + (1 - parity)) % dualVertices.length],
-            center,
-          ],
-          dual: true,
-          faceIndex: j,
-          faceSize: dualVertices.length,
-          partial,
-        }
-        if (partial) {
-          partials.push(vertex)
-        } else {
-          objects.push(vertex)
-          cached.currentWords.delete(cosetId)
-        }
+      if (partial) {
+        partials.push(vertex)
+      } else {
+        objects.push(vertex)
+        cached.currentWords.delete(cosetId)
       }
     }
   }

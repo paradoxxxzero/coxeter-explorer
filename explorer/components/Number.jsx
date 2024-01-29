@@ -44,7 +44,9 @@ export const parse = (raw, min, max, step, coxeter) => {
     fraction === 1 ||
     (fraction !== null && fraction < min) ||
     (fraction !== null && fraction > max) ||
-    (step % 1 === 0 && fraction % step !== 0)
+    (step % 1 === 0 && fraction % step !== 0) ||
+    // Consider x.  as invalid to prevent auto deletion
+    (step % 1 !== 0 && raw.endsWith('.'))
   )
 
   return {

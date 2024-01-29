@@ -53,6 +53,20 @@ export const hash = v => {
   return s
 }
 
+export const sortV = v =>
+  v.sort((a, b) => {
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] < b[i]) return -1
+      if (a[i] > b[i]) return 1
+    }
+    return 0
+  })
+
+export const hashV = v =>
+  sortV(v)
+    .map(a => hash(a))
+    .join('-')
+
 function* genCombinations(arr, size) {
   if (size < 0 || arr.length < size) {
     return
