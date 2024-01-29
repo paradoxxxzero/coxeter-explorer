@@ -1,3 +1,4 @@
+import { types } from '../../statics'
 import { hashV, sqrt } from '../math'
 import { dot, mulV, subV } from '../math/matrix'
 
@@ -167,7 +168,7 @@ export const getSliceObjects = (rank, cut, obj, polytope) => {
   return { sections, sectionPartials }
 }
 
-export const crossSection = (polytope, objects, section) => {
+export const crossSection = (polytope, objects, section, draw) => {
   // The section is defined by the normal and the distance from the origin
   const vector = section.slice(0, -1)
   const d = section[section.length - 1]
@@ -203,9 +204,11 @@ export const crossSection = (polytope, objects, section) => {
         obj,
         polytope
       )
-      crossParts.objects.push(sections)
-      crossParts.size += sections.length + sectionPartials.length
-      crossParts.partials.push(sectionPartials)
+      if (draw[types[i]]) {
+        crossParts.objects.push(sections)
+        crossParts.size += sections.length + sectionPartials.length
+        crossParts.partials.push(sectionPartials)
+      }
     }
     crossSection.push(crossParts)
   }

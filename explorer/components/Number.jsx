@@ -4,6 +4,7 @@ export const parse = (raw, min, max, step, coxeter) => {
   let valid = true
   let value = 0
   let fraction = null
+  const float = parseInt(step) !== parseFloat(step)
   if (coxeter && ['∞', 'inf', 'Infinity'].includes(raw)) {
     raw = '∞'
     value = 0
@@ -22,13 +23,12 @@ export const parse = (raw, min, max, step, coxeter) => {
     }
     fraction = denominator === '' ? '' : parseInt(denominator)
     raw = `${numeratorRaw}/${isNaN(fraction) ? denominator : fraction}`
+  } else if (float) {
+    value = raw === '' ? '' : parseFloat(raw)
+    const precision = step.toString().split('.')[1].length
+    raw = value.toFixed(precision)
   } else {
-    value =
-      raw === ''
-        ? ''
-        : parseInt(step) === parseFloat(step)
-        ? parseInt(raw)
-        : parseFloat(raw)
+    value = raw === '' ? '' : parseInt(raw)
   }
 
   valid = !(
@@ -84,8 +84,10 @@ export default function Number({
         ? '∞'
         : fractionName && fraction > 1
         ? `${value}/${fraction}`
+        : parseInt(step) !== parseFloat(step)
+        ? value.toFixed(step.toString().split('.')[1].length)
         : `${value}`,
-    [coxeter, fraction, fractionName, value]
+    [coxeter, fraction, fractionName, step, value]
   )
 
   const [raw, setRaw] = useState(defaultValue)

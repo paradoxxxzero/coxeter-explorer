@@ -56,7 +56,7 @@ onmessage = ({
       ? {
           0: true,
           1: true,
-          2: draw.edge,
+          2: draw.edge || draw.face,
           3: draw.face,
         }
       : {
@@ -104,7 +104,7 @@ onmessage = ({
     )
 
     if (section !== null) {
-      objects = crossSection(polytope, objects, section)
+      objects = crossSection(polytope, objects, section, draw)
     }
     if (objects[2] && !fundamental) {
       // Fundamental is only triangles

@@ -111,6 +111,13 @@ export const filterParams = (maybeBadParams, changed = [], oldParams) => {
   if (!badParams.includes('coxeter')) {
     normalizeCoxeter(params)
   }
+  if (params.section.length !== params.dimensions + 1) {
+    params.section = new Array(params.dimensions + 1).fill(0)
+    params.section[params.section.length - 2] = 1
+    const newGram = coxeterToGram(params.coxeter, params.stellation)
+    const newPseudoCurvature = det(newGram)
+    params.section[params.section.length - 1] = newPseudoCurvature < 0 ? 2 : 0
+  }
   if (
     params.matrix.length !== params.dimensions ||
     params.matrix.some(r => r.length !== params.dimensions)
@@ -122,16 +129,15 @@ export const filterParams = (maybeBadParams, changed = [], oldParams) => {
     // It's not entirely correct but it's fast and works for most cases
     const oldGram = coxeterToGram(oldParams.coxeter, oldParams.stellation)
     const newGram = coxeterToGram(params.coxeter, params.stellation)
-    if (det(oldGram) !== det(newGram)) {
+    const oldPseudoCurvature = det(oldGram)
+    const newPseudoCurvature = det(newGram)
+    if (oldPseudoCurvature !== newPseudoCurvature) {
       params.matrix = ident(params.dimensions)
+      params.section[params.section.length - 1] = newPseudoCurvature < 0 ? 2 : 0
     }
   }
   if (params.reciprocation > params.dimensions - 1) {
     params.reciprocation = params.dimensions - 1
-  }
-  if (params.section.length !== params.dimensions + 1) {
-    params.section = new Array(params.dimensions + 1).fill(0)
-    params.section[params.section.length - 2] = 1
   }
 
   for (let i = 3; i <= 9; i++) {
