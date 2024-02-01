@@ -2,7 +2,7 @@ import { types } from '../../statics'
 import { ambiances } from '../ambiances'
 import { getArity } from '../utils'
 
-export const fillData = (dimensions, objects, ambiance, draw) => {
+export const fillGeometry = (dimensions, objects, ambiance, draw) => {
   const data = []
   const infos = []
   const arity = getArity(dimensions)
@@ -13,7 +13,7 @@ export const fillData = (dimensions, objects, ambiance, draw) => {
       infos.push(null)
       continue
     }
-    const buffers = [new Float32Array(parts.size * 3)]
+    const buffers = []
     for (let j = 0; j < i + 1; j++) {
       buffers.push(new Float32Array(parts.size * arity))
     }
@@ -31,9 +31,43 @@ export const fillData = (dimensions, objects, ambiance, draw) => {
         for (let l = 0; l < object.vertices.length; l++) {
           const vertex = object.vertices[l]
           for (let m = 0; m < vertex.length; m++) {
-            buffers[l + 1][idx * arity + m] = vertex[m]
+            buffers[l][idx * arity + m] = vertex[m]
           }
         }
+        idx++
+      }
+    }
+    data.push(buffers)
+    infos.push({
+      start: parts.start,
+      size: parts.size,
+    })
+  }
+  return { infos, data }
+}
+
+export const fillColor = (dimensions, objects, ambiance, draw) => {
+  const data = []
+  const infos = []
+  for (let i = 0; i < objects.length; i++) {
+    const parts = objects[i]
+    if (!parts) {
+      infos.push(null)
+      continue
+    }
+    const buffer = new Float32Array(parts.size * 3)
+
+    let idx = 0
+    const allObjects = parts.objects.concat(parts.partials)
+
+    for (let j = 0; j < allObjects.length; j++) {
+      const objects = allObjects[j]
+      if (!objects) {
+        continue
+      }
+      for (let k = 0; k < objects.length; k++) {
+        const object = objects[k]
+
         const c = ambiances[ambiance].color({
           word: object.word,
           key: object.key,
@@ -47,13 +81,13 @@ export const fillData = (dimensions, objects, ambiance, draw) => {
           type: types[i],
           dual: !!object.dual,
         })
-        buffers[0][idx * 3 + 0] = c[0]
-        buffers[0][idx * 3 + 1] = c[1]
-        buffers[0][idx * 3 + 2] = c[2]
+        buffer[idx * 3 + 0] = c[0]
+        buffer[idx * 3 + 1] = c[1]
+        buffer[idx * 3 + 2] = c[2]
         idx++
       }
     }
-    data.push(buffers)
+    data.push(buffer)
     infos.push({
       start: parts.start,
       size: parts.size,

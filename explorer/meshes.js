@@ -131,11 +131,22 @@ export default function getMeshes(rt) {
         mesh.uniforms.eye.update(rt.camera.eye)
       }
     },
-    fillData(data) {
+    fillGeometry(geometry) {
       for (let i = 0; i < this.meshes.length; i++) {
         const type = this.meshes[i]
         const mesh = this[type]
-        mesh.fillData(data.data[i], data.infos[i])
+        if (geometry.data[i]) {
+          mesh.fillGeometry(geometry.data[i], geometry.infos[i])
+        }
+      }
+    },
+    fillColor(color) {
+      for (let i = 0; i < this.meshes.length; i++) {
+        const type = this.meshes[i]
+        const mesh = this[type]
+        if (color.data[i]) {
+          mesh.fillColor(color.data[i], color.infos[i])
+        }
       }
     },
   }

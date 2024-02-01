@@ -1,15 +1,15 @@
 import { getShape } from '../math/shape'
 import { isCompound, isDual } from '../mirrors'
 import { crossSection } from './crossSection'
-import { fillData } from './datafiller'
+import { fillColor, fillGeometry } from './datafiller'
 import { faceToFrag, getObjects } from './objects'
 import { getPolytope } from './polytope'
 
-let cache, shape
+let cache, shape, fullObjects, fullObjectsUnsectioned
 
 onmessage = ({
   data: {
-    first,
+    type,
     space,
     dimensions,
     coxeter,
@@ -25,7 +25,7 @@ onmessage = ({
   },
 }) => {
   try {
-    if (first) {
+    if (type === 'first') {
       cache = new Map()
       shape = getShape(
         dimensions,
@@ -37,6 +37,22 @@ onmessage = ({
       )
       // eslint-disable-next-line no-restricted-globals
       self.shape = shape
+      fullObjects = []
+      fullObjectsUnsectioned = []
+    }
+    // Shortcuts
+    if (type === 'paint') {
+      console.log(ambiance)
+      const color = fillColor(shape.dimensions, fullObjects, ambiance, draw)
+
+      postMessage(
+        {
+          type,
+          color,
+        },
+        color.data.filter(a => a).map(a => a.buffer)
+      )
+      return
     }
     const fundamental = mirrors.length && mirrors.every(m => !m)
     const dual = mirrors.some(m => isDual(m))
@@ -65,7 +81,7 @@ onmessage = ({
           2: draw.face,
         }
     const polytope = getPolytope(
-      first,
+      type === 'first',
       batch,
       shape,
       cache,
@@ -77,7 +93,7 @@ onmessage = ({
     )
     if (compound) {
       getPolytope(
-        first,
+        type === 'first',
         batch,
         shape,
         cache,
@@ -116,12 +132,25 @@ onmessage = ({
       if (!obj) {
         continue
       }
+      if (!fullObjects[i]) {
+        fullObjects[i] = {
+          objects: [],
+          partials: [],
+          start: 0,
+          size: 0,
+        }
+      }
+      fullObjects[i].objects.push(...obj.objects)
+      fullObjects[i].partials = obj.partials
+      fullObjects[i].size += obj.size
+
       polytope.root.lasts[i] += obj.objects.reduce(
         (acc, o) => acc + (o ? o.length : 0),
         0
       )
     }
-    const { infos, data } = fillData(shape.dimensions, objects, ambiance, draw)
+    const geometry = fillGeometry(shape.dimensions, objects, ambiance, draw)
+    const color = fillColor(shape.dimensions, objects, ambiance, draw)
     const poly = [...polytope]
     poly.done = polytope.done
     poly.size = polytope.size
@@ -134,12 +163,14 @@ onmessage = ({
     }
     postMessage(
       {
+        type,
         polytope: poly,
-        infos,
-        data,
+        geometry,
+        color,
       },
-      data
+      geometry.data
         .flat(1)
+        .concat(color.data)
         .filter(a => a)
         .map(a => a.buffer)
     )

@@ -545,7 +545,7 @@ export const mesh = (
       this.attributes.uv.extend(2, new Float32Array(geometry.uvs))
       this.attributes.normal.extend(3, new Float32Array(geometry.normals))
     },
-    fillData(data, info) {
+    fillGeometry(data, info) {
       if (!info) {
         this.count = 0
         return
@@ -556,11 +556,13 @@ export const mesh = (
         this.extendAttributes(this.count)
       }
 
-      this.attributes.color.update(data[0], info.start, info.size)
-      for (let j = 0; j < this.varying.length; j++) {
-        const attr = this.varying[j]
-        this.attributes[attr].update(data[j + 1], info.start, info.size)
+      for (let i = 0; i < this.varying.length; i++) {
+        const attr = this.varying[i]
+        this.attributes[attr].update(data[i], info.start, info.size)
       }
+    },
+    fillColor(data, info) {
+      this.attributes.color.update(data, info.start, info.size)
     },
     render(rt) {
       if (!this.count) {

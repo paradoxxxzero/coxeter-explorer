@@ -101,6 +101,7 @@ export const useRender = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
+      console.log('render')
       render(runtime)
       return runtime
     })
@@ -134,6 +135,7 @@ export const useRender = (runtime, setRuntime) => {
     runtime.projection7,
     runtime.projection8,
     runtime.projection9,
+    runtime.processing,
     runtime.ranges,
     runtime.space,
     runtime.stellation,

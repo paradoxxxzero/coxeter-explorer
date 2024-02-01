@@ -66,7 +66,7 @@ export const useProcess = (runtime, setRuntime) => {
         iteration: -1,
         paused: false,
       }
-      if (runtime.processing) {
+      if (runtime.processing || runtime.error) {
         runtime.shaper?.terminate()
         newRuntime.shaper = new Shaper()
       }
@@ -76,7 +76,6 @@ export const useProcess = (runtime, setRuntime) => {
     runtime.space,
     runtime.crosssection,
     runtime.section,
-    runtime.ambiance,
     runtime.extrarels,
     runtime.drawVertex,
     runtime.drawEdge,
@@ -113,7 +112,7 @@ export const useProcess = (runtime, setRuntime) => {
       }
 
       runtime.shaper.postMessage({
-        first: runtime.iteration === -1,
+        type: runtime.iteration === -1 ? 'first' : 'iteration',
         space: runtime.space,
         dimensions: runtime.dimensions,
         coxeter: runtime.coxeter,
@@ -145,7 +144,6 @@ export const useProcess = (runtime, setRuntime) => {
     runtime.section,
     runtime.iteration,
     runtime.limit,
-    runtime.ambiance,
     runtime.drawVertex,
     runtime.drawEdge,
     runtime.drawFace,
@@ -157,6 +155,24 @@ export const useProcess = (runtime, setRuntime) => {
     runtime.reciprocation,
     setRuntime,
   ])
+
+  useEffect(() => {
+    setRuntime(runtime => {
+      runtime.shaper.postMessage({
+        type: 'paint',
+        ambiance: runtime.ambiance,
+        draw: {
+          vertex: runtime.drawVertex,
+          edge: runtime.drawEdge,
+          face: runtime.drawFace,
+        },
+      })
+      return {
+        ...runtime,
+        processing: true,
+      }
+    })
+  }, [runtime.ambiance, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => ({
@@ -171,26 +187,50 @@ export const useProcess = (runtime, setRuntime) => {
     }
     const handleShape = ({ data }) => {
       if (!data.error) {
-        setRuntime(runtime => {
-          runtime.meshes.fillData(data)
-          return {
-            ...runtime,
-            processing: !data.polytope.done,
-            iteration:
-              runtime.paused || data.polytope.done
-                ? runtime.iteration
-                : runtime.iteration + 1,
-            polytope: data.polytope,
-          }
-        })
+        if (data.type === 'paint') {
+          setRuntime(runtime => {
+            console.log('paint')
+            runtime.meshes.fillColor(data.color)
+            return {
+              ...runtime,
+              processing: false,
+            }
+          })
+        }
+        if (['first', 'iteration'].includes(data.type)) {
+          setRuntime(runtime => {
+            runtime.meshes.fillGeometry(data.geometry)
+            runtime.meshes.fillColor(data.color)
+            return {
+              ...runtime,
+              processing: !data.polytope.done,
+              iteration:
+                runtime.paused || data.polytope.done
+                  ? runtime.iteration
+                  : runtime.iteration + 1,
+              polytope: data.polytope,
+            }
+          })
+        }
       } else {
         console.error(data.error)
       }
     }
+    const handleError = error => {
+      console.error(error)
+      setRuntime(runtime => ({
+        ...runtime,
+        error,
+        processing: false,
+        iteration: 0,
+      }))
+    }
 
     runtime.shaper.addEventListener('message', handleShape)
+    runtime.shaper.addEventListener('error', handleError)
     return () => {
       runtime.shaper.removeEventListener('message', handleShape)
+      runtime.shaper.removeEventListener('error', handleError)
     }
   }, [runtime.shaper, runtime.paused, setRuntime])
 }
