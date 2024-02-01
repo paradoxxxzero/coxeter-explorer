@@ -6,15 +6,17 @@ import { getDualObjects } from './dual'
 import { getFundamentalObjects } from './fundamental'
 
 export const faceToFrag = (faces, root) => {
-  faces.size = 0
+  const parts = {
+    start: faces.start,
+    size: 0,
+    objects: [],
+    partials: [],
+  }
   for (let p = 0; p < 2; p++) {
     const partial = p === 1
     const objects = partial ? faces.partials : faces.objects
     for (let i = 0; i < objects.length; i++) {
       const obj = objects[i]
-      if (!obj) {
-        continue
-      }
       const newObjects = []
       for (let j = 0; j < obj.length; j++) {
         const face = obj[j]
@@ -71,61 +73,54 @@ export const faceToFrag = (faces, root) => {
         }
       }
       if (partial) {
-        faces.partials[i] = newObjects
+        parts.partials.push(newObjects)
       } else {
-        faces.objects[i] = newObjects
+        parts.objects.push(newObjects)
       }
-      faces.size += newObjects.length
+      parts.size += newObjects.length
     }
   }
+  return parts
 }
 
 export const getObjects = (
   shape,
   cache,
-  space,
   draw,
-  fundamental,
-  dual,
   polytope,
   hidden,
   reciprocation,
-  section
+  section,
+  root
 ) => {
-  if (!polytope.root.lasts) {
-    polytope.root.lasts = new Array(3).fill(0)
-  }
   const objects = []
-  if (fundamental) {
-    const fundamentalObjects = getFundamentalObjects(
-      polytope.root,
-      shape,
-      space
-    )
+  if (root.fundamental) {
+    const fundamentalObjects = getFundamentalObjects(shape, root)
     for (let i = 0; i < fundamentalObjects.length; i++) {
-      if (draw[types[i]]) {
-        objects.push({
-          start: polytope.root.lasts[i],
-          size: fundamentalObjects[i].length,
-          objects: [fundamentalObjects[i]],
-          partials: [],
-        })
-        polytope.root.lasts[i] += fundamentalObjects[i].length
-      } else {
-        objects.push(null)
-      }
-    }
-  } else {
-    for (let i = 0; i < (section ? 4 : 3); i++) {
-      if (!polytope[i] || (!section && !dual && !draw[types[i]])) {
-        objects.push(null)
-        continue
-      }
       const parts = {
-        start: polytope.root.lasts[i],
+        start: root.lasts[i],
         size: 0,
         objects: [],
         partials: [],
+      }
+      if (draw[types[i]]) {
+        parts.size = fundamentalObjects[i].length
+        parts.objects.push(fundamentalObjects[i])
+        root.lasts[i] += fundamentalObjects[i].length
+      }
+      objects.push(parts)
+    }
+  } else {
+    for (let i = 0; i < (section ? 4 : 3); i++) {
+      const parts = {
+        start: root.lasts[i],
+        size: 0,
+        objects: [],
+        partials: [],
+      }
+      if (!polytope[i] || (!section && !root.dual && !draw[types[i]])) {
+        objects.push(parts)
+        continue
       }
       for (let j = 0; j < polytope[i].detail.length; j++) {
         const detail = polytope[i].detail[j]
@@ -136,24 +131,19 @@ export const getObjects = (
           !cached.currentWords.size
         ) {
           // Keep index for subshape
-          parts.objects.push(null)
-          parts.partials.push(null)
+          parts.objects.push([])
+          parts.partials.push([])
           continue
         }
 
         const { objects, partials } = detail.dual
-          ? getDualObjects(
-              i,
-              cached,
-              shape,
-              polytope,
-              reciprocation,
-              detail.key
-            )
-          : getBaseObjects(i, cached, shape, polytope)
+          ? getDualObjects(i, cached, shape, reciprocation, detail.key, root)
+          : getBaseObjects(i, cached, root)
 
         if (!section && (!draw[types[i]] || hidden.includes(detail.key))) {
           // Dual needs to be computed but still can be hidden
+          parts.objects.push([])
+          parts.partials.push([])
           continue
         }
         parts.objects.push(objects)

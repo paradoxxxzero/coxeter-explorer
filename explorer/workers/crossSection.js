@@ -21,7 +21,7 @@ export const slice = (start, end, { p, normal }) => {
   return vertex
 }
 
-export const getSliceObjects = (rank, cut, obj, polytope) => {
+export const getSliceObjects = (rank, cut, obj, root) => {
   const sections = []
   const sectionPartials = []
 
@@ -46,8 +46,8 @@ export const getSliceObjects = (rank, cut, obj, polytope) => {
       }
     }
   } else if (rank === 1) {
-    if (!polytope.root.crossEdges) {
-      polytope.root.crossEdges = new Map()
+    if (!root.crossEdges) {
+      root.crossEdges = new Map()
     }
 
     for (let k = 0; k < obj.length; k++) {
@@ -69,13 +69,10 @@ export const getSliceObjects = (rank, cut, obj, polytope) => {
       }
       if (!face.partial) {
         for (let l = 0; l < 2; l++) {
-          if (!polytope.root.crossEdges.has(hashes[l])) {
-            polytope.root.crossEdges.set(
-              hashes[l],
-              new Set([hashes[(l + 1) % 2]])
-            )
+          if (!root.crossEdges.has(hashes[l])) {
+            root.crossEdges.set(hashes[l], new Set([hashes[(l + 1) % 2]]))
           } else {
-            polytope.root.crossEdges.get(hashes[l]).add(hashes[(l + 1) % 2])
+            root.crossEdges.get(hashes[l]).add(hashes[(l + 1) % 2])
           }
         }
       }
@@ -92,13 +89,10 @@ export const getSliceObjects = (rank, cut, obj, polytope) => {
       }
     }
   } else if (rank === 2) {
-    if (!polytope.root.unfinishedCells) {
-      polytope.root.unfinishedCells = new Map()
+    if (!root.unfinishedCells) {
+      root.unfinishedCells = new Map()
     }
-    const allObjects = [
-      ...obj,
-      ...Array.from(polytope.root.unfinishedCells.values()),
-    ]
+    const allObjects = [...obj, ...Array.from(root.unfinishedCells.values())]
     for (let k = 0; k < allObjects.length; k++) {
       const cell = allObjects[k]
       const face = []
@@ -106,20 +100,20 @@ export const getSliceObjects = (rank, cut, obj, polytope) => {
       for (let l = 0; l < cell.vertices.length; l++) {
         for (let m = l + 1; m < cell.vertices.length; m++) {
           const eHash = hashV([cell.vertices[l], cell.vertices[m]])
-          if (polytope.root.crossEdges.has(eHash)) {
+          if (root.crossEdges.has(eHash)) {
             const vertex = slice(cell.vertices[l], cell.vertices[m], cut)
             if (!vertex) {
               continue
             }
-            hashes.push([eHash, polytope.root.crossEdges.get(eHash)])
+            hashes.push([eHash, root.crossEdges.get(eHash)])
             face.push(vertex)
           }
         }
       }
 
       if (face.length < 3) {
-        if (!polytope.root.unfinishedCells.has(cell.word) && !cell.partial) {
-          polytope.root.unfinishedCells.set(cell.word, cell)
+        if (!root.unfinishedCells.has(cell.word) && !cell.partial) {
+          root.unfinishedCells.set(cell.word, cell)
         }
         continue
       }
@@ -142,11 +136,11 @@ export const getSliceObjects = (rank, cut, obj, polytope) => {
       let partial = cell.partial
       if (order.length < face.length) {
         partial = true
-        if (!polytope.root.unfinishedCells.has(cell.word) && !cell.partial) {
-          polytope.root.unfinishedCells.set(cell.word, cell)
+        if (!root.unfinishedCells.has(cell.word) && !cell.partial) {
+          root.unfinishedCells.set(cell.word, cell)
         }
       } else {
-        polytope.root.unfinishedCells.delete(cell.word)
+        root.unfinishedCells.delete(cell.word)
       }
       const vertices = []
       for (let l = 0; l < order.length; l++) {
@@ -168,7 +162,7 @@ export const getSliceObjects = (rank, cut, obj, polytope) => {
   return { sections, sectionPartials }
 }
 
-export const crossSection = (polytope, objects, section, draw) => {
+export const crossSection = (objects, section, draw, root) => {
   // The section is defined by the normal and the distance from the origin
   const vector = section.slice(0, -1)
   const d = section[section.length - 1]
@@ -181,33 +175,25 @@ export const crossSection = (polytope, objects, section, draw) => {
   const crossSection = []
   for (let i = 0; i < 3; i++) {
     const parts = objects[i + 1]
-    if (!parts) {
-      crossSection.push(null)
-      continue
-    }
 
     const crossParts = {
-      start: polytope.root.lasts[i],
+      start: root.lasts[i],
       size: 0,
       objects: [],
       partials: [],
     }
+    if (parts) {
+      // Transform the edges into vertices
+      const allObjects = parts.objects.concat(parts.partials)
+      for (let j = 0; j < allObjects.length; j++) {
+        const obj = allObjects[j] || []
 
-    // Transform the edges into vertices
-    const allObjects = parts.objects.concat(parts.partials)
-    for (let j = 0; j < allObjects.length; j++) {
-      const obj = allObjects[j] || []
-
-      const { sections, sectionPartials } = getSliceObjects(
-        i,
-        cut,
-        obj,
-        polytope
-      )
-      if (draw[types[i]]) {
-        crossParts.objects.push(sections)
-        crossParts.size += sections.length + sectionPartials.length
-        crossParts.partials.push(sectionPartials)
+        const { sections, sectionPartials } = getSliceObjects(i, cut, obj, root)
+        if (draw[types[i]]) {
+          crossParts.objects.push(sections)
+          crossParts.size += sections.length + sectionPartials.length
+          crossParts.partials.push(sectionPartials)
+        }
       }
     }
     crossSection.push(crossParts)

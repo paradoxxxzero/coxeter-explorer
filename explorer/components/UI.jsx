@@ -155,14 +155,12 @@ export default function UI({
     [rotations.auto, updateRotations]
   )
   const handleCleanExtraRels = useCallback(() => {
-    if (!runtime.polytope?.root || !params.extrarels) {
+    if (!runtime.polytope || !params.extrarels) {
       return
     }
     const clean = r => {
       const expanded = expand(r)
-      if (
-        !expanded.split('').every(r => runtime.polytope.root.gens.includes(r))
-      ) {
+      if (!expanded.split('').every(r => runtime.polytope.gens.includes(r))) {
         return r
       }
       return factor(expanded)
@@ -173,12 +171,12 @@ export default function UI({
         .map(r => clean(r))
         .join(', '),
     })
-  }, [params.extrarels, runtime.polytope?.root, updateParams])
+  }, [params.extrarels, runtime.polytope, updateParams])
 
   const cleanRels = useMemo(
-    () => runtime.polytope?.root?.rels.map(r => factor(r)).join(', '),
+    () => runtime.polytope?.rels.map(r => factor(r)).join(', '),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [runtime.polytope?.root?.rels.join(',')]
+    [runtime.polytope?.rels.join(',')]
   )
 
   const exportImage = useCallback(async () => {
@@ -530,32 +528,31 @@ export default function UI({
             <aside className="parameters">
               {(showUI === 'full' ||
                 (showUI === 'advanced' && params.extrarels)) &&
-              runtime.polytope?.root &&
-              runtime.polytope.root.gens.length ? (
+              runtime.polytope?.gens.length ? (
                 <div className="rels">
                   <label className="number-label">
                     <span>
-                      {runtime.polytope.root.gens
+                      {runtime.polytope.gens
                         .split('')
                         .map(g => (
                           <span className="generator" key={g}>
                             {g}
-                            <sub>{runtime.polytope.root.transforms[g]}</sub>
+                            <sub>{runtime.polytope.transforms[g]}</sub>
                           </span>
                         ))
                         .reduce((a, b) => [a, ', ', b])}{' '}
-                      / {runtime.polytope.root.subgens.split('').join(', ')} |{' '}
+                      / {runtime.polytope.subgens.split('').join(', ')} |{' '}
                     </span>
                     <div
                       data-autosize={
-                        params.extrarels || runtime.polytope.root.extrarels
+                        params.extrarels || runtime.polytope.extrarels
                       }
                     >
                       <input
                         name="extrarels"
                         size={4}
                         title={cleanRels}
-                        placeholder={runtime.polytope.root.extrarels}
+                        placeholder={runtime.polytope.extrarels}
                         value={params.extrarels}
                         onChange={handleRawChange}
                       />
@@ -667,7 +664,7 @@ export default function UI({
           {showUI === 'empty' ? <div className="spacer" /> : null}
           <button
             className={`space-button button${
-              runtime.processing && !runtime.paused ? ' processing' : ''
+              runtime.processing ? ' processing' : ''
             }${showUI === 'empty' ? ' empty' : ''}`}
             onClick={handleUI}
           >

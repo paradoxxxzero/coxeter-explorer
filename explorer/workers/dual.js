@@ -69,23 +69,23 @@ export const getDualObjects = (
   rank,
   cached,
   shape,
-  polytope,
   reciprocation,
-  key
+  key,
+  root
 ) => {
-  const { space } = polytope.root
+  const { space } = root
   const objects = []
   const partials = []
   if (rank === 0) {
     // root word -> { vertex: centroid, facets: [facet vertex ids] }
-    polytope.root.dualVertices = polytope.root.dualVertices || new Map()
+    root.dualVertices = root.dualVertices || new Map()
 
     for (const [cosetId, word] of cached.currentWords) {
       const vertexIds = []
 
       for (let i = 0; i < cached.facet.length; i++) {
-        const vertexId = wordToCoset(polytope.root, word + cached.facet[i])
-        if (vertexId && polytope.root.vertices.has(vertexId)) {
+        const vertexId = wordToCoset(root, word + cached.facet[i])
+        if (vertexId && root.vertices.has(vertexId)) {
           vertexIds.push(vertexId)
         }
       }
@@ -97,7 +97,7 @@ export const getDualObjects = (
       // The facet dual of rank 0 is a scaled up centroid of the facet
       let normal = new Array(shape.dimensions).fill(0)
       for (let j = 0; j < vertexIds.length; j++) {
-        const vertex = polytope.root.vertices.get(vertexIds[j])
+        const vertex = root.vertices.get(vertexIds[j])
         normal = addV(normal, vertex)
       }
 
@@ -111,18 +111,13 @@ export const getDualObjects = (
 
           if (reciprocation > 0 && reciprocation < shape.dimensions - 1) {
             if (!cached.midradius) {
-              cached.midradius = getMidradius(
-                reciprocation,
-                shape,
-                key,
-                polytope.root
-              )
+              cached.midradius = getMidradius(reciprocation, shape, key, root)
             }
             radius = cached.midradius
           }
           const normalWithMetric = multiplyVector(space.metric, normal)
           for (let j = 0; j < vertexIds.length; j++) {
-            const vertex = polytope.root.vertices.get(vertexIds[j])
+            const vertex = root.vertices.get(vertexIds[j])
             weights += dot(normalWithMetric, vertex)
           }
           weights /= radius * vertexIds.length
@@ -146,7 +141,7 @@ export const getDualObjects = (
 
       const id = `${key}#${word}`
       // We also need to store the adjacency
-      polytope.root.dualVertices.set(id, {
+      root.dualVertices.set(id, {
         vertex: normal,
         facet: vertexIds,
         partial,
@@ -159,18 +154,18 @@ export const getDualObjects = (
       }
     }
   } else if (rank === 1) {
-    if (!polytope.root.dualVertices?.size) {
+    if (!root.dualVertices?.size) {
       return { objects, partials }
     }
 
-    polytope.root.dualEdges = polytope.root.dualEdges || new Map()
+    root.dualEdges = root.dualEdges || new Map()
 
     for (const [cosetId, word] of cached.currentWords) {
       const vertexIds = []
       for (let i = 0; i < cached.facet.length; i++) {
-        const vertexId = wordToCoset(polytope.root, word + cached.facet[i])
+        const vertexId = wordToCoset(root, word + cached.facet[i])
         // Need the vertex?
-        if (vertexId && polytope.root.vertices.has(vertexId)) {
+        if (vertexId && root.vertices.has(vertexId)) {
           vertexIds.push(vertexId)
         }
       }
@@ -187,7 +182,7 @@ export const getDualObjects = (
       for (const [
         id,
         { vertex, facet, partial: vertexPartial },
-      ] of polytope.root.dualVertices.entries()) {
+      ] of root.dualVertices.entries()) {
         if (vertexIds.every(vertexId => facet.includes(vertexId))) {
           dualVertices.push(vertex)
           dualVerticesId.push(id)
@@ -207,7 +202,7 @@ export const getDualObjects = (
         dual: true,
         partial,
       }
-      polytope.root.dualEdges.set(`${key}#${word}`, {
+      root.dualEdges.set(`${key}#${word}`, {
         edge: dualVerticesId,
         partial,
       })
@@ -219,15 +214,15 @@ export const getDualObjects = (
       }
     }
   } else if (rank === 2) {
-    if (!polytope.root.dualVertices?.size || !polytope.root.dualEdges?.size) {
+    if (!root.dualVertices?.size || !root.dualEdges?.size) {
       return { objects, partials }
     }
     for (const [cosetId, word] of cached.currentWords) {
       const vertexIds = []
       for (let i = 0; i < cached.facet.length; i++) {
-        const vertexId = wordToCoset(polytope.root, word + cached.facet[i])
+        const vertexId = wordToCoset(root, word + cached.facet[i])
         // Need the vertex?
-        if (vertexId && polytope.root.vertices.has(vertexId)) {
+        if (vertexId && root.vertices.has(vertexId)) {
           vertexIds.push(vertexId)
         }
       }
@@ -241,7 +236,7 @@ export const getDualObjects = (
       for (const [
         vkey,
         { vertex, facet, partial: vertexPartial },
-      ] of polytope.root.dualVertices.entries()) {
+      ] of root.dualVertices.entries()) {
         if (
           vertexIds.every(vertexId => facet.includes(vertexId)) ||
           shape.dimensions === 2 // Hack to draw fake face
@@ -258,10 +253,7 @@ export const getDualObjects = (
 
       // Find the edges that compose this face
       const edges = []
-      for (const {
-        edge,
-        partial: edgePartial,
-      } of polytope.root.dualEdges.values()) {
+      for (const { edge, partial: edgePartial } of root.dualEdges.values()) {
         if (
           dualVerticesId.includes(edge[0]) &&
           dualVerticesId.includes(edge[1])

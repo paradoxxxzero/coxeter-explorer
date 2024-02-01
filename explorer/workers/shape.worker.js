@@ -5,7 +5,7 @@ import { fillColor, fillGeometry } from './datafiller'
 import { faceToFrag, getObjects } from './objects'
 import { getPolytope } from './polytope'
 
-let cache, shape, fullObjects, fullObjectsUnsectioned
+let cache, root, shape, fullObjects, fullRawObjects
 
 onmessage = ({
   data: {
@@ -26,7 +26,6 @@ onmessage = ({
 }) => {
   try {
     if (type === 'first') {
-      cache = new Map()
       shape = getShape(
         dimensions,
         coxeter,
@@ -35,73 +34,106 @@ onmessage = ({
         space,
         extrarels
       )
+      root = {
+        fundamental: mirrors.length && mirrors.every(m => !m),
+        dual: mirrors.some(m => isDual(m)),
+        compound: mirrors.some(m => isCompound(m)),
+        lasts: new Array(3).fill(0),
+      }
+      const getRoot = shape => {
+        let root
+        const visitShape = subshape => {
+          if (subshape.dimensions === 0) {
+            root = subshape
+          }
+          if (!root) {
+            subshape.children.forEach(visitShape)
+          }
+        }
+        shape.children.forEach(visitShape)
+        return root
+      }
+      cache = new Map([
+        [
+          `${root.dual ? 'd' : root.fundamental ? 'f' : ''}${
+            getRoot(shape).key
+          }`,
+          root,
+        ],
+      ])
       // eslint-disable-next-line no-restricted-globals
       self.shape = shape
       fullObjects = []
-      fullObjectsUnsectioned = []
+      fullRawObjects = []
     }
     // Shortcuts
     if (type === 'paint') {
-      console.log(ambiance)
       const color = fillColor(shape.dimensions, fullObjects, ambiance, draw)
 
       postMessage(
         {
-          type,
           color,
         },
         color.data.filter(a => a).map(a => a.buffer)
       )
       return
     }
-    const fundamental = mirrors.length && mirrors.every(m => !m)
-    const dual = mirrors.some(m => isDual(m))
-    const compound = mirrors.some(m => isCompound(m))
+    if (type === 'section') {
+      if (!fullRawObjects.length) {
+        return
+      }
+      let objects = fullRawObjects
+      for (let i = 0; i < objects.length; i++) {
+        root.lasts[i] = 0
+      }
+      if (section !== null) {
+        objects = crossSection(objects, section, draw, root)
+      }
+      if (!root.fundamental) {
+        // Fundamental is only triangles
+        objects[2] = faceToFrag(objects[2], root)
+      }
+      fullObjects = objects
+      for (let i = 0; i < objects.length; i++) {
+        root.lasts[i] = objects[i].size
+      }
+      const geometry = fillGeometry(shape.dimensions, objects, ambiance, draw)
+      const color = fillColor(shape.dimensions, objects, ambiance, draw)
+      postMessage(
+        {
+          geometry,
+          color,
+        },
+        geometry.data
+          .flat(1)
+          .concat(color.data)
+          .filter(a => a)
+          .map(a => a.buffer)
+      )
+      return
+    }
+    if (type === 'display') {
+      return
+    }
 
-    // We always need to compute the vertices
-    const computeWords = fundamental
-      ? { [dimensions - 1]: true } // Compute vertices (Fundamental is reversed)
-      : dual
-      ? {
-          0: true,
-          1: draw.edge || draw.face,
-          2: draw.face,
-          [dimensions - 1]: true,
-        }
-      : section !== null
-      ? {
-          0: true,
-          1: true,
-          2: draw.edge || draw.face,
-          3: draw.face,
-        }
-      : {
-          0: true,
-          1: draw.edge,
-          2: draw.face,
-        }
     const polytope = getPolytope(
-      type === 'first',
       batch,
       shape,
       cache,
       space,
-      draw,
-      fundamental,
-      dual && !compound,
-      computeWords
+      root.dual && !root.compound,
+      section,
+      root
     )
-    if (compound) {
+    if (root.compound) {
       getPolytope(
-        type === 'first',
         batch,
         shape,
         cache,
         space,
-        draw,
-        fundamental,
-        dual,
-        computeWords,
+        root.dual,
+        section,
+        root,
         polytope
       )
     }
@@ -109,29 +141,40 @@ onmessage = ({
     let objects = getObjects(
       shape,
       cache,
-      space,
       draw,
-      fundamental,
-      dual,
       polytope,
       hidden,
       reciprocation,
-      section
+      section,
+      root
     )
-
-    if (section !== null) {
-      objects = crossSection(polytope, objects, section, draw)
+    if (section) {
+      for (let i = 0; i < objects.length; i++) {
+        const obj = objects[i]
+        if (!fullRawObjects[i]) {
+          fullRawObjects[i] = {
+            objects: [],
+            partials: [],
+            start: 0,
+            size: 0,
+          }
+        }
+        fullRawObjects[i].objects.push(...obj.objects)
+        fullRawObjects[i].partials = obj.partials
+        fullRawObjects[i].size += obj.size
+      }
     }
-    if (objects[2] && !fundamental) {
+    if (section !== null) {
+      objects = crossSection(objects, section, draw, root)
+    }
+
+    if (!root.fundamental) {
       // Fundamental is only triangles
-      faceToFrag(objects[2], polytope.root)
+      objects[2] = faceToFrag(objects[2], root)
     }
 
     for (let i = 0; i < objects.length; i++) {
       const obj = objects[i]
-      if (!obj) {
-        continue
-      }
       if (!fullObjects[i]) {
         fullObjects[i] = {
           objects: [],
@@ -144,27 +187,23 @@ onmessage = ({
       fullObjects[i].partials = obj.partials
       fullObjects[i].size += obj.size
 
-      polytope.root.lasts[i] += obj.objects.reduce(
+      root.lasts[i] += obj.objects.reduce(
         (acc, o) => acc + (o ? o.length : 0),
         0
       )
     }
     const geometry = fillGeometry(shape.dimensions, objects, ambiance, draw)
     const color = fillColor(shape.dimensions, objects, ambiance, draw)
-    const poly = [...polytope]
-    poly.done = polytope.done
-    poly.size = polytope.size
-    poly.root = {
-      gens: shape.gens,
-      subgens: shape.subgens,
-      rels: shape.rels,
-      transforms: shape.transforms,
-      extrarels: shape.extrarels,
-    }
+
+    polytope.gens = shape.gens
+    polytope.subgens = shape.subgens
+    polytope.rels = shape.rels
+    polytope.transforms = shape.transforms
+    polytope.extrarels = shape.extrarels
+
     postMessage(
       {
-        type,
-        polytope: poly,
+        polytope,
         geometry,
         color,
       },

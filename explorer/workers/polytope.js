@@ -3,16 +3,41 @@ import { arrayEquals } from '../../utils'
 import { reorder } from '../math/shape'
 import { ToddCoxeter, countCosets, wordToCoset } from '../math/toddcoxeter'
 
+const isInvariant = (g, subshape, root) => {
+  if (subshape.done === false || subshape.facet.length === 0) {
+    // Infinite face, can't determine, include only generating mirrors
+    // Ignore commuting gens
+    return subshape.gens.includes(g)
+  }
+  const facetCosets = []
+  const facetCosetsAfterG = []
+  for (const facet of subshape.facet) {
+    const coset = wordToCoset(root, facet)
+    if (!coset) {
+      // Unfinished
+      return null
+    }
+    const cosetsAfterG = wordToCoset(root, g + facet)
+    if (!cosetsAfterG) {
+      // Unfinished
+      return null
+    }
+    facetCosets.push(coset)
+    facetCosetsAfterG.push(cosetsAfterG)
+  }
+  facetCosets.sort((a, b) => a - b)
+  facetCosetsAfterG.sort((a, b) => a - b)
+  return facetCosets.every((coset, i) => coset === facetCosetsAfterG[i])
+}
+
 export const getPolytope = (
-  first,
   batch,
   shape,
   cache,
   space,
-  draw,
-  fundamental,
   dual,
-  computeWords,
+  section,
+  root,
   polytope = []
 ) => {
   polytope.done = true
@@ -25,50 +50,22 @@ export const getPolytope = (
     }
   }
 
-  const isInvariant = (g, subshape, root) => {
-    if (subshape.done === false || subshape.facet.length === 0) {
-      // Infinite face, can't determine, include only generating mirrors
-      // Ignore commuting gens
-      return subshape.gens.includes(g)
-    }
-    const facetCosets = []
-    const facetCosetsAfterG = []
-    for (const facet of subshape.facet) {
-      const coset = wordToCoset(root, facet)
-      if (!coset) {
-        // Unfinished
-        return null
-      }
-      const cosetsAfterG = wordToCoset(root, g + facet)
-      if (!cosetsAfterG) {
-        // Unfinished
-        return null
-      }
-      facetCosets.push(coset)
-      facetCosetsAfterG.push(cosetsAfterG)
-    }
-    facetCosets.sort((a, b) => a - b)
-    facetCosetsAfterG.sort((a, b) => a - b)
-    return facetCosets.every((coset, i) => coset === facetCosetsAfterG[i])
-  }
-
   const visitShape = subshape => {
     const rank =
-      dual || fundamental
+      dual || root.fundamental
         ? shape.dimensions - subshape.dimensions - 1
         : subshape.dimensions
 
     subshape.children.forEach(visitShape)
 
-    const compute = computeWords[rank]
     const type = types[rank]
-    const key = `${dual ? 'd' : fundamental ? 'f' : ''}${subshape.key}`
+    const key = `${dual ? 'd' : root.fundamental ? 'f' : ''}${subshape.key}`
 
     if (subshape?.new) {
       if (!polytope[rank]) {
         polytope[rank] = {
           dimensions: rank,
-          processing: draw[type] ? 0 : undefined,
+          processing: 0,
           count: 0,
           detail: [],
           aggregated: [],
@@ -76,18 +73,17 @@ export const getPolytope = (
         }
       }
       const eigenvalues = space.eigens.values
-
       if (!cache.has(key)) {
+        cache.set(key, {})
+      }
+      const cached = cache.get(key)
+      if (!cached.key) {
         let subgens = ''
         if (subshape.dimensions === 0) {
           subgens = shape.subgens
         } else {
           for (let i = 0; i < shape.gens.length; i++) {
-            const invariant = isInvariant(
-              shape.gens[i],
-              subshape,
-              polytope.root
-            )
+            const invariant = isInvariant(shape.gens[i], subshape, root)
             if (invariant === null) {
               // Root iteration not enough processed, do nothing for now
               return
@@ -98,27 +94,30 @@ export const getPolytope = (
         }
 
         // Handle hosotope edges
-        if (polytope.root?.hosotope) {
+        if (root.hosotope) {
           if (subshape.dimensions === 1) {
-            subgens = subgens.replace(polytope.root.hosotope.gen, '')
+            subgens = subgens.replace(root.hosotope.gen, '')
           } else if (subshape.dimensions === 2) {
-            let index = polytope.root.coxeter[
-              polytope.root.hosotope.index
-            ].findIndex((m, l) => l !== polytope.root.hosotope.index && m !== 2)
+            let index = root.coxeter[root.hosotope.index].findIndex(
+              (m, l) => l !== root.hosotope.index && m !== 2
+            )
             if (index < 0) {
               index =
-                polytope.root.hosotope.index < polytope.root.dimensions - 1
-                  ? polytope.root.hosotope.index + 1
+                root.hosotope.index < root.dimensions - 1
+                  ? root.hosotope.index + 1
                   : 0
             }
-            const gen = Object.entries(polytope.root.transforms).find(
-              ([k, v]) => v.includes(index)
+            const gen = Object.entries(root.transforms).find(([k, v]) =>
+              v.includes(index)
             )[0]
-            subgens = subgens.replace(gen, polytope.root.hosotope.gen)
+            subgens = subgens.replace(gen, root.hosotope.gen)
           }
         }
-
-        const cached = {
+        const compute =
+          (rank === shape.dimensions - 1 && dual) ||
+          root.fundamental ||
+          (!root.fundamental && rank < (section ? 4 : 3))
+        Object.assign(cached, {
           ...shape,
           key,
           subgens,
@@ -127,7 +126,7 @@ export const getPolytope = (
           mirrors: subshape.mirrors,
           compute,
           space,
-          ...(subshape.dimensions === 0 && !fundamental
+          ...(subshape.dimensions === 0 && !root.fundamental
             ? {
                 rootVertex: space.rootVertex,
                 rootNormals: space.rootNormals,
@@ -135,21 +134,15 @@ export const getPolytope = (
                 metric: space.metric,
               }
             : {}),
-        }
-        cache.set(key, cached)
-      }
-
-      const cached = cache.get(key)
-      if (subshape.dimensions === 0) {
-        polytope.root = cached
+        })
       }
 
       if (!cached.done) {
-        cached.limit = compute ? batch : isComputeDone ? 1000 : 1
+        cached.limit = cached.compute ? batch : isComputeDone ? 3000 : 1
         if (type === 'edge' && space.curvature <= 0) {
           cached.limit *= 1.75
         }
-        if (compute) {
+        if (cached.compute) {
           // Also extract words to generate the shape
           ToddCoxeter(cached)
           if (eigenvalues.some(x => x <= 0)) {
@@ -166,7 +159,7 @@ export const getPolytope = (
           }
         }
       }
-      const subShapeMirrors = fundamental
+      const subShapeMirrors = root.fundamental
         ? subshape.mirrors.map(() => 0)
         : subshape.mirrors
 
@@ -176,7 +169,7 @@ export const getPolytope = (
         stellation: subshape.stellation,
         mirrors: subShapeMirrors,
         dual,
-        fundamental,
+        fundamental: root.fundamental,
         count: cached.count,
         done: cached.done,
       })
@@ -202,13 +195,13 @@ export const getPolytope = (
           done: cached.done,
         })
       }
-      if (draw[type] && cached.words) {
+      if (cached.words) {
         polytope[rank].processing += cached.words.size
       }
       polytope[rank].count += cached.count
       polytope[rank].done = polytope[rank].done && cached.done
       polytope[rank].dual = dual
-      polytope[rank].fundamental = fundamental
+      polytope[rank].fundamental = root.fundamental // TODO: remove
       polytope.done = polytope.done && cached.done
     }
   }
@@ -216,10 +209,9 @@ export const getPolytope = (
   shape.children.forEach(visitShape)
 
   // Low dimensional fixes
-
   if (shape.dimensions === 0) {
     // Handle displaying the 1D shape egde
-    shape.currentWords = new Map(first ? [[1, '']] : [])
+    shape.currentWords = shape.currentWords || new Map([[1, '']])
     shape.facet = ['']
     shape.done = true
     const vertices = new Map([[1, [0]]])
@@ -232,7 +224,7 @@ export const getPolytope = (
       compute: true,
       vertices,
     })
-    polytope.root = polytope[0] = {
+    polytope[0] = {
       dimensions: 0,
       processing: 1,
       count: 0,
@@ -265,8 +257,8 @@ export const getPolytope = (
     }
   } else if (shape.dimensions === 1) {
     // Handle displaying the 1D shape egde
-    shape.currentWords = new Map(first ? [[1, '']] : [])
-    shape.facet = Array.from(polytope.root.words.values())
+    shape.currentWords = shape.currentWords || new Map([[1, '']])
+    shape.facet = Array.from(root.words.values())
     shape.done = true
     cache.set('e', {
       ...shape,
@@ -309,7 +301,7 @@ export const getPolytope = (
   }
   // Handle displaying the 2D shape face
   else if (shape.dimensions === 2) {
-    shape.currentWords = new Map(first ? [[1, '']] : [])
+    shape.currentWords = shape.currentWords || new Map([[1, '']])
 
     const double = shape.gens
       .split('')
@@ -318,7 +310,7 @@ export const getPolytope = (
       .split('')
       .every(g => shape.transforms[g].length === 2)
 
-    const unorderedFacet = Array.from(polytope.root.words.values())
+    const unorderedFacet = Array.from(root.words.values())
     shape.facet = new Array(unorderedFacet.length)
     for (let i = 0; i < unorderedFacet.length; i++) {
       shape.facet[i] =
@@ -332,6 +324,7 @@ export const getPolytope = (
       subdimensions: shape.dimensions,
       mirrors: shape.mirrors,
       compute: true,
+      partial: !root.done,
     })
     polytope[2] = {
       dimensions: 2,
@@ -363,10 +356,10 @@ export const getPolytope = (
       ],
       done: true,
     }
-  } else if (shape.dimensions === 3 && computeWords[3]) {
+  } else if (shape.dimensions === 3 && section) {
     // Add the 3D shape cell
     shape.currentWords = new Map([[1, '']])
-    shape.facet = Array.from(polytope.root.words.values())
+    shape.facet = Array.from(root.words.values())
     shape.done = true
     cache.set('c', {
       ...shape,
@@ -375,7 +368,7 @@ export const getPolytope = (
       subdimensions: shape.dimensions,
       mirrors: shape.mirrors,
       compute: true,
-      partial: !polytope.root.done,
+      partial: !root.done,
     })
     polytope[3] = {
       dimensions: 3,
@@ -410,9 +403,7 @@ export const getPolytope = (
   }
 
   // Used for limiting
-  polytope.size = fundamental
-    ? polytope.root.words.size
-    : polytope.root.vertices.size
+  polytope.size = root.fundamental ? root.words.size : root.vertices.size
 
   return polytope
 }

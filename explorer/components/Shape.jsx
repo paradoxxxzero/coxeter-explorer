@@ -61,7 +61,7 @@ const icons = n => {
 
 export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
   const handlePause = useCallback(() => {
-    if (runtime.paused && runtime.polytope.size > runtime.limit) {
+    if (runtime.paused && runtime.polytope?.size > runtime.limit) {
       updateParams({
         limit: runtime.limit + runtime.start,
       })
@@ -72,7 +72,7 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
     }))
   }, [
     runtime.paused,
-    runtime.polytope.size,
+    runtime.polytope,
     runtime.limit,
     runtime.start,
     setRuntime,
@@ -91,7 +91,7 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
     },
     [runtime.hidden, updateParams]
   )
-  const handlereciprocationChange = useCallback(
+  const handleReciprocationChange = useCallback(
     event => {
       const level = +event.target.closest('button').dataset.key
       updateParams({
@@ -101,7 +101,8 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
     [updateParams]
   )
 
-  const simple = runtime.polytope.every(subshape => subshape.detail.length < 2)
+  const polytope = runtime.polytope || []
+  const simple = polytope.every(subshape => subshape.detail.length < 2)
 
   const formatCount = count => (isFinite(count) ? count.toLocaleString() : '∞')
   if (showUI === 'empty') {
@@ -111,7 +112,7 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
   const detail = showUI === 'full' ? 'detail' : 'aggregated'
   return (
     <aside className="shape">
-      {runtime.processing ? (
+      {!runtime.done ? (
         <div className="buttons">
           {runtime.paused ? (
             <button
@@ -133,13 +134,11 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
         </div>
       ) : null}
       <div
-        className={`shape-info${
-          runtime.processing && !runtime.paused ? ' shape-processing' : ''
-        }${
+        className={`shape-info${runtime.processing ? ' shape-processing' : ''}${
           ['advanced', 'full'].includes(showUI) ? ' shape-info-expanded' : ''
         }`}
       >
-        {[...runtime.polytope]
+        {[...polytope]
           .reverse()
           .filter(level => level)
           .filter(level => level.count > 0)
@@ -160,7 +159,7 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                         ? -1
                         : level.dimensions
                     }
-                    onClick={handlereciprocationChange}
+                    onClick={handleReciprocationChange}
                   >
                     {runtime.reciprocation === level.dimensions
                       ? coxeterPlaneIcon
@@ -174,7 +173,7 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                   gridRow: `span ${level[detail].length}`,
                 }}
               >
-                {level.done || level.processing === undefined
+                {level.done || !level.processing
                   ? null
                   : `${level.processing} / `}
 

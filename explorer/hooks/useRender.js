@@ -101,7 +101,6 @@ export const useRender = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
-      console.log('render')
       render(runtime)
       return runtime
     })

@@ -546,11 +546,6 @@ export const mesh = (
       this.attributes.normal.extend(3, new Float32Array(geometry.normals))
     },
     fillGeometry(data, info) {
-      if (!info) {
-        this.count = 0
-        return
-      }
-
       this.count = info.start + info.size
       if (this.instances < this.count) {
         this.extendAttributes(this.count)
@@ -562,6 +557,11 @@ export const mesh = (
       }
     },
     fillColor(data, info) {
+      this.count = info.start + info.size
+      if (this.instances < this.count) {
+        this.extendAttributes(this.count)
+      }
+
       this.attributes.color.update(data, info.start, info.size)
     },
     render(rt) {

@@ -2,7 +2,7 @@ import { normalize, reflect } from '../math/hypermath'
 import { transpose } from '../math/matrix'
 import { wordToCoset } from '../math/toddcoxeter'
 
-export const getBaseObjects = (rank, cached, shape, polytope) => {
+export const getBaseObjects = (rank, cached, root) => {
   const objects = []
   const partials = []
   if (rank === 0) {
@@ -17,44 +17,40 @@ export const getBaseObjects = (rank, cached, shape, polytope) => {
     for (const [cosetId, word] of cached.currentWords) {
       const vertex = { word, vertices: [] }
       for (let i = 0; i < cached.facet.length; i++) {
-        const vertexId = wordToCoset(polytope.root, word + cached.facet[i])
-        if (vertexId && polytope.root.vertices.has(vertexId)) {
-          vertex.vertices.push(polytope.root.vertices.get(vertexId))
+        const vertexId = wordToCoset(root, word + cached.facet[i])
+        if (vertexId && root.vertices.has(vertexId)) {
+          vertex.vertices.push(root.vertices.get(vertexId))
         }
       }
-      if (polytope.root.hosotope && polytope.root.vertices.size === 1) {
+      if (root.hosotope && root.vertices.size === 1) {
         // Monogon
         vertex.vertices.push(
           reflect(
             vertex.vertices[0],
-            polytope.root.rootNormals[polytope.root.hosotope.index - 1],
-            polytope.root.metric
+            root.rootNormals[root.hosotope.index - 1],
+            root.metric
           )
         )
       }
       if (vertex.vertices.length < rank + 1) {
         continue
       }
-      if (polytope.root.hosotope) {
+      if (root.hosotope) {
         let hosotopeVertex
-        if (!polytope.root.hosotopeVertex) {
-          polytope.root.hosotopeVertex = normalize(
-            transpose(polytope.root.rootVertices)[polytope.root.hosotope.index],
-            polytope.root.metric
+        if (!root.hosotopeVertex) {
+          root.hosotopeVertex = normalize(
+            transpose(root.rootVertices)[root.hosotope.index],
+            root.metric
           )
-          hosotopeVertex = polytope.root.hosotopeVertex
+          hosotopeVertex = root.hosotopeVertex
         } else {
           hosotopeVertex = word
             .split('')
             .reverse()
             .reduce(
               (a, b) =>
-                reflect(
-                  a,
-                  polytope.root.rootNormals[polytope.root.gens.indexOf(b)],
-                  polytope.root.metric
-                ),
-              polytope.root.hosotopeVertex
+                reflect(a, root.rootNormals[root.gens.indexOf(b)], root.metric),
+              root.hosotopeVertex
             )
         }
         objects.push({
@@ -66,7 +62,7 @@ export const getBaseObjects = (rank, cached, shape, polytope) => {
           vertices: [hosotopeVertex, vertex.vertices[1]],
         })
         // Monogon
-        if (polytope.root.vertices.size === 1) {
+        if (root.vertices.size === 1) {
           const oppositeHosotopeVertex = hosotopeVertex.map(x => -x)
           objects.push({
             ...vertex,
@@ -83,37 +79,37 @@ export const getBaseObjects = (rank, cached, shape, polytope) => {
       cached.currentWords.delete(cosetId)
     }
   } else if (rank === 2) {
-    polytope.root.hosotopePair = null
+    root.hosotopePair = null
     for (const [cosetId, word] of cached.currentWords) {
       const faceVertices = []
       for (let i = 0; i < cached.facet.length; i++) {
-        const vertexId = wordToCoset(polytope.root, word + cached.facet[i])
-        if (vertexId && polytope.root.vertices.has(vertexId)) {
-          faceVertices.push(polytope.root.vertices.get(vertexId))
+        const vertexId = wordToCoset(root, word + cached.facet[i])
+        if (vertexId && root.vertices.has(vertexId)) {
+          faceVertices.push(root.vertices.get(vertexId))
         }
       }
-      if (polytope.root.hosotope) {
+      if (root.hosotope) {
         // Monogon
-        if (polytope.root.vertices.size === 1) {
+        if (root.vertices.size === 1) {
           faceVertices.push(faceVertices[0].map(x => -x))
         }
         let hosotopePair
-        if (!polytope.root.hosotopePair) {
+        if (!root.hosotopePair) {
           const hosotopeVertex = normalize(
-            transpose(polytope.root.rootVertices)[polytope.root.hosotope.index],
-            polytope.root.metric
+            transpose(root.rootVertices)[root.hosotope.index],
+            root.metric
           )
-          polytope.root.hosotopePair = [
+          root.hosotopePair = [
             hosotopeVertex,
             reflect(
               hosotopeVertex,
-              polytope.root.rootNormals[polytope.root.hosotope.index],
-              polytope.root.metric
+              root.rootNormals[root.hosotope.index],
+              root.metric
             ),
           ]
-          hosotopePair = polytope.root.hosotopePair
+          hosotopePair = root.hosotopePair
         } else {
-          hosotopePair = polytope.root.hosotopePair.map(hosotopeVertex =>
+          hosotopePair = root.hosotopePair.map(hosotopeVertex =>
             word
               .split('')
               .reverse()
@@ -121,8 +117,8 @@ export const getBaseObjects = (rank, cached, shape, polytope) => {
                 (a, b) =>
                   reflect(
                     a,
-                    polytope.root.rootNormals[polytope.root.gens.indexOf(b)],
-                    polytope.root.metric
+                    root.rootNormals[root.gens.indexOf(b)],
+                    root.metric
                   ),
                 hosotopeVertex
               )
@@ -131,7 +127,7 @@ export const getBaseObjects = (rank, cached, shape, polytope) => {
         faceVertices.splice(1, 0, hosotopePair[0])
         faceVertices.push(hosotopePair[1])
         // Monogon
-        if (polytope.root.vertices.size === 1) {
+        if (root.vertices.size === 1) {
           faceVertices[3] = faceVertices[1].map(x => -x)
         }
       }
@@ -139,7 +135,8 @@ export const getBaseObjects = (rank, cached, shape, polytope) => {
         continue
       }
 
-      const partial = faceVertices.length < cached.facet.length
+      const partial =
+        faceVertices.length < cached.facet.length || cached.partial
       if (!partial) {
         cached.currentWords.delete(cosetId)
       }
@@ -161,9 +158,9 @@ export const getBaseObjects = (rank, cached, shape, polytope) => {
     for (const [cosetId, word] of cached.currentWords) {
       const cellVertices = []
       for (let i = 0; i < cached.facet.length; i++) {
-        const vertexId = wordToCoset(polytope.root, word + cached.facet[i])
-        if (vertexId && polytope.root.vertices.has(vertexId)) {
-          cellVertices.push(polytope.root.vertices.get(vertexId))
+        const vertexId = wordToCoset(root, word + cached.facet[i])
+        if (vertexId && root.vertices.has(vertexId)) {
+          cellVertices.push(root.vertices.get(vertexId))
         }
       }
       if (cellVertices.length < rank + 1) {

@@ -8,11 +8,6 @@ export const fillGeometry = (dimensions, objects, ambiance, draw) => {
   const arity = getArity(dimensions)
   for (let i = 0; i < objects.length; i++) {
     const parts = objects[i]
-    if (!parts) {
-      data.push(null)
-      infos.push(null)
-      continue
-    }
     const buffers = []
     for (let j = 0; j < i + 1; j++) {
       buffers.push(new Float32Array(parts.size * arity))
@@ -51,10 +46,6 @@ export const fillColor = (dimensions, objects, ambiance, draw) => {
   const infos = []
   for (let i = 0; i < objects.length; i++) {
     const parts = objects[i]
-    if (!parts) {
-      infos.push(null)
-      continue
-    }
     const buffer = new Float32Array(parts.size * 3)
 
     let idx = 0
