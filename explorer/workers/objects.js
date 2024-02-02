@@ -118,15 +118,16 @@ export const getObjects = (
         objects: [],
         partials: [],
       }
-      if (!polytope[i] || (!section && !root.dual && !draw[types[i]])) {
+      const facet = polytope.facets[i]
+      if (!facet || (!section && !root.dual && !draw[types[i]])) {
         objects.push(parts)
         continue
       }
-      for (let j = 0; j < polytope[i].detail.length; j++) {
-        const detail = polytope[i].detail[j]
-        const cached = cache.get(detail.key)
+      for (let j = 0; j < facet.parts.length; j++) {
+        const part = facet.parts[j]
+        const cached = cache.get(part.key)
         if (
-          (!detail.dual && hidden.includes(detail.key)) ||
+          (!part.dual && hidden.includes(part.key)) ||
           !cached.compute ||
           !cached.currentWords.size
         ) {
@@ -136,11 +137,11 @@ export const getObjects = (
           continue
         }
 
-        const { objects, partials } = detail.dual
-          ? getDualObjects(i, cached, shape, reciprocation, detail.key, root)
+        const { objects, partials } = part.dual
+          ? getDualObjects(i, cached, shape, reciprocation, part.key, root)
           : getBaseObjects(i, cached, root)
 
-        if (!section && (!draw[types[i]] || hidden.includes(detail.key))) {
+        if (!section && (!draw[types[i]] || hidden.includes(part.key))) {
           // Dual needs to be computed but still can be hidden
           parts.objects.push([])
           parts.partials.push([])

@@ -108,7 +108,7 @@ export const useProcess = (runtime, setRuntime) => {
       }
 
       runtime.shaper.postMessage({
-        type: runtime.iteration === -1 ? 'first' : 'iteration',
+        type: 'iterate',
         space: runtime.space,
         dimensions: runtime.dimensions,
         coxeter: runtime.coxeter,
@@ -128,6 +128,7 @@ export const useProcess = (runtime, setRuntime) => {
         reciprocation: runtime.reciprocation,
         extrarels: runtime.extrarels,
         section: runtime.crosssection ? runtime.section : null,
+        iteration: runtime.iteration,
       })
       return {
         ...runtime,

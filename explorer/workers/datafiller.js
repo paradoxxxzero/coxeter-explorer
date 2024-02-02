@@ -2,7 +2,7 @@ import { types } from '../../statics'
 import { ambiances } from '../ambiances'
 import { getArity } from '../utils'
 
-export const fillGeometry = (dimensions, objects, ambiance, draw) => {
+export const fillGeometry = (dimensions, objects, draw, hidden) => {
   const data = []
   const infos = []
   const arity = getArity(dimensions)
@@ -41,7 +41,7 @@ export const fillGeometry = (dimensions, objects, ambiance, draw) => {
   return { infos, data }
 }
 
-export const fillColor = (dimensions, objects, ambiance, draw) => {
+export const fillColor = (dimensions, objects, ambiance, draw, hidden) => {
   const data = []
   const infos = []
   for (let i = 0; i < objects.length; i++) {

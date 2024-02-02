@@ -101,15 +101,41 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
     [updateParams]
   )
 
-  const polytope = runtime.polytope || []
-  const simple = polytope.every(subshape => subshape.detail.length < 2)
+  if (!runtime.polytope) {
+    return <aside className="shape" />
+  }
+  const simple = runtime.polytope.facets.every(
+    subshape => subshape.parts.length < 2
+  )
 
   const formatCount = count => (isFinite(count) ? count.toLocaleString() : '∞')
   if (showUI === 'empty') {
     return null
   }
 
-  const detail = showUI === 'full' ? 'detail' : 'aggregated'
+  // const detail = showUI === 'full' ? 'parts' : 'aggregated'
+  // TODO: Reaggregate facets
+  // const aggregated = polytope.facets[rank].aggregated.find(
+  //   ({ coxeter, stellation, mirrors }) =>
+  //     arrayEquals(coxeter, subshape.coxeter) &&
+  //     arrayEquals(stellation, subshape.stellation) &&
+  //     arrayEquals(mirrors, subShapeMirrors)
+  // )
+  // if (aggregated) {
+  //   aggregated.done = aggregated.done && tcParam.done
+  //   aggregated.count += tcParam.count
+  //   aggregated.key += ',' + key
+  // } else {
+  //   polytope.facets[rank].aggregated.push({
+  //     key,
+  //     coxeter: subshape.coxeter,
+  //     stellation: subshape.stellation,
+  //     mirrors: subShapeMirrors,
+
+  //     count: tcParam.count,
+  //     done: tcParam.done,
+  //   })
+  // }
   return (
     <aside className="shape">
       {!runtime.done ? (
@@ -138,7 +164,7 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
           ['advanced', 'full'].includes(showUI) ? ' shape-info-expanded' : ''
         }`}
       >
-        {[...polytope]
+        {[...runtime.polytope.facets]
           .reverse()
           .filter(level => level)
           .filter(level => level.count > 0)
@@ -147,7 +173,7 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
               <div
                 className="shape-icon"
                 style={{
-                  gridRow: `span ${level[detail].length}`,
+                  gridRow: `span ${level.parts.length}`,
                 }}
               >
                 {icons(level.dimensions)}
@@ -170,40 +196,41 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
               <div
                 className="shape-count"
                 style={{
-                  gridRow: `span ${level[detail].length}`,
+                  gridRow: `span ${level.parts.length}`,
                 }}
               >
-                {level.done || !level.processing
-                  ? null
-                  : `${level.processing} / `}
-
+                {level.processing && level.processing !== level.count ? (
+                  <small>{formatCount(level.processing)} / </small>
+                ) : null}
                 {formatCount(level.count)}
+                {runtime.polytope.infinite ? ' (∞)' : null}
               </div>
 
               <div
                 className={
                   level.dimensions > 0 &&
                   ['advanced', 'full'].includes(showUI) &&
-                  level[detail].length > 1
+                  level.parts.length > 1
                     ? ' shape-split'
                     : ''
                 }
                 style={{
-                  gridRow: `span ${level[detail].length}`,
+                  gridRow: `span ${level.parts.length}`,
                 }}
               />
 
               {['advanced', 'full'].includes(showUI)
-                ? level[detail].map(
+                ? level.parts.map(
                     ({ count, coxeter, stellation, mirrors, key }) => (
                       <Fragment key={key}>
                         <div
                           className="shape-count shape-detail-count"
                           title={key}
                         >
-                          {!simple && level[detail].length > 1
+                          {!simple && level.parts.length > 1
                             ? formatCount(count)
                             : null}
+                          {runtime.polytope.infinite ? ' (∞)' : null}
                         </div>
                         <div
                           className={`shape-view-diagram ${

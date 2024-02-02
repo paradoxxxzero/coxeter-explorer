@@ -3,9 +3,9 @@ import { isCompound, isDual } from '../mirrors'
 import { crossSection } from './crossSection'
 import { fillColor, fillGeometry } from './datafiller'
 import { faceToFrag, getObjects } from './objects'
-import { getPolytope } from './polytope'
+import { getPolytope, iterate } from './polytope'
 
-let cache, root, shape, fullObjects, fullRawObjects
+let tcParams, root, shape, polytope, fullObjects, fullRawObjects
 
 onmessage = ({
   data: {
@@ -22,10 +22,12 @@ onmessage = ({
     reciprocation,
     extrarels,
     section,
+    iteration,
   },
 }) => {
   try {
-    if (type === 'first') {
+    if (iteration < 0) {
+      // shape is an tree representation of the polytope
       shape = getShape(
         dimensions,
         coxeter,
@@ -35,36 +37,37 @@ onmessage = ({
         extrarels
       )
       root = {
+        space,
         fundamental: mirrors.length && mirrors.every(m => !m),
         dual: mirrors.some(m => isDual(m)),
         compound: mirrors.some(m => isCompound(m)),
         lasts: new Array(3).fill(0),
+        subgens: shape.subgens,
       }
-      const getRoot = shape => {
-        let root
-        const visitShape = subshape => {
-          if (subshape.dimensions === 0) {
-            root = subshape
-          }
-          if (!root) {
-            subshape.children.forEach(visitShape)
-          }
-        }
-        shape.children.forEach(visitShape)
-        return root
-      }
-      cache = new Map([
+      // tcParams is a map of keys -> Todd-Coxeter params
+      tcParams = new Map([
         [
-          `${root.dual ? 'd' : root.fundamental ? 'f' : ''}${
-            getRoot(shape).key
-          }`,
+          `${root.dual ? 'd' : root.fundamental ? 'f' : ''}${shape.root.key}`,
           root,
         ],
       ])
-      // eslint-disable-next-line no-restricted-globals
-      self.shape = shape
+
+      // polytope is a list of facets
+      polytope = getPolytope(batch, shape, tcParams, section, root)
+
       fullObjects = []
       fullRawObjects = []
+
+      // Debug access
+      // eslint-disable-next-line no-restricted-globals
+      Object.assign(self, {
+        shape,
+        polytope,
+        fullObjects,
+        fullRawObjects,
+        tcParams,
+        root,
+      })
     }
     // Shortcuts
     if (type === 'paint') {
@@ -112,35 +115,18 @@ onmessage = ({
       )
       return
     }
+
     if (type === 'display') {
-      return
+      // return
     }
 
-    const polytope = getPolytope(
-      batch,
-      shape,
-      cache,
-      space,
-      root.dual && !root.compound,
-      section,
-      root
-    )
-    if (root.compound) {
-      getPolytope(
-        batch,
-        shape,
-        cache,
-        space,
-        root.dual,
-        section,
-        root,
-        polytope
-      )
+    if (type === 'iterate') {
+      iterate(polytope, tcParams, batch, root)
     }
 
     let objects = getObjects(
       shape,
-      cache,
+      tcParams,
       draw,
       polytope,
       hidden,
@@ -192,15 +178,16 @@ onmessage = ({
         0
       )
     }
-    const geometry = fillGeometry(shape.dimensions, objects, ambiance, draw)
-    const color = fillColor(shape.dimensions, objects, ambiance, draw)
+    const geometry = fillGeometry(shape.dimensions, objects, draw, hidden)
+    const color = fillColor(shape.dimensions, objects, ambiance, draw, hidden)
 
     polytope.gens = shape.gens
     polytope.subgens = shape.subgens
     polytope.rels = shape.rels
     polytope.transforms = shape.transforms
     polytope.extrarels = shape.extrarels
-
+    // Used for limiting
+    polytope.size = root.fundamental ? root.words.size : root.vertices.size
     postMessage(
       {
         polytope,

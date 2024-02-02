@@ -61,7 +61,7 @@ export const getShape = (
   space,
   extrarels,
   shape = null,
-  root = null
+  base = null
 ) => {
   if (!shape) {
     // Handle fundamental domain
@@ -145,8 +145,8 @@ export const getShape = (
       removed: [],
       children: [],
     }
-    root = shape
-    root.solved = new Map()
+    base = shape
+    base.solved = new Map()
     if (mirrors.length > 1 && mirrors.filter(m => m).length === 1) {
       const mirrorIndex = mirrors.findIndex(m => m)
       if (coxeter[mirrorIndex].every((m, i) => mirrorIndex === i || m === 2)) {
@@ -156,16 +156,15 @@ export const getShape = (
         const [gen] = Object.entries(shape.transforms).find(([k, v]) =>
           v.includes(hosotopeIndex)
         )
-        root.hosotope = {
+        base.hosotope = {
           gen,
           index: hosotopeIndex,
         }
       }
     }
   }
-
   const emptySubshapes = []
-  // Try subgroups by removing a root reflection
+  // Try subgroups by removing a base reflection
   for (let i = 0; i < dimensions; i++) {
     if (shape.removed.includes(i)) {
       continue
@@ -178,7 +177,7 @@ export const getShape = (
     const key = removed.sort().join('-')
 
     let isnew = false
-    if (!root.solved.has(key)) {
+    if (!base.solved.has(key)) {
       isnew = true
       // const removedGen = shape.gens[i]
       // const removedTransform = shape.transforms[removedGen]
@@ -196,15 +195,15 @@ export const getShape = (
       //     : removedRootReflections.length
       const subshape = {
         dimensions: shape.dimensions - 1,
-        coxeter: submatrix(root.coxeter, removed),
-        stellation: submatrix(root.stellation, removed),
-        mirrors: subvector(root.mirrors, removed),
+        coxeter: submatrix(base.coxeter, removed),
+        stellation: submatrix(base.stellation, removed),
+        mirrors: subvector(base.mirrors, removed),
         gens,
-        subgens: root.subgens
+        subgens: base.subgens
           .split('')
           .filter(g => gens.includes(g))
           .join(''),
-        rels: root.rels.filter(rel =>
+        rels: base.rels.filter(rel =>
           rel
             .toLowerCase()
             .split('')
@@ -220,32 +219,35 @@ export const getShape = (
       ToddCoxeter(subshape)
       subshape.facet = Array.from(subshape.words.values())
 
-      root.solved.set(key, subshape)
+      base.solved.set(key, subshape)
+      if (subshape.dimensions === 0) {
+        base.root = subshape
+      }
     }
 
-    const subshape = root.solved.get(key)
+    const subshape = base.solved.get(key)
 
     const hosotopeFacet =
-      root.hosotope &&
+      base.hosotope &&
       subshape.removed.length &&
-      subshape.removed[0] === root.hosotope.index &&
+      subshape.removed[0] === base.hosotope.index &&
       subshape.removed.every(
         (s, l) => l === 0 || s === (subshape.removed[l - 1] + 1) % dimensions
       )
 
     // If the coset generate a facet
     if (
-      isFacet(subshape.facet, subshape.dimensions, root.transforms) ||
+      isFacet(subshape.facet, subshape.dimensions, base.transforms) ||
       hosotopeFacet
     ) {
       if (isnew && subshape.dimensions === 2) {
         const unorderedFacet = [...subshape.facet]
         const double = subshape.gens
           .split('')
-          .every(g => root.mirrors[root.transforms[g][0]])
+          .every(g => base.mirrors[base.transforms[g][0]])
         const rotation = subshape.gens
           .split('')
-          .every(g => root.transforms[g].length === 2)
+          .every(g => base.transforms[g].length === 2)
 
         for (let i = 0; i < unorderedFacet.length; i++) {
           subshape.facet[i] =
@@ -269,7 +271,7 @@ export const getShape = (
             space,
             extrarels,
             subShape,
-            root
+            base
           )
         )
       } else {
@@ -302,7 +304,7 @@ export const getShape = (
             space,
             extrarels,
             subShape,
-            root
+            base
           )
         )
       } else {
@@ -311,7 +313,7 @@ export const getShape = (
     }
   }
 
-  if (shape === root && mirrors.some(m => isSnub(m))) {
+  if (shape === base && mirrors.some(m => isSnub(m))) {
     // Snubs generate one more simplex facet
     // Add missing part at the end
     let snubgens = ''
@@ -332,7 +334,7 @@ export const getShape = (
           }
         }
         visitShape(shape)
-        const missingEdges = Object.entries(root.transforms)
+        const missingEdges = Object.entries(base.transforms)
           .filter(
             // If reflection edge, add only if mirror active
             ([edge, transform]) =>
@@ -398,10 +400,10 @@ export const getShape = (
 
         const extra = {}
         // Extra faces are transforms that end on same generator
-        const rotations = Object.entries(root.transforms).filter(
+        const rotations = Object.entries(base.transforms).filter(
           ([edge, transform]) => transform.length === 2
         )
-        const conjugations = Object.entries(root.transforms).filter(
+        const conjugations = Object.entries(base.transforms).filter(
           ([edge, transform]) => transform.length === 3
         )
         let rotationSnubgens = ''
