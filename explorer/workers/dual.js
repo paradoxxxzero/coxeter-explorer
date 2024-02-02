@@ -80,7 +80,7 @@ export const getDualObjects = (
     // root word -> { vertex: centroid, facets: [facet vertex ids] }
     root.dualVertices = root.dualVertices || new Map()
 
-    for (const [cosetId, word] of cached.currentWords) {
+    for (const [cosetId, word] of cached.dualCurrentWords) {
       const vertexIds = []
 
       for (let i = 0; i < cached.facet.length; i++) {
@@ -150,7 +150,7 @@ export const getDualObjects = (
         partials.push(vertex)
       } else {
         objects.push(vertex)
-        cached.currentWords.delete(cosetId)
+        cached.dualCurrentWords.delete(cosetId)
       }
     }
   } else if (rank === 1) {
@@ -160,7 +160,7 @@ export const getDualObjects = (
 
     root.dualEdges = root.dualEdges || new Map()
 
-    for (const [cosetId, word] of cached.currentWords) {
+    for (const [cosetId, word] of cached.dualCurrentWords) {
       const vertexIds = []
       for (let i = 0; i < cached.facet.length; i++) {
         const vertexId = wordToCoset(root, word + cached.facet[i])
@@ -210,14 +210,14 @@ export const getDualObjects = (
         partials.push(vertex)
       } else {
         objects.push(vertex)
-        cached.currentWords.delete(cosetId)
+        cached.dualCurrentWords.delete(cosetId)
       }
     }
   } else if (rank === 2) {
     if (!root.dualVertices?.size || !root.dualEdges?.size) {
       return { objects, partials }
     }
-    for (const [cosetId, word] of cached.currentWords) {
+    for (const [cosetId, word] of cached.dualCurrentWords) {
       const vertexIds = []
       for (let i = 0; i < cached.facet.length; i++) {
         const vertexId = wordToCoset(root, word + cached.facet[i])
@@ -291,7 +291,7 @@ export const getDualObjects = (
         partials.push(vertex)
       } else {
         objects.push(vertex)
-        cached.currentWords.delete(cosetId)
+        cached.dualCurrentWords.delete(cosetId)
       }
     }
   }

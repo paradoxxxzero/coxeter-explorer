@@ -71,12 +71,12 @@ export const getPolytope = (batch, shape, tcParams, section, root) => {
     infinite,
     done: true,
   }
-  if (root.compound) {
+  if (root.compound && root.dual) {
     root.dual = false
-    root.compound = false
+
     Object.assign(polytope, getPolytope(batch, shape, tcParams, section, root))
+
     root.dual = true
-    root.compound = true
   }
 
   const visitShape = subshape => {
@@ -90,9 +90,8 @@ export const getPolytope = (batch, shape, tcParams, section, root) => {
     const key = `${root.dual ? 'd' : root.fundamental ? 'f' : ''}${
       subshape.key
     }`
-
     const compute =
-      (rank === shape.dimensions - 1 && root.dual) ||
+      (rank === shape.dimensions - 1 && (root.dual || root.compound)) ||
       root.fundamental ||
       (!root.fundamental && rank < (section ? 4 : 3))
 
@@ -109,37 +108,40 @@ export const getPolytope = (batch, shape, tcParams, section, root) => {
           fundamental: root.fundamental,
         }
       }
+      if (!root.compound || !root.dual) {
+        if (!tcParams.has(key)) {
+          tcParams.set(key, {})
+        }
 
-      if (!tcParams.has(key)) {
-        tcParams.set(key, {})
-      }
+        const tcParam = tcParams.get(key)
+        if (!tcParam.key) {
+          Object.assign(tcParam, {
+            gens: shape.gens,
+            rels: shape.rels,
+            transforms: shape.transforms,
+            key,
+            localgens: subshape.gens,
+            facet: subshape.facet,
+            partial: !subshape.done,
+            rank: rank,
+            mirrors: subshape.mirrors,
+            compute,
+            done: !compute && infinite,
+            count: 0,
+            dual: root.dual,
+            compound: root.compound,
 
-      const tcParam = tcParams.get(key)
-      if (!tcParam.key) {
-        Object.assign(tcParam, {
-          gens: shape.gens,
-          rels: shape.rels,
-          transforms: shape.transforms,
-          key,
-          localgens: subshape.gens,
-          facet: subshape.facet,
-          partial: !subshape.done,
-          rank: rank,
-          mirrors: subshape.mirrors,
-          compute,
-          done: !compute && infinite,
-          count: 0,
-
-          space: root.space,
-          ...(subshape.dimensions === 0 && !root.fundamental
-            ? {
-                rootVertex: root.space.rootVertex,
-                rootNormals: root.space.rootNormals,
-                rootVertices: root.space.rootVertices,
-                metric: root.space.metric,
-              }
-            : {}),
-        })
+            space: root.space,
+            ...(subshape.dimensions === 0 && !root.fundamental
+              ? {
+                  rootVertex: root.space.rootVertex,
+                  rootNormals: root.space.rootNormals,
+                  rootVertices: root.space.rootVertices,
+                  metric: root.space.metric,
+                }
+              : {}),
+          })
+        }
       }
 
       const subShapeMirrors = root.fundamental
@@ -153,8 +155,8 @@ export const getPolytope = (batch, shape, tcParams, section, root) => {
         mirrors: subShapeMirrors,
         dual: root.dual,
         fundamental: root.fundamental,
-        count: tcParam.count,
-        done: tcParam.done,
+        count: 0,
+        done: false,
       })
     }
   }
@@ -312,7 +314,7 @@ export const getPolytope = (batch, shape, tcParams, section, root) => {
 
 export const iterate = (polytope, tcParams, batch, root) => {
   const facets =
-    root.dual || root.fundamental
+    (root.dual && !root.compound) || root.fundamental
       ? [...polytope.facets].reverse()
       : polytope.facets
 
@@ -328,6 +330,10 @@ export const iterate = (polytope, tcParams, batch, root) => {
       const part = facet.parts[j]
       const key = part.key
       const tcParam = tcParams.get(key)
+      if (root.compound && !tcParam) {
+        continue
+      }
+
       if (tcParam.subgens === undefined) {
         tcParam.subgens = getSubgens(tcParam, root)
         if (tcParam.subgens === undefined) {
@@ -335,9 +341,9 @@ export const iterate = (polytope, tcParams, batch, root) => {
           return
         }
       }
-      if (!tcParam.done) {
-        tcParam.limit = tcParam.compute ? batch : isComputeDone ? 2000 : 1
-        if (tcParam.rank === 1 && !isFinite(tcParam.count)) {
+      if (!tcParam.done && (isComputeDone || tcParam.compute)) {
+        tcParam.limit = tcParam.compute ? batch : 2000
+        if (i === 1 && polytope.infinite) {
           tcParam.limit *= 1.75
         }
         if (tcParam.compute) {
@@ -355,5 +361,34 @@ export const iterate = (polytope, tcParams, batch, root) => {
       facet.processing += part.processing
     }
     polytope.done = polytope.done && facet.done
+  }
+
+  // Fix compound counts
+  if (root.compound) {
+    for (let i = 0; i < facets.length; i++) {
+      const facet = facets[i]
+      for (let j = 0; j < facet.parts.length; j++) {
+        const part = facet.parts[j]
+        const key = part.key
+        if (tcParams.get(key)) {
+          continue
+        }
+        const compoundKey = key.replace(/^d/g, '')
+        const tcParam = tcParams.get(compoundKey)
+        if (!tcParam) {
+          continue
+        }
+        if (tcParam.compute) {
+          part.count = tcParam.cosets.size
+          part.processing = tcParam.words.size
+        } else {
+          part.count = tcParam.count
+        }
+        part.done = tcParam.done
+
+        facet.count += part.count
+        facet.processing += part.processing
+      }
+    }
   }
 }

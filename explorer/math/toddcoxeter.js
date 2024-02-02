@@ -97,8 +97,15 @@ const words = function (params) {
     const start = quotient(params, 1)
     params.words = new Map()
     params.words.set(start, '')
-    params.currentWords = new Map()
-    params.currentWords.set(start, '')
+
+    if (params.compound || !params.dual) {
+      params.currentWords = new Map()
+      params.currentWords.set(start, '')
+    }
+    if (params.compound || params.dual) {
+      params.dualCurrentWords = new Map()
+      params.dualCurrentWords.set(start, '')
+    }
     params.lastCoset = start
     params.remaining = [start]
     if (params.rootVertex && params.rootNormals && params.metric) {
@@ -152,7 +159,8 @@ const words = function (params) {
 
       const newWord = generator + word
       params.words.set(nextCosetId, newWord)
-      params.currentWords.set(nextCosetId, newWord)
+      params.currentWords?.set(nextCosetId, newWord)
+      params.dualCurrentWords?.set(nextCosetId, newWord)
       params.lastCoset = nextCosetId
       params.remaining.push(nextCosetId)
       if (params.vertices) {
@@ -222,6 +230,7 @@ const iter = params => {
         break
       }
     }
+
     if (coset === null) {
       params.done = true
       break

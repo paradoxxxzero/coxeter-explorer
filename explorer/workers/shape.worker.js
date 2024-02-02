@@ -47,7 +47,9 @@ onmessage = ({
       // tcParams is a map of keys -> Todd-Coxeter params
       tcParams = new Map([
         [
-          `${root.dual ? 'd' : root.fundamental ? 'f' : ''}${shape.root.key}`,
+          `${root.dual && !root.compound ? 'd' : root.fundamental ? 'f' : ''}${
+            shape.root.key
+          }`,
           root,
         ],
       ])
@@ -69,6 +71,7 @@ onmessage = ({
         root,
       })
     }
+
     // Shortcuts
     if (type === 'paint') {
       const color = fillColor(shape.dimensions, fullObjects, ambiance, draw)

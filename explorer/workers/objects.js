@@ -125,12 +125,10 @@ export const getObjects = (
       }
       for (let j = 0; j < facet.parts.length; j++) {
         const part = facet.parts[j]
-        const cached = cache.get(part.key)
-        if (
-          (!part.dual && hidden.includes(part.key)) ||
-          !cached.compute ||
-          !cached.currentWords.size
-        ) {
+        const cached = cache.get(
+          root.compound ? part.key.replace(/^d/g, '') : part.key
+        )
+        if ((!part.dual && hidden.includes(part.key)) || !cached.compute) {
           // Keep index for subshape
           parts.objects.push([])
           parts.partials.push([])
