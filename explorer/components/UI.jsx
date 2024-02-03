@@ -585,8 +585,6 @@ export default function UI({
                 min={0}
                 step={1}
                 value={params.sizeVertex}
-                toggler={params.drawVertex}
-                togglerName="drawVertex"
                 onChange={handleChange}
               />
               <Number
@@ -595,18 +593,8 @@ export default function UI({
                 min={0}
                 step={1}
                 value={params.sizeEdge}
-                toggler={params.drawEdge}
-                togglerName="drawEdge"
                 onChange={handleChange}
               />
-              <label className="boolean-label">
-                Faces
-                <Boolean
-                  name="drawFace"
-                  value={params.drawFace}
-                  onChange={handleChange}
-                />
-              </label>
               <label className="select-label">
                 Ambiance
                 <select

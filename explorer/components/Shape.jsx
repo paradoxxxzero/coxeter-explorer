@@ -9,6 +9,7 @@ import {
 } from '../icons'
 import CoxeterDiagram from './CoxeterDiagram'
 import { ident } from '../math/matrix'
+import { types } from '../../statics'
 
 const icons = n => {
   if (n < 4) {
@@ -59,6 +60,46 @@ const icons = n => {
   )
 }
 
+const addHidden = (hidden, key, polytope) => {
+  // We add a specific key
+  if (!types.includes(key)) {
+    const type = key.split(/_/)[0]
+    const allkeys = polytope.facets[types.indexOf(type)].parts.map(
+      ({ key }) => key
+    )
+
+    // If the group is hidden, we add all keys of the group and remove the current
+    if (hidden.includes(type)) {
+      return hidden.concat(allkeys).filter(k => ![type, key].includes(k))
+    }
+    // If all keys of the group are hidden, we hide the group also
+    if (allkeys.every(k => hidden.includes(k) || k === key)) {
+      hidden = hidden.concat(type)
+    }
+  }
+  return hidden.concat(key)
+}
+
+const removeHidden = (hidden, key, polytope) => {
+  // We remove a specific key
+  if (!types.includes(key)) {
+    //remove the group if it was hidden
+    const type = key.split(/_/)[0]
+    hidden = hidden.filter(k => k !== type)
+  } else {
+    // We remove a group
+    // If all specific keys of the group are hidden, we remove them
+    const allkeys = polytope.facets[types.indexOf(key)].parts.map(
+      ({ key }) => key
+    )
+    if (allkeys.every(k => hidden.includes(k))) {
+      hidden = hidden.filter(k => !allkeys.includes(k))
+    }
+  }
+
+  return hidden.filter(k => k !== key)
+}
+
 export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
   const handlePause = useCallback(() => {
     if (runtime.paused && runtime.polytope?.size > runtime.limit) {
@@ -82,19 +123,31 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
   const handleHiddenChange = useCallback(
     event => {
       const dataset = event.target.closest('button').dataset
+      const rank = +dataset.rank
+      const key = types[rank]
 
-      const keys = dataset.key
-        ? dataset.key.split(',')
-        : runtime.polytope.fundamental
-        ? [['vertices', 'edges', 'faces'][dataset.rank]]
-        : runtime.polytope.facets[dataset.rank].parts
-            .map(({ key }) => key)
-            .flat()
-      const shown = !keys.some(k => runtime.hidden.includes(k))
-      const hidden = runtime.hidden.filter(v => !keys.includes(v))
-      updateParams({
-        hidden: shown ? [...hidden, ...keys] : hidden,
-      })
+      const shown = !runtime.hidden.includes(key)
+
+      const hidden = shown
+        ? addHidden(runtime.hidden, key, runtime.polytope)
+        : removeHidden(runtime.hidden, key, runtime.polytope)
+
+      updateParams({ hidden })
+    },
+    [runtime.hidden, runtime.polytope, updateParams]
+  )
+  const handleHiddenKeyChange = useCallback(
+    event => {
+      const dataset = event.target.closest('button').dataset
+      const key = dataset.key
+
+      const shown = !runtime.hidden.includes(key)
+
+      const hidden = shown
+        ? addHidden(runtime.hidden, key, runtime.polytope)
+        : removeHidden(runtime.hidden, key, runtime.polytope)
+
+      updateParams({ hidden })
     },
     [runtime.hidden, runtime.polytope, updateParams]
   )
@@ -201,6 +254,21 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                       : centerViewIcon}
                   </button>
                 ) : null}
+                {level.dimensions < 3 ? (
+                  //   &&
+                  // (level.parts.length > 1 ||
+                  //     level.fundamental)
+                  <button
+                    title={types[level.dimensions]}
+                    className="shape-hidden button"
+                    data-rank={level.dimensions}
+                    onClick={handleHiddenChange}
+                  >
+                    {runtime.hidden.includes(types[level.dimensions])
+                      ? eyeOffIcon
+                      : eyeIcon}
+                  </button>
+                ) : null}
               </div>
               <div
                 className="shape-count"
@@ -208,24 +276,6 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                   gridRow: `span ${level.parts.length}`,
                 }}
               >
-                {level.dimensions < 3 &&
-                (level.parts.length > 1 || level.fundamental) ? (
-                  <button
-                    className="shape-hidden button"
-                    data-rank={level.dimensions}
-                    onClick={handleHiddenChange}
-                  >
-                    {(
-                      level.fundamental
-                        ? runtime.hidden.includes(
-                            ['vertices', 'edges', 'faces'][level.dimensions]
-                          )
-                        : level.parts.some(p => runtime.hidden.includes(p.key))
-                    )
-                      ? eyeOffIcon
-                      : eyeIcon}
-                  </button>
-                ) : null}
                 {level.processing && level.processing !== level.count ? (
                   <small>{formatCount(level.processing)} / </small>
                 ) : null}
@@ -270,11 +320,10 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                               className="shape-hidden button"
                               data-key={key}
                               title={key}
-                              onClick={handleHiddenChange}
+                              onClick={handleHiddenKeyChange}
                             >
-                              {key
-                                .split(',')
-                                .some(k => runtime.hidden.includes(k))
+                              {runtime.hidden.includes(key) ||
+                              runtime.hidden.includes(types[level.dimensions])
                                 ? eyeOffIcon
                                 : eyeIcon}
                             </button>

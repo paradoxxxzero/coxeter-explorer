@@ -29,9 +29,6 @@ export const defaultParams = {
   adaptative: true,
   sizeVertex: 40,
   sizeEdge: 25,
-  drawVertex: true,
-  drawEdge: true,
-  drawFace: false,
   controls: 'space',
   ambiance: 'neon',
   centered: false,
@@ -43,7 +40,7 @@ export const defaultParams = {
   crosssection: false,
   section: [0, 0, 0, 1, 0],
 
-  hidden: [],
+  hidden: ['face'],
   reciprocation: 0,
 
   start: 1000,

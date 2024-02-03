@@ -58,7 +58,7 @@ const geometries = {
 
 export default function getMeshes(rt) {
   return {
-    meshes: types,
+    meshes: types.slice(0, 3),
     ...mesh(
       rt,
       'vertex',

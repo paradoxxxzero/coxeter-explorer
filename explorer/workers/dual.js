@@ -28,7 +28,8 @@ const getChain = (edges, chain = null) => {
 
 const getMidradius = (reciprocation, shape, key, root) => {
   const dists = []
-  const facet = shape.children.find(c => c.key === key.replace('d', ''))
+  // TODO: fixthis
+  const facet = shape.children.find(c => c.key === key.replace('dual_', ''))
   const facets = []
   const visitShape = subshape => {
     if (subshape.dimensions === reciprocation) {
@@ -133,7 +134,7 @@ export const getDualObjects = (
       }
 
       const vertex = {
-        key: (cached.compound ? 'd' : '') + cached.key,
+        key: cached.compound ? cached.key.replace(/_/, 'dual_') : cached.key,
         word,
         vertices: [normal],
         dual: true,
@@ -198,7 +199,7 @@ export const getDualObjects = (
         continue
       }
       const vertex = {
-        key: (cached.compound ? 'd' : '') + cached.key,
+        key: cached.compound ? cached.key.replace(/_/, 'dual_') : cached.key,
         word,
         vertices: dualVertices,
         dual: true,
@@ -282,7 +283,7 @@ export const getDualObjects = (
         dualVertices.push(dualVerticesIndexed[index])
       }
       const vertex = {
-        key: (cached.compound ? 'd' : '') + cached.key,
+        key: cached.compound ? cached.key.replace(/_/, 'dual_') : cached.key,
         word,
         vertices: dualVertices,
         dual: true,

@@ -1,3 +1,4 @@
+import { types } from '../../statics'
 import { getShape } from '../math/shape'
 import { isCompound, isDual } from '../mirrors'
 import { crossSection } from './crossSection'
@@ -16,7 +17,6 @@ onmessage = ({
     stellation,
     mirrors,
     ambiance,
-    draw,
     batch,
     hidden,
     reciprocation,
@@ -47,9 +47,9 @@ onmessage = ({
       // tcParams is a map of keys -> Todd-Coxeter params
       tcParams = new Map([
         [
-          `${root.dual && !root.compound ? 'd' : root.fundamental ? 'f' : ''}${
-            shape.root.key
-          }`,
+          `${types[root.dual || root.fundamental ? dimensions - 1 : 0]}_${
+            root.dual && !root.compound ? 'dual_' : root.fundamental ? 'f' : ''
+          }${shape.root.key}`,
           root,
         ],
       ])
@@ -70,28 +70,11 @@ onmessage = ({
         tcParams,
         root,
       })
-      if (!hidden.length) {
-        if (!draw.vertex) {
-          hidden.push(...polytope.facets[0].parts.map(p => p.key).flat())
-        }
-        if (!draw.edge) {
-          hidden.push(...polytope.facets[1].parts.map(p => p.key).flat())
-        }
-        if (!draw.face) {
-          hidden.push(...polytope.facets[2].parts.map(p => p.key).flat())
-        }
-      }
     }
 
     // Shortcuts
     if (type === 'paint') {
-      const color = fillColor(
-        shape.dimensions,
-        fullObjects,
-        ambiance,
-        hidden,
-        polytope
-      )
+      const color = fillColor(shape.dimensions, fullObjects, ambiance, hidden)
 
       postMessage(
         {
@@ -115,13 +98,7 @@ onmessage = ({
       }
       fullObjects = objects
       const geometry = fillGeometry(shape.dimensions, objects, hidden)
-      const color = fillColor(
-        shape.dimensions,
-        objects,
-        ambiance,
-        hidden,
-        polytope
-      )
+      const color = fillColor(shape.dimensions, objects, ambiance, hidden)
       postMessage(
         {
           geometry,
@@ -138,13 +115,7 @@ onmessage = ({
 
     if (type === 'display') {
       const geometry = fillGeometry(shape.dimensions, fullObjects, hidden)
-      const color = fillColor(
-        shape.dimensions,
-        fullObjects,
-        ambiance,
-        hidden,
-        polytope
-      )
+      const color = fillColor(shape.dimensions, fullObjects, ambiance, hidden)
       postMessage(
         {
           geometry,
@@ -211,7 +182,6 @@ onmessage = ({
       objects,
       ambiance,
       hidden,
-      polytope,
       root.lasts
     )
     root.lasts = geometry.infos.map(i => i.start + i.nonpartial)
@@ -231,7 +201,6 @@ onmessage = ({
         polytope,
         geometry,
         color,
-        hidden: iteration < 0 ? hidden : undefined,
       },
       geometry.data
         .flat(1)

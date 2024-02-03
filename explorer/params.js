@@ -1,3 +1,4 @@
+import { types } from '../statics'
 import { defaultParams } from './default'
 import { min, sign } from './math'
 import { coxeterToGram } from './math/hypermath'
@@ -105,6 +106,15 @@ export const filterParams = (maybeBadParams, changed = [], oldParams) => {
     )
   ) {
     params.limit = params.start
+  }
+
+  if (
+    ['coxeter', 'dimensions', 'stellation', 'mirrors'].some(c =>
+      changed.includes(c)
+    )
+  ) {
+    // Keep only hidden groups
+    params.hidden = oldParams.hidden.filter(h => types.includes(h))
   }
 
   // Normalize params

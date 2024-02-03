@@ -108,7 +108,7 @@ export const getObjects = (
       for (let j = 0; j < facet.parts.length; j++) {
         const part = facet.parts[j]
         const cached = cache.get(
-          root.compound ? part.key.replace(/^d/g, '') : part.key
+          root.compound ? part.key.replace(/dual_/g, '') : part.key
         )
         const { objects, partials } = part.dual
           ? getDualObjects(i, cached, shape, reciprocation, part.key, root)

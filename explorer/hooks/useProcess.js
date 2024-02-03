@@ -48,7 +48,6 @@ export const useProcess = (runtime, setRuntime) => {
       return {
         ...runtime,
         space,
-        hidden: [],
         error: null,
       }
     })
@@ -117,11 +116,6 @@ export const useProcess = (runtime, setRuntime) => {
         stellation: runtime.stellation,
         mirrors: runtime.mirrors,
         ambiance: runtime.ambiance,
-        draw: {
-          vertex: runtime.drawVertex,
-          edge: runtime.drawEdge,
-          face: runtime.drawFace,
-        },
         batch:
           runtime.iteration === -1
             ? max(1, ~~(runtime.batch / 10))
@@ -227,12 +221,6 @@ export const useProcess = (runtime, setRuntime) => {
 
           if (data.color) {
             newRuntime.meshes.fillColor(data.color)
-          }
-          if (data.hidden) {
-            // Updating hidden from the display style from draw*
-            if (!arrayEquals(runtime.hidden, data.hidden)) {
-              newRuntime.hidden = data.hidden
-            }
           }
           return newRuntime
         })

@@ -1,3 +1,4 @@
+import { types } from '../../statics'
 import { ToddCoxeter, countCosets, wordToCoset } from '../math/toddcoxeter'
 
 const isInvariant = (g, localgens, facet, partial, root) => {
@@ -87,9 +88,10 @@ export const getPolytope = (batch, shape, tcParams, section, root) => {
 
     subshape.children.forEach(visitShape)
 
-    const key = `${root.dual ? 'd' : root.fundamental ? 'f' : ''}${
-      subshape.key
-    }`
+    const key = `${types[rank]}_${
+      root.dual ? 'dual_' : root.fundamental ? 'fundamental_' : ''
+    }${subshape.key}`
+
     const compute =
       (rank === shape.dimensions - 1 && (root.dual || root.compound)) ||
       root.fundamental ||
@@ -373,7 +375,7 @@ export const iterate = (polytope, tcParams, batch, root) => {
         if (tcParams.get(key)) {
           continue
         }
-        const compoundKey = key.replace(/^d/g, '')
+        const compoundKey = key.replace(/dual_/g, '')
         const tcParam = tcParams.get(compoundKey)
         if (!tcParam) {
           continue

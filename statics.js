@@ -52,4 +52,15 @@ export const details = [
   'higher',
   'ultra',
 ]
-export const types = ['vertex', 'edge', 'face']
+export const types = [
+  'vertex',
+  'edge',
+  'face',
+  'cell',
+  '4-face',
+  '5-face',
+  '6-face',
+  '7-face',
+  '8-face',
+  '9-face',
+]

@@ -50,8 +50,7 @@ const polytope = (coxeterArgs, mirrors, stellationArgs, extra) => {
   const params = {
     ...defaultParams,
     ...coxeterParams,
-    drawVertex: dimensions <= 4,
-    drawFace: dimensions <= 4,
+    hidden: dimensions <= 4 ? [] : ['vertex', 'face'],
     curve: dimensions > 3,
     ambiance: 'colorful',
     matrix: ident(dimensions),
@@ -111,7 +110,7 @@ const tiling = (coxeterArgs, mirrors, stellationArgs, extra) => {
     ambiance: 'cathedral',
     sizeEdge: 40,
     sizeVertex: 50,
-    drawVertex: false,
+    hidden: ['vertex'],
     curve: true,
     zoom: 1,
     ...extra,
@@ -127,7 +126,7 @@ const etiling = (coxeterArgs, mirrors, stellationArgs, extra) => {
     ambiance: 'cathedral',
     sizeEdge: 40,
     sizeVertex: 50,
-    drawVertex: false,
+    hidden: ['vertex'],
     curve: true,
     zoom: 8,
     ...extra,
@@ -142,8 +141,7 @@ const ehoneycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
   return {
     ...polytope(coxeterArgs, mirrors, stellationArgs),
     ambiance: 'neon',
-    drawFace: false,
-    drawVertex: false,
+    hidden: ['vertex', 'face'],
     centered: false,
     sizeEdge: 25,
     zoom: 2,
@@ -160,8 +158,7 @@ const honeycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
   return {
     ...poly,
     ambiance: 'neon',
-    drawFace: false,
-    drawVertex: false,
+    hidden: ['vertex', 'face'],
     curve: true,
     centered: false,
     sizeEdge: dimensions > 4 ? 15 : 25,
@@ -436,9 +433,8 @@ export const presets = [
       </>
     ),
     params: polytope([4, 3, 3], [1, 0, 0, 0], {
-      drawVertex: true,
+      hidden: [],
       sizeVertex: 40,
-      drawFace: true,
       curve: true,
       ambiance: 'neon',
       zoom: 4.2,
@@ -451,8 +447,7 @@ export const presets = [
       </>
     ),
     params: tiling([7, 3], [1, 0, 0], {
-      drawVertex: false,
-      drawFace: true,
+      hidden: ['vertex'],
       curve: true,
       sizeEdge: 25,
       ambiance: 'neon',
@@ -482,8 +477,7 @@ export const presets = [
       [0, 0, 0],
 
       {
-        drawVertex: false,
-        drawFace: true,
+        hidden: ['vertex'],
         curve: true,
         sizeEdge: 25,
         ambiance: 'neon',
@@ -532,10 +526,10 @@ export const presets = [
       [0, 0, 0, 1, 0, 0],
 
       {
+        hidden: ['face'],
         sizeVertex: 25,
         sizeEdge: 15,
         ambiance: 'synthwave',
-        drawVertex: true,
         projection3: 'orthographic',
         projection4: 'orthographic',
         projection5: 'orthographic',
@@ -565,11 +559,11 @@ export const presets = [
       [0, 0, 0, 0, 0, 0, 0, 1],
 
       {
+        hidden: ['face'],
         sizeVertex: 20,
         sizeEdge: 6,
         curve: false,
         ambiance: 'neon',
-        drawVertex: true,
         projection3: 'orthographic',
         projection4: 'orthographic',
         projection5: 'orthographic',
@@ -589,8 +583,7 @@ export const presets = [
       </>
     ),
     params: tiling([3, 3, 6], [1, 0, 0, 0], {
-      drawVertex: false,
-      drawFace: true,
+      hidden: ['vertex'],
       curve: true,
       centered: true,
       ambiance: 'pure',
@@ -606,8 +599,7 @@ export const presets = [
       </>
     ),
     params: tiling([6, 3, 4], [1, 0, 0, 0], {
-      drawVertex: false,
-      drawFace: true,
+      hidden: ['vertex'],
       curve: true,
       centered: false,
       ambiance: 'colorful',
@@ -634,9 +626,8 @@ export const presets = [
       </>
     ),
     params: honeycomb([7, 3, 3], [1, 0, 0, 0], {
+      hidden: [],
       zoom: 1.5,
-      drawFace: true,
-      drawVertex: true,
     }),
   },
   {
@@ -647,8 +638,7 @@ export const presets = [
       </>
     ),
     params: tiling([5, 3, 6], [1, 0, 0, 0], {
-      drawVertex: false,
-      drawFace: true,
+      hidden: ['vertex'],
       curve: true,
       centered: true,
       ambiance: 'pure',
@@ -663,8 +653,7 @@ export const presets = [
       </>
     ),
     params: polytope([32, 2, 32], [1, 0, 0, 1], {
-      drawVertex: false,
-      drawFace: false,
+      hidden: ['vertex', 'face'],
       curve: true,
       ambiance: 'glass',
       zoom: 3,
@@ -688,8 +677,7 @@ export const presets = [
       [1, 1, 1, 1, 0],
 
       {
-        drawVertex: false,
-        drawFace: true,
+        hidden: ['vertex'],
         ambiance: 'neon',
         sizeEdge: 20,
         projection4: 'sterographic',
@@ -709,8 +697,7 @@ export const presets = [
       </>
     ),
     params: polytope([-1, 2, -1], [1, 0, 0, 1], [10, 1, 10], {
-      drawVertex: false,
-      drawFace: false,
+      hidden: ['vertex', 'face'],
       curve: true,
       ambiance: 'neon',
       centered: false,
@@ -731,8 +718,7 @@ export const presets = [
       </>
     ),
     params: polytope([-1, 3, 3, -1], [1, 0, 0, 0, 1], [10, 1, 1, 10], {
-      drawVertex: false,
-      drawFace: false,
+      hidden: ['vertex', 'face'],
       curve: true,
       ambiance: 'neon',
       centered: false,
@@ -756,8 +742,7 @@ export const presets = [
       [0, 0, 0, 0, 0, 0],
       [10, 1, 10, 1, 10],
       {
-        drawVertex: false,
-        drawFace: false,
+        hidden: ['vertex', 'face'],
         curve: true,
         ambiance: 'neon',
         centered: false,

@@ -11,7 +11,10 @@ const serialize = (parts, hidden) => {
       const objects = base[j]
       for (let k = 0; k < objects.length; k++) {
         const object = objects[k]
-        if (hidden.includes(object.key)) {
+        if (
+          hidden.includes(object.key) ||
+          hidden.includes(object.key.split('_')[0])
+        ) {
           continue
         }
         if (p === 0) {
@@ -57,18 +60,7 @@ export const fillGeometry = (dimensions, objects, hidden, lasts) => {
   return { infos, data }
 }
 
-export const fillColor = (
-  dimensions,
-  objects,
-  ambiance,
-  hidden,
-  polytope,
-  lasts
-) => {
-  const hasFace = polytope.facets[2].parts
-    .map(p => p.key)
-    .some(k => !hidden.includes(k))
-
+export const fillColor = (dimensions, objects, ambiance, hidden, lasts) => {
   const data = []
   const infos = []
   for (let i = 0; i < objects.length; i++) {
@@ -87,7 +79,7 @@ export const fillColor = (
         faceIndex: object.faceIndex,
         faceSize: object.faceSize,
         dimensions: dimensions,
-        hasFace,
+        hidden,
         idx: j,
         size: allObjects.length,
         type: types[i],

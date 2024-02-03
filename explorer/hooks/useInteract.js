@@ -157,8 +157,8 @@ export const useInteract = (
         return
       }
       if (matrix) {
-        for (let i = 0; i < types.length; i++) {
-          runtime.meshes[types[i]].uniforms.matrix.update(
+        for (let i = 0; i < runtime.meshes.meshes.length; i++) {
+          runtime.meshes[runtime.meshes.meshes[i]].uniforms.matrix.update(
             columnMajor(local.current.matrix)
           )
         }
