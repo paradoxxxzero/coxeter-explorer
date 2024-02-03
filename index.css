@@ -339,7 +339,7 @@ select option {
 .shape-view-diagram {
   display: flex;
   flex-direction: row;
-  justify-content: flex-end;
+  justify-content: space-between;
 }
 .shape-detail-button {
   background: none;

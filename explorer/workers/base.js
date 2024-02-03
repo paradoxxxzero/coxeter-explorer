@@ -8,6 +8,7 @@ export const getBaseObjects = (rank, cached, root) => {
   if (rank === 0) {
     for (const [cosetId, word] of cached.currentWords) {
       objects.push({
+        key: cached.key,
         word,
         vertices: [cached.vertices.get(cosetId)],
       })
@@ -15,7 +16,11 @@ export const getBaseObjects = (rank, cached, root) => {
     }
   } else if (rank === 1) {
     for (const [cosetId, word] of cached.currentWords) {
-      const vertex = { word, vertices: [] }
+      const vertex = {
+        key: cached.key,
+        word,
+        vertices: [],
+      }
       for (let i = 0; i < cached.facet.length; i++) {
         const vertexId = wordToCoset(root, word + cached.facet[i])
         if (vertexId && root.vertices.has(vertexId)) {
@@ -142,6 +147,7 @@ export const getBaseObjects = (rank, cached, root) => {
       }
 
       const vertex = {
+        key: cached.key,
         word,
         vertices: faceVertices,
         faceIndex: 0,

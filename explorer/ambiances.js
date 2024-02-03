@@ -218,9 +218,9 @@ export const ambiances = Object.fromEntries(
         opacity: 0.6,
         gouraud: false,
       },
-      color: ({ word, type, dimensions, draw }) => {
+      color: ({ word, type, dimensions, hasFace }) => {
         const h = word.length ? atoi(word[word.length - 1]) / dimensions : 0
-        return hsl(h % 1, 1, type === 'face' ? 0.6 : draw.face ? 0 : 0.8)
+        return hsl(h % 1, 1, type === 'face' ? 0.6 : hasFace ? 0 : 0.8)
       },
     },
     harlequin: {
@@ -285,11 +285,11 @@ export const ambiances = Object.fromEntries(
       glow: false,
       shading: false,
 
-      color: ({ word, type, draw }) => {
+      color: ({ word, type, hasFace }) => {
         return hsl(
           (word.length * 0.06) % 1,
           1,
-          type === 'face' ? 0.6 : draw.face ? 0.05 : 0.5
+          type === 'face' ? 0.6 : hasFace ? 0.05 : 0.5
         )
       },
     },

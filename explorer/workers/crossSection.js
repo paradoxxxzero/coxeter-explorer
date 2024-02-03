@@ -162,7 +162,7 @@ export const getSliceObjects = (rank, cut, obj, root) => {
   return { sections, sectionPartials }
 }
 
-export const crossSection = (objects, section, draw, root) => {
+export const crossSection = (objects, section, root) => {
   // The section is defined by the normal and the distance from the origin
   const vector = section.slice(0, -1)
   const d = section[section.length - 1]
@@ -178,7 +178,6 @@ export const crossSection = (objects, section, draw, root) => {
 
     const crossParts = {
       start: root.lasts[i],
-      size: 0,
       objects: [],
       partials: [],
     }
@@ -189,11 +188,8 @@ export const crossSection = (objects, section, draw, root) => {
         const obj = allObjects[j] || []
 
         const { sections, sectionPartials } = getSliceObjects(i, cut, obj, root)
-        if (draw[types[i]]) {
-          crossParts.objects.push(sections)
-          crossParts.size += sections.length + sectionPartials.length
-          crossParts.partials.push(sectionPartials)
-        }
+        crossParts.objects.push(sections)
+        crossParts.partials.push(sectionPartials)
       }
     }
     crossSection.push(crossParts)

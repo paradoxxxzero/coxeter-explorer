@@ -70,11 +70,28 @@ onmessage = ({
         tcParams,
         root,
       })
+      if (!hidden.length) {
+        if (!draw.vertex) {
+          hidden.push(...polytope.facets[0].parts.map(p => p.key).flat())
+        }
+        if (!draw.edge) {
+          hidden.push(...polytope.facets[1].parts.map(p => p.key).flat())
+        }
+        if (!draw.face) {
+          hidden.push(...polytope.facets[2].parts.map(p => p.key).flat())
+        }
+      }
     }
 
     // Shortcuts
     if (type === 'paint') {
-      const color = fillColor(shape.dimensions, fullObjects, ambiance, draw)
+      const color = fillColor(
+        shape.dimensions,
+        fullObjects,
+        ambiance,
+        hidden,
+        polytope
+      )
 
       postMessage(
         {
@@ -93,7 +110,7 @@ onmessage = ({
         root.lasts[i] = 0
       }
       if (section !== null) {
-        objects = crossSection(objects, section, draw, root)
+        objects = crossSection(objects, section, root)
       }
       if (!root.fundamental) {
         // Fundamental is only triangles
@@ -103,8 +120,14 @@ onmessage = ({
       for (let i = 0; i < objects.length; i++) {
         root.lasts[i] = objects[i].size
       }
-      const geometry = fillGeometry(shape.dimensions, objects, ambiance, draw)
-      const color = fillColor(shape.dimensions, objects, ambiance, draw)
+      const geometry = fillGeometry(shape.dimensions, objects, hidden)
+      const color = fillColor(
+        shape.dimensions,
+        objects,
+        ambiance,
+        hidden,
+        polytope
+      )
       postMessage(
         {
           geometry,
@@ -120,7 +143,26 @@ onmessage = ({
     }
 
     if (type === 'display') {
-      // return
+      const geometry = fillGeometry(shape.dimensions, fullObjects, hidden)
+      const color = fillColor(
+        shape.dimensions,
+        fullObjects,
+        ambiance,
+        hidden,
+        polytope
+      )
+      postMessage(
+        {
+          geometry,
+          color,
+        },
+        geometry.data
+          .flat(1)
+          .concat(color.data)
+          .filter(a => a)
+          .map(a => a.buffer)
+      )
+      return
     }
 
     if (type === 'iterate') {
@@ -130,9 +172,7 @@ onmessage = ({
     let objects = getObjects(
       shape,
       tcParams,
-      draw,
       polytope,
-      hidden,
       reciprocation,
       section,
       root
@@ -145,7 +185,6 @@ onmessage = ({
             objects: [],
             partials: [],
             start: 0,
-            size: 0,
           }
         }
         fullRawObjects[i].objects.push(...obj.objects)
@@ -154,7 +193,7 @@ onmessage = ({
       }
     }
     if (section !== null) {
-      objects = crossSection(objects, section, draw, root)
+      objects = crossSection(objects, section, root)
     }
 
     if (!root.fundamental) {
@@ -169,7 +208,6 @@ onmessage = ({
           objects: [],
           partials: [],
           start: 0,
-          size: 0,
         }
       }
       fullObjects[i].objects.push(...obj.objects)
@@ -181,8 +219,14 @@ onmessage = ({
         0
       )
     }
-    const geometry = fillGeometry(shape.dimensions, objects, draw, hidden)
-    const color = fillColor(shape.dimensions, objects, ambiance, draw, hidden)
+    const geometry = fillGeometry(shape.dimensions, objects, hidden)
+    const color = fillColor(
+      shape.dimensions,
+      objects,
+      ambiance,
+      hidden,
+      polytope
+    )
 
     polytope.gens = shape.gens
     polytope.subgens = shape.subgens
@@ -196,6 +240,7 @@ onmessage = ({
         polytope,
         geometry,
         color,
+        hidden: iteration < 0 ? hidden : undefined,
       },
       geometry.data
         .flat(1)

@@ -8,7 +8,6 @@ import { getFundamentalObjects } from './fundamental'
 export const faceToFrag = (faces, root) => {
   const parts = {
     start: faces.start,
-    size: 0,
     objects: [],
     partials: [],
   }
@@ -77,7 +76,6 @@ export const faceToFrag = (faces, root) => {
       } else {
         parts.objects.push(newObjects)
       }
-      parts.size += newObjects.length
     }
   }
   return parts
@@ -86,9 +84,7 @@ export const faceToFrag = (faces, root) => {
 export const getObjects = (
   shape,
   cache,
-  draw,
   polytope,
-  hidden,
   reciprocation,
   section,
   root
@@ -99,54 +95,31 @@ export const getObjects = (
     for (let i = 0; i < fundamentalObjects.length; i++) {
       const parts = {
         start: root.lasts[i],
-        size: 0,
         objects: [],
         partials: [],
       }
-      if (draw[types[i]]) {
-        parts.size = fundamentalObjects[i].length
-        parts.objects.push(fundamentalObjects[i])
-        root.lasts[i] += fundamentalObjects[i].length
-      }
+      parts.objects.push(fundamentalObjects[i])
+      root.lasts[i] += fundamentalObjects[i].length
       objects.push(parts)
     }
   } else {
     for (let i = 0; i < (section ? 4 : 3); i++) {
       const parts = {
         start: root.lasts[i],
-        size: 0,
         objects: [],
         partials: [],
       }
       const facet = polytope.facets[i]
-      if (!facet || (!section && !root.dual && !draw[types[i]])) {
-        objects.push(parts)
-        continue
-      }
       for (let j = 0; j < facet.parts.length; j++) {
         const part = facet.parts[j]
         const cached = cache.get(
           root.compound ? part.key.replace(/^d/g, '') : part.key
         )
-        if ((!part.dual && hidden.includes(part.key)) || !cached.compute) {
-          // Keep index for subshape
-          parts.objects.push([])
-          parts.partials.push([])
-          continue
-        }
-
         const { objects, partials } = part.dual
           ? getDualObjects(i, cached, shape, reciprocation, part.key, root)
           : getBaseObjects(i, cached, root)
 
-        if (!section && (!draw[types[i]] || hidden.includes(part.key))) {
-          // Dual needs to be computed but still can be hidden
-          parts.objects.push([])
-          parts.partials.push([])
-          continue
-        }
         parts.objects.push(objects)
-        parts.size += objects.length + partials.length
         parts.partials.push(partials)
       }
       objects.push(parts)

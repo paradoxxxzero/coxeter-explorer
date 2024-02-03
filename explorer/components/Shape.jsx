@@ -81,15 +81,20 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
 
   const handleHiddenChange = useCallback(
     event => {
-      const key = event.target.closest('button').dataset.key
-      const keys = key.split(',')
+      const dataset = event.target.closest('button').dataset
+
+      const keys = dataset.key
+        ? dataset.key.split(',')
+        : runtime.polytope.facets[dataset.rank].parts
+            .map(({ key }) => key)
+            .flat()
       const shown = !keys.some(k => runtime.hidden.includes(k))
       const hidden = runtime.hidden.filter(v => !keys.includes(v))
       updateParams({
         hidden: shown ? [...hidden, ...keys] : hidden,
       })
     },
-    [runtime.hidden, updateParams]
+    [runtime.hidden, runtime.polytope, updateParams]
   )
   const handleReciprocationChange = useCallback(
     event => {
@@ -199,6 +204,19 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                   gridRow: `span ${level.parts.length}`,
                 }}
               >
+                {level.dimensions < 3 &&
+                !level.fundamental &&
+                level.parts.length > 1 ? (
+                  <button
+                    className="shape-hidden button"
+                    data-rank={level.dimensions}
+                    onClick={handleHiddenChange}
+                  >
+                    {level.parts.some(p => runtime.hidden.includes(p.key))
+                      ? eyeOffIcon
+                      : eyeIcon}
+                  </button>
+                ) : null}
                 {level.processing && level.processing !== level.count ? (
                   <small>{formatCount(level.processing)} / </small>
                 ) : null}

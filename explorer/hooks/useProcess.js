@@ -153,11 +153,7 @@ export const useProcess = (runtime, setRuntime) => {
       runtime.shaper.postMessage({
         type: 'paint',
         ambiance: runtime.ambiance,
-        draw: {
-          vertex: runtime.drawVertex,
-          edge: runtime.drawEdge,
-          face: runtime.drawFace,
-        },
+        hidden: runtime.hidden,
       })
       return {
         ...runtime,
@@ -172,11 +168,7 @@ export const useProcess = (runtime, setRuntime) => {
         type: 'section',
         section: runtime.crosssection ? runtime.section : null,
         ambiance: runtime.ambiance,
-        draw: {
-          vertex: runtime.drawVertex,
-          edge: runtime.drawEdge,
-          face: runtime.drawFace,
-        },
+        hidden: runtime.hidden,
       })
       return {
         ...runtime,
@@ -190,38 +182,15 @@ export const useProcess = (runtime, setRuntime) => {
     setRuntime(runtime => {
       runtime.shaper.postMessage({
         type: 'display',
-        space: runtime.space,
-        dimensions: runtime.dimensions,
-        coxeter: runtime.coxeter,
-        stellation: runtime.stellation,
-        mirrors: runtime.mirrors,
         ambiance: runtime.ambiance,
-        draw: {
-          vertex: runtime.drawVertex,
-          edge: runtime.drawEdge,
-          face: runtime.drawFace,
-        },
-        batch:
-          runtime.iteration === -1
-            ? max(1, ~~(runtime.batch / 10))
-            : runtime.batch,
         hidden: runtime.hidden,
-        reciprocation: runtime.reciprocation,
-        extrarels: runtime.extrarels,
-        section: runtime.crosssection ? runtime.section : null,
       })
       return {
         ...runtime,
         processing: true,
       }
     })
-  }, [
-    runtime.drawVertex,
-    runtime.drawEdge,
-    runtime.drawFace,
-    runtime.hidden,
-    setRuntime,
-  ])
+  }, [runtime.hidden, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => ({
@@ -250,7 +219,6 @@ export const useProcess = (runtime, setRuntime) => {
                 ? runtime.iteration
                 : runtime.iteration + 1
           }
-
           if (data.geometry) {
             newRuntime.meshes.fillGeometry(data.geometry)
           }
@@ -258,7 +226,10 @@ export const useProcess = (runtime, setRuntime) => {
           if (data.color) {
             newRuntime.meshes.fillColor(data.color)
           }
-
+          if (data.hidden) {
+            // Updating hidden from the display style from draw*
+            newRuntime.hidden = data.hidden
+          }
           return newRuntime
         })
       } else {
