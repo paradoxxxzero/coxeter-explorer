@@ -4,6 +4,7 @@ import { getArity } from '../utils'
 
 const serialize = (parts, hidden) => {
   const allObjects = []
+  let nonpartial = 0
   for (let p = 0; p < 2; p++) {
     const base = p === 1 ? parts.partials : parts.objects
     for (let j = 0; j < base.length; j++) {
@@ -13,20 +14,23 @@ const serialize = (parts, hidden) => {
         if (hidden.includes(object.key)) {
           continue
         }
+        if (p === 0) {
+          nonpartial++
+        }
         allObjects.push(object)
       }
     }
   }
-  return allObjects
+  return { allObjects, nonpartial }
 }
 
-export const fillGeometry = (dimensions, objects, hidden) => {
+export const fillGeometry = (dimensions, objects, hidden, lasts) => {
   const data = []
   const infos = []
   const arity = getArity(dimensions)
   for (let i = 0; i < objects.length; i++) {
     const parts = objects[i]
-    const allObjects = serialize(parts, hidden)
+    const { allObjects, nonpartial } = serialize(parts, hidden)
 
     const buffers = []
     for (let j = 0; j < i + 1; j++) {
@@ -45,14 +49,22 @@ export const fillGeometry = (dimensions, objects, hidden) => {
     }
     data.push(buffers)
     infos.push({
-      start: parts.start,
+      start: lasts ? lasts[i] : 0,
       size: allObjects.length,
+      nonpartial,
     })
   }
   return { infos, data }
 }
 
-export const fillColor = (dimensions, objects, ambiance, hidden, polytope) => {
+export const fillColor = (
+  dimensions,
+  objects,
+  ambiance,
+  hidden,
+  polytope,
+  lasts
+) => {
   const hasFace = polytope.facets[2].parts
     .map(p => p.key)
     .some(k => !hidden.includes(k))
@@ -61,7 +73,7 @@ export const fillColor = (dimensions, objects, ambiance, hidden, polytope) => {
   const infos = []
   for (let i = 0; i < objects.length; i++) {
     const parts = objects[i]
-    const allObjects = serialize(parts, hidden)
+    const { allObjects } = serialize(parts, hidden)
 
     const buffer = new Float32Array(allObjects.length * 3)
 
@@ -87,7 +99,7 @@ export const fillColor = (dimensions, objects, ambiance, hidden, polytope) => {
     }
     data.push(buffer)
     infos.push({
-      start: parts.start,
+      start: lasts ? lasts[i] : 0,
       size: allObjects.length,
     })
   }

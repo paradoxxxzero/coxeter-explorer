@@ -85,6 +85,8 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
 
       const keys = dataset.key
         ? dataset.key.split(',')
+        : runtime.polytope.fundamental
+        ? [['vertices', 'edges', 'faces'][dataset.rank]]
         : runtime.polytope.facets[dataset.rank].parts
             .map(({ key }) => key)
             .flat()
@@ -166,7 +168,9 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
       ) : null}
       <div
         className={`shape-info${runtime.processing ? ' shape-processing' : ''}${
-          ['advanced', 'full'].includes(showUI) ? ' shape-info-expanded' : ''
+          ['advanced', 'full'].includes(showUI) && !runtime.polytope.fundamental
+            ? ' shape-info-expanded'
+            : ''
         }`}
       >
         {[...runtime.polytope.facets]
@@ -205,14 +209,19 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                 }}
               >
                 {level.dimensions < 3 &&
-                !level.fundamental &&
-                level.parts.length > 1 ? (
+                (level.parts.length > 1 || level.fundamental) ? (
                   <button
                     className="shape-hidden button"
                     data-rank={level.dimensions}
                     onClick={handleHiddenChange}
                   >
-                    {level.parts.some(p => runtime.hidden.includes(p.key))
+                    {(
+                      level.fundamental
+                        ? runtime.hidden.includes(
+                            ['vertices', 'edges', 'faces'][level.dimensions]
+                          )
+                        : level.parts.some(p => runtime.hidden.includes(p.key))
+                    )
                       ? eyeOffIcon
                       : eyeIcon}
                   </button>
@@ -228,6 +237,7 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                 className={
                   level.dimensions > 0 &&
                   ['advanced', 'full'].includes(showUI) &&
+                  !level.fundamental &&
                   level.parts.length > 1
                     ? ' shape-split'
                     : ''
@@ -237,7 +247,7 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                 }}
               />
 
-              {['advanced', 'full'].includes(showUI)
+              {['advanced', 'full'].includes(showUI) && !level.fundamental
                 ? level.parts.map(
                     ({ count, coxeter, stellation, mirrors, key }) => (
                       <Fragment key={key}>
@@ -255,7 +265,7 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                             key.startsWith('s') ? ' shape-snub' : ''
                           }`}
                         >
-                          {level.dimensions < 3 && !level.fundamental ? (
+                          {level.dimensions < 3 ? (
                             <button
                               className="shape-hidden button"
                               data-key={key}

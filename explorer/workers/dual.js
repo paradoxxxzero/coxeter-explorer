@@ -133,6 +133,7 @@ export const getDualObjects = (
       }
 
       const vertex = {
+        key: (cached.compound ? 'd' : '') + cached.key,
         word,
         vertices: [normal],
         dual: true,
@@ -197,6 +198,7 @@ export const getDualObjects = (
         continue
       }
       const vertex = {
+        key: (cached.compound ? 'd' : '') + cached.key,
         word,
         vertices: dualVertices,
         dual: true,
@@ -279,8 +281,8 @@ export const getDualObjects = (
         const index = chain[i]
         dualVertices.push(dualVerticesIndexed[index])
       }
-
       const vertex = {
+        key: (cached.compound ? 'd' : '') + cached.key,
         word,
         vertices: dualVertices,
         dual: true,

@@ -149,7 +149,7 @@ export const getPolytope = (batch, shape, tcParams, section, root) => {
         : subshape.mirrors
 
       polytope.facets[rank].parts.push({
-        key: key,
+        key,
         coxeter: subshape.coxeter,
         stellation: subshape.stellation,
         mirrors: subShapeMirrors,

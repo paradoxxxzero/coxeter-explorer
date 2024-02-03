@@ -9,6 +9,7 @@ import {
 import { dot, multiplyVector, transpose } from '../math/matrix'
 import { mirrorValue } from '../mirrors'
 import Shaper from '../workers/shape.worker?worker'
+import { arrayEquals } from '../../utils'
 
 export const useProcess = (runtime, setRuntime) => {
   useEffect(() => {
@@ -47,6 +48,7 @@ export const useProcess = (runtime, setRuntime) => {
       return {
         ...runtime,
         space,
+        hidden: [],
         error: null,
       }
     })
@@ -228,7 +230,9 @@ export const useProcess = (runtime, setRuntime) => {
           }
           if (data.hidden) {
             // Updating hidden from the display style from draw*
-            newRuntime.hidden = data.hidden
+            if (!arrayEquals(runtime.hidden, data.hidden)) {
+              newRuntime.hidden = data.hidden
+            }
           }
           return newRuntime
         })

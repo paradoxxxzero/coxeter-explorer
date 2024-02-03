@@ -37,17 +37,20 @@ export const getFundamentalObjects = (shape, root) => {
         const smallInfinity = 1000
         const zero = new Array(shape.dimensions).fill(0)
         vertices.push({
+          key: 'vertices',
           word,
           vertices: zero,
         })
         if (shape.dimensions === 2) {
           for (let i = 0; i < simplex.length; i++) {
             edges.push({
+              key: 'edges',
               word,
               vertices: [zero, mulV(simplex[i], smallInfinity)],
             })
           }
           faces.push({
+            key: 'faces',
             word,
             vertices: [
               zero,
@@ -60,6 +63,7 @@ export const getFundamentalObjects = (shape, root) => {
         const vertexHash = hash(simplex[i])
         if (!root.hashes.vertex.has(vertexHash)) {
           vertices.push({
+            key: 'vertices',
             word,
             vertices: [simplex[i]],
           })
@@ -69,6 +73,7 @@ export const getFundamentalObjects = (shape, root) => {
           const edgeHash = hashV([simplex[i], simplex[j]])
           if (!root.hashes.edge.has(edgeHash)) {
             edges.push({
+              key: 'edges',
               word,
               vertices: [simplex[i], simplex[j]],
             })
@@ -79,6 +84,7 @@ export const getFundamentalObjects = (shape, root) => {
             const faceHash = hashV([simplex[i], simplex[j], simplex[k]])
             if (!root.hashes.face.has(faceHash)) {
               faces.push({
+                key: 'faces',
                 word,
                 faceSize: 3,
                 vertices: [simplex[i], simplex[j], simplex[k]],

@@ -177,7 +177,6 @@ export const crossSection = (objects, section, root) => {
     const parts = objects[i + 1]
 
     const crossParts = {
-      start: root.lasts[i],
       objects: [],
       partials: [],
     }

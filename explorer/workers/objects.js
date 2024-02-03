@@ -1,4 +1,3 @@
-import { types } from '../../statics'
 import { abs } from '../math'
 import { addV, cross, mulV } from '../math/matrix'
 import { getBaseObjects } from './base'
@@ -7,7 +6,6 @@ import { getFundamentalObjects } from './fundamental'
 
 export const faceToFrag = (faces, root) => {
   const parts = {
-    start: faces.start,
     objects: [],
     partials: [],
   }
@@ -94,18 +92,15 @@ export const getObjects = (
     const fundamentalObjects = getFundamentalObjects(shape, root)
     for (let i = 0; i < fundamentalObjects.length; i++) {
       const parts = {
-        start: root.lasts[i],
         objects: [],
         partials: [],
       }
       parts.objects.push(fundamentalObjects[i])
-      root.lasts[i] += fundamentalObjects[i].length
       objects.push(parts)
     }
   } else {
     for (let i = 0; i < (section ? 4 : 3); i++) {
       const parts = {
-        start: root.lasts[i],
         objects: [],
         partials: [],
       }

@@ -106,9 +106,6 @@ onmessage = ({
         return
       }
       let objects = fullRawObjects
-      for (let i = 0; i < objects.length; i++) {
-        root.lasts[i] = 0
-      }
       if (section !== null) {
         objects = crossSection(objects, section, root)
       }
@@ -117,9 +114,6 @@ onmessage = ({
         objects[2] = faceToFrag(objects[2], root)
       }
       fullObjects = objects
-      for (let i = 0; i < objects.length; i++) {
-        root.lasts[i] = objects[i].size
-      }
       const geometry = fillGeometry(shape.dimensions, objects, hidden)
       const color = fillColor(
         shape.dimensions,
@@ -184,12 +178,10 @@ onmessage = ({
           fullRawObjects[i] = {
             objects: [],
             partials: [],
-            start: 0,
           }
         }
         fullRawObjects[i].objects.push(...obj.objects)
         fullRawObjects[i].partials = obj.partials
-        fullRawObjects[i].size += obj.size
       }
     }
     if (section !== null) {
@@ -207,32 +199,31 @@ onmessage = ({
         fullObjects[i] = {
           objects: [],
           partials: [],
-          start: 0,
         }
       }
       fullObjects[i].objects.push(...obj.objects)
       fullObjects[i].partials = obj.partials
-      fullObjects[i].size += obj.size
-
-      root.lasts[i] += obj.objects.reduce(
-        (acc, o) => acc + (o ? o.length : 0),
-        0
-      )
     }
-    const geometry = fillGeometry(shape.dimensions, objects, hidden)
+
+    const geometry = fillGeometry(shape.dimensions, objects, hidden, root.lasts)
     const color = fillColor(
       shape.dimensions,
       objects,
       ambiance,
       hidden,
-      polytope
+      polytope,
+      root.lasts
     )
+    root.lasts = geometry.infos.map(i => i.start + i.nonpartial)
 
     polytope.gens = shape.gens
     polytope.subgens = shape.subgens
     polytope.rels = shape.rels
     polytope.transforms = shape.transforms
     polytope.extrarels = shape.extrarels
+    polytope.fundamental = root.fundamental
+    polytope.dual = root.dual
+    polytope.compound = root.compound
     // Used for limiting
     polytope.size = root.fundamental ? root.words.size : root.vertices.size
     postMessage(
