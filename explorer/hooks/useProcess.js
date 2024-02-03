@@ -9,7 +9,6 @@ import {
 import { dot, multiplyVector, transpose } from '../math/matrix'
 import { mirrorValue } from '../mirrors'
 import Shaper from '../workers/shape.worker?worker'
-import { arrayEquals } from '../../utils'
 
 export const useProcess = (runtime, setRuntime) => {
   useEffect(() => {
@@ -146,6 +145,9 @@ export const useProcess = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
+      if (runtime.iteration < 0) {
+        return runtime
+      }
       runtime.shaper.postMessage({
         type: 'paint',
         ambiance: runtime.ambiance,
@@ -160,6 +162,9 @@ export const useProcess = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
+      if (runtime.iteration < 0) {
+        return runtime
+      }
       runtime.shaper.postMessage({
         type: 'section',
         section: runtime.crosssection ? runtime.section : null,
@@ -176,6 +181,9 @@ export const useProcess = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
+      if (runtime.iteration < 0) {
+        return runtime
+      }
       runtime.shaper.postMessage({
         type: 'display',
         ambiance: runtime.ambiance,

@@ -29,7 +29,7 @@ const getChain = (edges, chain = null) => {
 const getMidradius = (reciprocation, shape, key, root) => {
   const dists = []
   // TODO: fixthis
-  const facet = shape.children.find(c => c.key === key.replace('dual_', ''))
+  const facet = shape.children.find(c => c.key === key.split('_').slice(-1)[0])
   const facets = []
   const visitShape = subshape => {
     if (subshape.dimensions === reciprocation) {

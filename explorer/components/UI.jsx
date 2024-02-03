@@ -579,22 +579,26 @@ export default function UI({
                   />
                 </label>
               ) : null}
-              <Number
-                name="sizeVertex"
-                label="Vertices"
-                min={0}
-                step={1}
-                value={params.sizeVertex}
-                onChange={handleChange}
-              />
-              <Number
-                name="sizeEdge"
-                label="Edges"
-                min={0}
-                step={1}
-                value={params.sizeEdge}
-                onChange={handleChange}
-              />
+              {!runtime.hidden.includes('vertex') && (
+                <Number
+                  name="sizeVertex"
+                  label="Vertices"
+                  min={0}
+                  step={1}
+                  value={params.sizeVertex}
+                  onChange={handleChange}
+                />
+              )}
+              {!runtime.hidden.includes('edge') && (
+                <Number
+                  name="sizeEdge"
+                  label="Edges"
+                  min={0}
+                  step={1}
+                  value={params.sizeEdge}
+                  onChange={handleChange}
+                />
+              )}
               <label className="select-label">
                 Ambiance
                 <select

@@ -1,3 +1,4 @@
+import { types } from '../../statics'
 import { abs } from '../math'
 import { addV, cross, mulV } from '../math/matrix'
 import { getBaseObjects } from './base'
@@ -104,12 +105,26 @@ export const getObjects = (
         objects: [],
         partials: [],
       }
+      if (i >= polytope.facets.length) {
+        objects.push(parts)
+        continue
+      }
+
       const facet = polytope.facets[i]
       for (let j = 0; j < facet.parts.length; j++) {
         const part = facet.parts[j]
-        const cached = cache.get(
-          root.compound ? part.key.replace(/dual_/g, '') : part.key
-        )
+        let key = part.key
+        if (root.compound && part.dual) {
+          // Compound duals are not cached
+          if (shape.dimensions > 2) {
+            key = `${types[shape.dimensions - i - 1]}_${
+              part.key.split('_').slice(-1)[0]
+            }`
+          } else {
+            key = 'vertex_0-1'
+          }
+        }
+        const cached = cache.get(key)
         const { objects, partials } = part.dual
           ? getDualObjects(i, cached, shape, reciprocation, part.key, root)
           : getBaseObjects(i, cached, root)

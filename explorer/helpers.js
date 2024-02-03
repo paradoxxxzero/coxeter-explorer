@@ -546,6 +546,10 @@ export const mesh = (
       this.attributes.normal.extend(3, new Float32Array(geometry.normals))
     },
     fillGeometry(data, info) {
+      if (info.arity !== this.arity) {
+        console.warn('Wrong arity', info.arity, this.arity)
+        return
+      }
       this.count = info.start + info.size
       if (this.instances < this.count) {
         this.extendAttributes(this.count)
@@ -557,6 +561,10 @@ export const mesh = (
       }
     },
     fillColor(data, info) {
+      if (info.arity !== this.arity) {
+        console.warn('Wrong arity', info.arity, this.arity)
+        return
+      }
       this.count = info.start + info.size
       if (this.instances < this.count) {
         this.extendAttributes(this.count)

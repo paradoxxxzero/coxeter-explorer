@@ -55,6 +55,7 @@ export const fillGeometry = (dimensions, objects, hidden, lasts) => {
       start: lasts ? lasts[i] : 0,
       size: allObjects.length,
       nonpartial,
+      arity,
     })
   }
   return { infos, data }
@@ -63,6 +64,7 @@ export const fillGeometry = (dimensions, objects, hidden, lasts) => {
 export const fillColor = (dimensions, objects, ambiance, hidden, lasts) => {
   const data = []
   const infos = []
+  const arity = getArity(dimensions)
   for (let i = 0; i < objects.length; i++) {
     const parts = objects[i]
     const { allObjects } = serialize(parts, hidden)
@@ -93,6 +95,7 @@ export const fillColor = (dimensions, objects, ambiance, hidden, lasts) => {
     infos.push({
       start: lasts ? lasts[i] : 0,
       size: allObjects.length,
+      arity,
     })
   }
   return { infos, data }

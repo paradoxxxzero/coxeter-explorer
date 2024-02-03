@@ -561,6 +561,9 @@ export const getShape = (
     }
     shape.children.push(...snubshape)
   }
+  if (shape === base && !shape.root) {
+    shape.root = shape
+  }
   return shape
 }
 

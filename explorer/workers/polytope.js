@@ -1,4 +1,5 @@
 import { types } from '../../statics'
+import { reorder } from '../math/shape'
 import { ToddCoxeter, countCosets, wordToCoset } from '../math/toddcoxeter'
 
 const isInvariant = (g, localgens, facet, partial, root) => {
@@ -128,7 +129,7 @@ export const getPolytope = (batch, shape, tcParams, section, root) => {
             rank: rank,
             mirrors: subshape.mirrors,
             compute,
-            done: !compute && infinite,
+            done: false,
             count: 0,
             dual: root.dual,
             compound: root.compound,
@@ -164,153 +165,7 @@ export const getPolytope = (batch, shape, tcParams, section, root) => {
   }
 
   shape.children.forEach(visitShape)
-
-  // // Low dimensional fixes
-  // if (shape.dimensions === 0) {
-  //   // Handle displaying the 1D shape egde
-  //   shape.currentWords = shape.currentWords || new Map([[1, '']])
-  //   shape.facet = ['']
-  //   shape.done = true
-  //   const vertices = new Map([[1, [0]]])
-  //   tcParams.set('v', {
-  //     ...shape,
-  //     subgens: shape.subgens,
-  //     facet: shape.facet,
-  //     rank: shape.dimensions,
-  //     mirrors: shape.mirrors,
-  //     compute: true,
-  //     vertices,
-  //   })
-  //   polytope[0] = {
-  //     dimensions: 0,
-  //     processing: 1,
-  //     count: 0,
-  //     parts: [
-  //       {
-  //         key: 'v',
-  //         coxeter: shape.coxeter,
-  //         stellation: shape.stellation,
-  //         mirrors: shape.mirrors,
-  //         dual: root.dual,
-
-  //         count: 0,
-  //         done: true,
-  //       },
-  //     ],
-  //     vertices,
-  //     done: true,
-  //   }
-  // } else if (shape.dimensions === 1) {
-  //   // Handle displaying the 1D shape egde
-  //   shape.currentWords = shape.currentWords || new Map([[1, '']])
-  //   shape.facet = Array.from(root.words.values())
-  //   shape.done = true
-  //   tcParams.set('e', {
-  //     ...shape,
-  //     subgens: shape.subgens,
-  //     facet: shape.facet,
-  //     rank: shape.dimensions,
-  //     mirrors: shape.mirrors,
-  //     compute: true,
-  //   })
-  //   polytope[1] = {
-  //     dimensions: 1,
-  //     processing: 1,
-  //     count: 0,
-  //     parts: [
-  //       {
-  //         key: 'e',
-  //         coxeter: shape.coxeter,
-  //         stellation: shape.stellation,
-  //         mirrors: shape.mirrors,
-  //         dual: root.dual,
-
-  //         count: 0,
-  //         done: true,
-  //       },
-  //     ],
-  //     done: true,
-  //   }
-  // }
-  // // Handle displaying the 2D shape face
-  // else if (shape.dimensions === 2) {
-  //   shape.currentWords = shape.currentWords || new Map([[1, '']])
-
-  //   const double = shape.gens
-  //     .split('')
-  //     .every(g => shape.mirrors[shape.transforms[g][0]])
-  //   const rotation = shape.gens
-  //     .split('')
-  //     .every(g => shape.transforms[g].length === 2)
-
-  //   const unorderedFacet = Array.from(root.words.values())
-  //   shape.facet = new Array(unorderedFacet.length)
-  //   for (let i = 0; i < unorderedFacet.length; i++) {
-  //     shape.facet[i] =
-  //       unorderedFacet[rotation ? i : reorder(i, shape.facet.length, double)]
-  //   }
-  //   shape.done = true
-  //   tcParams.set('f', {
-  //     ...shape,
-  //     subgens: shape.subgens,
-  //     facet: shape.facet,
-  //     rank: shape.dimensions,
-  //     mirrors: shape.mirrors,
-  //     compute: true,
-  //     partial: !root.done,
-  //   })
-  //   polytope[2] = {
-  //     dimensions: 2,
-  //     processing: 1,
-  //     count: 0,
-  //     parts: [
-  //       {
-  //         key: 'f',
-  //         coxeter: shape.coxeter,
-  //         stellation: shape.stellation,
-  //         mirrors: shape.mirrors,
-  //         dual: root.dual,
-
-  //         count: 0,
-  //         done: true,
-  //       },
-  //     ],
-  //     done: true,
-  //   }
-  // } else if (shape.dimensions === 3 && section) {
-  //   // Add the 3D shape cell
-  //   shape.currentWords = new Map([[1, '']])
-  //   shape.facet = Array.from(root.words.values())
-  //   shape.done = true
-  //   tcParams.set('c', {
-  //     ...shape,
-  //     subgens: shape.subgens,
-  //     facet: shape.facet,
-  //     rank: shape.dimensions,
-  //     mirrors: shape.mirrors,
-  //     compute: true,
-  //     partial: !root.done,
-  //   })
-  //   polytope[3] = {
-  //     dimensions: 3,
-  //     processing: 1,
-  //     count: 0,
-  //     parts: [
-  //       {
-  //         key: 'c',
-  //         coxeter: shape.coxeter,
-  //         stellation: shape.stellation,
-  //         mirrors: shape.mirrors,
-  //         dual: root.dual,
-
-  //         count: 0,
-  //         done: true,
-  //       },
-  //     ],
-  //     done: true,
-  //   }
-  // }
-
+  addMissingDimensions(polytope, shape, tcParams, root, section)
   return polytope
 }
 
@@ -319,6 +174,10 @@ export const iterate = (polytope, tcParams, batch, root) => {
     (root.dual && !root.compound) || root.fundamental
       ? [...polytope.facets].reverse()
       : polytope.facets
+  if (root.dual && !root.compound && root.metric.length === 2) {
+    // Keep face at the end since there's no face
+    facets.push(facets.shift())
+  }
 
   const isComputeDone = facets.filter(f => f.compute).every(f => f.done)
 
@@ -334,6 +193,9 @@ export const iterate = (polytope, tcParams, batch, root) => {
       const tcParam = tcParams.get(key)
       if (root.compound && !tcParam) {
         continue
+      }
+      if (typeof tcParam.facet === 'function') {
+        tcParam.facet = tcParam.facet(root)
       }
 
       if (tcParam.subgens === undefined) {
@@ -392,5 +254,120 @@ export const iterate = (polytope, tcParams, batch, root) => {
         facet.processing += part.processing
       }
     }
+  }
+}
+
+const addMissingDimensions = (polytope, shape, tcParams, root, section) => {
+  const makeFace = cached => ({
+    dimensions: cached.rank,
+    processing: 1,
+    count: 0,
+    parts: [
+      {
+        key: cached.key,
+        coxeter: cached.coxeter,
+        stellation: cached.stellation,
+        mirrors: cached.mirrors,
+        dual: root.dual,
+        fundamental: root.fundamental,
+
+        count: 0,
+        done: true,
+      },
+    ],
+    done: true,
+  })
+
+  // Low dimensional fixes
+  if (shape.dimensions === 0) {
+    // Handle displaying the 1D shape egde
+    const cached = {
+      ...shape,
+      key: 'vertex',
+      currentWords: shape.currentWords || new Map([[1, '']]),
+      dualCurrentWords: shape.dualCurrentWords || new Map([[1, '']]),
+      subgens: shape.subgens,
+      facet: [''],
+      rank: shape.dimensions,
+      mirrors: shape.mirrors,
+      compute: true,
+      done: true,
+      vertices: new Map([[1, [0]]]),
+    }
+    Object.assign(root, cached)
+    tcParams.set(cached.key, cached)
+    polytope.facets[0] = makeFace(cached)
+  } else if (shape.dimensions === 1) {
+    // Handle displaying the 1D shape egde
+
+    const cached = {
+      ...shape,
+      key: 'edge',
+      currentWords: shape.currentWords || new Map([[1, '']]),
+      subgens: shape.subgens,
+      facet: root => (root.words ? Array.from(root.words.values()) : ['']),
+      rank: shape.dimensions,
+      mirrors: shape.mirrors,
+      compute: true,
+      done: true,
+    }
+
+    tcParams.set(cached.key, cached)
+    polytope.facets[1] = makeFace(cached)
+  } else if (shape.dimensions === 2) {
+    // Handle displaying the 2D shape face
+    const orderRootFacet = root => {
+      if (root.fundamental) {
+        return []
+      }
+      const double = shape.gens
+        .split('')
+        .every(g => shape.mirrors[shape.transforms[g][0]])
+      const rotation = shape.gens
+        .split('')
+        .every(g => shape.transforms[g].length === 2)
+
+      const unorderedFacet = Array.from(root.words.values())
+      const facet = new Array(unorderedFacet.length)
+      for (let i = 0; i < unorderedFacet.length; i++) {
+        facet[i] =
+          unorderedFacet[rotation ? i : reorder(i, facet.length, double)]
+      }
+      return facet
+    }
+
+    const cached = {
+      ...shape,
+      key: 'face',
+      currentWords: shape.currentWords || new Map([[1, '']]),
+      dualCurrentWords: shape.dualCurrentWords || new Map([[1, '']]),
+      subgens: shape.subgens,
+      facet: orderRootFacet,
+      rank: shape.dimensions,
+      mirrors: shape.mirrors,
+      compute: true,
+      done: true,
+    }
+
+    tcParams.set(cached.key, cached)
+    polytope.facets[2] = makeFace(cached)
+  } else if (shape.dimensions === 3 && section) {
+    // Add the 3D shape cell
+
+    const cached = {
+      ...shape,
+      key: 'cell',
+      currentWords: shape.currentWords || new Map([[1, '']]),
+      dualCurrentWords: shape.dualCurrentWords || new Map([[1, '']]),
+      subgens: shape.subgens,
+      facet: root => Array.from(root.words.values()),
+      rank: shape.dimensions,
+      mirrors: shape.mirrors,
+      compute: true,
+      done: true,
+    }
+
+    tcParams.set(cached.key, cached)
+    polytope.facets[3] = makeFace(cached)
   }
 }

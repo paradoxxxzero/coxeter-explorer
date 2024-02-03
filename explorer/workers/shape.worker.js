@@ -47,8 +47,18 @@ onmessage = ({
       // tcParams is a map of keys -> Todd-Coxeter params
       tcParams = new Map([
         [
-          `${types[root.dual || root.fundamental ? dimensions - 1 : 0]}_${
-            root.dual && !root.compound ? 'dual_' : root.fundamental ? 'f' : ''
+          `${
+            types[
+              (root.dual && !root.compound) || root.fundamental
+                ? dimensions - 1
+                : 0
+            ]
+          }_${
+            root.dual && !root.compound
+              ? 'dual_'
+              : root.fundamental
+              ? 'fundamental_'
+              : ''
           }${shape.root.key}`,
           root,
         ],

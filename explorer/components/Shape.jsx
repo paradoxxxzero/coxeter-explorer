@@ -168,7 +168,20 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
     subshape => subshape.parts.length < 2
   )
 
-  const formatCount = count => (isFinite(count) ? count.toLocaleString() : '∞')
+  const formatCount = count => {
+    if (!isFinite(count)) {
+      return '∞'
+    }
+    if (count === 0) {
+      return runtime.polytope.infinite ? '∞' : ''
+    }
+    let s = count.toLocaleString()
+    if (runtime.polytope.infinite) {
+      s += ' (∞)'
+    }
+    return s
+  }
+
   if (showUI === 'empty') {
     return null
   }
@@ -229,7 +242,6 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
         {[...runtime.polytope.facets]
           .reverse()
           .filter(level => level)
-          .filter(level => level.count > 0)
           .map(level => (
             <Fragment key={`shape-${level.dimensions}`}>
               <div
@@ -239,7 +251,7 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                 }}
               >
                 {icons(level.dimensions)}
-                {level.dual && !runtime.curve ? (
+                {runtime.polytope.dual && !runtime.curve ? (
                   <button
                     className="shape-reciprocation button"
                     data-key={
@@ -280,7 +292,6 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                   <small>{formatCount(level.processing)} / </small>
                 ) : null}
                 {formatCount(level.count)}
-                {runtime.polytope.infinite ? ' (∞)' : null}
               </div>
 
               <div
@@ -297,7 +308,8 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                 }}
               />
 
-              {['advanced', 'full'].includes(showUI) && !level.fundamental
+              {['advanced', 'full'].includes(showUI) &&
+              !runtime.polytope.fundamental
                 ? level.parts.map(
                     ({ count, coxeter, stellation, mirrors, key }) => (
                       <Fragment key={key}>
@@ -308,14 +320,13 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                           {!simple && level.parts.length > 1
                             ? formatCount(count)
                             : null}
-                          {runtime.polytope.infinite ? ' (∞)' : null}
                         </div>
                         <div
                           className={`shape-view-diagram ${
                             key.startsWith('s') ? ' shape-snub' : ''
                           }`}
                         >
-                          {level.dimensions < 3 ? (
+                          {level.dimensions < 3 && level.parts.length > 1 ? (
                             <button
                               className="shape-hidden button"
                               data-key={key}
@@ -330,7 +341,7 @@ export default function Shape({ runtime, setRuntime, showUI, updateParams }) {
                           ) : (
                             <div />
                           )}
-                          {coxeter ? (
+                          {coxeter && level.count ? (
                             <button
                               className="shape-detail-button"
                               onClick={() =>

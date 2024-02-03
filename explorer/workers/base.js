@@ -179,6 +179,7 @@ export const getBaseObjects = (rank, cached, root) => {
       }
 
       const vertex = {
+        key: cached.key,
         word,
         vertices: cellVertices,
         faceIndex: 0,

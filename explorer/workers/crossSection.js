@@ -1,4 +1,3 @@
-import { types } from '../../statics'
 import { hashV, sqrt } from '../math'
 import { dot, mulV, subV } from '../math/matrix'
 

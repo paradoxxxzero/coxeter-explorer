@@ -180,9 +180,9 @@ export const render = (rt, forceSize) => {
 
   // TRANSPARENT
   if (
-    ambiance.transparent.vertex ||
-    ambiance.transparent.edge ||
-    ambiance.transparent.face
+    (!rt.hidden.includes('vertex') && ambiance.transparent.vertex) ||
+    (!rt.hidden.includes('edge') && ambiance.transparent.edge) ||
+    (!rt.hidden.includes('face') && ambiance.transparent.face)
   ) {
     if (ambiance.transparency === 'oit') {
       if (msaa) {
