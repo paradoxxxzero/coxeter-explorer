@@ -43,6 +43,8 @@ onmessage = ({
         compound: mirrors.some(m => isCompound(m)),
         lasts: new Array(3).fill(0),
         subgens: shape.subgens,
+        hosotope: shape.hosotope,
+        coxeter: shape.coxeter,
       }
       // tcParams is a map of keys -> Todd-Coxeter params
       tcParams = new Map([
