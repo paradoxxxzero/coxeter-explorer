@@ -47,6 +47,8 @@ const polytope = (coxeterArgs, mirrors, stellationArgs, extra) => {
     stellationArgs = null
   }
   const { dimensions } = coxeterParams
+  const section = new Array(dimensions).fill(0)
+  section[section.length - 1] = 1
   const params = {
     ...defaultParams,
     ...coxeterParams,
@@ -56,6 +58,7 @@ const polytope = (coxeterArgs, mirrors, stellationArgs, extra) => {
     matrix: ident(dimensions),
     zoom: dimensions <= 3 ? 2 : dimensions > 4 ? 3 : 5,
     centered: true,
+    section,
     ...Object.fromEntries(
       range(3, dimensions + 1).map(i => [
         `projection${i}`,
@@ -105,6 +108,9 @@ const tiling = (coxeterArgs, mirrors, stellationArgs, extra) => {
     extra = stellationArgs
     stellationArgs = null
   }
+  const section = new Array(coxeterArgs.length).fill(0)
+  section[section.length - 2] = 2
+  section[section.length - 1] = 1
   return {
     ...polytope(coxeterArgs, mirrors, stellationArgs),
     ambiance: 'cathedral',
@@ -112,6 +118,7 @@ const tiling = (coxeterArgs, mirrors, stellationArgs, extra) => {
     sizeVertex: 50,
     hidden: ['vertex'],
     curve: true,
+    section,
     zoom: 1,
     ...extra,
   }
@@ -121,6 +128,8 @@ const etiling = (coxeterArgs, mirrors, stellationArgs, extra) => {
     extra = stellationArgs
     stellationArgs = null
   }
+  const section = new Array(coxeterArgs.length).fill(0)
+  section[section.length - 1] = 1
   return {
     ...polytope(coxeterArgs, mirrors, stellationArgs),
     ambiance: 'cathedral',
@@ -128,6 +137,7 @@ const etiling = (coxeterArgs, mirrors, stellationArgs, extra) => {
     sizeVertex: 50,
     hidden: ['vertex'],
     curve: true,
+    section,
     zoom: 8,
     ...extra,
   }
@@ -138,11 +148,14 @@ const ehoneycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
     extra = stellationArgs
     stellationArgs = null
   }
+  const section = new Array(coxeterArgs.length).fill(0)
+  section[section.length - 1] = 1
   return {
     ...polytope(coxeterArgs, mirrors, stellationArgs),
     ambiance: 'neon',
     hidden: ['vertex', 'face'],
     centered: false,
+    section,
     sizeEdge: 25,
     zoom: 2,
     ...extra,
@@ -155,6 +168,9 @@ const honeycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
   }
   const poly = polytope(coxeterArgs, mirrors, stellationArgs)
   const dimensions = poly.dimemsions
+  const section = new Array(coxeterArgs.length).fill(0)
+  section[section.length - 2] = 2
+  section[section.length - 1] = 1
   return {
     ...poly,
     ambiance: 'neon',

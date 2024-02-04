@@ -1,6 +1,6 @@
 import { types } from '../statics'
 import { defaultParams } from './default'
-import { min, sign } from './math'
+import { abs, min, sign } from './math'
 import { coxeterToGram } from './math/hypermath'
 import { det, ident } from './math/matrix'
 import { mirrorTypes } from './mirrors'
@@ -121,12 +121,18 @@ export const filterParams = (maybeBadParams, changed = [], oldParams) => {
   if (!badParams.includes('coxeter')) {
     normalizeCoxeter(params)
   }
-  if (params.section.length !== params.dimensions + 1) {
+  if (
+    params.section.length !== params.dimensions + 1 ||
+    ['coxeter', 'dimensions', 'stellation', 'mirrors', 'dimensions'].some(c =>
+      changed.includes(c)
+    )
+  ) {
     params.section = new Array(params.dimensions + 1).fill(0)
     params.section[params.section.length - 2] = 1
     const newGram = coxeterToGram(params.coxeter, params.stellation)
     const newPseudoCurvature = det(newGram)
-    params.section[params.section.length - 1] = newPseudoCurvature < 0 ? 2 : 0
+    params.section[params.section.length - 1] =
+      newPseudoCurvature < 0 && abs(newPseudoCurvature) > 1e-6 ? 2 : 0
   }
   if (
     params.matrix.length !== params.dimensions ||
@@ -143,7 +149,6 @@ export const filterParams = (maybeBadParams, changed = [], oldParams) => {
     const newPseudoCurvature = det(newGram)
     if (oldPseudoCurvature !== newPseudoCurvature) {
       params.matrix = ident(params.dimensions)
-      params.section[params.section.length - 1] = newPseudoCurvature < 0 ? 2 : 0
     }
   }
   if (params.reciprocation > params.dimensions - 1) {

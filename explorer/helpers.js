@@ -547,7 +547,6 @@ export const mesh = (
     },
     fillGeometry(data, info) {
       if (info.arity !== this.arity) {
-        console.warn('Wrong arity', info.arity, this.arity)
         return
       }
       this.count = info.start + info.size
@@ -562,7 +561,6 @@ export const mesh = (
     },
     fillColor(data, info) {
       if (info.arity !== this.arity) {
-        console.warn('Wrong arity', info.arity, this.arity)
         return
       }
       this.count = info.start + info.size

@@ -200,12 +200,13 @@ export const iterate = (polytope, tcParams, batch, root) => {
 
       if (tcParam.subgens === undefined) {
         tcParam.subgens = getSubgens(tcParam, root)
-        if (tcParam.subgens === undefined) {
-          // Root iteration not enough processed, do nothing for now
-          return
-        }
       }
-      if (!tcParam.done && (isComputeDone || tcParam.compute)) {
+      if (
+        !tcParam.done &&
+        (isComputeDone || tcParam.compute) &&
+        // Root iteration not enough processed, do nothing for now
+        tcParam.subgens !== undefined
+      ) {
         tcParam.limit = tcParam.compute ? batch : 2000
         if (i === 1 && polytope.infinite) {
           tcParam.limit *= 1.75
@@ -351,7 +352,7 @@ const addMissingDimensions = (polytope, shape, tcParams, root, section) => {
 
     tcParams.set(cached.key, cached)
     polytope.facets[2] = makeFace(cached)
-  } else if (shape.dimensions === 3 && section) {
+  } else if (shape.dimensions === 3 && section !== null) {
     // Add the 3D shape cell
 
     const cached = {

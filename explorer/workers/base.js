@@ -5,6 +5,9 @@ import { wordToCoset } from '../math/toddcoxeter'
 export const getBaseObjects = (rank, cached, root) => {
   const objects = []
   const partials = []
+  if (!cached.currentWords) {
+    return { objects, partials }
+  }
   if (rank === 0) {
     for (const [cosetId, word] of cached.currentWords) {
       objects.push({

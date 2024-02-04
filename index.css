@@ -411,7 +411,6 @@ select option {
   align-items: center;
 }
 .coxeter-node input {
-  margin: 0.5em 0 0;
   font-size: 1.25em;
 }
 .coxeter-node .boundness-flag {
@@ -507,6 +506,7 @@ select option {
   max-width: 5ch;
   font-size: 1.5em;
   padding: 0.25em 1.75em;
+  text-align: center;
 }
 .number-label {
   margin-right: 0.25em;

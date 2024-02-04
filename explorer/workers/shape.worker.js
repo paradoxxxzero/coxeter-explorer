@@ -96,6 +96,7 @@ onmessage = ({
       )
       return
     }
+
     if (type === 'section') {
       if (!fullRawObjects.length) {
         return
@@ -111,6 +112,8 @@ onmessage = ({
       fullObjects = objects
       const geometry = fillGeometry(shape.dimensions, objects, hidden)
       const color = fillColor(shape.dimensions, objects, ambiance, hidden)
+      root.lasts = geometry.infos.map(i => i.start + i.nonpartial)
+
       postMessage(
         {
           geometry,
@@ -128,6 +131,8 @@ onmessage = ({
     if (type === 'display') {
       const geometry = fillGeometry(shape.dimensions, fullObjects, hidden)
       const color = fillColor(shape.dimensions, fullObjects, ambiance, hidden)
+      root.lasts = geometry.infos.map(i => i.start + i.nonpartial)
+
       postMessage(
         {
           geometry,
@@ -154,7 +159,7 @@ onmessage = ({
       section,
       root
     )
-    if (section) {
+    if (section !== null) {
       for (let i = 0; i < objects.length; i++) {
         const obj = objects[i]
         if (!fullRawObjects[i]) {
@@ -166,8 +171,6 @@ onmessage = ({
         fullRawObjects[i].objects.push(...obj.objects)
         fullRawObjects[i].partials = obj.partials
       }
-    }
-    if (section !== null) {
       objects = crossSection(objects, section, root)
     }
 

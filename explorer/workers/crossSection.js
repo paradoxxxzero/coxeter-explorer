@@ -35,6 +35,7 @@ export const getSliceObjects = (rank, cut, obj, root) => {
 
       const object = {
         ...edge,
+        key: edge.key.replace(/edge/, 'vertex'),
         vertices: [vertex],
       }
 
@@ -78,6 +79,7 @@ export const getSliceObjects = (rank, cut, obj, root) => {
 
       const object = {
         ...face,
+        key: face.key.replace(/face/, 'edge'),
         vertices: edge,
       }
 
@@ -148,6 +150,7 @@ export const getSliceObjects = (rank, cut, obj, root) => {
 
       const object = {
         ...cell,
+        key: cell.key.replace(/cell/, 'face'),
         vertices,
         partial,
       }

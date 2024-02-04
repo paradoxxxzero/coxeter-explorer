@@ -25,8 +25,6 @@ export const parse = (raw, min, max, step, coxeter) => {
     raw = `${numeratorRaw}/${isNaN(fraction) ? denominator : fraction}`
   } else if (float) {
     value = raw === '' ? '' : parseFloat(raw)
-    const precision = step.toString().split('.')[1].length
-    raw = value.toFixed(precision)
   } else {
     value = raw === '' ? '' : parseInt(raw)
   }
@@ -84,8 +82,6 @@ export default function Number({
         ? '∞'
         : fractionName && fraction > 1
         ? `${value}/${fraction}`
-        : parseInt(step) !== parseFloat(step)
-        ? value.toFixed(step.toString().split('.')[1].length)
         : `${value}`,
     [coxeter, fraction, fractionName, step, value]
   )
@@ -99,7 +95,7 @@ export default function Number({
   const [valid, setValid] = useState(true)
 
   const update = useCallback(
-    newRaw => {
+    (newRaw, input = false) => {
       const parsed = parse(newRaw, min, max, step, coxeter)
       setRaw(parsed.raw)
       setValid(parsed.valid)
@@ -213,7 +209,7 @@ export default function Number({
 
   const handleChange = event => {
     const raw = event.target.value
-    update(raw)
+    update(raw, true)
   }
 
   const handleCheckBoxChange = event => {
@@ -237,7 +233,13 @@ export default function Number({
             type="text"
             name={name}
             value={raw}
-            style={{ width: `${raw.length + 0.25}ch` }}
+            style={{
+              width: `${
+                Math.max(
+                  ...[step, raw].map(c => c.toString().replace('.', '').length)
+                ) + 0.3
+              }ch`,
+            }}
             onChange={handleChange}
             {...props}
           />

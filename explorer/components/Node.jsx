@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { sign } from '../math'
 import { mirrorToType, mirrorTypes } from '../mirrors'
+import Number from './Number'
 
 export const dotSize = 6
 export const circleSize = 14
@@ -123,12 +124,14 @@ export default function Node({ index, value, boundness, disabled, onChange }) {
         {mirrorSymbols[type]}
       </svg>
       {type === 'custom' && (
-        <input
-          type="number"
+        <Number
+          name={`custom${index}`}
+          step={0.1}
+          min={-Infinity}
           value={value}
-          step=".01"
-          style={{ width: `${value.toString().length + 1.5}ch` }}
-          onChange={e => onChange(index, e.target.value)}
+          onChange={(_, value) =>
+            onChange(index, [0, 1].includes(value) ? value.toString() : value)
+          }
         />
       )}
       {boundnessFlag ? (
