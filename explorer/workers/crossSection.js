@@ -35,7 +35,7 @@ export const getSliceObjects = (rank, cut, obj, root) => {
 
       const object = {
         ...edge,
-        key: edge.key.replace(/edge/, 'vertex'),
+        key: edge.key.replace(/edge_/, 'vertex_?-'),
         vertices: [vertex],
       }
 
@@ -67,8 +67,17 @@ export const getSliceObjects = (rank, cut, obj, root) => {
       if (edge.length < 2) {
         continue
       }
+      const edges = []
+      if (edge.length > 2) {
+        for (let l = 0; l < edge.length; l++) {
+          edges.push([edge[l], edge[(l + 1) % edge.length]])
+        }
+      } else {
+        edges.push(edge)
+      }
+
       if (!face.partial) {
-        for (let l = 0; l < 2; l++) {
+        for (let l = 0; l < hashes.length; l++) {
           if (!root.crossEdges.has(hashes[l])) {
             root.crossEdges.set(hashes[l], new Set([hashes[(l + 1) % 2]]))
           } else {
@@ -77,16 +86,20 @@ export const getSliceObjects = (rank, cut, obj, root) => {
         }
       }
 
-      const object = {
-        ...face,
-        key: face.key.replace(/face/, 'edge'),
-        vertices: edge,
-      }
+      for (let l = 0; l < edges.length; l++) {
+        const edge = edges[l]
 
-      if (face.partial) {
-        sectionPartials.push(object)
-      } else {
-        sections.push(object)
+        const object = {
+          ...face,
+          key: face.key.replace(/face_/, 'edge_?-'),
+          vertices: edge,
+        }
+
+        if (face.partial) {
+          sectionPartials.push(object)
+        } else {
+          sections.push(object)
+        }
       }
     }
   } else if (rank === 2) {
@@ -150,7 +163,7 @@ export const getSliceObjects = (rank, cut, obj, root) => {
 
       const object = {
         ...cell,
-        key: cell.key.replace(/cell/, 'face'),
+        key: cell.key.replace(/cell_/, 'face_?-'),
         vertices,
         partial,
       }
