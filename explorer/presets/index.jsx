@@ -527,6 +527,19 @@ export const presets = [
   {
     name: (
       <>
+        <Space type="finite" dimensions={3} /> 120-cell Cross Section
+      </>
+    ),
+    params: polytope([5, 3, 3], [1, 0, 0, 0], {
+      crosssection: true,
+      section: [0, 0, 0, 1, 0],
+      ambiance: 'flare',
+      curve: false,
+    }),
+  },
+  {
+    name: (
+      <>
         <Space type="finite" dimensions={8} /> E6 (1<sub>22</sub>)
       </>
     ),

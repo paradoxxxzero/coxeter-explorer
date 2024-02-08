@@ -186,7 +186,7 @@ export const ambiances = Object.fromEntries(
       },
 
       transparency: 'oit',
-      color: ({ word }) => hsl(-(word.length * 0.07) % 1, 1, 0.8),
+      color: ({ word }) => hsl((word.length * 0.07) % 1, 0.5, 0.6),
       // culling: true,
     },
     flare: {

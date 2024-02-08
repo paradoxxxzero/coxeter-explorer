@@ -20,6 +20,7 @@ const serialize = (parts, hidden) => {
         if (p === 0) {
           nonpartial++
         }
+        object.subShape = j
         allObjects.push(object)
       }
     }
@@ -77,7 +78,7 @@ export const fillColor = (dimensions, objects, ambiance, hidden, lasts) => {
       const c = ambiances[ambiance].color({
         word: object.word,
         key: object.key,
-        subShape: j % parts.objects.length, // For partials
+        subShape: object.subShape,
         faceIndex: object.faceIndex,
         faceSize: object.faceSize,
         dimensions: dimensions,
