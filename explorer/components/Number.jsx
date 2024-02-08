@@ -44,7 +44,8 @@ export const parse = (raw, min, max, step, coxeter) => {
     (fraction !== null && fraction > max) ||
     (step % 1 === 0 && fraction % step !== 0) ||
     // Consider x.  as invalid to prevent auto deletion
-    (step % 1 !== 0 && raw.endsWith('.'))
+    (step % 1 !== 0 && raw.endsWith('.')) ||
+    (min < 0 && raw === '-0')
   )
 
   return {
@@ -83,7 +84,7 @@ export default function Number({
         : fractionName && fraction > 1
         ? `${value}/${fraction}`
         : `${value}`,
-    [coxeter, fraction, fractionName, step, value]
+    [coxeter, fraction, fractionName, value]
   )
 
   const [raw, setRaw] = useState(defaultValue)
