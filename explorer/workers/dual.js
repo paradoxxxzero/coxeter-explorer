@@ -77,6 +77,9 @@ export const getDualObjects = (
   const { space } = root
   const objects = []
   const partials = []
+  if (!cached.dualCurrentWords) {
+    return { objects, partials }
+  }
   if (rank === 0) {
     // root word -> { vertex: centroid, facets: [facet vertex ids] }
     root.dualVertices = root.dualVertices || new Map()
