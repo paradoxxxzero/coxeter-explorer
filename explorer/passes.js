@@ -1,3 +1,6 @@
+import { pass } from './helpers'
+import { columnMajor, ident } from './math/matrix'
+import { render } from './render'
 import fragmentAfterimage from './shaders/afterImage/fragment.glsl?raw'
 import vertexAfterimage from './shaders/afterImage/vertex.glsl?raw'
 import fragmentBloom from './shaders/bloom/fragment.glsl?raw'
@@ -6,13 +9,10 @@ import fragmentDown from './shaders/down/fragment.glsl?raw'
 import vertexDown from './shaders/down/vertex.glsl?raw'
 import fragmentOit from './shaders/oit/fragment.glsl?raw'
 import vertexOit from './shaders/oit/vertex.glsl?raw'
-import fragmentUp from './shaders/up/fragment.glsl?raw'
-import vertexUp from './shaders/up/vertex.glsl?raw'
 import fragmentSkybox from './shaders/skybox/fragment.glsl?raw'
 import vertexSkybox from './shaders/skybox/vertex.glsl?raw'
-import { pass } from './helpers'
-import { render } from './render'
-import { columnMajor, forceMatrixSize, ident, inverse } from './math/matrix'
+import fragmentUp from './shaders/up/fragment.glsl?raw'
+import vertexUp from './shaders/up/vertex.glsl?raw'
 
 export default function getPasses(rt) {
   return {
@@ -99,13 +99,13 @@ export default function getPasses(rt) {
       },
       {
         name: 'viewProjectionInverse',
-        type: 'm3fv',
-        value: columnMajor(ident(3)),
+        type: 'm4fv',
+        value: columnMajor(ident(4)),
       },
     ]),
     updateUniforms(rt) {
       this.skybox.uniforms.viewProjectionInverse.update(
-        columnMajor(forceMatrixSize(inverse(rt.matrix), 3))
+        rt.camera.viewProjectionInverse
       )
     },
   }

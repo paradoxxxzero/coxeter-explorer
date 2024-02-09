@@ -1,11 +1,19 @@
 import Stats from 'stats.js'
 import { resizeCanvasToDisplaySize } from './helpers'
 import { PI, min, tan } from './math'
-import { columnMajor, frustum, ident, inverse, multiply } from './math/matrix'
+import {
+  columnMajor,
+  frustum,
+  ident,
+  inverse,
+  multiply,
+  multiplyVector,
+} from './math/matrix'
 import getMeshes from './meshes'
 import getPasses from './passes'
 import refreshTextures from './textures'
 import { ambiances } from './ambiances'
+import { rotate4, translate4 } from './math/hypermath'
 
 const showStats = window.location.search.includes('stats')
 let stats
@@ -40,26 +48,23 @@ export const initializeGl = rt => {
   gl.enable(gl.DEPTH_TEST)
 
   const camera = {
-    zoom: 1,
+    zoom: rt.zoom,
     fov: PI / 3,
-    eye: [0, 0, -rt.zoom],
+    eye: [0, 0, 0],
+    rotation: rotate4(0, Math.PI),
     near: 0.01,
     far: 1000,
     update(offset) {
-      const position = ident(4)
-      position[0][3] = this.eye[0]
-      position[1][3] = this.eye[1]
-      position[2][3] = this.eye[2]
-      // Rotate pi around y
-      position[0][0] = -1
-      position[2][2] = -1
-
-      const viewMatrix = inverse(position)
+      const position = translate4(0, 0, this.zoom)
+      const eye = [0, 0, this.zoom, 0]
+      this.eye = multiplyVector(this.rotation, eye).slice(0, 3)
+      const viewMatrix = inverse(multiply(this.rotation, position))
 
       this.aspect = offset
         ? offset.fullWidth / offset.fullHeight
         : gl.canvas.clientWidth / gl.canvas.clientHeight
-      this.zoom = min(this.aspect, 1)
+
+      const zoom = min(this.aspect, 1)
 
       const bounds = {
         left: 0,
@@ -70,7 +75,7 @@ export const initializeGl = rt => {
         far: this.far,
       }
 
-      bounds.top = (this.near * tan(this.fov / 2)) / this.zoom
+      bounds.top = (this.near * tan(this.fov / 2)) / zoom
       let height = 2 * bounds.top
       let width = this.aspect * height
       bounds.left = -0.5 * width
@@ -88,6 +93,12 @@ export const initializeGl = rt => {
       const projectionMatrix = frustum(bounds)
       const viewProjection = multiply(projectionMatrix, viewMatrix)
       this.viewProjection = columnMajor(viewProjection)
+      this.viewProjectionInverse = columnMajor(inverse(viewProjection))
+    },
+    center() {
+      this.eye = [0, 0, 0]
+      this.rotation = rotate4(0, Math.PI)
+      this.update()
     },
   }
   camera.update()
@@ -121,10 +132,11 @@ export const initializeGl = rt => {
 export const updateCamera = (rt, zoom = null) => {
   rt.camera.fov = rt.fov3 ? (PI * rt.fov3) / 180 : 1
   if (zoom !== null) {
-    rt.camera.eye[2] = zoom === null ? -rt.zoom : -zoom
+    rt.camera.zoom = zoom === null ? rt.zoom : zoom
   }
   rt.camera.update()
   rt.meshes.updateUniforms(rt, true, zoom)
+  rt.passes.updateUniforms(rt)
 }
 
 export const changeAmbiance = rt => {

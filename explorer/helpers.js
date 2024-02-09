@@ -442,6 +442,7 @@ export const cubemap = (rt, name, texname, texi) => {
     texture: gl.createTexture(),
     width: 2048,
     height: 2048,
+    listeners: [],
   }
   cubemapCache[name] = cubemapCache[name] || {}
 
@@ -457,7 +458,7 @@ export const cubemap = (rt, name, texname, texi) => {
   })
   for (let i = 0; i < cube.length; i++) {
     const [face, target] = cube[i]
-    const pixels = cubemapCache[name][face] || null
+    let pixels = cubemapCache[name][face] || null
     gl.texImage2D(
       target,
       0,
@@ -469,21 +470,26 @@ export const cubemap = (rt, name, texname, texi) => {
       gl.UNSIGNED_BYTE,
       pixels
     )
-    if (!Object.keys(cubemapCache[name]).includes(face)) {
-      cubemapCache[name][face] = null // Prevent multi-load
-
-      const image = new Image()
-      image.src = `${name}/${face}.jpg`
-      image.addEventListener('load', function () {
-        cubemapCache[name][face] = image
-        const texture = rt.textures[texname]?.texture // Get current texture if any
-        if (texture) {
-          render(rt)
-          gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture)
-          gl.texImage2D(target, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
-          gl.generateMipmap(gl.TEXTURE_CUBE_MAP)
-        }
-      })
+    if (!pixels) {
+      pixels = new Image()
+      pixels.src = `${name}/${face}.jpg`
+      cubemapCache[name][face] = pixels // Prevent multi-load
+    }
+    if (!pixels.complete) {
+      const onImageLoad = () => {
+        cubeTexture.listeners.splice(
+          cubeTexture.listeners.findIndex(([p]) => p === pixels),
+          1
+        )
+        cubemapCache[name][face] = pixels
+        gl.activeTexture(gl[`TEXTURE${texi}`])
+        gl.bindTexture(gl.TEXTURE_CUBE_MAP, cubeTexture.texture)
+        gl.texImage2D(target, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
+        gl.generateMipmap(gl.TEXTURE_CUBE_MAP)
+        render(rt)
+      }
+      pixels.addEventListener('load', onImageLoad)
+      cubeTexture.listeners.push([pixels, onImageLoad])
     }
   }
   gl.generateMipmap(gl.TEXTURE_CUBE_MAP)
@@ -493,6 +499,13 @@ export const cubemap = (rt, name, texname, texi) => {
     gl.LINEAR_MIPMAP_LINEAR
   )
   return cubeTexture
+}
+
+export const clearListeners = texture => {
+  texture.listeners.forEach(([pixels, onImageLoad]) => {
+    pixels.removeEventListener('load', onImageLoad)
+  })
+  texture.listeners = []
 }
 
 export const pass = (rt, name, vertex, fragment, uniforms = []) => {

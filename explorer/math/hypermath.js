@@ -543,9 +543,10 @@ export const rotate = (offset, [i, j], dimensions, metric, zoom) => {
 
   // Handle hyperbolic rotation -> cosh, sinh
   const sinx = c > 0 ? sin : sinh
-
+  const cosx = c > 0 ? cos : cosh
   const sint = sinx(offset) // ~offset
-  const cost = sqrt(1 - c * sint * sint)
+  const cost = cosx(offset) // ~offset
+  // const cost = sqrt(1 - c * sint * sint)
   if (isNaN(cost) || isNaN(sint)) {
     console.warn('???')
     return matrix
@@ -565,6 +566,16 @@ export const rotate = (offset, [i, j], dimensions, metric, zoom) => {
   //     .join('\n')
   // )
 
+  return matrix
+}
+export const rotate4 = (x, y) =>
+  multiply(rotate(x, [1, 2], 4, ident(4), 1), rotate(y, [0, 2], 4, ident(4), 1))
+
+export const translate4 = (x, y, z) => {
+  const matrix = ident(4)
+  matrix[0][3] = x
+  matrix[1][3] = y
+  matrix[2][3] = z
   return matrix
 }
 

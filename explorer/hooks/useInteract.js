@@ -1,13 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { PI, abs, hypot, log, max, min, pow, sqrt } from '../math'
-import { rotate } from '../math/hypermath'
-import {
-  columnMajor,
-  forceMatrixSize,
-  inverse,
-  multiply,
-  set,
-} from '../math/matrix'
+import { rotate, rotate4 } from '../math/hypermath'
+import { columnMajor, multiply, set } from '../math/matrix'
 import { render, updateCamera } from '../render'
 // import { hyperMaterials } from '../shader/hyperMaterial'
 
@@ -22,10 +16,21 @@ const translate = (
   matrix,
   dimensions,
   metric,
-  zoom
+  zoom,
+  camera
 ) => {
   if (dimensions < 2) {
     return [[], []]
+  }
+  if (rotations.camera) {
+    set(
+      camera.rotation,
+      multiply(camera.rotation, rotate4(offset[1], offset[0]))
+    )
+    return [
+      [rotations.combinations.length + 1],
+      [rotations.combinations.length],
+    ]
   }
   const { combinations } = rotations
   const couples = [[], []]
@@ -81,7 +86,8 @@ export const keydown = (
   dimensions,
   metric,
   updateRotations,
-  zoom
+  zoom,
+  camera
 ) => {
   const { code } = e
   const step = 0.1
@@ -96,7 +102,8 @@ export const keydown = (
       matrix,
       dimensions,
       metric,
-      zoom
+      zoom,
+      camera
     )
 
   if (code === 'ArrowLeft' || code === 'KeyA') {
@@ -157,7 +164,7 @@ export const useInteract = (
   }, [runtime.zoom])
 
   const quickUpdate = useCallback(
-    ({ matrix, zoom } = { matrix: true, zoom: true }) => {
+    ({ matrix, zoom, camera } = { matrix: true, zoom: true, camera: true }) => {
       if (runtime.matrix._reset) {
         return
       }
@@ -167,11 +174,8 @@ export const useInteract = (
             columnMajor(local.current.matrix)
           )
         }
-        runtime.passes.skybox.uniforms.viewProjectionInverse.update(
-          columnMajor(forceMatrixSize(inverse(local.current.matrix), 3))
-        )
       }
-      if (zoom) {
+      if (zoom || camera) {
         updateCamera(runtime, local.current.zoom)
       }
     },
@@ -208,17 +212,22 @@ export const useInteract = (
       runtime.stellation,
       runtime.subsampling,
       runtime.zoom,
+      rotations.camera,
     ]
   )
 
   useEffect(() => {
-    animation.current.speed = new Array(rotations.combinations.length).fill(0)
+    animation.current.speed = new Array(rotations.combinations.length + 2).fill(
+      0
+    )
   }, [rotations.combinations.length])
 
   useEffect(() => {
     if (runtime.matrix._reset) {
       delete runtime.matrix._reset
-      animation.current.speed = new Array(rotations.combinations.length).fill(0)
+      animation.current.speed = new Array(
+        rotations.combinations.length + 2
+      ).fill(0)
     }
   }, [rotations.combinations.length, runtime.matrix])
 
@@ -230,12 +239,13 @@ export const useInteract = (
 
     const dt = performance.now() - animation.current.t
 
-    let changed = false
+    let matrixChanged = false
+    let cameraChanged = false
+    let zoomChanged = false
     for (let i = 0; i < speed.length; i++) {
       if (speed[i] === 0) {
         continue
       }
-      changed = true
 
       if (rotations.auto === 'damp') {
         speed[i] *= dampSpeed
@@ -243,25 +253,37 @@ export const useInteract = (
           speed[i] = 0
         }
       }
+      if (i >= rotations.combinations.length) {
+        cameraChanged = true
+      } else {
+        matrixChanged = true
+      }
+
       if (!pause.has(i)) {
         const currentSpeed = max(min(speed[i] * dt, 0.5), -0.5)
-        set(
-          local.current.matrix,
-          multiply(
-            rotate(
-              currentSpeed,
-              rotations.combinations[i],
-              runtime.dimensions,
-              runtime.space.metric,
-              animation.current.zoom || local.current.zoom
-            ),
-            local.current.matrix
+        if (i >= rotations.combinations.length) {
+          const offset = [0, 0]
+          offset[i - rotations.combinations.length] = currentSpeed
+          set(
+            runtime.camera.rotation,
+            multiply(runtime.camera.rotation, rotate4(...offset))
           )
-        )
+        } else {
+          set(
+            local.current.matrix,
+            multiply(
+              rotate(
+                currentSpeed,
+                rotations.combinations[i],
+                runtime.dimensions,
+                runtime.space.metric,
+                animation.current.zoom || local.current.zoom
+              ),
+              local.current.matrix
+            )
+          )
+        }
       }
-    }
-    if (changed) {
-      quickUpdate({ matrix: true })
     }
 
     if (zoom) {
@@ -278,9 +300,15 @@ export const useInteract = (
         local.current.zoom = zoom
         animation.current.zoom = null
       }
-      changed = true
-      quickUpdate({ zoom: true })
+      zoomChanged = true
     }
+
+    quickUpdate({
+      matrix: matrixChanged,
+      camera: cameraChanged,
+      zoom: zoomChanged,
+    })
+
     if (
       speed.reduce((a, b) => abs(a) + abs(b), 0) === 0 &&
       animation.current.zoom === null &&
@@ -291,7 +319,7 @@ export const useInteract = (
       animation.current.t = null
       return
     }
-    if (changed) {
+    if (matrixChanged || cameraChanged || zoomChanged) {
       render(runtime)
     }
     animation.current.t = performance.now()
@@ -302,6 +330,7 @@ export const useInteract = (
     rotations.auto,
     rotations.combinations,
     runtime.dimensions,
+    runtime.camera,
     runtime.space,
   ])
 
@@ -345,10 +374,12 @@ export const useInteract = (
       }
       const last = local.current.pointers.get(e.pointerId)
       const delta = [
-        -(e.clientX - last[0]) / window.innerHeight, // height is intentional
+        (e.clientX - last[0]) / window.innerHeight, // height is intentional
         -(e.clientY - last[1]) / window.innerHeight,
       ]
-
+      if (!rotations.camera) {
+        delta[0] *= -1
+      }
       local.current.pointers.set(e.pointerId, [e.clientX, e.clientY])
       if (local.current.pointers.size > 1) {
         if (distance === null) {
@@ -383,7 +414,8 @@ export const useInteract = (
         local.current.matrix,
         runtime.dimensions,
         runtime.space.metric,
-        animation.current.zoom || local.current.zoom
+        animation.current.zoom || local.current.zoom,
+        runtime.camera
       )
       if (rotations.auto) {
         const dt = min(50, performance.now() - t)
@@ -460,7 +492,8 @@ export const useInteract = (
           runtime.dimensions,
           runtime.space.metric,
           updateRotations,
-          animation.current.zoom || local.current.zoom
+          animation.current.zoom || local.current.zoom,
+          runtime.camera
         )
       ) {
         quickUpdate({ matrix: true })
@@ -475,6 +508,7 @@ export const useInteract = (
     rotations,
     runtime.space,
     runtime.dimensions,
+    runtime.camera,
     updateRotations,
   ])
 

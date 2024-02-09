@@ -69,7 +69,6 @@ export const useRender = (runtime, setRuntime) => {
   useEffect(() => {
     setRuntime(runtime => {
       runtime.meshes.updateUniforms(runtime)
-      runtime.passes.updateUniforms(runtime)
       return runtime
     })
   }, [

@@ -1,5 +1,5 @@
 import { ambiances } from './ambiances'
-import { cubemap, storage, texture } from './helpers'
+import { clearListeners, cubemap, storage, texture } from './helpers'
 import { min } from './math'
 
 export default function refreshTextures(rt) {
@@ -167,19 +167,21 @@ export default function refreshTextures(rt) {
   // Skybox
   if (rt.textures.skybox) {
     gl.deleteTexture(rt.textures.skybox.texture)
+    clearListeners(rt.textures.skybox)
     rt.textures.skybox = null
   }
 
-  if (ambiance.skybox) {
+  if (ambiance.skybox && rt.skybox !== 'none') {
     rt.textures.skybox = cubemap(rt, rt.skybox || ambiance.skybox, 'skybox', 2)
   }
   // Reflections
   if (rt.textures.envmap) {
     gl.deleteTexture(rt.textures.envmap.texture)
+    clearListeners(rt.textures.envmap)
     rt.textures.envmap = null
   }
 
-  if (ambiance.envmap) {
+  if (ambiance.envmap && rt.envmap !== 'none') {
     rt.textures.envmap = cubemap(rt, rt.envmap || ambiance.envmap, 'envmap', 3)
   }
 }

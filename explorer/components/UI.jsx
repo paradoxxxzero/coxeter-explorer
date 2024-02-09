@@ -5,6 +5,8 @@ import { range } from '../../utils.js'
 import { ambiances } from '../ambiances.js'
 import { defaultParams } from '../default.js'
 import {
+  cameraIcon,
+  cameraOffIcon,
   centerViewIcon,
   coxeterPlaneIcon,
   cubeIcon,
@@ -97,20 +99,22 @@ export default function UI({
   const handleCenter = useCallback(() => {
     const matrix = ident(runtime.dimensions)
     matrix._reset = true
+    runtime.camera.center()
     updateParams({
       matrix,
       centered: true,
     })
-  }, [updateParams, runtime.dimensions])
+  }, [runtime.dimensions, runtime.camera, updateParams])
 
   const handleCoxeter = useCallback(() => {
     const matrix = ident(runtime.dimensions)
     matrix._reset = true
+    runtime.camera.center()
     updateParams({
       matrix,
       centered: false,
     })
-  }, [updateParams, runtime.dimensions])
+  }, [runtime.dimensions, runtime.camera, updateParams])
 
   const handleOrtho = useCallback(() => {
     updateParams(
@@ -141,6 +145,13 @@ export default function UI({
       updateRotations('shift', (rotations.shift + 1) % rotations.maxShift)
     },
     [rotations.maxShift, rotations.shift, updateRotations]
+  )
+
+  const handleCamera = useCallback(
+    param => {
+      updateRotations('camera', !rotations.camera)
+    },
+    [rotations.camera, updateRotations]
   )
   const handleLock = useCallback(
     param => {
@@ -358,6 +369,13 @@ export default function UI({
                     )}
                   </>
                 ) : null}
+                <button
+                  className="button"
+                  onClick={handleCamera}
+                  title="Rotate camera"
+                >
+                  {rotations.camera ? cameraIcon : cameraOffIcon}
+                </button>
               </div>
             </aside>
           ) : null}
@@ -641,7 +659,7 @@ export default function UI({
               )}
               {showUI === 'full' && ambiances[params.ambiance]?.skybox && (
                 <label className="select-label">
-                  Envmap
+                  Skybox
                   <select
                     name="skybox"
                     value={params.skybox}
