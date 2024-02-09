@@ -64,3 +64,12 @@ export const types = [
   '8-face',
   '9-face',
 ]
+
+export const envmaps = [
+  '',
+  'home',
+  'lights',
+  'lounge',
+  'sky',
+  'studio', //
+]

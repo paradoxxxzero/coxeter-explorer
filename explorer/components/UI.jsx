@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { details, projections, spaceLetters } from '../../statics.js'
+import { details, envmaps, projections, spaceLetters } from '../../statics.js'
 import { range } from '../../utils.js'
 import { ambiances } from '../ambiances.js'
 import { defaultParams } from '../default.js'
@@ -621,6 +621,24 @@ export default function UI({
                   ))}
                 </select>
               </label>
+              {showUI === 'full' && ambiances[params.ambiance]?.envmap && (
+                <label className="select-label">
+                  Envmap
+                  <select
+                    name="envmap"
+                    value={params.envmap}
+                    onChange={handleRawChange}
+                  >
+                    {envmaps.map(e => (
+                      <option key={e} value={e}>
+                        {(e || 'default')
+                          .replace(/_/g, ' ')
+                          .replace(/./, c => c.toUpperCase())}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
               {window.location.search.includes('debug') &&
                 showUI === 'full' && (
                   <>

@@ -39,6 +39,7 @@ export const defaultParams = {
   zoom: 1.5,
   crosssection: false,
   section: [0, 0, 0, 1, 2],
+  envmap: '',
 
   hidden: ['face'],
   reciprocation: 0,

@@ -19,6 +19,13 @@ export const useRender = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
+      refreshTextures(runtime)
+      return runtime
+    })
+  }, [runtime.envmap, setRuntime])
+
+  useEffect(() => {
+    setRuntime(runtime => {
       changeAmbiance(runtime)
       refreshTextures(runtime)
       return runtime

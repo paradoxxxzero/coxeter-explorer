@@ -171,6 +171,6 @@ export default function refreshTextures(rt) {
   }
 
   if (ambiance.envmap) {
-    rt.textures.envmap = cubemap(rt, ambiance.envmap, 'envmap')
+    rt.textures.envmap = cubemap(rt, rt.envmap || ambiance.envmap, 'envmap')
   }
 }
