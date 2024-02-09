@@ -493,3 +493,15 @@ void nset(inout vec9 v, in int i, in float x) {
   }
 }
 #endif
+
+vecN vecNFromVec3(in vec3 v) {
+  vecN r;
+  nset(r, 0, v.x);
+  nset(r, 1, v.y);
+  nset(r, 2, v.z);
+  return r;
+}
+
+vec3 vec3FromVecN(in vecN v) {
+  return vec3(nget(v, 0), nget(v, 1), nget(v, 2));
+}

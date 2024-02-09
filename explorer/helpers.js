@@ -436,9 +436,10 @@ export const textureFull = (rt, type, scale = null) => {
 
 const imageTextureCache = {}
 
+const parts = ['texture', 'normal', 'displacement']
+
 export const texture = (rt, name, texi) => {
   const { gl } = rt
-  const parts = ['texture', 'normal']
 
   const texture = {
     width: 4096,
@@ -463,7 +464,7 @@ export const texture = (rt, name, texi) => {
       0,
       gl.RGBA,
       gl.UNSIGNED_BYTE,
-      pixels
+      pixels?.complete ? pixels : null
     )
     if (!pixels) {
       pixels = new Image()
@@ -487,6 +488,9 @@ export const texture = (rt, name, texi) => {
           gl.UNSIGNED_BYTE,
           pixels
         )
+        // Should not be necessary
+        imageTextureCache[src] = null
+
         gl.generateMipmap(gl.TEXTURE_2D)
         render(rt)
       }
@@ -497,7 +501,13 @@ export const texture = (rt, name, texi) => {
   // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
   return texture
 }
-
+export const deleteTextures = (rt, texture) => {
+  const { gl } = rt
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i]
+    gl.deleteTexture(texture[part])
+  }
+}
 export const cubemap = (rt, name, texi) => {
   const { gl } = rt
   gl.activeTexture(gl[`TEXTURE${texi}`])
@@ -635,6 +645,11 @@ export const mesh = (
       name: 'normalMap',
       type: '1i',
       value: 5,
+    },
+    {
+      name: 'displacementMap',
+      type: '1i',
+      value: 6,
     },
     ...(['vertex', 'edge'].includes(type)
       ? [

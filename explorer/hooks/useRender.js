@@ -22,7 +22,7 @@ export const useRender = (runtime, setRuntime) => {
       refreshTextures(runtime)
       return runtime
     })
-  }, [runtime.envmap, runtime.skybox, setRuntime])
+  }, [runtime.envmap, runtime.skybox, runtime.texture, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => {

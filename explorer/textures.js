@@ -2,6 +2,7 @@ import { ambiances } from './ambiances'
 import {
   clearListeners,
   cubemap,
+  deleteTextures,
   storage,
   texture,
   textureFull,
@@ -193,12 +194,12 @@ export default function refreshTextures(rt) {
 
   // Texture
   if (rt.textures.mesh) {
-    gl.deleteTexture(rt.textures.mesh.texture)
     clearListeners(rt.textures.mesh)
+    deleteTextures(rt, rt.textures.mesh)
     rt.textures.mesh = null
   }
 
-  if (ambiance.texture) {
-    rt.textures.mesh = texture(rt, ambiance.texture, 4)
+  if (ambiance.texture && rt.texture !== 'none') {
+    rt.textures.mesh = texture(rt, rt.texture || ambiance.texture, 4)
   }
 }

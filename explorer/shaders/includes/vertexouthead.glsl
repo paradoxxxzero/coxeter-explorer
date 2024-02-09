@@ -1,3 +1,7 @@
+#if TEXTURE == 1
+uniform sampler2D displacementMap;
+#endif
+
 #ifdef SHADING
 #ifdef GOURAUD
 #include lighting

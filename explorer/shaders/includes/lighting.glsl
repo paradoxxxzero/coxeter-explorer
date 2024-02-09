@@ -154,7 +154,7 @@ vec4 light(vec3 position, vec3 normal, vec3 rgb, vec2 uv) {
   vec3 texHsl = rgbToHsl(texColor.rgb);
   texHsl.x = hsl.x;
   color.rgb = hslToRgb(texHsl);
-  mat3 tbn = getTangentFrame(-eyeDirection, normal, uv);
+  mat3 tbn = getTangentFrame(eyeDirection, normal, uv);
   vec3 map = texture(normalMap, uv).xyz * 2. - 1.;
   normal = normalize(tbn * map);
   #endif

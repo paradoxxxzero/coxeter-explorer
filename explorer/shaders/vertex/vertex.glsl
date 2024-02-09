@@ -34,6 +34,10 @@ void main() {
 
   vec3 proj = xproject(pos);
   vec3 norm = normal;
-  proj = inflate(proj, pos, normal, thickness);
+  #if (TEXTURE == 1 || (defined(SHADING) && SHADING == 3)) && DIMENSIONS >= 2
+  vecN normN = multiplyMatrix(matrix, vecNFromVec3(normal));
+  norm = normalize(pureproject(normN));
+  #endif
+  proj = inflate(proj, pos, norm, thickness);
   #include vertexout
 }

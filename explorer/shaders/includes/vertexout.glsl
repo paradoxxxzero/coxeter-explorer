@@ -1,3 +1,7 @@
+#if TEXTURE == 1
+proj += norm * texture(displacementMap, uv).r * .06;
+#endif
+
 gl_Position = viewProject(proj);
 
 #if defined(SHADING) && defined(GOURAUD)

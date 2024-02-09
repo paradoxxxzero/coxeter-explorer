@@ -80,3 +80,12 @@ export const envmaps = [
   'studio',
   'teufelsberg',
 ]
+
+export const textures = [
+  'none',
+  '',
+  'bricks',
+  'fabric',
+  'plank',
+  'rock', //
+]
