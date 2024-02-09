@@ -1,9 +1,14 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { PI, abs, hypot, log, max, min, pow, sqrt } from '../math'
 import { rotate } from '../math/hypermath'
-import { columnMajor, multiply, set } from '../math/matrix'
+import {
+  columnMajor,
+  forceMatrixSize,
+  inverse,
+  multiply,
+  set,
+} from '../math/matrix'
 import { render, updateCamera } from '../render'
-import { types } from '../../statics'
 // import { hyperMaterials } from '../shader/hyperMaterial'
 
 const zoomSpeed = 0.9
@@ -162,6 +167,9 @@ export const useInteract = (
             columnMajor(local.current.matrix)
           )
         }
+        runtime.passes.skybox.uniforms.viewProjectionInverse.update(
+          columnMajor(forceMatrixSize(inverse(local.current.matrix), 3))
+        )
       }
       if (zoom) {
         updateCamera(runtime, local.current.zoom)

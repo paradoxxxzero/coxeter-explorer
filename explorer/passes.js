@@ -8,8 +8,11 @@ import fragmentOit from './shaders/oit/fragment.glsl?raw'
 import vertexOit from './shaders/oit/vertex.glsl?raw'
 import fragmentUp from './shaders/up/fragment.glsl?raw'
 import vertexUp from './shaders/up/vertex.glsl?raw'
+import fragmentSkybox from './shaders/skybox/fragment.glsl?raw'
+import vertexSkybox from './shaders/skybox/vertex.glsl?raw'
 import { pass } from './helpers'
 import { render } from './render'
+import { columnMajor, forceMatrixSize, ident, inverse } from './math/matrix'
 
 export default function getPasses(rt) {
   return {
@@ -88,14 +91,33 @@ export default function getPasses(rt) {
         value: 1,
       },
     ]),
+    ...pass(rt, 'skybox', vertexSkybox, fragmentSkybox, [
+      {
+        name: 'cubeMap',
+        type: '1i',
+        value: 2,
+      },
+      {
+        name: 'viewProjectionInverse',
+        type: 'm3fv',
+        value: columnMajor(ident(3)),
+      },
+    ]),
+    updateUniforms(rt) {
+      this.skybox.uniforms.viewProjectionInverse.update(
+        columnMajor(forceMatrixSize(inverse(rt.matrix), 3))
+      )
+    },
   }
 }
+
 if (import.meta.hot) {
   const updatePassShader = (pass, type) => module => {
     const rt = window.rt
     console.debug('Accepting the new pass shader')
     rt.passes[pass][type] = module.default
     rt.passes[pass].recompileProgram(rt)
+    rt.passes.updateUniforms(rt)
     render(rt)
   }
   import.meta.hot.accept(

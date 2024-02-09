@@ -22,7 +22,7 @@ export const useRender = (runtime, setRuntime) => {
       refreshTextures(runtime)
       return runtime
     })
-  }, [runtime.envmap, setRuntime])
+  }, [runtime.envmap, runtime.skybox, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => {
@@ -69,6 +69,7 @@ export const useRender = (runtime, setRuntime) => {
   useEffect(() => {
     setRuntime(runtime => {
       runtime.meshes.updateUniforms(runtime)
+      runtime.passes.updateUniforms(runtime)
       return runtime
     })
   }, [

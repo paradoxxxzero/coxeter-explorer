@@ -86,7 +86,8 @@ export const initializeGl = rt => {
       bounds.right = bounds.left + width
 
       const projectionMatrix = frustum(bounds)
-      this.viewProjection = columnMajor(multiply(projectionMatrix, viewMatrix))
+      const viewProjection = multiply(projectionMatrix, viewMatrix)
+      this.viewProjection = columnMajor(viewProjection)
     },
   }
   camera.update()
@@ -250,7 +251,13 @@ export const render = (rt, forceSize) => {
       }
     }
   }
-
+  if (ambiance.skybox) {
+    gl.useProgram(rt.passes.skybox.program)
+    gl.enable(gl.DEPTH_TEST)
+    gl.depthMask(true)
+    gl.depthFunc(gl.LEQUAL)
+    gl.drawArrays(gl.TRIANGLES, 0, 3)
+  }
   const out = ambiance.afterImage
     ? rt.fb.afterImage
     : ambiance.glow

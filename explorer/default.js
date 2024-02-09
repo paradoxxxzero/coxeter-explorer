@@ -40,6 +40,7 @@ export const defaultParams = {
   crosssection: false,
   section: [0, 0, 0, 1, 2],
   envmap: '',
+  skybox: '',
 
   hidden: ['face'],
   reciprocation: 0,

@@ -639,6 +639,24 @@ export default function UI({
                   </select>
                 </label>
               )}
+              {showUI === 'full' && ambiances[params.ambiance]?.skybox && (
+                <label className="select-label">
+                  Envmap
+                  <select
+                    name="skybox"
+                    value={params.skybox}
+                    onChange={handleRawChange}
+                  >
+                    {envmaps.map(e => (
+                      <option key={e} value={e}>
+                        {(e || 'default')
+                          .replace(/_/g, ' ')
+                          .replace(/./, c => c.toUpperCase())}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
               {window.location.search.includes('debug') &&
                 showUI === 'full' && (
                   <>

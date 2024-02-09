@@ -435,9 +435,9 @@ export const texture = (rt, type, scale = null) => {
 
 const cubemapCache = {}
 
-export const cubemap = (rt, name, texname) => {
+export const cubemap = (rt, name, texname, texi) => {
   const { gl } = rt
-  gl.activeTexture(gl.TEXTURE2)
+  gl.activeTexture(gl[`TEXTURE${texi}`])
   const cubeTexture = {
     texture: gl.createTexture(),
     width: 2048,
@@ -457,7 +457,7 @@ export const cubemap = (rt, name, texname) => {
   })
   for (let i = 0; i < cube.length; i++) {
     const [face, target] = cube[i]
-    const pixels = cubemapCache[name][face]
+    const pixels = cubemapCache[name][face] || null
     gl.texImage2D(
       target,
       0,
@@ -548,7 +548,7 @@ export const mesh = (
     {
       name: 'envMap',
       type: '1i',
-      value: 2,
+      value: 3,
     },
     ...(['vertex', 'edge'].includes(type)
       ? [
@@ -643,6 +643,7 @@ export const mesh = (
       if (!this.count) {
         return
       }
+      const { gl } = rt
       gl.useProgram(this.program)
       gl.bindVertexArray(this.vao)
       gl.drawElementsInstanced(

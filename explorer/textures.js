@@ -164,6 +164,15 @@ export default function refreshTextures(rt) {
     )
   }
 
+  // Skybox
+  if (rt.textures.skybox) {
+    gl.deleteTexture(rt.textures.skybox.texture)
+    rt.textures.skybox = null
+  }
+
+  if (ambiance.skybox) {
+    rt.textures.skybox = cubemap(rt, rt.skybox || ambiance.skybox, 'skybox', 2)
+  }
   // Reflections
   if (rt.textures.envmap) {
     gl.deleteTexture(rt.textures.envmap.texture)
@@ -171,6 +180,6 @@ export default function refreshTextures(rt) {
   }
 
   if (ambiance.envmap) {
-    rt.textures.envmap = cubemap(rt, rt.envmap || ambiance.envmap, 'envmap')
+    rt.textures.envmap = cubemap(rt, rt.envmap || ambiance.envmap, 'envmap', 3)
   }
 }

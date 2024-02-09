@@ -499,3 +499,22 @@ export const subvector = (vector, removed) =>
 
 export const submatrix = (matrix, removed) =>
   subvector(matrix, removed).map(row => subvector(row, removed))
+
+export const forceMatrixSize = (m, size) => {
+  if (m.length === size) {
+    return m
+  }
+  if (m.length < size) {
+    const nm = m.map((row, i) => [
+      ...row,
+      ...new Array(size - m.length)
+        .fill(0)
+        .map((_, j) => (j + row.length === i ? 1 : 0)),
+    ])
+    for (let i = m.length; i < size; i++) {
+      nm.push(new Array(size).fill(0).map((_, j) => (j === nm.length ? 1 : 0)))
+    }
+    return nm
+  }
+  return m.slice(0, size).map(row => row.slice(0, size))
+}

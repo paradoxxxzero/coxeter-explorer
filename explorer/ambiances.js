@@ -196,6 +196,7 @@ export const ambiances = Object.fromEntries(
       gouraud: false,
       envmap: 'home',
       metalness: 1,
+      skybox: 'home',
 
       color: () => [0, 0, 0],
     },
