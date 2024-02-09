@@ -57,6 +57,7 @@ const defaults = {
   shininess: 32,
   opacity: 1,
   ambient: 0.2,
+  metalness: 0.2,
   roughness: 0.85,
   gouraud: false,
   transparency: 'oit',
@@ -178,12 +179,14 @@ export const ambiances = Object.fromEntries(
       opacity: 1,
       ambient: 0.2,
       gouraud: false,
-      face: {
-        gouraud: true,
-        opacity: 0.1,
-        diffuse: 'fresnel',
-        specular: false,
-      },
+      envmap: 'home',
+      metalness: 1,
+      // face: {
+      //   gouraud: false,
+      //   opacity: 0.1,
+      //   diffuse: 'fresnel',
+      //   specular: false,
+      // },
 
       transparency: 'oit',
       color: ({ word }) => hsl((word.length * 0.07) % 1, 0.5, 0.6),

@@ -1,6 +1,11 @@
+#if ENVMAP == 1
+uniform samplerCube envMap;
+#endif
+
 const float ambient = AMBIENT;
 const float shininess = SHININESS;
 const float roughness = ROUGHNESS;
+const float metalness = METALNESS;
 const float opacity = OPACITY;
 
 float getDiffuse(in vec3 normal, in vec3 lightDirection, in vec3 eyeDirection, inout vec4 color) {
@@ -91,6 +96,11 @@ float getSpecular(in vec3 normal, in vec3 lightDirection, in vec3 eyeDirection, 
 vec4 light(vec3 position, vec3 normal, vec3 rgb, vec2 uv) {
   #if SHADING == 0
   vec4 color = vec4(rgb, opacity);
+  #if ENVMAP == 1
+  vec4 envColor = texture(envMap, reflect(normalize(position - eye), normalize(normal)));
+  color = vec4(mix(color.xyz, envColor.xyz, metalness), color.a);
+
+  #endif
   #if !defined(DIFFUSE) && !defined(SPECULAR)
   return color;
   #else 

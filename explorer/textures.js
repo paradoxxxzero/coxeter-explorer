@@ -1,5 +1,5 @@
 import { ambiances } from './ambiances'
-import { storage, texture } from './helpers'
+import { cubemap, storage, texture } from './helpers'
 import { min } from './math'
 
 export default function refreshTextures(rt) {
@@ -162,5 +162,15 @@ export default function refreshTextures(rt) {
       rt.textures.bloom.texture,
       0
     )
+  }
+
+  // Reflections
+  if (rt.textures.envmap) {
+    gl.deleteTexture(rt.textures.envmap.texture)
+    rt.textures.envmap = null
+  }
+
+  if (ambiance.envmap) {
+    rt.textures.envmap = cubemap(rt, ambiance.envmap, 'envmap')
   }
 }

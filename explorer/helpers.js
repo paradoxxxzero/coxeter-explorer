@@ -89,9 +89,11 @@ export const augment = (rt, vertex, fragment, type) => {
     specular: v => specularLight.indexOf(v),
     ambient: v => float(v),
     shininess: v => float(v),
+    metalness: v => float(v),
     roughness: v => float(v),
     opacity: v => float(v),
     gouraud: v => '',
+    envmap: v => (v ? 1 : 0),
   }
   Object.entries(ambienceDefines).forEach(([key, getter]) => {
     const value =
@@ -431,6 +433,68 @@ export const texture = (rt, type, scale = null) => {
   return { texture, width, height }
 }
 
+const cubemapCache = {}
+
+export const cubemap = (rt, name, texname) => {
+  const { gl } = rt
+  gl.activeTexture(gl.TEXTURE2)
+  const cubeTexture = {
+    texture: gl.createTexture(),
+    width: 2048,
+    height: 2048,
+  }
+  cubemapCache[name] = cubemapCache[name] || {}
+
+  gl.bindTexture(gl.TEXTURE_CUBE_MAP, cubeTexture.texture)
+
+  const cube = Object.entries({
+    px: gl.TEXTURE_CUBE_MAP_POSITIVE_X,
+    nx: gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
+    py: gl.TEXTURE_CUBE_MAP_POSITIVE_Y,
+    ny: gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,
+    pz: gl.TEXTURE_CUBE_MAP_POSITIVE_Z,
+    nz: gl.TEXTURE_CUBE_MAP_NEGATIVE_Z,
+  })
+  for (let i = 0; i < cube.length; i++) {
+    const [face, target] = cube[i]
+    const pixels = cubemapCache[name][face]
+    gl.texImage2D(
+      target,
+      0,
+      gl.RGBA,
+      cubeTexture.width,
+      cubeTexture.height,
+      0,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      pixels
+    )
+    if (!Object.keys(cubemapCache[name]).includes(face)) {
+      cubemapCache[name][face] = null // Prevent multi-load
+
+      const image = new Image()
+      image.src = `${name}/${face}.jpg`
+      image.addEventListener('load', function () {
+        cubemapCache[name][face] = image
+        const texture = rt.textures[texname]?.texture // Get current texture if any
+        if (texture) {
+          render(rt)
+          gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture)
+          gl.texImage2D(target, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
+          gl.generateMipmap(gl.TEXTURE_CUBE_MAP)
+        }
+      })
+    }
+  }
+  gl.generateMipmap(gl.TEXTURE_CUBE_MAP)
+  gl.texParameteri(
+    gl.TEXTURE_CUBE_MAP,
+    gl.TEXTURE_MIN_FILTER,
+    gl.LINEAR_MIPMAP_LINEAR
+  )
+  return cubeTexture
+}
+
 export const pass = (rt, name, vertex, fragment, uniforms = []) => {
   const pass = {
     name,
@@ -480,6 +544,11 @@ export const mesh = (
       name: 'zoom',
       type: '1f',
       value: 1,
+    },
+    {
+      name: 'envMap',
+      type: '1i',
+      value: 2,
     },
     ...(['vertex', 'edge'].includes(type)
       ? [
