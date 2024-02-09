@@ -94,6 +94,7 @@ export const augment = (rt, vertex, fragment, type) => {
     opacity: v => float(v),
     gouraud: v => '',
     envmap: v => (v ? 1 : 0),
+    texture: v => (v ? 1 : 0),
   }
   Object.entries(ambienceDefines).forEach(([key, getter]) => {
     const value =
@@ -405,7 +406,7 @@ export const uniform = (rt, program, name, type) => {
   return uniform
 }
 
-export const texture = (rt, type, scale = null) => {
+export const textureFull = (rt, type, scale = null) => {
   const { gl } = rt
 
   const width = scale
@@ -433,9 +434,71 @@ export const texture = (rt, type, scale = null) => {
   return { texture, width, height }
 }
 
-const cubemapCache = {}
+const imageTextureCache = {}
 
-export const cubemap = (rt, name, texname, texi) => {
+export const texture = (rt, name, texi) => {
+  const { gl } = rt
+  const parts = ['texture', 'normal']
+
+  const texture = {
+    width: 4096,
+    height: 4096,
+    listeners: [],
+  }
+  for (let i = 0; i < parts.length; i++) {
+    gl.activeTexture(gl[`TEXTURE${texi + i}`])
+    const part = parts[i]
+    texture[part] = gl.createTexture()
+    gl.bindTexture(gl.TEXTURE_2D, texture[parts[i]])
+    const src = `textures/${name}/${part}.jpg`
+    let pixels = imageTextureCache[src] || null
+
+    gl.bindTexture(gl.TEXTURE_2D, texture.texture)
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      texture.width,
+      texture.height,
+      0,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      pixels
+    )
+    if (!pixels) {
+      pixels = new Image()
+      pixels.src = src
+      imageTextureCache[src] = pixels // Prevent multi-load
+    }
+    if (!pixels.complete) {
+      const onImageLoad = () => {
+        texture.listeners.splice(
+          texture.listeners.findIndex(([p]) => p === pixels),
+          1
+        )
+        imageTextureCache[src] = pixels
+        gl.activeTexture(gl[`TEXTURE${texi + i}`])
+        gl.bindTexture(gl.TEXTURE_2D, texture[part])
+        gl.texImage2D(
+          gl.TEXTURE_2D,
+          0,
+          gl.RGBA,
+          gl.RGBA,
+          gl.UNSIGNED_BYTE,
+          pixels
+        )
+        gl.generateMipmap(gl.TEXTURE_2D)
+        render(rt)
+      }
+      pixels.addEventListener('load', onImageLoad)
+      texture.listeners.push([pixels, onImageLoad])
+    }
+  }
+  // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+  return texture
+}
+
+export const cubemap = (rt, name, texi) => {
   const { gl } = rt
   gl.activeTexture(gl[`TEXTURE${texi}`])
   const cubeTexture = {
@@ -444,7 +507,6 @@ export const cubemap = (rt, name, texname, texi) => {
     height: 2048,
     listeners: [],
   }
-  cubemapCache[name] = cubemapCache[name] || {}
 
   gl.bindTexture(gl.TEXTURE_CUBE_MAP, cubeTexture.texture)
 
@@ -458,7 +520,8 @@ export const cubemap = (rt, name, texname, texi) => {
   })
   for (let i = 0; i < cube.length; i++) {
     const [face, target] = cube[i]
-    let pixels = cubemapCache[name][face] || null
+    const src = `cubemaps/${name}/${face}.jpg`
+    let pixels = imageTextureCache[src] || null
     gl.texImage2D(
       target,
       0,
@@ -472,8 +535,8 @@ export const cubemap = (rt, name, texname, texi) => {
     )
     if (!pixels) {
       pixels = new Image()
-      pixels.src = `${name}/${face}.jpg`
-      cubemapCache[name][face] = pixels // Prevent multi-load
+      pixels.src = src
+      imageTextureCache[src] = pixels // Prevent multi-load
     }
     if (!pixels.complete) {
       const onImageLoad = () => {
@@ -481,7 +544,7 @@ export const cubemap = (rt, name, texname, texi) => {
           cubeTexture.listeners.findIndex(([p]) => p === pixels),
           1
         )
-        cubemapCache[name][face] = pixels
+        imageTextureCache[src] = pixels
         gl.activeTexture(gl[`TEXTURE${texi}`])
         gl.bindTexture(gl.TEXTURE_CUBE_MAP, cubeTexture.texture)
         gl.texImage2D(target, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
@@ -493,11 +556,11 @@ export const cubemap = (rt, name, texname, texi) => {
     }
   }
   gl.generateMipmap(gl.TEXTURE_CUBE_MAP)
-  gl.texParameteri(
-    gl.TEXTURE_CUBE_MAP,
-    gl.TEXTURE_MIN_FILTER,
-    gl.LINEAR_MIPMAP_LINEAR
-  )
+  // gl.texParameteri(
+  //   gl.TEXTURE_CUBE_MAP,
+  //   gl.TEXTURE_MIN_FILTER,
+  //   gl.LINEAR_MIPMAP_LINEAR
+  // )
   return cubeTexture
 }
 
@@ -562,6 +625,16 @@ export const mesh = (
       name: 'envMap',
       type: '1i',
       value: 3,
+    },
+    {
+      name: 'textureMap',
+      type: '1i',
+      value: 4,
+    },
+    {
+      name: 'normalMap',
+      type: '1i',
+      value: 5,
     },
     ...(['vertex', 'edge'].includes(type)
       ? [

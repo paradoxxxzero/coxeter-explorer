@@ -68,6 +68,8 @@ export const types = [
 export const envmaps = [
   'none',
   '',
+  'circus',
+  'corridor',
   'garden',
   'home',
   'lights',

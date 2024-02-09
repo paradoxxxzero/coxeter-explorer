@@ -1,5 +1,11 @@
 import { ambiances } from './ambiances'
-import { clearListeners, cubemap, storage, texture } from './helpers'
+import {
+  clearListeners,
+  cubemap,
+  storage,
+  texture,
+  textureFull,
+} from './helpers'
 import { min } from './math'
 
 export default function refreshTextures(rt) {
@@ -68,7 +74,7 @@ export default function refreshTextures(rt) {
 
     gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1])
 
-    rt.textures.oitAccum = texture(rt, gl.RGBA16F)
+    rt.textures.oitAccum = textureFull(rt, gl.RGBA16F)
     gl.framebufferTexture2D(
       gl.FRAMEBUFFER,
       gl.COLOR_ATTACHMENT0,
@@ -77,7 +83,7 @@ export default function refreshTextures(rt) {
       0
     )
 
-    rt.textures.oitReveal = texture(rt, gl.R16F)
+    rt.textures.oitReveal = textureFull(rt, gl.R16F)
     gl.framebufferTexture2D(
       gl.FRAMEBUFFER,
       gl.COLOR_ATTACHMENT1,
@@ -107,9 +113,9 @@ export default function refreshTextures(rt) {
   if (ambiance.afterImage) {
     rt.fb.afterImage = gl.createFramebuffer()
     gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.afterImage)
-    rt.textures.afterImageLastScreen = texture(rt, gl.RGBA8)
-    rt.textures.afterImageScreen = texture(rt, gl.RGBA8)
-    rt.textures.afterImageOutScreen = texture(rt, gl.RGBA8)
+    rt.textures.afterImageLastScreen = textureFull(rt, gl.RGBA8)
+    rt.textures.afterImageScreen = textureFull(rt, gl.RGBA8)
+    rt.textures.afterImageOutScreen = textureFull(rt, gl.RGBA8)
   }
 
   // BLOOM
@@ -142,9 +148,9 @@ export default function refreshTextures(rt) {
     gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.kawase)
     rt.textures.kawase = []
     for (let i = 0; i < ambiance.glow.steps; i++) {
-      rt.textures.kawase[i] = texture(rt, gl.RGBA8, ambiance.glow.pow ** -i)
+      rt.textures.kawase[i] = textureFull(rt, gl.RGBA8, ambiance.glow.pow ** -i)
     }
-    rt.textures.blur = texture(rt, gl.RGBA8)
+    rt.textures.blur = textureFull(rt, gl.RGBA8)
     gl.framebufferTexture2D(
       gl.FRAMEBUFFER,
       gl.COLOR_ATTACHMENT0,
@@ -154,7 +160,7 @@ export default function refreshTextures(rt) {
     )
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.bloom)
-    rt.textures.bloom = texture(rt, gl.RGBA8)
+    rt.textures.bloom = textureFull(rt, gl.RGBA8)
     gl.framebufferTexture2D(
       gl.FRAMEBUFFER,
       gl.COLOR_ATTACHMENT0,
@@ -172,7 +178,7 @@ export default function refreshTextures(rt) {
   }
 
   if (ambiance.skybox && rt.skybox !== 'none') {
-    rt.textures.skybox = cubemap(rt, rt.skybox || ambiance.skybox, 'skybox', 2)
+    rt.textures.skybox = cubemap(rt, rt.skybox || ambiance.skybox, 2)
   }
   // Reflections
   if (rt.textures.envmap) {
@@ -182,6 +188,17 @@ export default function refreshTextures(rt) {
   }
 
   if (ambiance.envmap && rt.envmap !== 'none') {
-    rt.textures.envmap = cubemap(rt, rt.envmap || ambiance.envmap, 'envmap', 3)
+    rt.textures.envmap = cubemap(rt, rt.envmap || ambiance.envmap, 3)
+  }
+
+  // Texture
+  if (rt.textures.mesh) {
+    gl.deleteTexture(rt.textures.mesh.texture)
+    clearListeners(rt.textures.mesh)
+    rt.textures.mesh = null
+  }
+
+  if (ambiance.texture) {
+    rt.textures.mesh = texture(rt, ambiance.texture, 4)
   }
 }

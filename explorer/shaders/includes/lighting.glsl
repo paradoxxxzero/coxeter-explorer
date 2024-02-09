@@ -2,11 +2,53 @@
 uniform samplerCube envMap;
 #endif
 
+#if TEXTURE == 1
+uniform sampler2D textureMap;
+uniform sampler2D normalMap;
+#endif
+
 const float ambient = AMBIENT;
 const float shininess = SHININESS;
 const float roughness = ROUGHNESS;
 const float metalness = METALNESS;
 const float opacity = OPACITY;
+
+vec3 rgbToHsl(vec3 c) {
+  vec4 K = vec4(0., -1. / 3., 2. / 3., -1.);
+  vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+  vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+
+  float d = q.x - min(q.w, q.y);
+  float e = 1.0e-10;
+  return vec3(abs(q.z + (q.w - q.y) / (6. * d + e)), d / (q.x + e), (q.x + q.y) * .5);
+}
+
+vec3 hslToRgb(vec3 c) {
+  vec3 rgb = clamp(abs(mod(c.x * 6. + vec3(0., 4., 2.), 6.) - 3.) - 1., 0., 1.);
+  return c.z + c.y * (rgb - .5) * (1. - abs(2. * c.z - 1.));
+}
+
+mat3 getTangentFrame(vec3 eye_pos, vec3 surf_norm, vec2 uv) {
+	// Normal Mapping Without Precomputed Tangents
+	// http://www.thetenthplanet.de/archives/1180
+  vec3 q0 = dFdx(eye_pos.xyz);
+  vec3 q1 = dFdy(eye_pos.xyz);
+  vec2 st0 = dFdx(uv.st);
+  vec2 st1 = dFdy(uv.st);
+
+  vec3 N = surf_norm; // normalized
+
+  vec3 q1perp = cross(q1, N);
+  vec3 q0perp = cross(N, q0);
+
+  vec3 T = q1perp * st0.x + q0perp * st1.x;
+  vec3 B = q1perp * st0.y + q0perp * st1.y;
+
+  float det = max(dot(T, T), dot(B, B));
+  float scale = (det == 0.0) ? 0.0 : inversesqrt(det);
+
+  return mat3(T * scale, B * scale, N);
+}
 
 float getDiffuse(in vec3 normal, in vec3 lightDirection, in vec3 eyeDirection, inout vec4 color) {
   #ifdef DIFFUSE
@@ -96,20 +138,31 @@ float getSpecular(in vec3 normal, in vec3 lightDirection, in vec3 eyeDirection, 
 vec4 light(vec3 position, vec3 normal, vec3 rgb, vec2 uv) {
   #if SHADING == 0
   vec4 color = vec4(rgb, opacity);
-  #if ENVMAP == 1
-  vec4 envColor = texture(envMap, reflect(normalize(position - eye), normalize(normal)));
-  color = vec4(mix(color.xyz, envColor.xyz, metalness), color.a);
 
+  vec3 eyeDirection = eye - position;
+  eyeDirection = normalize(eyeDirection);
+
+  #if ENVMAP == 1
+  vec4 envColor = texture(envMap, reflect(-eyeDirection, normalize(normal)));
+  color = vec4(mix(color.xyz, envColor.xyz, metalness), color.a);
+  #endif
+  #if TEXTURE == 1
+  vec4 texColor = texture(textureMap, uv);
+  // Get color hue
+  vec3 hsl = rgbToHsl(color.rgb);
+  // Apply color hue to texture color
+  vec3 texHsl = rgbToHsl(texColor.rgb);
+  texHsl.x = hsl.x;
+  color.rgb = hslToRgb(texHsl);
+  mat3 tbn = getTangentFrame(-eyeDirection, normal, uv);
+  vec3 map = texture(normalMap, uv).xyz * 2. - 1.;
+  normal = normalize(tbn * map);
   #endif
   #if !defined(DIFFUSE) && !defined(SPECULAR)
   return color;
   #else 
   float diffuse = 0.;
   float specular = 0.;
-
-  vec3 eyeDirection = eye - position;
-
-  eyeDirection = normalize(eyeDirection);
   vec3 lightDirection = eyeDirection;
 
   // ADS Ambient, Diffuse, Specular
