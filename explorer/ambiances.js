@@ -129,6 +129,22 @@ export const ambiances = Object.fromEntries(
           ? hsl((subShape * 0.23 + word.length * 0.07) % 1, 1, 0.58)
           : [0, 0, 0],
     },
+    lights: {
+      background: [0.6, 0.6, 0.6, 1],
+      glow: {
+        exposure: 1.5,
+        strength: 2,
+        offset: {
+          up: 2,
+          down: 2,
+        },
+        steps: 4,
+        pow: 2,
+      },
+      envmap: 'lights',
+      metalness: 1,
+      color: () => [0, 0, 0],
+    },
     synthwave: {
       background: [...hsl(0.77, 0.6, 0.04), 1],
       glow: {
@@ -169,7 +185,6 @@ export const ambiances = Object.fromEntries(
       transparency: 'oit',
       color: ({ word, dual }) =>
         hsl(((word.length * 0.03) % 1) - (dual ? 0.25 : 0), 1, 0.8),
-      // culling: true,
     },
     shiny: {
       background: [0, 0, 0, 1],
@@ -181,16 +196,8 @@ export const ambiances = Object.fromEntries(
       gouraud: false,
       envmap: 'home',
       metalness: 1,
-      // face: {
-      //   gouraud: false,
-      //   opacity: 0.1,
-      //   diffuse: 'fresnel',
-      //   specular: false,
-      // },
 
-      transparency: 'oit',
-      color: ({ word }) => hsl((word.length * 0.07) % 1, 0.5, 0.6),
-      // culling: true,
+      color: () => [0, 0, 0],
     },
     flare: {
       background: [1, 1, 1, 1],

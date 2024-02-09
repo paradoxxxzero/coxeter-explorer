@@ -67,9 +67,13 @@ export const types = [
 
 export const envmaps = [
   '',
+  'garden',
   'home',
   'lights',
   'lounge',
+  'night',
+  'room',
   'sky',
-  'studio', //
+  'studio',
+  'teufelsberg',
 ]
