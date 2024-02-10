@@ -100,5 +100,6 @@ vecN trix(in vecN a, in vecN b, in vecN c, in vec2 t) {
   }
   #endif
 
-  return nadd(nadd(nmul(b, t.x), nmul(c, t.y)), nmul(a, 1. - t.x - t.y));
+  // a + (b - a) * t.x + (c - b) * t.y
+  return nadd(a, nadd(nmul(nsub(b, a), t.x), nmul(nsub(c, b), t.y)));
 }

@@ -20,8 +20,6 @@ export const faceToFrag = (faces, root) => {
         const face = obj[j]
         const dimensions = face.vertices[0].length
 
-        const parity = face.word.length % 2 ? 0 : 1
-
         if (
           face.vertices.length === 3 &&
           !face.vertices
@@ -60,8 +58,8 @@ export const faceToFrag = (faces, root) => {
             const fragment = {
               ...face,
               vertices: [
-                face.vertices[(k + parity) % face.vertices.length],
-                face.vertices[(k + (1 - parity)) % face.vertices.length],
+                face.vertices[k],
+                face.vertices[(k + 1) % face.vertices.length],
                 centroids[l],
               ],
               faceIndex: k,

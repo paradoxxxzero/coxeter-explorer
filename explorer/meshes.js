@@ -172,6 +172,11 @@ export const mesh = (
         )
       })
       this.attributes.color.extend(3, new Float32Array(maxSize * 3), true)
+      this.attributes.triangulation?.extend(
+        2,
+        new Float32Array(maxSize * 2),
+        true
+      )
     },
     updateGeometry(rt) {
       const geometry = geometryFunc(rt.space.curvature && rt.curve, rt.detail)
@@ -204,6 +209,17 @@ export const mesh = (
       }
 
       this.attributes.color.update(data, info.start, info.size)
+    },
+    fillTriangulation(data, info) {
+      if (info.arity !== this.arity) {
+        return
+      }
+      this.count = info.start + info.size
+      if (this.instances < this.count) {
+        this.extendAttributes(this.count)
+      }
+
+      this.attributes.triangulation.update(data, info.start, info.size)
     },
     render(rt) {
       if (!this.count) {
@@ -253,6 +269,16 @@ export const mesh = (
     new Float32Array(size * 3),
     1
   )
+  if (type === 'face') {
+    mesh.attributes.triangulation = attribute(
+      rt,
+      mesh,
+      'triangulation',
+      2,
+      new Float32Array(size * 2),
+      1
+    )
+  }
   varying.forEach(attr => {
     mesh.attributes[attr] = attribute(
       rt,
@@ -360,6 +386,10 @@ export default function getMeshes(rt) {
         const mesh = this[type]
         if (color.data[i]) {
           mesh.fillColor(color.data[i], color.infos[i])
+        }
+        if (color.infos[i].nextIsTri) {
+          mesh.fillTriangulation(color.data[i + 1], color.infos[i])
+          i++
         }
       }
     },

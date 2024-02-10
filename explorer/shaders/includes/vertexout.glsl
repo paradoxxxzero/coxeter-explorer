@@ -3,9 +3,28 @@ vPosition = proj;
 vNormal = norm;
 vUv = uv;
 
+#if (TEXTURE == 1 || (defined(SHADING) && SHADING == 3)) && DIMENSIONS >= 2
 #ifdef EDGE
 const float repeat = 4.;
-vUv.t = 2. * abs(vUv.t * repeat - floor(vUv.t * repeat + .5));
+vUv.y = 2. * abs(vUv.y * repeat - floor(vUv.y * repeat + .5));
+#endif
+#ifdef FACE
+// vUv.y = (clamp(vUv.y * 1. / (vUv.x), 0., 1.) + triangulation.s) / triangulation.t;
+// vUv.x = sin(vUv.x * ETA) * .5;
+
+if(triangulation.t == 3.) {
+vUv.y = .5 - .5 * uv.x + uv.y;
+} else {
+float o = TAU / triangulation.t;
+float n = o * (triangulation.s);
+float m = o * (triangulation.s + 1.);
+vec2 u = vec2(cos(n), sin(n));
+vec2 v = vec2(cos(m), sin(m));
+vec2 p = uv.x * u + uv.y * (v - u);
+vUv.x = .5 * (p.x + 1.);
+vUv.y = .5 * (p.y + 1.);
+}
+#endif
 #endif
 
 #if TEXTURE == 1

@@ -72,6 +72,8 @@ export const fillColor = (dimensions, objects, ambiance, hidden, lasts) => {
 
     const buffer = new Float32Array(allObjects.length * 3)
 
+    const tribuffer = i === 2 ? new Float32Array(allObjects.length * 2) : null
+
     for (let j = 0; j < allObjects.length; j++) {
       const object = allObjects[j]
 
@@ -91,12 +93,20 @@ export const fillColor = (dimensions, objects, ambiance, hidden, lasts) => {
       buffer[j * 3 + 0] = c[0]
       buffer[j * 3 + 1] = c[1]
       buffer[j * 3 + 2] = c[2]
+      if (tribuffer) {
+        tribuffer[j * 2 + 0] = object.faceIndex
+        tribuffer[j * 2 + 1] = object.faceSize
+      }
     }
     data.push(buffer)
+    if (tribuffer) {
+      data.push(tribuffer)
+    }
     infos.push({
       start: lasts ? lasts[i] : 0,
       size: allObjects.length,
       arity,
+      nextIsTri: !!tribuffer,
     })
   }
   return { infos, data }

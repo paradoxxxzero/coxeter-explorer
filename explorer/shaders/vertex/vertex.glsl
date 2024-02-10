@@ -1,5 +1,6 @@
 #include globals
 #include dimensions
+#define VERTEX
 
 uniform float thickness;
 uniform matN metric;

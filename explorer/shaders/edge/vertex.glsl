@@ -1,8 +1,9 @@
 #include globals
 #include dimensions
+#define EDGE
+#define EDGE_METHOD 0
 
 uniform float thickness;
-
 uniform matN metric;
 uniform matN matrix;
 
@@ -30,9 +31,6 @@ in mat3 target;
 #include vertexouthead
 #include project
 
-#define EDGE
-#define STABLE 0
-
 void main() {
   vecN positionN = multiplyMatrix(matrix, adapt(position));
   vecN targetN = multiplyMatrix(matrix, adapt(target));
@@ -56,7 +54,7 @@ void main() {
 
   #if DIMENSIONS < 3 || (PROJECTION3 != -1 && PROJECTION3 != 8)
   vec3 norm = vec3(0, 0, -1);
-  #elif STABLE == 0
+  #elif EDGE_METHOD == 0
   vec3 norm = cross(nextProj + NOISE, proj);
   #else
   // Find a stable norm for the whole tube

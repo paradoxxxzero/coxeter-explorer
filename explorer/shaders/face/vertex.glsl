@@ -1,5 +1,6 @@
 #include globals
 #include dimensions
+#define FACE
 
 uniform matN metric;
 uniform matN matrix;
@@ -7,6 +8,7 @@ uniform matN matrix;
 in vec2 uv;
 in vec3 normal;
 in vec3 color;
+in vec2 triangulation;
 
 #if DIMENSIONS < 2
 in float position;
