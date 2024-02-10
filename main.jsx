@@ -7,6 +7,7 @@ import { ToddCoxeter } from './explorer/math/toddcoxeter.js'
 import { filterParams } from './explorer/params.js'
 import { defaultParams } from './explorer/default.js'
 // import 'https://greggman.github.io/webgl-lint/webgl-lint.js'
+// import 'https://raw.githack.com/KhronosGroup/WebGLDeveloperTools/main/src/debug/webgl-debug.js'
 
 const parseParams = () => {
   const { location } = window

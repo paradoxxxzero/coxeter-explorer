@@ -21,10 +21,30 @@ export default function App({ params, updateParams }) {
   })
 
   useEffect(() => {
+    if (!runtime.gl && runtime.error) {
+      return
+    }
+    const onContextLost = e => {
+      setRuntime(rt => ({
+        ...rt,
+        gl: null,
+        error: 'WebGL context lost',
+      }))
+
+      e.preventDefault()
+    }
+    const onContextRestored = () => {
+      setRuntime(rt => ({
+        ...rt,
+        ...initializeGl(rt, onContextLost, onContextRestored),
+        error: null,
+      }))
+    }
+
     setRuntime(rt => {
       try {
         if (!rt.gl) {
-          return initializeGl(rt)
+          return initializeGl(rt, onContextLost, onContextRestored)
         }
         return rt
       } catch (e) {
@@ -35,7 +55,7 @@ export default function App({ params, updateParams }) {
         }
       }
     })
-  }, [runtime.gl])
+  }, [runtime.gl, runtime.error])
 
   const [rotations, setRotations] = useState({
     shift: 0,

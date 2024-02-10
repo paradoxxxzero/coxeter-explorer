@@ -143,7 +143,7 @@ vec4 light(vec3 position, vec3 normal, vec3 rgb, vec2 uv) {
   eyeDirection = normalize(eyeDirection);
 
   #if ENVMAP == 1
-  vec4 envColor = texture(envMap, reflect(-eyeDirection, normalize(normal)));
+  vec4 envColor = texture(envMap, reflect(-eyeDirection, normal));
   color = vec4(mix(color.xyz, envColor.xyz, metalness), color.a);
   #endif
   #if TEXTURE == 1

@@ -1,19 +1,18 @@
 import Stats from 'stats.js'
+import { ambiances } from './ambiances'
 import { resizeCanvasToDisplaySize } from './helpers'
 import { PI, min, tan } from './math'
+import { rotate4, translate4 } from './math/hypermath'
 import {
   columnMajor,
   frustum,
-  ident,
   inverse,
   multiply,
   multiplyVector,
 } from './math/matrix'
 import getMeshes from './meshes'
 import getPasses from './passes'
-import refreshTextures from './textures'
-import { ambiances } from './ambiances'
-import { rotate4, translate4 } from './math/hypermath'
+import { refreshTexturesFull } from './textures'
 
 const showStats = window.location.search.includes('stats')
 let stats
@@ -23,10 +22,13 @@ if (showStats) {
   document.body.appendChild(stats.dom)
 }
 
-export const initializeGl = rt => {
-  const canvas = document.createElement('canvas')
-  canvas.id = 'webgl2'
-  document.body.insertBefore(canvas, document.body.firstChild)
+export const initializeGl = (rt, onContextLost, onContextRestored) => {
+  let canvas = document.getElementById('webgl2')
+  if (!canvas) {
+    canvas = document.createElement('canvas')
+    canvas.id = 'webgl2'
+    document.body.insertBefore(canvas, document.body.firstChild)
+  }
 
   const gl = canvas.getContext('webgl2', {
     alpha: true,
@@ -36,6 +38,10 @@ export const initializeGl = rt => {
     powerPreference: 'high-performance',
     preserveDrawingBuffer: false,
   })
+
+  canvas.addEventListener('webglcontextlost', onContextLost, false)
+  canvas.addEventListener('webglcontextrestored', onContextRestored, false)
+
   rt = { ...rt, gl }
 
   if (!gl) {
@@ -154,6 +160,10 @@ export const changeAmbiance = rt => {
 }
 
 export const render = (rt, forceSize) => {
+  if (!rt.gl) {
+    // Context lost
+    return
+  }
   if (showStats) {
     stats.update()
   }
@@ -166,7 +176,7 @@ export const render = (rt, forceSize) => {
   const ambiance = ambiances[rt.ambiance]
   if (resizeCanvasToDisplaySize(gl.canvas, rt.subsampling, forceSize)) {
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-    refreshTextures(rt)
+    refreshTexturesFull(rt)
     rt.camera.update(forceSize)
     rt.meshes.updateUniforms(rt, true, rt.zoom)
   }

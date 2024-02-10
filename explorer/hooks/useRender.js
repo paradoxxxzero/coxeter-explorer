@@ -1,6 +1,10 @@
 import { useEffect } from 'react'
 import { changeAmbiance, render, updateCamera } from '../render'
-import refreshTextures from '../textures'
+import {
+  refreshTexturesEnv,
+  refreshTexturesFull,
+  refreshTexturesMap,
+} from '../textures'
 
 export const useRender = (runtime, setRuntime) => {
   useEffect(() => {
@@ -19,15 +23,24 @@ export const useRender = (runtime, setRuntime) => {
 
   useEffect(() => {
     setRuntime(runtime => {
-      refreshTextures(runtime)
+      refreshTexturesEnv(runtime)
       return runtime
     })
-  }, [runtime.envmap, runtime.skybox, runtime.texture, setRuntime])
+  }, [runtime.envmap, runtime.skybox, setRuntime])
+
+  useEffect(() => {
+    setRuntime(runtime => {
+      refreshTexturesMap(runtime)
+      return runtime
+    })
+  }, [runtime.texture, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => {
       changeAmbiance(runtime)
-      refreshTextures(runtime)
+      refreshTexturesFull(runtime)
+      refreshTexturesEnv(runtime)
+      refreshTexturesMap(runtime)
       return runtime
     })
   }, [runtime.ambiance, runtime.msaa, runtime.msaaSamples, setRuntime])
@@ -97,6 +110,9 @@ export const useRender = (runtime, setRuntime) => {
   ])
 
   useEffect(() => {
+    if (!runtime.gl.canvas) {
+      return
+    }
     // Resize observer calls render on setup
     const resizeObserver = new ResizeObserver(() => {
       render(runtime)

@@ -9,13 +9,14 @@ import {
 } from './helpers'
 import { min } from './math'
 
-export default function refreshTextures(rt) {
+export const refreshTexturesFull = rt => {
   const { gl } = rt
   const ambiance = ambiances[rt.ambiance]
   const msaa = rt.msaa
     ? min(rt.msaaSamples, rt.gl.getParameter(rt.gl.MAX_SAMPLES))
     : 0
 
+  gl.activeTexture(gl.TEXTURE0)
   // BASE FBO
   gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.base)
   storage(rt, rt.rb.base, gl.RGBA8, msaa)
@@ -170,7 +171,11 @@ export default function refreshTextures(rt) {
       0
     )
   }
+}
 
+export const refreshTexturesEnv = rt => {
+  const { gl } = rt
+  const ambiance = ambiances[rt.ambiance]
   // Skybox
   if (rt.textures.skybox) {
     gl.deleteTexture(rt.textures.skybox.texture)
@@ -191,7 +196,10 @@ export default function refreshTextures(rt) {
   if (ambiance.envmap && rt.envmap !== 'none') {
     rt.textures.envmap = cubemap(rt, rt.envmap || ambiance.envmap, 3)
   }
+}
 
+export const refreshTexturesMap = rt => {
+  const ambiance = ambiances[rt.ambiance]
   // Texture
   if (rt.textures.mesh) {
     clearListeners(rt.textures.mesh)

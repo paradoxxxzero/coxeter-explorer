@@ -30,6 +30,7 @@ in mat3 target;
 #include vertexouthead
 #include project
 
+#define EDGE
 #define STABLE 0
 
 void main() {
