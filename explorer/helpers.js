@@ -242,6 +242,9 @@ export const attribute = (
     size,
     type,
     update(array = null, start = null, size = null) {
+      if (this.location === -1) {
+        return
+      }
       gl.bindVertexArray(this.mesh.vao)
       gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer)
       if (array === null && start === null && size === null) {
