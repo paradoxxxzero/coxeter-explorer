@@ -99,22 +99,22 @@ export const mesh = (
     {
       name: 'envMap',
       type: '1i',
-      value: 3,
+      value: 1,
     },
     {
       name: 'textureMap',
       type: '1i',
-      value: 4,
+      value: 2,
     },
     {
       name: 'normalMap',
       type: '1i',
-      value: 5,
+      value: 3,
     },
     {
       name: 'displacementMap',
       type: '1i',
-      value: 6,
+      value: 4,
     },
     ...(['vertex', 'edge'].includes(type)
       ? [

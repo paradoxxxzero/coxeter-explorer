@@ -25,6 +25,7 @@ export default function App({ params, updateParams }) {
       return
     }
     const onContextLost = e => {
+      console.error('WebGL context lost', e)
       setRuntime(rt => ({
         ...rt,
         gl: null,
@@ -34,6 +35,7 @@ export default function App({ params, updateParams }) {
       e.preventDefault()
     }
     const onContextRestored = () => {
+      console.warn('WebGL context restored')
       setRuntime(rt => ({
         ...rt,
         ...initializeGl(rt, onContextLost, onContextRestored),

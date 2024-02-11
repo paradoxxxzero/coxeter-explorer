@@ -95,7 +95,7 @@ export default function getPasses(rt) {
       {
         name: 'cubeMap',
         type: '1i',
-        value: 2,
+        value: 0,
       },
       {
         name: 'viewProjectionInverse',

@@ -264,7 +264,6 @@ export const ambiances = Object.fromEntries(
     },
     fabric: {
       background: [1, 1, 1, 1],
-      glow: false,
       texture: 'fabric',
       ambient: 0.4,
       color: ({ word, type, hidden }) => {
@@ -323,7 +322,6 @@ export const ambiances = Object.fromEntries(
     plain: {
       extended: true,
       background: [1, 1, 1, 1],
-      glow: false,
       shading: false,
 
       color: ({ word, type, hidden }) => {

@@ -122,7 +122,6 @@ export const augment = (rt, vertex, fragment, type) => {
   if (rt.curve) {
     config += `#define SEGMENTS\n`
   }
-
   Object.entries({ ...includes, config }).forEach(([key, value]) => {
     vertex = vertex.replace(`#include ${key}`, value)
     fragment = fragment.replace(`#include ${key}`, value)
@@ -164,7 +163,6 @@ export const compileProgram = (
   uniformsDef = []
 ) => {
   const { gl } = rt
-
   const program = gl.createProgram()
 
   const vertexShader = gl.createShader(gl.VERTEX_SHADER)

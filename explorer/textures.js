@@ -184,7 +184,7 @@ export const refreshTexturesEnv = rt => {
   }
 
   if (ambiance.skybox && rt.skybox !== 'none') {
-    rt.textures.skybox = cubemap(rt, rt.skybox || ambiance.skybox, 2)
+    rt.textures.skybox = cubemap(rt, rt.skybox || ambiance.skybox, 0)
   }
   // Reflections
   if (rt.textures.envmap) {
@@ -194,7 +194,7 @@ export const refreshTexturesEnv = rt => {
   }
 
   if (ambiance.envmap && rt.envmap !== 'none') {
-    rt.textures.envmap = cubemap(rt, rt.envmap || ambiance.envmap, 3)
+    rt.textures.envmap = cubemap(rt, rt.envmap || ambiance.envmap, 1)
   }
 }
 
@@ -208,6 +208,6 @@ export const refreshTexturesMap = rt => {
   }
 
   if (ambiance.texture && rt.texture !== 'none') {
-    rt.textures.mesh = texture(rt, rt.texture || ambiance.texture, 4)
+    rt.textures.mesh = texture(rt, rt.texture || ambiance.texture, 2)
   }
 }
