@@ -99,6 +99,7 @@ export const augment = (rt, vertex, fragment, type) => {
       Object.keys(ambiance[type]).includes(key)
         ? ambiance[type][key]
         : ambiance[key]
+
     if (value !== false) {
       config += `#define ${key.toUpperCase()} ${getter(value)}\n`
     }
@@ -447,14 +448,13 @@ export const texture = (rt, name, texi) => {
     listeners: [],
   }
   for (let i = 0; i < parts.length; i++) {
-    gl.activeTexture(gl[`TEXTURE${texi + i}`])
     const part = parts[i]
+
+    gl.activeTexture(gl[`TEXTURE${texi + i}`])
     texture[part] = gl.createTexture()
-    gl.bindTexture(gl.TEXTURE_2D, texture[parts[i]])
+    gl.bindTexture(gl.TEXTURE_2D, texture[part])
     const src = `textures/${name}/${part}.jpg`
     let pixels = imageTextureCache[src] || null
-
-    gl.bindTexture(gl.TEXTURE_2D, texture.texture)
     gl.texImage2D(
       gl.TEXTURE_2D,
       0,
@@ -466,6 +466,8 @@ export const texture = (rt, name, texi) => {
       gl.UNSIGNED_BYTE,
       pixels?.complete ? pixels : null
     )
+    gl.generateMipmap(gl.TEXTURE_2D)
+
     if (!pixels) {
       pixels = new Image()
       pixels.src = src
@@ -488,8 +490,6 @@ export const texture = (rt, name, texi) => {
           gl.UNSIGNED_BYTE,
           pixels
         )
-        // Should not be necessary
-        imageTextureCache[src] = null
 
         gl.generateMipmap(gl.TEXTURE_2D)
         render(rt)
@@ -519,7 +519,6 @@ export const cubemap = (rt, name, texi) => {
   }
 
   gl.bindTexture(gl.TEXTURE_CUBE_MAP, cubeTexture.texture)
-
   const cube = Object.entries({
     px: gl.TEXTURE_CUBE_MAP_POSITIVE_X,
     nx: gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
@@ -541,8 +540,9 @@ export const cubemap = (rt, name, texi) => {
       0,
       gl.RGBA,
       gl.UNSIGNED_BYTE,
-      pixels
+      pixels?.complete ? pixels : null
     )
+    gl.generateMipmap(gl.TEXTURE_CUBE_MAP)
     if (!pixels) {
       pixels = new Image()
       pixels.src = src
@@ -558,6 +558,7 @@ export const cubemap = (rt, name, texi) => {
         gl.activeTexture(gl[`TEXTURE${texi}`])
         gl.bindTexture(gl.TEXTURE_CUBE_MAP, cubeTexture.texture)
         gl.texImage2D(target, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
+
         gl.generateMipmap(gl.TEXTURE_CUBE_MAP)
         render(rt)
       }
@@ -565,7 +566,6 @@ export const cubemap = (rt, name, texi) => {
       cubeTexture.listeners.push([pixels, onImageLoad])
     }
   }
-  gl.generateMipmap(gl.TEXTURE_CUBE_MAP)
   // gl.texParameteri(
   //   gl.TEXTURE_CUBE_MAP,
   //   gl.TEXTURE_MIN_FILTER,
