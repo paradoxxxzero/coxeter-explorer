@@ -11,10 +11,7 @@ const orient = (vertices, space) => {
     subV(vertices[1], vertices[2])
   )
   const d = dot(normal, vertices[2]) * (space.curvature || -1)
-  if (d > 0) {
-    return [vertices[1], vertices[0], vertices[2]]
-  }
-  return vertices
+  return d > 0
 }
 
 export const faceToFrag = (faces, root) => {
@@ -40,7 +37,8 @@ export const faceToFrag = (faces, root) => {
         ) {
           newObjects.push({
             ...face,
-            vertices: orient(face.vertices, root.space),
+            vertices: face.vertices,
+            reverse: orient(face.vertices, root.space),
           })
           continue
         }
@@ -70,16 +68,16 @@ export const faceToFrag = (faces, root) => {
         }
         for (let k = 0; k < face.vertices.length; k++) {
           for (let l = 0; l < centroids.length; l++) {
+            const vertices = [
+              face.vertices[k],
+              face.vertices[(k + 1) % face.vertices.length],
+              centroids[l],
+            ]
+
             const fragment = {
               ...face,
-              vertices: orient(
-                [
-                  face.vertices[k],
-                  face.vertices[(k + 1) % face.vertices.length],
-                  centroids[l],
-                ],
-                root.space
-              ),
+              vertices,
+              reverse: orient(vertices, root.space),
               faceIndex: k,
             }
             newObjects.push(fragment)

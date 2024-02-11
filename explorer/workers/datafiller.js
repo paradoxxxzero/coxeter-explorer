@@ -44,8 +44,12 @@ export const fillGeometry = (dimensions, objects, hidden, lasts) => {
     for (let j = 0; j < allObjects.length; j++) {
       const object = allObjects[j]
 
-      for (let l = 0; l < object.vertices.length; l++) {
-        const vertex = object.vertices[l]
+      const vertices = [...object.vertices]
+      if (object.reverse) {
+        ;[vertices[0], vertices[1]] = [vertices[1], vertices[0]]
+      }
+      for (let l = 0; l < vertices.length; l++) {
+        const vertex = vertices[l]
         for (let m = 0; m < vertex.length; m++) {
           buffers[l][j * arity + m] = vertex[m]
         }
@@ -93,9 +97,16 @@ export const fillColor = (dimensions, objects, ambiance, hidden, lasts) => {
       buffer[j * 3 + 0] = c[0]
       buffer[j * 3 + 1] = c[1]
       buffer[j * 3 + 2] = c[2]
+
       if (tribuffer) {
-        tribuffer[j * 2 + 0] = object.faceIndex
-        tribuffer[j * 2 + 1] = object.faceSize
+        if (object.faceSize === 3) {
+          tribuffer[j * 2 + 0] = 0
+          tribuffer[j * 2 + 1] = 1 / 6
+        } else {
+          const shift = object.reverse ? [1, 0] : [0, 1]
+          tribuffer[j * 2 + 0] = (object.faceIndex + shift[0]) / object.faceSize
+          tribuffer[j * 2 + 1] = (object.faceIndex + shift[1]) / object.faceSize
+        }
       }
     }
     data.push(buffer)

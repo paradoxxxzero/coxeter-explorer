@@ -10,18 +10,11 @@ vUv.y = 2. * abs(vUv.y * repeat - floor(vUv.y * repeat + .5));
 #endif
 
 #ifdef FACE
-if(triangulation.t == 3.) {
-vUv.y = .5 - .5 * uv.x + uv.y;
-} else {
-float o = TAU / triangulation.t;
-float n = o * (triangulation.s);
-float m = o * (triangulation.s + 1.);
-vec2 u = vec2(cos(n), sin(n));
-vec2 v = vec2(cos(m), sin(m));
+vec2 thetas = TAU * triangulation;
+vec2 u = vec2(cos(thetas.x), sin(thetas.x));
+vec2 v = vec2(cos(thetas.y), sin(thetas.y));
 vec2 p = uv.x * u + uv.y * (v - u);
-vUv.x = .5 * (p.x + 1.);
-vUv.y = .5 * (p.y + 1.);
-}
+vUv = .5 * (p + 1.);
 #endif
 #endif
 
