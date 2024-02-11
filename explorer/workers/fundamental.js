@@ -83,11 +83,15 @@ export const getFundamentalObjects = (shape, root) => {
           for (let k = j + 1; k < simplex.length; k++) {
             const faceHash = hashV([simplex[i], simplex[j], simplex[k]])
             if (!root.hashes.face.has(faceHash)) {
+              const vertices = [simplex[i], simplex[j], simplex[k]]
+              if (word.length % 2 === 1) {
+                vertices.reverse()
+              }
               faces.push({
                 key: 'face',
                 word,
                 faceSize: 3,
-                vertices: [simplex[i], simplex[j], simplex[k]],
+                vertices,
               })
               root.hashes.face.add(faceHash)
             }

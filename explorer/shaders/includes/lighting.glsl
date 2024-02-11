@@ -34,15 +34,16 @@ vec3 hueRotate(vec3 color, float hue) {
   return hslToRgb(hsl);
 }
 
-mat3 getTangentFrame(vec3 eye_pos, vec3 surf_norm, vec2 uv) {
+#if TEXTURE == 1
+mat3 getTangentFrame(vec3 eye_pos, vec3 normal, vec2 uv) {
 	// Normal Mapping Without Precomputed Tangents
 	// http://www.thetenthplanet.de/archives/1180
-  vec3 q0 = dFdx(eye_pos.xyz);
-  vec3 q1 = dFdy(eye_pos.xyz);
-  vec2 st0 = dFdx(uv.st);
-  vec2 st1 = dFdy(uv.st);
+  vec3 q0 = dFdx(eye_pos);
+  vec3 q1 = dFdy(eye_pos);
+  vec2 st0 = dFdx(uv);
+  vec2 st1 = dFdy(uv);
 
-  vec3 N = surf_norm; // normalized
+  vec3 N = normal;
 
   vec3 q1perp = cross(q1, N);
   vec3 q0perp = cross(N, q0);
@@ -55,6 +56,7 @@ mat3 getTangentFrame(vec3 eye_pos, vec3 surf_norm, vec2 uv) {
 
   return mat3(T * scale, B * scale, N);
 }
+#endif
 
 float getDiffuse(in vec3 normal, in vec3 lightDirection, in vec3 eyeDirection, inout vec4 color) {
   #ifdef DIFFUSE
