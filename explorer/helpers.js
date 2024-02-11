@@ -186,6 +186,13 @@ export const compileProgram = (
     fragmentShader,
     uniformsDef,
     recompile(rt, newVertex, newFragment, uniforms = null) {
+      // gl.deleteShader(this.vertexShader)
+      // gl.deleteShader(this.fragmentShader)
+      // gl.deleteProgram(this.program)
+
+      // this.program = gl.createProgram()
+      // this.vertexShader = gl.createShader(gl.VERTEX_SHADER)
+      // this.fragmentShader = gl.createShader(gl.FRAGMENT_SHADER)
       if (compileShader(rt, name, 'vertex', newVertex, this.vertexShader)) {
         return
       }
@@ -194,6 +201,9 @@ export const compileProgram = (
       ) {
         return
       }
+      // gl.attachShader(this.program, this.vertexShader)
+      // gl.attachShader(this.program, this.fragmentShader)
+
       if (linkProgram(rt, name, this.program)) {
         return
       }
@@ -294,6 +304,9 @@ export const attribute = (
         gl.vertexAttribDivisor(this.location + i, this.instances || 0)
       }
       this.update()
+    },
+    refresh() {
+      this.extend(this.size, this.data)
     },
     get() {
       gl.bindVertexArray(this.mesh.vao)

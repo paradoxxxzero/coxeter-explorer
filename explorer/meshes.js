@@ -153,6 +153,9 @@ export const mesh = (
         this.type
       )
       this.recompile(rt, newVertex, newFragment, uniforms(rt))
+      Object.entries(this.attributes).forEach(([name, attr]) => {
+        attr.refresh()
+      })
     },
     changeArity(arity) {
       arity = getArity(arity)
