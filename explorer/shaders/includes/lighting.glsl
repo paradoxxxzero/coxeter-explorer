@@ -28,6 +28,12 @@ vec3 hslToRgb(vec3 c) {
   return c.z + c.y * (rgb - .5) * (1. - abs(2. * c.z - 1.));
 }
 
+vec3 hueRotate(vec3 color, float hue) {
+  vec3 hsl = rgbToHsl(color);
+  hsl.x += hue;
+  return hslToRgb(hsl);
+}
+
 mat3 getTangentFrame(vec3 eye_pos, vec3 surf_norm, vec2 uv) {
 	// Normal Mapping Without Precomputed Tangents
 	// http://www.thetenthplanet.de/archives/1180

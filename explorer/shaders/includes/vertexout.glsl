@@ -10,16 +10,6 @@ vUv.y = 2. * abs(vUv.y * repeat - floor(vUv.y * repeat + .5));
 #endif
 
 #ifdef FACE
-// Make sure the normal is pointing away from the center
-float d = dot(vPosition, vNormal);
-if(d < PI / 4.) {
-norm = - norm;
-vNormal = - vNormal;
-}
-
-// vUv.y = (clamp(vUv.y * 1. / (vUv.x), 0., 1.) + triangulation.s) / triangulation.t;
-// vUv.x = sin(vUv.x * ETA) * .5;
-
 if(triangulation.t == 3.) {
 vUv.y = .5 - .5 * uv.x + uv.y;
 } else {

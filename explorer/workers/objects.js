@@ -1,9 +1,21 @@
 import { types } from '../../statics'
 import { abs } from '../math'
-import { addV, cross, mulV } from '../math/matrix'
+import { addV, cross, dot, mulV, subV } from '../math/matrix'
 import { getBaseObjects } from './base'
 import { getDualObjects } from './dual'
 import { getFundamentalObjects } from './fundamental'
+
+const orient = (vertices, space) => {
+  const normal = cross(
+    subV(vertices[0], vertices[2]),
+    subV(vertices[1], vertices[2])
+  )
+  const d = dot(normal, vertices[2]) * (space.curvature || -1)
+  if (d > 0) {
+    return [vertices[1], vertices[0], vertices[2]]
+  }
+  return vertices
+}
 
 export const faceToFrag = (faces, root) => {
   const parts = {
@@ -26,7 +38,10 @@ export const faceToFrag = (faces, root) => {
             .reduce((a, b) => addV(a, b), new Array(dimensions).fill(0))
             .every(a => abs(a) < 1e-12)
         ) {
-          newObjects.push(face)
+          newObjects.push({
+            ...face,
+            vertices: orient(face.vertices, root.space),
+          })
           continue
         }
 
@@ -57,11 +72,14 @@ export const faceToFrag = (faces, root) => {
           for (let l = 0; l < centroids.length; l++) {
             const fragment = {
               ...face,
-              vertices: [
-                face.vertices[k],
-                face.vertices[(k + 1) % face.vertices.length],
-                centroids[l],
-              ],
+              vertices: orient(
+                [
+                  face.vertices[k],
+                  face.vertices[(k + 1) % face.vertices.length],
+                  centroids[l],
+                ],
+                root.space
+              ),
               faceIndex: k,
             }
             newObjects.push(fragment)
