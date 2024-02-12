@@ -245,6 +245,7 @@ export const ambiances = Object.fromEntries(
       },
 
       transparency: 'oit',
+      tesselation: 'full',
       color: ({ word, faceIndex }) => {
         const l = word
           .split('')
@@ -326,6 +327,7 @@ export const ambiances = Object.fromEntries(
       ambient: 0.3,
       shininess: 32,
       reversed: true,
+      tesselation: 'full',
 
       color: ({ parity }) => (parity ? [0, 0, 0] : [1, 1, 1]),
     },

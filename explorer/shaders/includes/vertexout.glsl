@@ -14,12 +14,15 @@ vec2 thetas = TAU * triangulation;
 vec2 u = vec2(cos(thetas.x), sin(thetas.x));
 vec2 v = vec2(cos(thetas.y), sin(thetas.y));
 
+#if TESSELATION == 1
+// We have right triangles so we need to adjust the u and v vectors
 float f = cos(thetas.y - thetas.x);
 if(gl_InstanceID % 2 == (sign(thetas.y - thetas.x) > 0. ? 1 : 0)) {
 u *= f;
 } else {
 v *= f;
 }
+#endif
 
 vec2 p = uv.x * u + uv.y * (v - u);
 vUv = .5 * (p + 1.);

@@ -9,6 +9,7 @@ import {
 import { dot, multiplyVector, transpose } from '../math/matrix'
 import { mirrorValue } from '../mirrors'
 import Shaper from '../workers/shape.worker?worker'
+import { ambiances } from '../ambiances'
 
 export const useProcess = (runtime, setRuntime) => {
   useEffect(() => {
@@ -149,6 +150,30 @@ export const useProcess = (runtime, setRuntime) => {
         return runtime
       }
       runtime.shaper.postMessage({
+        type: 'tesselate',
+        section: runtime.crosssection ? runtime.section : null,
+        ambiance: runtime.ambiance,
+        hidden: runtime.hidden,
+      })
+      return {
+        ...runtime,
+        processing: true,
+      }
+    })
+  }, [
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    ambiances[runtime.ambiance].tesselation,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    runtime.crosssection ? runtime.section : null,
+    setRuntime,
+  ])
+
+  useEffect(() => {
+    setRuntime(runtime => {
+      if (runtime.iteration < 0) {
+        return runtime
+      }
+      runtime.shaper.postMessage({
         type: 'paint',
         ambiance: runtime.ambiance,
         hidden: runtime.hidden,
@@ -159,25 +184,6 @@ export const useProcess = (runtime, setRuntime) => {
       }
     })
   }, [runtime.ambiance, setRuntime])
-
-  useEffect(() => {
-    setRuntime(runtime => {
-      if (runtime.iteration < 0) {
-        return runtime
-      }
-      runtime.shaper.postMessage({
-        type: 'section',
-        section: runtime.crosssection ? runtime.section : null,
-        ambiance: runtime.ambiance,
-        hidden: runtime.hidden,
-      })
-      return {
-        ...runtime,
-        processing: true,
-      }
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runtime.crosssection ? runtime.section : null, setRuntime])
 
   useEffect(() => {
     setRuntime(runtime => {

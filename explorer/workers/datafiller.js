@@ -97,14 +97,14 @@ export const fillColor = (dimensions, objects, ambiance, hidden, lasts) => {
       buffer[j * 3 + 2] = c[2]
 
       if (tribuffer) {
-        // if (object.faceSize === 3) {
-        //   tribuffer[j * 2 + 0] = 0
-        //   tribuffer[j * 2 + 1] = 1 / 6
-        // } else {
-        const shift = object.reverse ? [1, 0] : [0, 1]
-        tribuffer[j * 2 + 0] = (object.faceIndex + shift[0]) / object.faceSize
-        tribuffer[j * 2 + 1] = (object.faceIndex + shift[1]) / object.faceSize
-        // }
+        if (ambiance.tesselation !== 'full' && object.faceSize === 3) {
+          tribuffer[j * 2 + 0] = 0
+          tribuffer[j * 2 + 1] = 1 / 6
+        } else {
+          const shift = object.reverse ? [1, 0] : [0, 1]
+          tribuffer[j * 2 + 0] = (object.faceIndex + shift[0]) / object.faceSize
+          tribuffer[j * 2 + 1] = (object.faceIndex + shift[1]) / object.faceSize
+        }
       }
     }
     data.push(buffer)

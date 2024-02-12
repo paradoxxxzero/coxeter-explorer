@@ -1,4 +1,5 @@
 import { types } from '../../statics'
+import { ambiances } from '../ambiances'
 import { getShape } from '../math/shape'
 import { isCompound, isDual } from '../mirrors'
 import { crossSection } from './crossSection'
@@ -97,15 +98,15 @@ onmessage = ({
       return
     }
 
-    if (type === 'section') {
+    if (type === 'tesselate') {
       if (!fullRawObjects.length) {
         return
       }
-      let objects = fullRawObjects
+      let objects = [...fullRawObjects]
       if (section !== null) {
         objects = crossSection(objects, section, root)
       }
-      objects[2] = faceToFrag(objects[2], root)
+      objects[2] = faceToFrag(objects[2], root, ambiances[ambiance].tesselation)
       fullObjects = objects
       const geometry = fillGeometry(shape.dimensions, objects, hidden)
       const color = fillColor(shape.dimensions, objects, ambiance, hidden)
@@ -156,22 +157,22 @@ onmessage = ({
       section,
       root
     )
-    if (section !== null) {
-      for (let i = 0; i < objects.length; i++) {
-        const obj = objects[i]
-        if (!fullRawObjects[i]) {
-          fullRawObjects[i] = {
-            objects: [],
-            partials: [],
-          }
+    for (let i = 0; i < objects.length; i++) {
+      const obj = objects[i]
+      if (!fullRawObjects[i]) {
+        fullRawObjects[i] = {
+          objects: [],
+          partials: [],
         }
-        fullRawObjects[i].objects.push(...obj.objects)
-        fullRawObjects[i].partials = obj.partials
       }
+      fullRawObjects[i].objects.push(...obj.objects)
+      fullRawObjects[i].partials = obj.partials
+    }
+    if (section !== null) {
       objects = crossSection(objects, section, root)
     }
 
-    objects[2] = faceToFrag(objects[2], root)
+    objects[2] = faceToFrag(objects[2], root, ambiances[ambiance].tesselation)
 
     for (let i = 0; i < objects.length; i++) {
       const obj = objects[i]

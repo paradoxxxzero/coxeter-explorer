@@ -93,6 +93,7 @@ export const augment = (rt, vertex, fragment, type) => {
     envmap: v => (v ? true : null),
     texture: v => (v ? true : null),
     reversed: v => (v ? true : null),
+    tesselation: v => (v === 'full' ? 1 : 0),
   }
   Object.entries(ambienceDefines).forEach(([key, getter]) => {
     const value =
