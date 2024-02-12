@@ -5,6 +5,9 @@ import { getBaseObjects } from './base'
 import { getDualObjects } from './dual'
 import { getFundamentalObjects } from './fundamental'
 
+const division = 'half'
+// const division = 'normal'
+
 const orient = (vertices, space) => {
   const normal = cross(
     subV(vertices[0], vertices[2]),
@@ -30,6 +33,7 @@ export const faceToFrag = (faces, root) => {
         const dimensions = face.vertices[0].length
 
         if (
+          division === 'normal' &&
           face.vertices.length === 3 &&
           !face.vertices
             .reduce((a, b) => addV(a, b), new Array(dimensions).fill(0))
@@ -68,19 +72,34 @@ export const faceToFrag = (faces, root) => {
         }
         for (let k = 0; k < face.vertices.length; k++) {
           for (let l = 0; l < centroids.length; l++) {
-            const vertices = [
-              face.vertices[k],
-              face.vertices[(k + 1) % face.vertices.length],
-              centroids[l],
-            ]
+            const p = face.vertices[k]
+            const t = face.vertices[(k + 1) % face.vertices.length]
+            const c = centroids[l]
+            if (division === 'normal') {
+              newObjects.push({
+                ...face,
+                vertices: [p, t, c],
+                reverse: orient([p, t, c], root.space),
+                faceIndex: k,
+              })
+            } else {
+              const m = mulV(addV(p, t), 0.5)
 
-            const fragment = {
-              ...face,
-              vertices,
-              reverse: orient(vertices, root.space),
-              faceIndex: k,
+              newObjects.push({
+                ...face,
+                vertices: [p, m, c],
+                reverse: orient([p, m, c], root.space),
+                faceIndex: k * 2,
+                faceSize: face.faceSize * 2,
+              })
+              newObjects.push({
+                ...face,
+                vertices: [m, t, c],
+                reverse: orient([m, t, c], root.space),
+                faceIndex: k * 2 + 1,
+                faceSize: face.faceSize * 2,
+              })
             }
-            newObjects.push(fragment)
           }
         }
       }

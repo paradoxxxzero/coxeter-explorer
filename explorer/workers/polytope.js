@@ -144,6 +144,21 @@ export const getPolytope = (batch, shape, tcParams, section, root) => {
                 }
               : {}),
           })
+          if (subshape.dimensions === 2) {
+            tcParam.parity = 0
+            if (subshape.mirrors[1] && !subshape.mirrors[0]) {
+              tcParam.parity = 1
+            }
+            const gens = Object.values(subshape.transforms)
+              .filter(t => t.length === 1)
+              .map(([c]) => c)
+              .sort()
+            if (gens.length === 2) {
+              // if ((gens[1] + 1) % shape.dimensions === gens[0]) {
+              tcParam.parity += 1 + (gens[1] - gens[0])
+              tcParam.parity = tcParam.parity % 2
+            }
+          }
         }
       }
 

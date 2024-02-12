@@ -291,6 +291,7 @@ export const getDualObjects = (
         vertices: dualVertices,
         dual: true,
         faceSize: dualVertices.length,
+        parity: 0,
         partial,
       }
       if (partial) {

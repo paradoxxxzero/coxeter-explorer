@@ -245,14 +245,14 @@ export const ambiances = Object.fromEntries(
       },
 
       transparency: 'oit',
-      color: ({ word, idx, type }) => {
+      color: ({ word, faceIndex }) => {
         const l = word
           .split('')
           .map(c => atoi(c))
           .reduce((a, b) => a + b, 0)
 
         const color = [...catpuccin[l % catpuccin.length]]
-        if (idx % 2) {
+        if (faceIndex % 2 === word.length % 2) {
           color[2] *= 0.5
         }
         return hsl(...color)
@@ -318,6 +318,16 @@ export const ambiances = Object.fromEntries(
         type !== 'vertex'
           ? hsl((subShape * 0.21 + word.length * 0.03) % 1, 1, 0.8)
           : [1, 1, 1],
+    },
+    checkerboard: {
+      background: [1, 1, 1, 1],
+      diffuse: 'oren-nayar',
+      specular: 'cook-torrance',
+      ambient: 0.3,
+      shininess: 32,
+      reversed: true,
+
+      color: ({ parity }) => (parity ? [0, 0, 0] : [1, 1, 1]),
     },
     plain: {
       extended: true,

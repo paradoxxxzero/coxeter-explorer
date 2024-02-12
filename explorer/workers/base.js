@@ -155,6 +155,7 @@ export const getBaseObjects = (rank, cached, root) => {
         vertices: faceVertices,
         faceIndex: 0,
         faceSize: faceVertices.length,
+        parity: cached.parity,
         partial,
       }
       if (partial) {

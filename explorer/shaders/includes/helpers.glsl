@@ -77,6 +77,8 @@ vecN nmix(in vecN a, in vecN b, in float t) {
 }
 
 vecN trix(in vecN a, in vecN b, in vecN c, in vec2 t) {
+  vecN x = a;
+
   #if CURVATURE < 0
   float lena = len(a);
   float lenb = len(b);
@@ -88,8 +90,8 @@ vecN trix(in vecN a, in vecN b, in vecN c, in vec2 t) {
   }
   if(lena > idealBound && lenc < idealBound) {
     vecN t = a;
-    a = c;
-    c = t;
+    a = c - b;
+    c = t + b;
   }
 
   float order = getOrder(max(max(lena, lenb), lenc));
@@ -101,5 +103,7 @@ vecN trix(in vecN a, in vecN b, in vecN c, in vec2 t) {
   #endif
 
   // a + (b - a) * t.x + (c - b) * t.y
+  // a (1 - t.x) + c + t.y + b (t.x - t.y)
+  // FIXME
   return nadd(a, nadd(nmul(nsub(b, a), t.x), nmul(nsub(c, b), t.y)));
 }

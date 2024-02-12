@@ -1,4 +1,4 @@
-#if TEXTURE == 1
+#ifdef TEXTURE
 uniform sampler2D displacementMap;
 #endif
 

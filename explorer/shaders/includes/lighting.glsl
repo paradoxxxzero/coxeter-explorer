@@ -1,8 +1,8 @@
-#if ENVMAP == 1
+#ifdef ENVMAP
 uniform samplerCube envMap;
 #endif
 
-#if TEXTURE == 1
+#ifdef TEXTURE
 uniform sampler2D textureMap;
 uniform sampler2D normalMap;
 #endif
@@ -34,7 +34,7 @@ vec3 hueRotate(vec3 color, float hue) {
   return hslToRgb(hsl);
 }
 
-#if TEXTURE == 1
+#ifdef TEXTURE
 mat3 getTangentFrame(vec3 eye_pos, vec3 normal, vec2 uv) {
 	// Normal Mapping Without Precomputed Tangents
 	// http://www.thetenthplanet.de/archives/1180
@@ -69,9 +69,9 @@ float getDiffuse(in vec3 normal, in vec3 lightDirection, in vec3 eyeDirection, i
 
   const float albedo = 1.;
 
-  float LdotV = dot(lightDirection, eyeDirection);
-  float NdotL = dot(lightDirection, normal);
-  float NdotV = dot(normal, eyeDirection);
+  float LdotV = abs(dot(lightDirection, eyeDirection));
+  float NdotL = abs(dot(lightDirection, normal));
+  float NdotV = abs(dot(normal, eyeDirection));
 
   float s = LdotV - NdotL * NdotV;
   float t = mix(1.0, max(NdotL, NdotV), step(0.0, s));
@@ -150,11 +150,17 @@ vec4 light(vec3 position, vec3 normal, vec3 rgb, vec2 uv) {
   vec3 eyeDirection = eye - position;
   eyeDirection = normalize(eyeDirection);
 
-  #if ENVMAP == 1
+  #ifdef REVERSED
+  if(dot(eyeDirection, normal) < 0.) {
+    color.xyz = vec3(1.) - rgb;
+  }
+  #endif
+
+  #ifdef ENVMAP
   vec4 envColor = texture(envMap, reflect(-eyeDirection, normal));
   color = vec4(mix(color.xyz, envColor.xyz, metalness), color.a);
   #endif
-  #if TEXTURE == 1
+  #ifdef TEXTURE
   vec4 texColor = texture(textureMap, uv);
   // Get color hue
   vec3 hsl = rgbToHsl(color.rgb);

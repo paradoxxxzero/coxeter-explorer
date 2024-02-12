@@ -77,19 +77,17 @@ export const fillColor = (dimensions, objects, ambiance, hidden, lasts) => {
     const buffer = new Float32Array(allObjects.length * 3)
 
     const tribuffer = i === 2 ? new Float32Array(allObjects.length * 2) : null
-
     for (let j = 0; j < allObjects.length; j++) {
       const object = allObjects[j]
-
       const c = ambiances[ambiance].color({
         word: object.word,
         key: object.key,
         subShape: object.subShape,
         faceIndex: object.faceIndex,
         faceSize: object.faceSize,
+        parity: (object.faceIndex + object.word.length + object.parity) % 2,
         dimensions: dimensions,
         hidden,
-        idx: j,
         size: allObjects.length,
         type: types[i],
         dual: !!object.dual,
@@ -99,14 +97,14 @@ export const fillColor = (dimensions, objects, ambiance, hidden, lasts) => {
       buffer[j * 3 + 2] = c[2]
 
       if (tribuffer) {
-        if (object.faceSize === 3) {
-          tribuffer[j * 2 + 0] = 0
-          tribuffer[j * 2 + 1] = 1 / 6
-        } else {
-          const shift = object.reverse ? [1, 0] : [0, 1]
-          tribuffer[j * 2 + 0] = (object.faceIndex + shift[0]) / object.faceSize
-          tribuffer[j * 2 + 1] = (object.faceIndex + shift[1]) / object.faceSize
-        }
+        // if (object.faceSize === 3) {
+        //   tribuffer[j * 2 + 0] = 0
+        //   tribuffer[j * 2 + 1] = 1 / 6
+        // } else {
+        const shift = object.reverse ? [1, 0] : [0, 1]
+        tribuffer[j * 2 + 0] = (object.faceIndex + shift[0]) / object.faceSize
+        tribuffer[j * 2 + 1] = (object.faceIndex + shift[1]) / object.faceSize
+        // }
       }
     }
     data.push(buffer)

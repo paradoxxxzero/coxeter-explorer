@@ -90,8 +90,9 @@ export const augment = (rt, vertex, fragment, type) => {
     roughness: v => float(v),
     opacity: v => float(v),
     gouraud: v => '',
-    envmap: v => (v ? 1 : 0),
-    texture: v => (v ? 1 : 0),
+    envmap: v => (v ? true : null),
+    texture: v => (v ? true : null),
+    reversed: v => (v ? true : null),
   }
   Object.entries(ambienceDefines).forEach(([key, getter]) => {
     const value =
@@ -101,8 +102,15 @@ export const augment = (rt, vertex, fragment, type) => {
         : ambiance[key]
 
     if (value !== false) {
-      config += `#define ${key.toUpperCase()} ${getter(value)}\n`
+      let defval = getter(value)
+      if (defval === true) {
+        defval = ''
+      }
+      if (defval !== null) {
+        config += `#define ${key.toUpperCase()} ${defval}\n`
+      }
     }
+
     if (key === 'opacity' && value < 1) {
       ambiance.transparent[type] = true
       config += `#define TRANSPARENT\n`

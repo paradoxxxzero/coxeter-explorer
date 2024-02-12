@@ -35,7 +35,7 @@ void main() {
 
   vec3 proj = xproject(pos);
   vec3 norm = normal;
-  #if (TEXTURE == 1 || (defined(SHADING) && SHADING == 3)) && DIMENSIONS >= 2
+  #if (defined(TEXTURE) || (defined(SHADING) && SHADING == 3)) && DIMENSIONS >= 2
   vecN normN = multiplyMatrix(matrix, vecNFromVec3(normal));
   norm = normalize(pureproject(normN));
   #endif

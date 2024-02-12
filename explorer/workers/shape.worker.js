@@ -105,10 +105,7 @@ onmessage = ({
       if (section !== null) {
         objects = crossSection(objects, section, root)
       }
-      if (!root.fundamental) {
-        // Fundamental is only triangles
-        objects[2] = faceToFrag(objects[2], root)
-      }
+      objects[2] = faceToFrag(objects[2], root)
       fullObjects = objects
       const geometry = fillGeometry(shape.dimensions, objects, hidden)
       const color = fillColor(shape.dimensions, objects, ambiance, hidden)
@@ -174,10 +171,7 @@ onmessage = ({
       objects = crossSection(objects, section, root)
     }
 
-    if (!root.fundamental) {
-      // Fundamental is only triangles
-      objects[2] = faceToFrag(objects[2], root)
-    }
+    objects[2] = faceToFrag(objects[2], root)
 
     for (let i = 0; i < objects.length; i++) {
       const obj = objects[i]

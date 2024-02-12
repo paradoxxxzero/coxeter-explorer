@@ -3,7 +3,7 @@ vPosition = proj;
 vNormal = norm;
 vUv = uv;
 
-#if (TEXTURE == 1 || (defined(SHADING) && SHADING > 0)) && DIMENSIONS >= 2
+#if (defined(TEXTURE) || (defined(SHADING) && SHADING > 0)) && DIMENSIONS >= 2
 #ifdef EDGE
 const float repeat = 4.;
 vUv.y = 2. * abs(vUv.y * repeat - floor(vUv.y * repeat + .5));
@@ -13,12 +13,20 @@ vUv.y = 2. * abs(vUv.y * repeat - floor(vUv.y * repeat + .5));
 vec2 thetas = TAU * triangulation;
 vec2 u = vec2(cos(thetas.x), sin(thetas.x));
 vec2 v = vec2(cos(thetas.y), sin(thetas.y));
+
+float f = cos(thetas.y - thetas.x);
+if(gl_InstanceID % 2 == (sign(thetas.y - thetas.x) > 0. ? 1 : 0)) {
+u *= f;
+} else {
+v *= f;
+}
+
 vec2 p = uv.x * u + uv.y * (v - u);
 vUv = .5 * (p + 1.);
 #endif
 #endif
 
-#if TEXTURE == 1
+#ifdef TEXTURE
 proj += norm * texture(displacementMap, vUv).r * .06;
 #endif
 #endif

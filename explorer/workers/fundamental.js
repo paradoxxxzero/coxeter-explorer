@@ -90,6 +90,8 @@ export const getFundamentalObjects = (shape, root) => {
               faces.push({
                 key: 'face',
                 word,
+                parity: 0,
+                faceIndex: 0,
                 faceSize: 3,
                 vertices,
               })

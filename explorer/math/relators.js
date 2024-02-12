@@ -68,7 +68,7 @@ export const getRelators = (transforms, coxeter) => {
     if (transform1.length === 1) {
       const reflection1 = transform1[0]
       for (let j = 0; j < reflectionsEntries.length; j++) {
-        const [gen2, reflection2] = reflectionsEntries[j]
+        const [gen2, [reflection2]] = reflectionsEntries[j]
         // Only add once
         if (reflection2 > reflection1) {
           const m = coxeter[reflection1][reflection2]
