@@ -213,6 +213,16 @@ export const useProcess = (runtime, setRuntime) => {
     if (!runtime.shaper) {
       return
     }
+    const handleError = error => {
+      console.error(error)
+      setRuntime(runtime => ({
+        ...runtime,
+        error,
+        processing: false,
+        done: true,
+        iteration: 0,
+      }))
+    }
     const handleShape = ({ data }) => {
       if (!data.error) {
         setRuntime(runtime => {
@@ -239,18 +249,8 @@ export const useProcess = (runtime, setRuntime) => {
           return newRuntime
         })
       } else {
-        console.error(data.error)
+        handleError(data.error)
       }
-    }
-    const handleError = error => {
-      console.error(error)
-      setRuntime(runtime => ({
-        ...runtime,
-        error,
-        processing: false,
-        done: true,
-        iteration: 0,
-      }))
     }
 
     runtime.shaper.addEventListener('message', handleShape)

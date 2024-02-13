@@ -19,6 +19,7 @@ export default function App({ params, updateParams }) {
     paused: false,
     error: null,
   })
+  const [displayStack, setDisplayStack] = useState(false)
 
   useEffect(() => {
     if (!runtime.gl && runtime.error) {
@@ -29,7 +30,7 @@ export default function App({ params, updateParams }) {
       setRuntime(rt => ({
         ...rt,
         gl: null,
-        error: 'WebGL context lost',
+        error: new Error('WebGL context lost'),
       }))
 
       e.preventDefault()
@@ -53,7 +54,7 @@ export default function App({ params, updateParams }) {
         console.error(e)
         return {
           ...rt,
-          error: e.message,
+          error: e,
         }
       }
     })
@@ -94,25 +95,44 @@ export default function App({ params, updateParams }) {
     [setRotations]
   )
 
-  return runtime.gl ? (
+  return (
     <>
-      <UI
-        runtime={runtime}
-        params={params}
-        rotations={rotations}
-        setRuntime={setRuntime}
-        updateRotations={updateRotations}
-        updateParams={updateParams}
-      />
-      <Runtime
-        runtime={runtime}
-        rotations={rotations}
-        setRuntime={setRuntime}
-        updateRotations={updateRotations}
-        updateParams={updateParams}
-      />
+      {runtime.error ? (
+        <aside className="global-error">
+          <div>
+            {runtime.error.toString()}{' '}
+            <button
+              onClick={() => setDisplayStack(displayStack => !displayStack)}
+            >
+              {displayStack ? 'Hide' : 'Show'} stack
+            </button>
+          </div>
+          {runtime.error.stack && displayStack ? (
+            <pre>{runtime.error.stack}</pre>
+          ) : null}
+        </aside>
+      ) : null}
+      {runtime.gl ? (
+        <>
+          <UI
+            runtime={runtime}
+            params={params}
+            rotations={rotations}
+            setRuntime={setRuntime}
+            updateRotations={updateRotations}
+            updateParams={updateParams}
+          />
+          <Runtime
+            runtime={runtime}
+            rotations={rotations}
+            setRuntime={setRuntime}
+            updateRotations={updateRotations}
+            updateParams={updateParams}
+          />
+        </>
+      ) : null}
     </>
-  ) : null
+  )
 }
 
 if (import.meta.hot) {

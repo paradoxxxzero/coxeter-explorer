@@ -18,11 +18,10 @@ export default function Runtime({
 
   const handleError = useCallback(
     type => error => {
+      error.type = type
       setRuntime(runtime => ({
         ...runtime,
-        error: {
-          [type]: error.message,
-        },
+        error,
       }))
     },
     [setRuntime]

@@ -77,6 +77,18 @@ select option {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
+.global-error {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: rgba(255, 0, 0, 0.5);
+  color: white;
+  padding: 0.5em;
+  z-index: 1000;
+  text-align: center;
+}
+
 .preset-button {
   padding: 0.5em;
   font-size: 3em;

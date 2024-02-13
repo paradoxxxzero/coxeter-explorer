@@ -218,7 +218,7 @@ onmessage = ({
         .filter(a => a)
         .map(a => a.buffer)
     )
-  } catch (e) {
-    postMessage({ error: e.message })
+  } catch (error) {
+    postMessage({ error })
   }
 }
