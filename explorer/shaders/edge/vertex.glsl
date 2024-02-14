@@ -78,6 +78,13 @@ void main() {
   // Rodrigues' rotation formula: rotate norm around tangent by angle r:
   float r = uv.x * TAU;
   norm = normalize(norm * cos(r) + cross(tangent, norm) * sin(r));
-  proj = inflate(proj, pos, norm, thickness);
+
+  float size = thickness;
+  #ifdef TEXTURE
+  if(thickness > 45.) {
+    size += texture(displacementMap, uv).r;
+  }
+  #endif
+  proj = inflate(proj, pos, norm, size);
   #include vertexout
 }

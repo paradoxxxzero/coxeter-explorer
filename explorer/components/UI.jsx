@@ -593,16 +593,14 @@ export default function UI({
                   )}
                 </div>
               ) : null}
-              {runtime.space?.curvature ? (
-                <label className="boolean-label">
-                  Normalize
-                  <Boolean
-                    name="curve"
-                    value={params.curve}
-                    onChange={handleChange}
-                  />
-                </label>
-              ) : null}
+              <label className="boolean-label">
+                Normalize
+                <Boolean
+                  name="curve"
+                  value={params.curve}
+                  onChange={handleChange}
+                />
+              </label>
               {!runtime.hidden.includes('vertex') && (
                 <Number
                   name="sizeVertex"

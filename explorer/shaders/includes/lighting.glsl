@@ -3,14 +3,13 @@ uniform samplerCube envMap;
 #endif
 
 #ifdef TEXTURE
-uniform sampler2D textureMap;
+uniform sampler2D albedoMap;
 uniform sampler2D normalMap;
+uniform sampler2D armMap;
 #endif
 
 const float ambient = AMBIENT;
 const float shininess = SHININESS;
-const float roughness = ROUGHNESS;
-const float metalness = METALNESS;
 const float opacity = OPACITY;
 
 vec3 rgbToHsl(vec3 c) {
@@ -58,7 +57,7 @@ mat3 getTangentFrame(vec3 eye_pos, vec3 normal, vec2 uv) {
 }
 #endif
 
-float getDiffuse(in vec3 normal, in vec3 lightDirection, in vec3 eyeDirection, inout vec4 color) {
+float getDiffuse(in vec3 normal, in vec2 uv, in vec3 lightDirection, in vec3 eyeDirection, inout vec4 color) {
   #ifdef DIFFUSE
   // Diffuse
   #if DIFFUSE == 0
@@ -75,6 +74,11 @@ float getDiffuse(in vec3 normal, in vec3 lightDirection, in vec3 eyeDirection, i
 
   float s = LdotV - NdotL * NdotV;
   float t = mix(1.0, max(NdotL, NdotV), step(0.0, s));
+  #ifdef TEXTURE
+  float roughness = texture(armMap, uv).g;
+  #else
+  float roughness = ROUGHNESS;
+  #endif
   float sigma2 = roughness * roughness;
   float A = 1.0 + sigma2 * (albedo / (sigma2 + 0.13) + 0.5 / (sigma2 + 0.33));
   float B = 0.45 * sigma2 / (sigma2 + 0.09);
@@ -104,7 +108,7 @@ float getDiffuse(in vec3 normal, in vec3 lightDirection, in vec3 eyeDirection, i
   return 0.;
 }
 
-float getSpecular(in vec3 normal, in vec3 lightDirection, in vec3 eyeDirection, in vec4 color) {
+float getSpecular(in vec3 normal, in vec2 uv, in vec3 lightDirection, in vec3 eyeDirection, in vec4 color) {
   #ifdef SPECULAR
   #if SPECULAR == 0
   // Phong
@@ -126,7 +130,13 @@ float getSpecular(in vec3 normal, in vec3 lightDirection, in vec3 eyeDirection, 
   float NdotH = dot(normal, halfVector);
   float VdotH = dot(eyeDirection, halfVector);
 
+  #ifdef TEXTURE
+  float roughness = texture(armMap, uv).g;
+  #else
+  float roughness = ROUGHNESS;
+  #endif
   float sigma2 = roughness * roughness;
+
   float cos2alpha = NdotH * NdotH;
   float D = exp((cos2alpha - 1.) / (cos2alpha * sigma2)) / (PI * sigma2 * cos2alpha * cos2alpha);
 
@@ -145,51 +155,65 @@ float getSpecular(in vec3 normal, in vec3 lightDirection, in vec3 eyeDirection, 
 
 vec4 light(vec3 position, vec3 normal, vec3 rgb, vec2 uv) {
   #if SHADING == 0
-  vec4 color = vec4(rgb, opacity);
+  vec4 albedo = vec4(rgb, opacity);
 
   vec3 eyeDirection = eye - position;
   eyeDirection = normalize(eyeDirection);
 
   #ifdef REVERSED
   if(dot(eyeDirection, normal) < 0.) {
-    color.xyz = vec3(1.) - rgb;
+    albedo.xyz = vec3(1.) - rgb;
   }
   #endif
 
   #ifdef ENVMAP
   vec4 envColor = texture(envMap, reflect(-eyeDirection, normal));
-  color = vec4(mix(color.xyz, envColor.xyz, metalness), color.a);
+  // #ifdef TEXTURE
+  // float metalness = texture(armMap, uv).b;
+  // #else
+  float metalness = METALNESS;
+  // #endif
+  albedo = vec4(mix(albedo.xyz, envColor.xyz, metalness), albedo.a);
   #endif
   #ifdef TEXTURE
-  vec4 texColor = texture(textureMap, uv);
-  // Get color hue
-  vec3 hsl = rgbToHsl(color.rgb);
-  // Apply color hue to texture color
-  vec3 texHsl = rgbToHsl(texColor.rgb);
-  texHsl.x = hsl.x;
-  color.rgb = hslToRgb(texHsl);
+  vec4 texAlbedo = texture(albedoMap, uv);
+  // Get albedo hue
+  if(albedo.rgb != vec3(1.)) {
+    vec3 hsl = rgbToHsl(albedo.rgb);
+  // Apply albedo hue to texture albedo
+    vec3 texHsl = rgbToHsl(texAlbedo.rgb);
+    texHsl.r = hsl.r;
+    albedo.rgb = hslToRgb(texHsl);
+  } else {
+    albedo.rgb = texAlbedo.rgb;
+  }
   mat3 tbn = getTangentFrame(eyeDirection, normal, uv);
   vec3 map = texture(normalMap, uv).xyz * 2. - 1.;
   normal = normalize(tbn * map);
   #endif
   #if !defined(DIFFUSE) && !defined(SPECULAR)
-  return color;
+  return albedo;
   #else 
   float diffuse = 0.;
   float specular = 0.;
   vec3 lightDirection = eyeDirection;
 
   // ADS Ambient, Diffuse, Specular
-  diffuse = getDiffuse(normal, lightDirection, eyeDirection, color);
-  specular = getSpecular(normal, lightDirection, eyeDirection, color);
+  diffuse = getDiffuse(normal, uv, lightDirection, eyeDirection, albedo);
+  specular = getSpecular(normal, uv, lightDirection, eyeDirection, albedo);
 
   #ifdef DIFFUSE
   #if DIFFUSE == 4
-  color.a += specular;
+  albedo.a += specular;
   #endif
   #endif
 
-  return vec4((ambient + diffuse + specular) * color.rgb, color.a);
+  vec4 color = vec4((ambient + diffuse + specular) * albedo.rgb, albedo.a);
+  #ifdef TEXTURE
+  vec4 arm = texture(armMap, uv);
+  color.rgb *= arm.r;
+  #endif
+  return color;
   #endif
   #elif SHADING == 1
   // Normal

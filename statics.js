@@ -85,7 +85,13 @@ export const textures = [
   'none',
   '',
   'bricks',
+  'denim',
   'fabric',
+  'leather',
+  'metal',
   'plank',
-  'rock', //
+  'pebbles',
+  'rag',
+  'rock',
+  'wood',
 ]

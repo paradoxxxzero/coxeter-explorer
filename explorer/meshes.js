@@ -69,7 +69,7 @@ export const mesh = (
   varying = ['position']
 ) => {
   const { gl } = rt
-  const geometry = geometryFunc(rt.space?.curvature && rt.curve, rt.detail)
+  const geometry = geometryFunc(rt.curve, rt.detail)
   const uniforms = rt => [
     {
       name: 'viewProjection',
@@ -102,7 +102,7 @@ export const mesh = (
       value: 1,
     },
     {
-      name: 'textureMap',
+      name: 'albedoMap',
       type: '1i',
       value: 2,
     },
@@ -112,9 +112,14 @@ export const mesh = (
       value: 3,
     },
     {
-      name: 'displacementMap',
+      name: 'armMap',
       type: '1i',
       value: 4,
+    },
+    {
+      name: 'displacementMap',
+      type: '1i',
+      value: 5,
     },
     ...(['vertex', 'edge'].includes(type)
       ? [
@@ -182,7 +187,7 @@ export const mesh = (
       )
     },
     updateGeometry(rt) {
-      const geometry = geometryFunc(rt.space.curvature && rt.curve, rt.detail)
+      const geometry = geometryFunc(rt.curve, rt.detail)
       this.indices.update(new Uint16Array(geometry.indices))
       this.attributes.vertex.extend(3, new Float32Array(geometry.vertices))
       this.attributes.uv.extend(2, new Float32Array(geometry.uvs))

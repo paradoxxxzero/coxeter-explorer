@@ -39,6 +39,10 @@ void main() {
   vecN normN = multiplyMatrix(matrix, vecNFromVec3(normal));
   norm = normalize(pureproject(normN));
   #endif
-  proj = inflate(proj, pos, norm, thickness);
+  float size = thickness;
+  #ifdef TEXTURE
+  size += texture(displacementMap, uv).r;
+  #endif
+  proj = inflate(proj, pos, norm, size);
   #include vertexout
 }

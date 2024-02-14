@@ -1,5 +1,6 @@
 import { diffuseLight, projections, shadings, specularLight } from '../statics'
 import { ambiances } from './ambiances'
+import { externTextures } from './externs'
 import { min } from './math'
 import { render } from './render'
 import complex from './shaders/includes/complex.glsl?raw'
@@ -457,7 +458,7 @@ export const textureFull = (rt, type, scale = null) => {
 
 const imageTextureCache = {}
 
-const parts = ['texture', 'normal', 'displacement']
+const parts = ['albedo', 'normal', 'arm', 'displacement']
 
 export const texture = (rt, name, texi) => {
   const { gl } = rt
@@ -467,14 +468,16 @@ export const texture = (rt, name, texi) => {
     height: 4096,
     listeners: [],
   }
+
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i]
-
     gl.activeTexture(gl[`TEXTURE${texi + i}`])
+    const src = externTextures[name][part]
+
     texture[part] = gl.createTexture()
     gl.bindTexture(gl.TEXTURE_2D, texture[part])
-    const src = `textures/${name}/${part}.jpg`
-    let pixels = imageTextureCache[src] || null
+    let pixels = (src && imageTextureCache[src]) || null
+
     gl.texImage2D(
       gl.TEXTURE_2D,
       0,
@@ -484,16 +487,18 @@ export const texture = (rt, name, texi) => {
       0,
       gl.RGBA,
       gl.UNSIGNED_BYTE,
-      pixels?.complete ? pixels : null
+      pixels?.src && pixels?.complete ? pixels : null
     )
     gl.generateMipmap(gl.TEXTURE_2D)
-
+    if (!src) {
+      return texture
+    }
     if (!pixels) {
       pixels = new Image()
-      pixels.src = src
+      pixels.crossOrigin = 'anonymous'
       imageTextureCache[src] = pixels // Prevent multi-load
     }
-    if (!pixels.complete) {
+    if (!pixels.src || !pixels.complete) {
       const onImageLoad = () => {
         texture.listeners.splice(
           texture.listeners.findIndex(([p]) => p === pixels),
@@ -510,12 +515,12 @@ export const texture = (rt, name, texi) => {
           gl.UNSIGNED_BYTE,
           pixels
         )
-
         gl.generateMipmap(gl.TEXTURE_2D)
         render(rt)
       }
       pixels.addEventListener('load', onImageLoad)
       texture.listeners.push([pixels, onImageLoad])
+      pixels.src = src
     }
   }
   // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)

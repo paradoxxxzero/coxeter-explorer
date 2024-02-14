@@ -275,18 +275,14 @@ export const ambiances = Object.fromEntries(
         )
       },
     },
-    rock: {
+    bricks: {
       background: [1, 1, 1, 1],
       glow: false,
       texture: 'bricks',
       ambient: 0.4,
-      color: ({ word, type, hidden }) => {
-        return hsl(
-          (word.length * 0.06) % 1,
-          1,
-          type === 'face' ? 0.6 : !hidden.includes('face') ? 0.05 : 0.8
-        )
-      },
+      diffuse: 'oren-nayar',
+      specular: 'cook-torrance',
+      color: () => [1, 1, 1],
     },
     facets: {
       background: [0, 0, 0, 1],

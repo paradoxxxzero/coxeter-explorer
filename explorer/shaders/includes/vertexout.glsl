@@ -5,8 +5,10 @@ vUv = uv;
 
 #if (defined(TEXTURE) || (defined(SHADING) && SHADING > 0)) && DIMENSIONS >= 2
 #ifdef EDGE
-const float repeat = 10.;
-vUv.y = 2. * abs(vUv.y * repeat - floor(vUv.y * repeat + .5));
+if(thickness < 45.) {
+float repeat = 45. - thickness;
+vUv.y = (2. * abs(vUv.y * repeat - floor(vUv.y * repeat + .5)));
+}
 #endif
 
 #ifdef FACE
@@ -27,10 +29,13 @@ v *= f;
 vec2 p = vUv.x * u + vUv.y * v;
 vUv = .5 * (p + 1.);
 #endif
+
 #endif
 
+#ifdef FACE
 #ifdef TEXTURE
-vPosition += vNormal * texture(displacementMap, vUv).r * .06;
+vPosition += vNormal * texture(displacementMap, vUv).r * .05;
+#endif
 #endif
 
 gl_Position = viewProject(vPosition);

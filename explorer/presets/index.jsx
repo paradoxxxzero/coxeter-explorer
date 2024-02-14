@@ -136,7 +136,7 @@ const etiling = (coxeterArgs, mirrors, stellationArgs, extra) => {
     sizeEdge: 40,
     sizeVertex: 50,
     hidden: ['vertex'],
-    curve: true,
+    curve: false,
     section,
     zoom: 8,
     ...extra,
@@ -158,6 +158,7 @@ const ehoneycomb = (coxeterArgs, mirrors, stellationArgs, extra) => {
     section,
     sizeEdge: 25,
     zoom: 2,
+    curve: false,
     ...extra,
   }
 }
@@ -475,7 +476,10 @@ export const presets = [
         <Space type="affine" dimensions={3} /> Floret Pentagonal Tiling
       </>
     ),
-    params: etiling([6, 3], ['b', 'b', 'b'], { ambiance: 'reflection' }),
+    params: etiling([6, 3], ['b', 'b', 'b'], {
+      ambiance: 'reflection',
+      curve: false,
+    }),
   },
   {
     name: (
@@ -708,6 +712,7 @@ export const presets = [
       {
         hidden: ['vertex'],
         ambiance: 'neon',
+        curve: false,
         sizeEdge: 20,
         projection4: 'sterographic',
       }
