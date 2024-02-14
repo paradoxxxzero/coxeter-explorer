@@ -163,7 +163,7 @@ export const tri = ({ segments = 3 } = {}) => {
     for (let j = 0; j < i + 1; j++) {
       vertices.push(((2 * j - i) * part) / 2, i * part, 0)
       normals.push(0, 0, 1)
-      uvs.push(part * i, part * j)
+      uvs.push(part * (i - j), part * j)
     }
   }
   for (let i = 1; i < segments + 1; i++) {

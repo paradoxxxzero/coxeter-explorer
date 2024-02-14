@@ -199,7 +199,7 @@ vec4 light(vec3 position, vec3 normal, vec3 rgb, vec2 uv) {
   return vec4(position * .5 + .5, opacity);
   #elif SHADING == 3
   // Uvs
-  return vec4(hslToRgb(vec3(uv.y, .8, .2 + uv.x * .6)), opacity);
+  return vec4(uv.xy, 0., opacity);
   #endif
   return vec4(rgb, opacity);
 }

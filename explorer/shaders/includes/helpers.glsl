@@ -54,7 +54,7 @@ float easeInOut(in float t, in float order) {
 float getOrder(in float len) {
   return floor(log(len) / LN10);
 }
-const float idealBound = 1e4;
+const float idealBound = 1e6;
 
 vecN nmix(in vecN a, in vecN b, in float t) {
   #if CURVATURE < 0
@@ -65,45 +65,50 @@ vecN nmix(in vecN a, in vecN b, in float t) {
 
   if(lena > idealBound && lenb > idealBound) {
     t = easeInOut(t, order);
-  } else if(lena > idealBound) {
+    return nadd(nmul(a, (1. - t)), nmul(b, t));
+  }
+  if(lena > idealBound) {
     t = 1. - pow(t, order + 4.);
     // WTF, without this useless line it does not work
     return nadd(nmul(a, (1. - t)), nmul(b, t));
-  } else if(lenb > idealBound) {
+  }
+  if(lenb > idealBound) {
     t = pow(t, order + 4.);
+    return nadd(nmul(a, (1. - t)), nmul(b, t));
   }
   #endif
   return nadd(nmul(a, (1. - t)), nmul(b, t));
 }
 
 vecN trix(in vecN a, in vecN b, in vecN c, in vec2 t) {
-  vecN x = a;
-
   #if CURVATURE < 0
   float lena = len(a);
   float lenb = len(b);
   float lenc = len(c);
   if(lena > idealBound && lenb < idealBound) {
-    vecN t = a;
+    // a, b, c -> b, c, a
+    vecN tmp = a;
     a = b;
-    b = t;
-  }
-  if(lena > idealBound && lenc < idealBound) {
-    vecN t = a;
-    a = c - b;
-    c = t + b;
-  }
+    b = c;
+    c = tmp;
 
-  float order = getOrder(max(max(lena, lenb), lenc));
+  } else if(lena > idealBound && lenc < idealBound) {
+    // a, b, c -> c, a, b
+    vecN tmp = a;
+    a = c;
+    c = b;
+    b = tmp;
+  }
+  float lenmax = max(max(lena, lenb), lenc);
+  float order = getOrder(lenmax);
 
-  if(lena > idealBound || lenb > idealBound || lenc > idealBound) {
+  if(lenmax > idealBound) {
     t.x = easeInOut(t.x, order);
     t.y = easeInOut(t.y, order);
   }
   #endif
 
-  // a + (b - a) * t.x + (c - b) * t.y
-  // a (1 - t.x) + c + t.y + b (t.x - t.y)
-  // FIXME
-  return nadd(a, nadd(nmul(nsub(b, a), t.x), nmul(nsub(c, b), t.y)));
+  vecN ab = nsub(b, a);
+  vecN ac = nsub(c, a);
+  return nadd(a, nadd(nmul(ab, t.x), nmul(ac, t.y)));
 }

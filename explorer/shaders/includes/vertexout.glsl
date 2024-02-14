@@ -5,7 +5,7 @@ vUv = uv;
 
 #if (defined(TEXTURE) || (defined(SHADING) && SHADING > 0)) && DIMENSIONS >= 2
 #ifdef EDGE
-const float repeat = 4.;
+const float repeat = 10.;
 vUv.y = 2. * abs(vUv.y * repeat - floor(vUv.y * repeat + .5));
 #endif
 
@@ -24,20 +24,22 @@ v *= f;
 }
 #endif
 
-vec2 p = uv.x * u + uv.y * (v - u);
+vec2 p = vUv.x * u + vUv.y * v;
 vUv = .5 * (p + 1.);
 #endif
 #endif
 
 #ifdef TEXTURE
-proj += norm * texture(displacementMap, vUv).r * .06;
-#endif
+vPosition += vNormal * texture(displacementMap, vUv).r * .06;
 #endif
 
+gl_Position = viewProject(vPosition);
+#else 
 gl_Position = viewProject(proj);
+#endif
 
 #if defined(SHADING) && defined(GOURAUD)
-vColor = light(proj, norm, color, uv);
+vColor = light(vPosition, vNormal, color, vUv);
 #else
 vColor = color;
 
