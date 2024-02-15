@@ -1,6 +1,6 @@
 import { diffuseLight, projections, shadings, specularLight } from '../statics'
 import { ambiances } from './ambiances'
-import { externTextures } from './externs'
+import { externEnvs, externTextures } from './externs'
 import { min } from './math'
 import { render } from './render'
 import complex from './shaders/includes/complex.glsl?raw'
@@ -12,6 +12,8 @@ import lighting from './shaders/includes/lighting.glsl?raw'
 import project from './shaders/includes/project.glsl?raw'
 import vertexout from './shaders/includes/vertexout.glsl?raw'
 import vertexouthead from './shaders/includes/vertexouthead.glsl?raw'
+import hdritocubeVertex from './shaders/hdritocube/vertex.glsl?raw'
+import hdritocubeFragment from './shaders/hdritocube/fragment.glsl?raw'
 
 export const includes = {
   globals,
@@ -139,12 +141,12 @@ export const augment = (rt, vertex, fragment, type) => {
   return [vertex, fragment].map(source => preprocess(source, rt.dimensions))
 }
 
-const compileShader = (rt, name, type, shaderSource, shader) => {
-  rt.gl.shaderSource(shader, shaderSource)
-  rt.gl.compileShader(shader)
-  const success = rt.gl.getShaderParameter(shader, rt.gl.COMPILE_STATUS)
+const compileShader = (gl, name, type, shaderSource, shader) => {
+  gl.shaderSource(shader, shaderSource)
+  gl.compileShader(shader)
+  const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS)
   if (!success) {
-    const error = rt.gl.getShaderInfoLog(shader)
+    const error = gl.getShaderInfoLog(shader)
     console.error(
       `An error occurred compiling the ${name}->${type} shader: ${error}`,
       { shaderSource }
@@ -153,8 +155,7 @@ const compileShader = (rt, name, type, shaderSource, shader) => {
   }
 }
 
-const linkProgram = (rt, name, program) => {
-  const { gl } = rt
+const linkProgram = (gl, name, program) => {
   gl.linkProgram(program)
 
   const success = gl.getProgramParameter(program, gl.LINK_STATUS)
@@ -177,17 +178,17 @@ export const compileProgram = (
 
   const vertexShader = gl.createShader(gl.VERTEX_SHADER)
   const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER)
-  if (compileShader(rt, name, 'vertex', vertex, vertexShader)) {
+  if (compileShader(gl, name, 'vertex', vertex, vertexShader)) {
     return
   }
-  if (compileShader(rt, name, 'fragment', fragment, fragmentShader)) {
+  if (compileShader(gl, name, 'fragment', fragment, fragmentShader)) {
     return
   }
 
   gl.attachShader(program, vertexShader)
   gl.attachShader(program, fragmentShader)
 
-  if (linkProgram(rt, name, program)) {
+  if (linkProgram(gl, name, program)) {
     return
   }
   const rv = {
@@ -203,18 +204,18 @@ export const compileProgram = (
       // this.program = gl.createProgram()
       // this.vertexShader = gl.createShader(gl.VERTEX_SHADER)
       // this.fragmentShader = gl.createShader(gl.FRAGMENT_SHADER)
-      if (compileShader(rt, name, 'vertex', newVertex, this.vertexShader)) {
+      if (compileShader(gl, name, 'vertex', newVertex, this.vertexShader)) {
         return
       }
       if (
-        compileShader(rt, name, 'fragment', newFragment, this.fragmentShader)
+        compileShader(gl, name, 'fragment', newFragment, this.fragmentShader)
       ) {
         return
       }
       // gl.attachShader(this.program, this.vertexShader)
       // gl.attachShader(this.program, this.fragmentShader)
 
-      if (linkProgram(rt, name, this.program)) {
+      if (linkProgram(gl, name, this.program)) {
         return
       }
       if (uniforms) {
@@ -519,8 +520,8 @@ export const texture = (rt, name, texi) => {
         render(rt)
       }
       pixels.addEventListener('load', onImageLoad)
-      texture.listeners.push([pixels, onImageLoad])
       pixels.src = src
+      texture.listeners.push([pixels, onImageLoad])
     }
   }
   // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
@@ -535,15 +536,21 @@ export const deleteTextures = (rt, texture) => {
 }
 export const cubemap = (rt, name, texi) => {
   const { gl } = rt
-  gl.activeTexture(gl[`TEXTURE${texi}`])
   const cubeTexture = {
     texture: gl.createTexture(),
     width: 2048,
     height: 2048,
     listeners: [],
   }
+  const src = externEnvs[name]
 
+  gl.activeTexture(gl[`TEXTURE${texi}`])
   gl.bindTexture(gl.TEXTURE_CUBE_MAP, cubeTexture.texture)
+  gl.texParameteri(
+    gl.TEXTURE_CUBE_MAP,
+    gl.TEXTURE_MIN_FILTER,
+    gl.LINEAR_MIPMAP_LINEAR
+  )
   const cube = Object.entries({
     px: gl.TEXTURE_CUBE_MAP_POSITIVE_X,
     nx: gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
@@ -552,10 +559,11 @@ export const cubemap = (rt, name, texi) => {
     pz: gl.TEXTURE_CUBE_MAP_POSITIVE_Z,
     nz: gl.TEXTURE_CUBE_MAP_NEGATIVE_Z,
   })
+  let pixels = imageTextureCache[src]?.hdri
   for (let i = 0; i < cube.length; i++) {
     const [face, target] = cube[i]
-    const src = `cubemaps/${name}/${face}.jpg`
-    let pixels = imageTextureCache[src] || null
+    let cubemap =
+      (imageTextureCache[src] && imageTextureCache[src][face]) || null
     gl.texImage2D(
       target,
       0,
@@ -565,37 +573,61 @@ export const cubemap = (rt, name, texi) => {
       0,
       gl.RGBA,
       gl.UNSIGNED_BYTE,
-      pixels?.complete ? pixels : null
+      pixels?.src && pixels?.complete ? cubemap : null
     )
-    gl.generateMipmap(gl.TEXTURE_CUBE_MAP)
-    if (!pixels) {
-      pixels = new Image()
-      pixels.src = src
-      imageTextureCache[src] = pixels // Prevent multi-load
-    }
-    if (!pixels.complete) {
-      const onImageLoad = () => {
-        cubeTexture.listeners.splice(
-          cubeTexture.listeners.findIndex(([p]) => p === pixels),
-          1
-        )
-        imageTextureCache[src] = pixels
-        gl.activeTexture(gl[`TEXTURE${texi}`])
-        gl.bindTexture(gl.TEXTURE_CUBE_MAP, cubeTexture.texture)
-        gl.texImage2D(target, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
-
-        gl.generateMipmap(gl.TEXTURE_CUBE_MAP)
-        render(rt)
-      }
-      pixels.addEventListener('load', onImageLoad)
-      cubeTexture.listeners.push([pixels, onImageLoad])
-    }
   }
-  // gl.texParameteri(
-  //   gl.TEXTURE_CUBE_MAP,
-  //   gl.TEXTURE_MIN_FILTER,
-  //   gl.LINEAR_MIPMAP_LINEAR
-  // )
+  gl.generateMipmap(gl.TEXTURE_CUBE_MAP)
+
+  if (!imageTextureCache[src]) {
+    pixels = new Image()
+    pixels.crossOrigin = 'anonymous'
+    imageTextureCache[src] = { hdri: pixels }
+  }
+  if (!pixels.src || !pixels.complete || !imageTextureCache[src].processed) {
+    const onImageLoad = () => {
+      cubeTexture.listeners.splice(
+        cubeTexture.listeners.findIndex(([p]) => p === pixels),
+        1
+      )
+      gl.activeTexture(gl[`TEXTURE${texi}`])
+      gl.bindTexture(gl.TEXTURE_CUBE_MAP, cubeTexture.texture)
+
+      // HDRI to cubemap
+      if (!imageTextureCache[src].processed) {
+        Object.assign(imageTextureCache[src], hdriToCubemap(rt.gl, pixels))
+      }
+      imageTextureCache[src].hdri = pixels // ?
+
+      gl.activeTexture(gl[`TEXTURE${texi}`])
+      gl.bindTexture(gl.TEXTURE_CUBE_MAP, cubeTexture.texture)
+      gl.texParameteri(
+        gl.TEXTURE_CUBE_MAP,
+        gl.TEXTURE_MIN_FILTER,
+        gl.LINEAR_MIPMAP_LINEAR
+      )
+      for (let i = 0; i < cube.length; i++) {
+        const [face, target] = cube[i]
+        let pixels = imageTextureCache[src][face]
+
+        gl.texImage2D(
+          target,
+          0,
+          gl.RGBA,
+          cubeTexture.width,
+          cubeTexture.height,
+          0,
+          gl.RGBA,
+          gl.UNSIGNED_BYTE,
+          pixels
+        )
+      }
+      gl.generateMipmap(gl.TEXTURE_CUBE_MAP)
+      render(rt)
+    }
+    pixels.addEventListener('load', onImageLoad)
+    pixels.src = src
+    cubeTexture.listeners.push([pixels, onImageLoad])
+  }
   return cubeTexture
 }
 
@@ -617,6 +649,96 @@ export const pass = (rt, name, vertex, fragment, uniforms = []) => {
     },
   }
   return { [name]: pass }
+}
+
+export const hdriToCubemap = (gl, pixels) => {
+  const faces = { processed: true }
+  const fb = gl.createFramebuffer()
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fb)
+  const cubemapTexture = gl.createTexture()
+  gl.bindTexture(gl.TEXTURE_2D, cubemapTexture)
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+  gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, 2048, 2048)
+  gl.framebufferTexture2D(
+    gl.FRAMEBUFFER,
+    gl.COLOR_ATTACHMENT0,
+    gl.TEXTURE_2D,
+    cubemapTexture,
+    0
+  )
+  const hdriTexture = gl.createTexture()
+  gl.activeTexture(gl.TEXTURE0)
+  gl.bindTexture(gl.TEXTURE_2D, hdriTexture)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+  gl.texImage2D(
+    gl.TEXTURE_2D,
+    0,
+    gl.RGBA,
+    8192,
+    4096,
+    0,
+    gl.RGBA,
+    gl.UNSIGNED_BYTE,
+    pixels
+  )
+  gl.generateMipmap(gl.TEXTURE_2D)
+
+  const program = gl.createProgram()
+  const vertexShader = gl.createShader(gl.VERTEX_SHADER)
+  const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER)
+  if (
+    compileShader(gl, 'hdritocube', 'vertex', hdritocubeVertex, vertexShader)
+  ) {
+    return
+  }
+  if (
+    compileShader(
+      gl,
+      'hdritocube',
+      'fragment',
+      hdritocubeFragment,
+      fragmentShader
+    )
+  ) {
+    return
+  }
+
+  gl.attachShader(program, vertexShader)
+  gl.attachShader(program, fragmentShader)
+  linkProgram(gl, 'hdritocube', program)
+  gl.useProgram(program)
+  gl.uniform1i(gl.getUniformLocation(program, 'hdri'), 0)
+  gl.uniform1i(gl.getUniformLocation(program, 'part'), 0)
+  gl.viewport(0, 0, 2048, 2048)
+
+  const parts = ['px', 'nx', 'py', 'ny', 'pz', 'nz']
+  for (let i = 0; i < parts.length; i++) {
+    gl.uniform1i(gl.getUniformLocation(program, 'part'), i)
+    const part = parts[i]
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT0,
+      gl.TEXTURE_2D,
+      cubemapTexture,
+      0
+    )
+    gl.uniform1i(gl.getUniformLocation(program, 'face'), i)
+    gl.drawArrays(gl.TRIANGLES, 0, 3)
+    faces[part] = new Uint8Array(2048 * 2048 * 4)
+    gl.readPixels(0, 0, 2048, 2048, gl.RGBA, gl.UNSIGNED_BYTE, faces[part])
+  }
+  gl.deleteTexture(hdriTexture)
+  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+  gl.deleteTexture(cubemapTexture)
+  gl.deleteFramebuffer(fb)
+  return faces
 }
 
 export const storage = (rt, rb, type, msaa) => {

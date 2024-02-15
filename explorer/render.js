@@ -12,7 +12,7 @@ import {
 } from './math/matrix'
 import getMeshes from './meshes'
 import getPasses from './passes'
-import { refreshTexturesFull } from './textures'
+import { refreshTexturesEnv, refreshTexturesFull } from './textures'
 
 const showStats = window.location.search.includes('stats')
 let stats

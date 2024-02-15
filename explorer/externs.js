@@ -1,7 +1,9 @@
 // Big thanks to https://polyhaven.org/ for the resources
 
 const link = (name, part) =>
-  `https://dl.polyhaven.org/file/ph-assets/Textures/jpg/4k/${name}/${name}_${part}_4k.jpg`
+  part === 'env'
+    ? `https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/${name}.jpg`
+    : `https://dl.polyhaven.org/file/ph-assets/Textures/jpg/4k/${name}/${name}_${part}_4k.jpg`
 
 export const externTextures = {
   fabric: {
@@ -61,4 +63,20 @@ export const externTextures = {
     displacement: link('metal_plate', 'disp'),
     arm: link('metal_plate', 'arm'),
   },
+}
+
+export const externEnvs = {
+  bay: link('golden_bay', 'env'),
+  circus: link('circus_arena', 'env'),
+  garden: link('studio_garden', 'env'),
+  home: link('cayley_interior', 'env'),
+  lounge: link('aft_lounge', 'env'),
+  night: link('moonless_golf', 'env'),
+  pool: link('pool', 'env'),
+  room: link('small_empty_room_1', 'env'),
+  shell: link('acoustical_shell', 'env'),
+  sky: link('kloofendal_48d_partly_cloudy_puresky', 'env'),
+  studio: link('studio_small_02', 'env'),
+  teufelsberg: link('teufelsberg_roof', 'env'),
+  umbrellas: link('outdoor_umbrellas', 'env'),
 }

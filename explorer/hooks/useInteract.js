@@ -372,6 +372,9 @@ export const useInteract = (
       if (!local.current.pointers.has(e.pointerId)) {
         return
       }
+      if (!rotations.combinations.length) {
+        return
+      }
       const last = local.current.pointers.get(e.pointerId)
       const delta = [
         (e.clientX - last[0]) / window.innerHeight, // height is intentional

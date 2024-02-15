@@ -68,17 +68,19 @@ export const types = [
 export const envmaps = [
   'none',
   '',
+  'bay',
   'circus',
-  'corridor',
   'garden',
   'home',
-  'lights',
   'lounge',
   'night',
+  'pool',
   'room',
+  'shell',
   'sky',
   'studio',
   'teufelsberg',
+  'umbrellas',
 ]
 
 export const textures = [
