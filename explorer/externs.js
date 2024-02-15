@@ -68,15 +68,17 @@ export const externTextures = {
 export const externEnvs = {
   bay: link('golden_bay', 'env'),
   circus: link('circus_arena', 'env'),
+  corridor: link('large_corridor', 'env'),
   garden: link('studio_garden', 'env'),
   home: link('cayley_interior', 'env'),
+  lights: link('studio_small_02', 'env'),
   lounge: link('aft_lounge', 'env'),
   night: link('moonless_golf', 'env'),
   pool: link('pool', 'env'),
   room: link('small_empty_room_1', 'env'),
   shell: link('acoustical_shell', 'env'),
   sky: link('kloofendal_48d_partly_cloudy_puresky', 'env'),
-  studio: link('studio_small_02', 'env'),
+  studio: link('neon_photostudio', 'env'),
   teufelsberg: link('teufelsberg_roof', 'env'),
   umbrellas: link('outdoor_umbrellas', 'env'),
 }

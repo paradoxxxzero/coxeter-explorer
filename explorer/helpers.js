@@ -461,18 +461,19 @@ const imageTextureCache = {}
 
 const parts = ['albedo', 'normal', 'arm', 'displacement']
 
-export const texture = (rt, name, texi) => {
+export const texture = (rt, name, textureIndex) => {
   const { gl } = rt
 
   const texture = {
     width: 4096,
     height: 4096,
     listeners: [],
+    index: textureIndex,
   }
 
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i]
-    gl.activeTexture(gl[`TEXTURE${texi + i}`])
+    gl.activeTexture(gl.TEXTURE0 + texture.index + i)
     const src = externTextures[name][part]
 
     texture[part] = gl.createTexture()
@@ -506,7 +507,7 @@ export const texture = (rt, name, texi) => {
           1
         )
         imageTextureCache[src] = pixels
-        gl.activeTexture(gl[`TEXTURE${texi + i}`])
+        gl.activeTexture(gl.TEXTURE0 + texture.index + i)
         gl.bindTexture(gl.TEXTURE_2D, texture[part])
         gl.texImage2D(
           gl.TEXTURE_2D,
@@ -524,7 +525,6 @@ export const texture = (rt, name, texi) => {
       texture.listeners.push([pixels, onImageLoad])
     }
   }
-  // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
   return texture
 }
 export const deleteTextures = (rt, texture) => {
@@ -534,38 +534,22 @@ export const deleteTextures = (rt, texture) => {
     gl.deleteTexture(texture[part])
   }
 }
-export const cubemap = (rt, name, texi) => {
+export const cubemap = (rt, name, textureIndex) => {
   const { gl } = rt
   const cubeTexture = {
     texture: gl.createTexture(),
     width: 2048,
     height: 2048,
+    index: textureIndex,
     listeners: [],
   }
   const src = externEnvs[name]
 
-  gl.activeTexture(gl[`TEXTURE${texi}`])
+  gl.activeTexture(gl.TEXTURE0 + cubeTexture.index)
   gl.bindTexture(gl.TEXTURE_CUBE_MAP, cubeTexture.texture)
-  gl.texParameteri(
-    gl.TEXTURE_CUBE_MAP,
-    gl.TEXTURE_MIN_FILTER,
-    gl.LINEAR_MIPMAP_LINEAR
-  )
-  const cube = Object.entries({
-    px: gl.TEXTURE_CUBE_MAP_POSITIVE_X,
-    nx: gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
-    py: gl.TEXTURE_CUBE_MAP_POSITIVE_Y,
-    ny: gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,
-    pz: gl.TEXTURE_CUBE_MAP_POSITIVE_Z,
-    nz: gl.TEXTURE_CUBE_MAP_NEGATIVE_Z,
-  })
-  let pixels = imageTextureCache[src]?.hdri
-  for (let i = 0; i < cube.length; i++) {
-    const [face, target] = cube[i]
-    let cubemap =
-      (imageTextureCache[src] && imageTextureCache[src][face]) || null
+  for (let i = 0; i < 6; i++) {
     gl.texImage2D(
-      target,
+      gl.TEXTURE_CUBE_MAP_POSITIVE_X + i,
       0,
       gl.RGBA,
       cubeTexture.width,
@@ -573,55 +557,42 @@ export const cubemap = (rt, name, texi) => {
       0,
       gl.RGBA,
       gl.UNSIGNED_BYTE,
-      pixels?.src && pixels?.complete ? cubemap : null
+      null
     )
   }
-  gl.generateMipmap(gl.TEXTURE_CUBE_MAP)
+  let pixels = imageTextureCache[src]
+  if (pixels?.src && pixels?.complete) {
+    hdriToCubemap(rt.gl, pixels, cubeTexture)
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, cubeTexture.texture)
+    gl.texParameteri(
+      gl.TEXTURE_CUBE_MAP,
+      gl.TEXTURE_MIN_FILTER,
+      gl.LINEAR_MIPMAP_LINEAR
+    )
+    gl.generateMipmap(gl.TEXTURE_CUBE_MAP)
+  }
 
   if (!imageTextureCache[src]) {
     pixels = new Image()
     pixels.crossOrigin = 'anonymous'
-    imageTextureCache[src] = { hdri: pixels }
+    imageTextureCache[src] = pixels
   }
-  if (!pixels.src || !pixels.complete || !imageTextureCache[src].processed) {
+  if (!pixels.src || !pixels.complete) {
     const onImageLoad = () => {
       cubeTexture.listeners.splice(
         cubeTexture.listeners.findIndex(([p]) => p === pixels),
         1
       )
-      gl.activeTexture(gl[`TEXTURE${texi}`])
+      gl.activeTexture(gl.TEXTURE0 + cubeTexture.index)
       gl.bindTexture(gl.TEXTURE_CUBE_MAP, cubeTexture.texture)
 
       // HDRI to cubemap
-      if (!imageTextureCache[src].processed) {
-        Object.assign(imageTextureCache[src], hdriToCubemap(rt.gl, pixels))
-      }
-      imageTextureCache[src].hdri = pixels // ?
-
-      gl.activeTexture(gl[`TEXTURE${texi}`])
+      hdriToCubemap(rt.gl, pixels, cubeTexture)
+      gl.activeTexture(gl.TEXTURE0 + cubeTexture.index)
       gl.bindTexture(gl.TEXTURE_CUBE_MAP, cubeTexture.texture)
-      gl.texParameteri(
-        gl.TEXTURE_CUBE_MAP,
-        gl.TEXTURE_MIN_FILTER,
-        gl.LINEAR_MIPMAP_LINEAR
-      )
-      for (let i = 0; i < cube.length; i++) {
-        const [face, target] = cube[i]
-        let pixels = imageTextureCache[src][face]
-
-        gl.texImage2D(
-          target,
-          0,
-          gl.RGBA,
-          cubeTexture.width,
-          cubeTexture.height,
-          0,
-          gl.RGBA,
-          gl.UNSIGNED_BYTE,
-          pixels
-        )
-      }
       gl.generateMipmap(gl.TEXTURE_CUBE_MAP)
+
+      imageTextureCache[src] = pixels // ?
       render(rt)
     }
     pixels.addEventListener('load', onImageLoad)
@@ -651,25 +622,10 @@ export const pass = (rt, name, vertex, fragment, uniforms = []) => {
   return { [name]: pass }
 }
 
-export const hdriToCubemap = (gl, pixels) => {
-  const faces = { processed: true }
+export const hdriToCubemap = (gl, pixels, texture) => {
   const fb = gl.createFramebuffer()
   gl.bindFramebuffer(gl.FRAMEBUFFER, fb)
-  const cubemapTexture = gl.createTexture()
-  gl.bindTexture(gl.TEXTURE_2D, cubemapTexture)
-  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-  gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, 2048, 2048)
-  gl.framebufferTexture2D(
-    gl.FRAMEBUFFER,
-    gl.COLOR_ATTACHMENT0,
-    gl.TEXTURE_2D,
-    cubemapTexture,
-    0
-  )
+
   const hdriTexture = gl.createTexture()
   gl.activeTexture(gl.TEXTURE0)
   gl.bindTexture(gl.TEXTURE_2D, hdriTexture)
@@ -716,29 +672,24 @@ export const hdriToCubemap = (gl, pixels) => {
   gl.useProgram(program)
   gl.uniform1i(gl.getUniformLocation(program, 'hdri'), 0)
   gl.uniform1i(gl.getUniformLocation(program, 'part'), 0)
-  gl.viewport(0, 0, 2048, 2048)
+  gl.viewport(0, 0, texture.width, texture.height)
 
-  const parts = ['px', 'nx', 'py', 'ny', 'pz', 'nz']
-  for (let i = 0; i < parts.length; i++) {
+  for (let i = 0; i < 6; i++) {
     gl.uniform1i(gl.getUniformLocation(program, 'part'), i)
-    const part = parts[i]
     gl.framebufferTexture2D(
       gl.FRAMEBUFFER,
       gl.COLOR_ATTACHMENT0,
-      gl.TEXTURE_2D,
-      cubemapTexture,
+      gl.TEXTURE_CUBE_MAP_POSITIVE_X + i,
+      texture.texture,
       0
     )
     gl.uniform1i(gl.getUniformLocation(program, 'face'), i)
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
     gl.drawArrays(gl.TRIANGLES, 0, 3)
-    faces[part] = new Uint8Array(2048 * 2048 * 4)
-    gl.readPixels(0, 0, 2048, 2048, gl.RGBA, gl.UNSIGNED_BYTE, faces[part])
   }
   gl.deleteTexture(hdriTexture)
-  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-  gl.deleteTexture(cubemapTexture)
   gl.deleteFramebuffer(fb)
-  return faces
+  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 }
 
 export const storage = (rt, rb, type, msaa) => {
