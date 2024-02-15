@@ -1,7 +1,7 @@
 import { diffuseLight, projections, shadings, specularLight } from '../statics'
 import { ambiances } from './ambiances'
 import { externEnvs, externTextures } from './externs'
-import { min } from './math'
+import { max, min } from './math'
 import { render } from './render'
 import complex from './shaders/includes/complex.glsl?raw'
 import dimensions from './shaders/includes/dimensions.glsl?raw'
@@ -624,7 +624,29 @@ export const pass = (rt, name, vertex, fragment, uniforms = []) => {
 
 export const hdriToCubemap = (gl, pixels, texture) => {
   const fb = gl.createFramebuffer()
+  const hdri = {
+    width: pixels.width,
+    height: pixels.height,
+  }
   gl.bindFramebuffer(gl.FRAMEBUFFER, fb)
+  const maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE)
+  if (maxTextureSize < max(hdri.width, hdri.height)) {
+    // Resize the image to gl.MAX_TEXTURE_SIZE
+    const canvas = document.createElement('canvas')
+    if (hdri.width > hdri.height) {
+      canvas.width = gl.getParameter(gl.MAX_TEXTURE_SIZE)
+      canvas.height = (maxTextureSize / hdri.width) * hdri.height
+    } else {
+      canvas.height = gl.getParameter(gl.MAX_TEXTURE_SIZE)
+      canvas.width = (maxTextureSize / hdri.height) * hdri.width
+    }
+    hdri.width = canvas.width
+    hdri.height = canvas.height
+
+    const ctx = canvas.getContext('2d')
+    ctx.drawImage(pixels, 0, 0, canvas.width, canvas.height)
+    pixels = ctx.getImageData(0, 0, canvas.width, canvas.height)
+  }
 
   const hdriTexture = gl.createTexture()
   gl.activeTexture(gl.TEXTURE0)
@@ -637,8 +659,8 @@ export const hdriToCubemap = (gl, pixels, texture) => {
     gl.TEXTURE_2D,
     0,
     gl.RGBA,
-    8192,
-    4096,
+    hdri.width,
+    hdri.height,
     0,
     gl.RGBA,
     gl.UNSIGNED_BYTE,
