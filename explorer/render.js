@@ -191,6 +191,14 @@ export const render = (rt, forceSize) => {
   gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb.base)
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
+  if (ambiance.skybox) {
+    gl.useProgram(rt.passes.skybox.program)
+    gl.enable(gl.DEPTH_TEST)
+    gl.depthMask(true)
+    gl.depthFunc(gl.LEQUAL)
+    gl.drawArrays(gl.TRIANGLES, 0, 3)
+  }
+
   if (!ambiance.transparent.vertex) {
     rt.meshes.vertex.render(rt)
   }
@@ -258,6 +266,8 @@ export const render = (rt, forceSize) => {
       gl.bindTexture(gl.TEXTURE_2D, rt.textures.oitReveal.texture)
       gl.drawArrays(gl.TRIANGLES, 0, 3)
     } else if (ambiance.transparency === 'blend') {
+      // Meshes should be sorted back to front
+      // for blending to work correctly
       gl.enable(gl.BLEND)
       ambiance.culling && gl.disable(gl.CULL_FACE)
       gl.depthMask(false)
@@ -273,13 +283,7 @@ export const render = (rt, forceSize) => {
       }
     }
   }
-  if (ambiance.skybox) {
-    gl.useProgram(rt.passes.skybox.program)
-    gl.enable(gl.DEPTH_TEST)
-    gl.depthMask(true)
-    gl.depthFunc(gl.LEQUAL)
-    gl.drawArrays(gl.TRIANGLES, 0, 3)
-  }
+
   const out = ambiance.afterImage
     ? rt.fb.afterImage
     : ambiance.glow

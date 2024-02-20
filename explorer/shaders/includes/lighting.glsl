@@ -57,8 +57,8 @@ mat3 getTangentFrame(vec3 eye_pos, vec3 normal, vec2 uv) {
 }
 #endif
 
-float getDiffuse(in vec3 normal, in vec2 uv, in vec3 lightDirection, in vec3 eyeDirection, inout vec4 color) {
-  #ifdef DIFFUSE
+#ifdef DIFFUSE
+float getDiffuse(in vec3 normal, in vec2 uv, in vec3 lightDirection, in vec3 eyeDirection) {
   // Diffuse
   #if DIFFUSE == 0
   // Lambert
@@ -74,11 +74,11 @@ float getDiffuse(in vec3 normal, in vec2 uv, in vec3 lightDirection, in vec3 eye
 
   float s = LdotV - NdotL * NdotV;
   float t = mix(1.0, max(NdotL, NdotV), step(0.0, s));
-  #ifdef TEXTURE
+    #ifdef TEXTURE
   float roughness = texture(armMap, uv).g;
-  #else
+    #else
   float roughness = ROUGHNESS;
-  #endif
+    #endif
   float sigma2 = roughness * roughness;
   float A = 1.0 + sigma2 * (albedo / (sigma2 + 0.13) + 0.5 / (sigma2 + 0.33));
   float B = 0.45 * sigma2 / (sigma2 + 0.09);
@@ -93,23 +93,16 @@ float getDiffuse(in vec3 normal, in vec2 uv, in vec3 lightDirection, in vec3 eye
   float diffuse = abs(dot(normal, lightDirection));
   return floor(diffuse * 4.) / 4.;
   #elif DIFFUSE == 4
-  // Fresnel
-  float diffuse = abs(dot(normal, lightDirection));
-  float p = 1. - diffuse;
-  color.a = clamp(p * p * p, color.a, 1.);
-  return 1. - ambient;
-  #elif DIFFUSE == 5
   // Reverse
   float diffuse = abs(dot(normal, lightDirection));
   float p = 1. - diffuse;
   return p * p;
   #endif
-  #endif
-  return 0.;
 }
+#endif
 
-float getSpecular(in vec3 normal, in vec2 uv, in vec3 lightDirection, in vec3 eyeDirection, in vec4 color) {
-  #ifdef SPECULAR
+#ifdef SPECULAR
+float getSpecular(in vec3 normal, in vec2 uv, in vec3 lightDirection, in vec3 eyeDirection) {
   #if SPECULAR == 0
   // Phong
   vec3 reflectDirection = reflect(-lightDirection, normal);
@@ -149,81 +142,110 @@ float getSpecular(in vec3 normal, in vec2 uv, in vec3 lightDirection, in vec3 ey
   // TODO
 
   #endif
-  #endif
-  return 0.;
 }
+#endif
 
 vec4 light(vec3 position, vec3 normal, vec3 rgb, vec2 uv) {
-  #if SHADING == 0
-  vec4 albedo = vec4(rgb, opacity);
+
+  #if SHADING == 0 // Input colors
+  vec3 albedo = rgb;
+  #elif SHADING == 1 // Normal colors
+  vec3 albedo = normal * .5 + .5;
+  #elif SHADING == 2 // Position colors
+  vec3 albedo = position * .5 + .5;
+  #elif SHADING == 3 // Uv colors
+  vec3 albedo = vec3(uv.xy, 0.);
+  #else
+  vec3 albedo = rgb;
+  #endif
 
   vec3 eyeDirection = eye - position;
   eyeDirection = normalize(eyeDirection);
 
   #ifdef REVERSED
   if(dot(eyeDirection, normal) < 0.) {
-    albedo.xyz = vec3(1.) - rgb;
+    albedo = 1. - albedo;
   }
   #endif
 
-  #ifdef ENVMAP
-  vec4 envColor = texture(envMap, reflect(-eyeDirection, normal));
-  // #ifdef TEXTURE
-  // float metalness = texture(armMap, uv).b;
-  // #else
-  float metalness = METALNESS;
-  // #endif
-  albedo = vec4(mix(albedo.xyz, envColor.xyz, metalness), albedo.a);
-  #endif
   #ifdef TEXTURE
-  vec4 texAlbedo = texture(albedoMap, uv);
+  vec3 texAlbedo = texture(albedoMap, uv).rgb;
+
   // Get albedo hue
-  if(albedo.rgb != vec3(1.)) {
-    vec3 hsl = rgbToHsl(albedo.rgb);
+    #ifdef TINT
+  vec3 hsl = rgbToHsl(albedo);
   // Apply albedo hue to texture albedo
-    vec3 texHsl = rgbToHsl(texAlbedo.rgb);
-    texHsl.r = hsl.r;
-    albedo.rgb = hslToRgb(texHsl);
-  } else {
-    albedo.rgb = texAlbedo.rgb;
-  }
+  vec3 texHsl = rgbToHsl(texAlbedo);
+  texHsl.r = hsl.r;
+  albedo = hslToRgb(texHsl);
+    #else
+  albedo = texAlbedo;
+    #endif
+
   mat3 tbn = getTangentFrame(eyeDirection, normal, uv);
   vec3 map = texture(normalMap, uv).xyz * 2. - 1.;
   normal = normalize(tbn * map);
+
   #endif
-  #if !defined(DIFFUSE) && !defined(SPECULAR)
-  return albedo;
-  #else 
-  float diffuse = 0.;
-  float specular = 0.;
+
   vec3 lightDirection = eyeDirection;
 
   // ADS Ambient, Diffuse, Specular
-  diffuse = getDiffuse(normal, uv, lightDirection, eyeDirection, albedo);
-  specular = getSpecular(normal, uv, lightDirection, eyeDirection, albedo);
-
+  float diffuse = 1.;
   #ifdef DIFFUSE
-  #if DIFFUSE == 4
-  albedo.a += specular;
-  #endif
+  diffuse = getDiffuse(normal, uv, lightDirection, eyeDirection);
   #endif
 
-  vec4 color = vec4((ambient + diffuse + specular) * albedo.rgb, albedo.a);
+  float specular = 0.;
+  #ifdef SPECULAR
+  specular = getSpecular(normal, uv, lightDirection, eyeDirection);
+  #endif
+
+  // TODO
+  // #ifdef DIFFUSE
+  //   #if DIFFUSE == 4
+  // albedo.a += specular;
+  //   #endif
+  // #endif
+
+  // TONE MAPPING
+  #ifdef TONE
+  albedo = pow(albedo, vec3(1. / 2.2));
+  #endif
+
+  #ifdef TEXTURE
+  float metalness = texture(armMap, uv).b;
+  #else
+  float metalness = METALNESS;
+  #endif
+
+  #ifdef FRESNEL
+  // Fresnel
+  vec3 halfVector = normalize(lightDirection + eyeDirection);
+  float p = abs(dot(normal, halfVector));
+  float f0 = mix(0.04, diffuse, metalness); // 1 -> 1.5
+  float fresnel = f0 + (1. - f0) * pow(1. - p, 3.);
+  float reflectance = fresnel;
+  float alpha = opacity * reflectance + specular; // For glass effect
+  #else
+  float reflectance = metalness;
+  float alpha = opacity;
+  #endif
+
+  #ifdef ENVMAP
+  vec3 envAlbedo = texture(envMap, reflect(-eyeDirection, normal)).rgb;
+
+  albedo = mix(albedo, envAlbedo, reflectance);
+  #endif
+
+  float k = ambient + diffuse + specular;
+  // Ambient occlusion
   #ifdef TEXTURE
   vec4 arm = texture(armMap, uv);
-  color.rgb *= arm.r;
+  k *= arm.r;
   #endif
+
+  vec4 color = vec4(k * albedo, alpha);
+
   return color;
-  #endif
-  #elif SHADING == 1
-  // Normal
-  return vec4(normal * .5 + .5, opacity);
-  #elif SHADING == 2
-  // Position
-  return vec4(position * .5 + .5, opacity);
-  #elif SHADING == 3
-  // Uvs
-  return vec4(uv.xy, 0., opacity);
-  #endif
-  return vec4(rgb, opacity);
 }

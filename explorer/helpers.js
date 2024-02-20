@@ -96,6 +96,8 @@ export const augment = (rt, vertex, fragment, type) => {
     envmap: v => (v ? true : null),
     texture: v => (v ? true : null),
     reversed: v => (v ? true : null),
+    tint: v => (v ? true : null),
+    fresnel: v => (v ? true : null),
     tesselation: v => (v === 'full' ? 1 : 0),
   }
   Object.entries(ambienceDefines).forEach(([key, getter]) => {
@@ -147,9 +149,22 @@ const compileShader = (gl, name, type, shaderSource, shader) => {
   const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS)
   if (!success) {
     const error = gl.getShaderInfoLog(shader)
+    let relevantSource = shaderSource
+    const match = error.match(/ERROR: \d+:(\d+):/)?.[1]
+    if (match) {
+      const errlno = parseInt(match)
+      const ctx = 5
+      const lines = shaderSource.split('\n')
+      const start = max(0, errlno - ctx)
+      const end = min(lines.length, errlno + ctx)
+      relevantSource = lines
+        .slice(start, end)
+        .map((s, i) => (i === ctx - 1 ? '=>' : '  ') + s)
+        .join('\n')
+    }
     console.error(
       `An error occurred compiling the ${name}->${type} shader: ${error}`,
-      { shaderSource }
+      relevantSource
     )
     return error
   }

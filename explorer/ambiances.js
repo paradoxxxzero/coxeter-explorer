@@ -60,6 +60,7 @@ const defaults = {
   metalness: 0.2,
   roughness: 0.85,
   gouraud: false,
+  fresnel: true,
   transparency: 'oit',
   color: ({ word }) => hsl((word.length * 0.03) % 1, 0.75, 0.7),
 }
@@ -101,8 +102,9 @@ export const ambiances = Object.fromEntries(
 
       face: {
         gouraud: true,
-        diffuse: 'fresnel',
-        opacity: 0.025,
+        diffuse: false,
+        metalness: 0,
+        opacity: 0.4,
       },
       transparency: 'blend',
       color: ({ word }) => hsl(...catpuccin[word.length % catpuccin.length]),
@@ -176,9 +178,10 @@ export const ambiances = Object.fromEntries(
       ambient: 0.2,
       gouraud: false,
       face: {
+        diffuse: false,
         gouraud: true,
-        opacity: 0.1,
-        diffuse: 'fresnel',
+        opacity: 0.999,
+        metalness: 0.1,
         specular: false,
       },
 
@@ -206,6 +209,8 @@ export const ambiances = Object.fromEntries(
       diffuse: 'cel',
       face: {
         opacity: 0.6,
+        fresnel: false,
+        metalness: 1,
         gouraud: false,
       },
       color: ({ word }) => hsl((word.length * 0.09) % 1, 1, 0.8),
@@ -215,8 +220,9 @@ export const ambiances = Object.fromEntries(
       transparency: 'oit',
       face: {
         gouraud: true,
-        opacity: 0.2,
-        diffuse: 'fresnel',
+        opacity: 0.9,
+        diffuse: false,
+        metalness: 0.1,
       },
       color: ({ subShape, type }) =>
         type !== 'vertex' ? hsl((subShape * 0.21) % 1, 1, 0.8) : [1, 1, 1],
@@ -227,6 +233,7 @@ export const ambiances = Object.fromEntries(
       diffuse: 'cel',
       face: {
         opacity: 0.6,
+        fresnel: false,
         gouraud: false,
       },
       color: ({ word, type, dimensions, hidden }) => {
@@ -241,7 +248,8 @@ export const ambiances = Object.fromEntries(
     harlequin: {
       background: [...hsl(240 / 360, 0.23, 0.09), 1],
       face: {
-        opacity: 0.6,
+        opacity: 0.9,
+        metalness: 0.6,
       },
 
       transparency: 'oit',
@@ -267,6 +275,7 @@ export const ambiances = Object.fromEntries(
       background: [1, 1, 1, 1],
       texture: 'fabric',
       ambient: 0.4,
+      tint: true,
       color: ({ word, type, hidden }) => {
         return hsl(
           (word.length * 0.06) % 1,
@@ -289,6 +298,16 @@ export const ambiances = Object.fromEntries(
       color: ({ faceIndex, faceSize }) =>
         hsl((faceIndex || 0) / (faceSize || 1), 0.75, 0.7),
     },
+    bubbles: {
+      background: [0, 0, 0, 1],
+      envmap: 'window',
+      skybox: 'window',
+      diffuse: false,
+      metalness: 0.25,
+      opacity: 0.4,
+      transparency: 'oit',
+      color: () => [1, 1, 1],
+    },
     monochrome: {
       background: [0.12, 0.12, 0.12, 1],
       diffuse: 'reverse',
@@ -303,9 +322,9 @@ export const ambiances = Object.fromEntries(
     glass: {
       background: [0, 0, 0, 1],
       transparency: 'blend',
-      opacity: 0.2,
+      opacity: 0.1,
       ambient: 0,
-      diffuse: 'fresnel',
+      diffuse: false,
       specular: 'blinn-phong',
       face: {
         shininess: 16,
@@ -353,12 +372,14 @@ export const ambiances = Object.fromEntries(
       extended: true,
       background: [1, 1, 1, 1],
       shading: 'normal',
+      ambient: 0.6,
       color: () => [0, 0, 0],
     },
     uvs: {
       extended: true,
       background: [1, 1, 1, 1],
       shading: 'uv',
+      ambient: 0.6,
       color: () => [0, 0, 0],
     },
   }).map(([name, ambiance]) => [

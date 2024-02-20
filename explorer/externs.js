@@ -81,4 +81,5 @@ export const externEnvs = {
   studio: link('neon_photostudio', 'env'),
   teufelsberg: link('teufelsberg_roof', 'env'),
   umbrellas: link('outdoor_umbrellas', 'env'),
+  window: link('old_room', 'env'),
 }

@@ -31,7 +31,6 @@ export const diffuseLight = [
   'oren-nayar',
   'minnaert',
   'cel',
-  'fresnel',
   'reverse',
 ]
 export const specularLight = [
@@ -83,6 +82,7 @@ export const envmaps = [
   'studio',
   'teufelsberg',
   'umbrellas',
+  'window',
 ]
 
 export const textures = [
