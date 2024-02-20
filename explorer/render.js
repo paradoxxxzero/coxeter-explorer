@@ -179,6 +179,7 @@ export const render = (rt, forceSize) => {
     refreshTexturesFull(rt)
     rt.camera.update(forceSize)
     rt.meshes.updateUniforms(rt, true, rt.zoom)
+    rt.passes.updateUniforms(rt)
   }
 
   // OPAQUE

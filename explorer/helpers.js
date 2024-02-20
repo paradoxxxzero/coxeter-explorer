@@ -664,7 +664,7 @@ export const hdriToCubemap = (gl, pixels, texture) => {
   }
 
   const hdriTexture = gl.createTexture()
-  gl.activeTexture(gl.TEXTURE0)
+  gl.activeTexture(gl.TEXTURE7)
   gl.bindTexture(gl.TEXTURE_2D, hdriTexture)
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
@@ -707,10 +707,12 @@ export const hdriToCubemap = (gl, pixels, texture) => {
   gl.attachShader(program, fragmentShader)
   linkProgram(gl, 'hdritocube', program)
   gl.useProgram(program)
-  gl.uniform1i(gl.getUniformLocation(program, 'hdri'), 0)
+  gl.uniform1i(gl.getUniformLocation(program, 'hdri'), 7)
   gl.uniform1i(gl.getUniformLocation(program, 'part'), 0)
   gl.viewport(0, 0, texture.width, texture.height)
-
+  gl.disable(gl.BLEND)
+  gl.disable(gl.DEPTH_TEST)
+  gl.disable(gl.CULL_FACE)
   for (let i = 0; i < 6; i++) {
     gl.uniform1i(gl.getUniformLocation(program, 'part'), i)
     gl.framebufferTexture2D(
@@ -727,6 +729,8 @@ export const hdriToCubemap = (gl, pixels, texture) => {
   gl.deleteTexture(hdriTexture)
   gl.deleteFramebuffer(fb)
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+  gl.bindRenderbuffer(gl.RENDERBUFFER, null)
 }
 
 export const storage = (rt, rb, type, msaa) => {
