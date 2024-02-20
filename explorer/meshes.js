@@ -92,6 +92,11 @@ export const mesh = (
       value: columnMajor(ident(rt.dimensions)),
     },
     {
+      name: 'time',
+      type: '1f',
+      value: 0,
+    },
+    {
       name: 'zoom',
       type: '1f',
       value: 1,
@@ -377,6 +382,7 @@ export default function getMeshes(rt) {
         mesh.uniforms.viewProjection.update(rt.camera.viewProjection)
         mesh.uniforms.zoom.update(quick ? zoom : rt.zoom)
         mesh.uniforms.eye.update(rt.camera.eye)
+        mesh.uniforms.time.update(performance.now() / 1000)
       }
     },
     fillGeometry(geometry) {

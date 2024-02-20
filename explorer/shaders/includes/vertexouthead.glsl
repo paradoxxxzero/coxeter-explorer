@@ -17,3 +17,11 @@ out vec4 vColor;
 #else
 flat out vec3 vColor;
 #endif
+
+#ifdef SHADING
+  #if SHADING == 5
+flat out float vId;
+  #elif SHADING == 6
+flat out float vId;
+  #endif
+#endif

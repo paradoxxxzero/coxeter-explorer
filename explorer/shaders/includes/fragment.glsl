@@ -12,6 +12,14 @@ float weight(float z, float a) {
 out vec4 outColor;
 #endif
 
+#ifdef SHADING
+  #if SHADING == 5
+flat in float vId;
+  #elif SHADING == 6
+flat in float vId;
+  #endif
+#endif
+
 #if defined(SHADING) && !defined(GOURAUD)
 #include lighting
 in vec3 vNormal;

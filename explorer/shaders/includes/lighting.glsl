@@ -144,17 +144,50 @@ float getSpecular(in vec3 normal, in vec2 uv, in vec3 lightDirection, in vec3 ey
   #endif
 }
 #endif
+//iq noise fn
+float hash(float n) {
+  return fract(sin(n) * 43758.5453);
+}
+float noise(in vec3 x) {
+  vec3 p = floor(x);
+  vec3 f = fract(x);
+
+  f = f * f * (3.0 - 2.0 * f);
+  float n = p.x + p.y * 57.0 + 113.0 * p.z;
+  return mix(mix(mix(hash(n + 0.0), hash(n + 1.0), f.x), mix(hash(n + 57.0), hash(n + 58.0), f.x), f.y), mix(mix(hash(n + 113.0), hash(n + 114.0), f.x), mix(hash(n + 170.0), hash(n + 171.0), f.x), f.y), f.z);
+}
+
+#if defined(SHADING) && SHADING == 1
+vec3 thinFilmInterference(float g) {
+  // Approximate thin film interference
+  // https://www.shadertoy.com/view/fsGfz3
+  vec3 lambda = vec3(612.0, 535.0, 465.0);
+  vec3 omega = g / lambda;
+  vec3 col = vec3(cos(omega * 20000.0) * 0.5 + 0.5);
+  col = mix(vec3(0.25), col, exp(-omega * 1000.0));
+  return pow(col, vec3(1.0 / 2.2));
+}
+#endif
 
 vec4 light(vec3 position, vec3 normal, vec3 rgb, vec2 uv) {
 
   #if SHADING == 0 // Input colors
   vec3 albedo = rgb;
-  #elif SHADING == 1 // Normal colors
+  #elif SHADING == 1 // Gravity colors
+  // Approximate thin film interference
+  float noisedHeight = -position.y * .5 + noise(rgb + normal * 2.5 + vec3(time * .5));
+  // vec3 albedo = hslToRgb(vec3(10. * (atan(noisedHeight) + ETA) / PI, .5, .5));
+  vec3 albedo = thinFilmInterference((atan(noisedHeight) + ETA) / PI);
+  #elif SHADING == 2 // Normal colors
   vec3 albedo = normal * .5 + .5;
-  #elif SHADING == 2 // Position colors
+  #elif SHADING == 3 // Position colors
   vec3 albedo = position * .5 + .5;
-  #elif SHADING == 3 // Uv colors
+  #elif SHADING == 4 // Uv colors
   vec3 albedo = vec3(uv.xy, 0.);
+  #elif SHADING == 5 // Instance colors
+  vec3 albedo = hslToRgb(vec3(vId * .02, .5, .6));
+  #elif SHADING == 6 // Vertex colors
+  vec3 albedo = hslToRgb(vec3(vId * .02, .5, .6));
   #else
   vec3 albedo = rgb;
   #endif
@@ -201,18 +234,6 @@ vec4 light(vec3 position, vec3 normal, vec3 rgb, vec2 uv) {
   specular = getSpecular(normal, uv, lightDirection, eyeDirection);
   #endif
 
-  // TODO
-  // #ifdef DIFFUSE
-  //   #if DIFFUSE == 4
-  // albedo.a += specular;
-  //   #endif
-  // #endif
-
-  // TONE MAPPING
-  #ifdef TONE
-  albedo = pow(albedo, vec3(1. / 2.2));
-  #endif
-
   #ifdef TEXTURE
   float metalness = texture(armMap, uv).b;
   #else
@@ -222,9 +243,10 @@ vec4 light(vec3 position, vec3 normal, vec3 rgb, vec2 uv) {
   #ifdef FRESNEL
   // Fresnel
   vec3 halfVector = normalize(lightDirection + eyeDirection);
-  float p = abs(dot(normal, halfVector));
+  float p = 1. - abs(dot(normal, halfVector));
   float f0 = mix(0.04, diffuse, metalness); // 1 -> 1.5
-  float fresnel = f0 + (1. - f0) * pow(1. - p, 3.);
+
+  float fresnel = mix(f0, 1., pow(p, FRESNEL));
   float reflectance = fresnel;
   float alpha = opacity * reflectance + specular; // For glass effect
   #else
@@ -234,7 +256,7 @@ vec4 light(vec3 position, vec3 normal, vec3 rgb, vec2 uv) {
 
   #ifdef ENVMAP
   vec3 envAlbedo = texture(envMap, reflect(-eyeDirection, normal)).rgb;
-
+  // alpha = clamp(alpha + pow(length(envAlbedo), 2.) * .25, 0., 1.);
   albedo = mix(albedo, envAlbedo, reflectance);
   #endif
 
@@ -244,6 +266,11 @@ vec4 light(vec3 position, vec3 normal, vec3 rgb, vec2 uv) {
   vec4 arm = texture(armMap, uv);
   k *= arm.r;
   #endif
+
+  // TONE MAPPING
+  // #ifdef TONEMAP
+  // albedo = pow(albedo, vec3(1. / 2.2));
+  // #endif
 
   vec4 color = vec4(k * albedo, alpha);
 

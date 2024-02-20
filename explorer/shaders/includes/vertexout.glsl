@@ -47,5 +47,12 @@ gl_Position = viewProject(proj);
 vColor = light(vPosition, vNormal, color, vUv);
 #else
 vColor = color;
+#endif
 
+#ifdef SHADING 
+  #if SHADING == 5
+vId = float(gl_InstanceID);
+  #elif SHADING == 6
+vId = float(gl_VertexID);
+  #endif
 #endif

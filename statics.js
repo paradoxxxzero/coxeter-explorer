@@ -25,7 +25,15 @@ export const projections = [
   'SC_Hexagon',
 ]
 
-export const shadings = ['ads', 'normal', 'position', 'uv']
+export const shadings = [
+  'ads',
+  'gravity',
+  'normal',
+  'position',
+  'uv',
+  'instance',
+  'vertex',
+]
 export const diffuseLight = [
   'lambert',
   'oren-nayar',

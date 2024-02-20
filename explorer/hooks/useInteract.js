@@ -165,6 +165,11 @@ export const useInteract = (
 
   const quickUpdate = useCallback(
     ({ matrix, zoom, camera } = { matrix: true, zoom: true, camera: true }) => {
+      for (let i = 0; i < runtime.meshes.meshes.length; i++) {
+        runtime.meshes[runtime.meshes.meshes[i]].uniforms.time.update(
+          performance.now() / 1000
+        )
+      }
       if (runtime.matrix._reset) {
         return
       }

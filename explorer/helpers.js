@@ -97,7 +97,7 @@ export const augment = (rt, vertex, fragment, type) => {
     texture: v => (v ? true : null),
     reversed: v => (v ? true : null),
     tint: v => (v ? true : null),
-    fresnel: v => (v ? true : null),
+    fresnel: v => (v ? float(v) : null),
     tesselation: v => (v === 'full' ? 1 : 0),
   }
   Object.entries(ambienceDefines).forEach(([key, getter]) => {
