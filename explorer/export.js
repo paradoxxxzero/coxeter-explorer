@@ -1,4 +1,4 @@
-import { min } from './math'
+import { ceil, min } from './math'
 import { render } from './render'
 
 function wait() {
@@ -63,6 +63,8 @@ export const iterateChunks = async (
   combinedCtx,
   margin = 0
 ) => {
+  const total = ceil(width / chunkWidth) * ceil(height / chunkHeight)
+  let i = 0
   for (let chunkY = 0; chunkY < height; chunkY += chunkHeight) {
     const localHeight = min(chunkHeight, height - chunkY)
 
@@ -85,10 +87,7 @@ export const iterateChunks = async (
 
       combinedCtx.putImageData(data, chunkX, height - chunkY - localHeight)
 
-      progress.innerHTML = `${(
-        ((chunkY + chunkHeight * (chunkX / width)) / height) *
-        100
-      ).toFixed(0)}%`
+      progress.innerHTML = `${((++i / total) * 100).toFixed(0)}%`
 
       await wait()
     }
