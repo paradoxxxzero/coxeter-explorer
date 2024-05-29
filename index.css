@@ -257,6 +257,7 @@ select option {
   font-size: 0.9em;
   align-items: baseline;
   font-size: 0.75em;
+  justify-content: center;
 }
 
 .parameters label {

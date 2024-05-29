@@ -1,4 +1,3 @@
-import { PNGRGBAWriter } from 'dekapng'
 import { min } from './math'
 import { render } from './render'
 
@@ -40,7 +39,7 @@ export const renderChunk = (
     fullHeight,
   })
 
-  const data = new Uint8Array(width * height * 4)
+  const data = new Uint8ClampedArray(width * height * 4)
   gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   gl.readPixels(
     margins.left,
@@ -51,21 +50,7 @@ export const renderChunk = (
     gl.UNSIGNED_BYTE,
     data
   )
-  const lineSize = width * 4
-  const line = new Uint8Array(lineSize)
-  const numLines = (height / 2) | 0
-  for (let i = 0; i < numLines; ++i) {
-    const topOffset = lineSize * i
-    const bottomOffset = lineSize * (height - i - 1)
-    line.set(data.slice(topOffset, topOffset + lineSize), 0)
-    data.set(data.slice(bottomOffset, bottomOffset + lineSize), topOffset)
-    data.set(line, bottomOffset)
-  }
-  return {
-    width,
-    height,
-    data: data,
-  }
+  return new ImageData(data, width, height)
 }
 
 export const iterateChunks = async (
@@ -75,11 +60,10 @@ export const iterateChunks = async (
   chunkWidth,
   chunkHeight,
   progress,
-  pngRGBAWriter,
+  combinedCtx,
   margin = 0
 ) => {
   for (let chunkY = 0; chunkY < height; chunkY += chunkHeight) {
-    const rowChunks = []
     const localHeight = min(chunkHeight, height - chunkY)
 
     for (let chunkX = 0; chunkX < width; chunkX += chunkWidth) {
@@ -98,7 +82,8 @@ export const iterateChunks = async (
       if (!data) {
         return
       }
-      rowChunks.push(data)
+
+      combinedCtx.putImageData(data, chunkX, height - chunkY - localHeight)
 
       progress.innerHTML = `${(
         ((chunkY + chunkHeight * (chunkX / width)) / height) *
@@ -107,20 +92,10 @@ export const iterateChunks = async (
 
       await wait()
     }
-
-    for (let row = 0; row < localHeight; ++row) {
-      rowChunks.forEach(chunk => {
-        const rowSize = chunk.width * 4
-        const chunkOffset = rowSize * row
-        pngRGBAWriter.addPixels(chunk.data, chunkOffset, chunk.width)
-      })
-    }
   }
 }
 
 export async function makeBigPng(runtime, width, height) {
-  const pngRGBAWriter = new PNGRGBAWriter(width, height)
-
   const chunkWidth = 1000
   const chunkHeight = 1000
   const margin = 100
@@ -128,6 +103,11 @@ export async function makeBigPng(runtime, width, height) {
   const progress = document.createElement('div')
   progress.className = 'export-progress'
   document.body.appendChild(progress)
+
+  const combinedCanvas = document.createElement('canvas')
+  combinedCanvas.width = width
+  combinedCanvas.height = height
+  const combinedCtx = combinedCanvas.getContext('2d')
 
   try {
     await iterateChunks(
@@ -137,13 +117,14 @@ export async function makeBigPng(runtime, width, height) {
       chunkWidth,
       chunkHeight,
       progress,
-      pngRGBAWriter,
+      combinedCtx,
       margin
     )
   } finally {
     document.body.removeChild(progress)
   }
+
   render(runtime)
 
-  return pngRGBAWriter.finishAndGetBlob()
+  return combinedCanvas.toDataURL('image/png')
 }

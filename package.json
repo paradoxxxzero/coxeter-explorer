@@ -6,8 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "mv docs/three . && vite build && mv three docs && touch docs/.nojekyll",
-    "preview": "vite preview",
-    "postinstall": "sed -i 's/\"module\":.*//' node_modules/dekapng/package.json"
+    "preview": "vite preview"
   },
   "devDependencies": {
     "@types/react": "^18.2.33",
@@ -23,9 +22,9 @@
     "vite": "^4.5.0"
   },
   "dependencies": {
-    "dekapng": "^1.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "stats.js": "^0.17.0"
-  }
+  },
+  "packageManager": "yarn@4.2.2"
 }

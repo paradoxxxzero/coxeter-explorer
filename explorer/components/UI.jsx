@@ -35,6 +35,7 @@ import Presets from './Presets'
 import Rotation from './Rotation.jsx'
 import Shape from './Shape.jsx'
 import Space from './Space'
+import { makeBigPng } from '../export.js'
 
 const getShowUI = () => {
   try {
@@ -208,14 +209,12 @@ export default function UI({
       console.error('Invalid resolution')
       return
     }
-    const dekapng = await import('../export.js')
 
-    const blob = await dekapng.makeBigPng(runtime, width, height)
-    if (blob) {
+    const url = await makeBigPng(runtime, width, height)
+    if (url) {
       const a = document.createElement('a')
       document.body.appendChild(a)
       a.style.display = 'none'
-      const url = window.URL.createObjectURL(blob)
       a.href = url
       a.download = `${document.title}-${width}x${height}`
       a.click()
